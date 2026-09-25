@@ -61,6 +61,21 @@ public class Race {
         this.status = RaceStatus.SETUP;
     }
 
+    /**
+     * Transition unique RUNNING vers FINISHED (RG21, RG29).
+     */
+    public void finish() {
+        if (status != RaceStatus.RUNNING) {
+            throw new IllegalStateException("La course " + id + " ne peut pas être terminée : statut "
+                + status + ", attendu " + RaceStatus.RUNNING);
+        }
+        this.status = RaceStatus.FINISHED;
+    }
+
+    public boolean isRunning() {
+        return status == RaceStatus.RUNNING;
+    }
+
     public Long getId() {
         return id;
     }
