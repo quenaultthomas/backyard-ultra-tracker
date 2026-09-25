@@ -59,3 +59,12 @@ Pour chaque incrément, déléguer dans cet ordre aux sous-agents :
 4. `testeur` : lance build + tests + couverture, rend un verdict `OK` ou `KO` avec la liste des écarts.
 
 En cas de `KO`, retour au développeur avec les écarts (3 aller-retours maximum, puis remonter la question à l'utilisateur).
+
+## Cycle d'un incrément
+1. git-publisher (start) → branche dédiée
+2. fonctionnel → spec
+3. dev → implémentation
+4. testeur → tests unitaires
+5. e2e-tester → parcours de bout en bout (si l'incrément touche le front)
+6. Si verdict OK → git-publisher (publish) → MR
+7. Arrêt : l'humain relit et merge
