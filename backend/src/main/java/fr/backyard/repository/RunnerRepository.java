@@ -16,4 +16,8 @@ public interface RunnerRepository extends JpaRepository<Runner, Long> {
     Optional<Runner> findByQrToken(String qrToken);
 
     List<Runner> findByRaceIdAndStatus(Long raceId, RunnerStatus status);
+
+    boolean existsByRaceIdAndBib(Long raceId, int bib);
+
+    boolean existsByRaceIdAndBibAndIdNot(Long raceId, int bib, Long id);
 }
