@@ -71,6 +71,53 @@ public class Runner {
         this.status = RunnerStatus.ACTIVE;
     }
 
+    /**
+     * Transition unique ACTIVE vers DNF (RG29), utilisée par l'auto-DNF et le DNF manuel.
+     */
+    public void markDnf(DnfReason reason, int yard) {
+        requireStatus(RunnerStatus.ACTIVE, "passer DNF");
+        if (reason == null) {
+            throw new IllegalArgumentException("Raison de DNF obligatoire pour le coureur " + id);
+        }
+        if (yard < 1) {
+            throw new IllegalArgumentException("Yard de DNF invalide pour le coureur " + id + " : " + yard);
+        }
+        this.status = RunnerStatus.DNF;
+        this.dnfReason = reason;
+        this.dnfYard = yard;
+    }
+
+    /**
+     * Seule transition DNF vers ACTIVE (RG29), utilisée par la réintégration et la réactivation automatique.
+     */
+    public void reactivate() {
+        requireStatus(RunnerStatus.DNF, "être réactivé");
+        this.status = RunnerStatus.ACTIVE;
+        this.dnfReason = null;
+        this.dnfYard = null;
+    }
+
+    /**
+     * Transition ACTIVE vers WINNER (RG21, RG29).
+     */
+    public void markWinner() {
+        requireStatus(RunnerStatus.ACTIVE, "être déclaré vainqueur");
+        this.status = RunnerStatus.WINNER;
+        this.dnfReason = null;
+        this.dnfYard = null;
+    }
+
+    public boolean isActive() {
+        return status == RunnerStatus.ACTIVE;
+    }
+
+    private void requireStatus(RunnerStatus expected, String action) {
+        if (status != expected) {
+            throw new IllegalStateException("Le coureur " + id + " ne peut pas " + action
+                + " : statut " + status + ", attendu " + expected);
+        }
+    }
+
     public Long getId() {
         return id;
     }
