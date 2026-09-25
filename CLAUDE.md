@@ -65,6 +65,5 @@ En cas de `KO`, retour au développeur avec les écarts (3 aller-retours maximum
 2. fonctionnel → spec
 3. dev → implémentation
 4. testeur → tests unitaires
-5. e2e-tester → parcours de bout en bout (si l'incrément touche le front)
-6. Si verdict OK → git-publisher (publish) → MR
-7. Arrêt : l'humain relit et merge
+5. Si verdict OK → git-publisher (publish) → MR
+6. Arrêt : l'humain relit et merge
