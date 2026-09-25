@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn compile:*)",
+      "Bash(mvn test:*)",
+      "Bash(mvn verify:*)",
+      "Bash(mvn clean:*)",
+      "Bash(python3:*)",
+      "Bash(node:*)",
+      "Bash(git checkout:*)", "Bash(git pull --ff-only)",
+      "Bash(git add:*)", "Bash(git commit:*)",
+      "Bash(git push -u origin feature/*)",
+      "Bash(git status:*)", "Bash(git diff:*)",
+      "Bash(glab mr create:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)", "Bash(git push origin main:*)",
+      "Bash(git reset --hard:*)", "Bash(glab mr merge:*)"
+    ]
+  }
+}
