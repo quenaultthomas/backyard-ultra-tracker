@@ -1,5 +1,7 @@
 package fr.backyard.service.exception;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -8,18 +10,20 @@ import java.util.Map;
  * Levée après le traitement de toutes les courses : cite l'id de chaque course en échec
  * et porte les exceptions d'origine : la première en cause, les suivantes en exceptions supprimées.
  */
-public class YardClosingFailedException extends RuntimeException {
+public final class YardClosingFailedException extends RuntimeException {
 
-    private final List<Long> failedRaceIds;
+    private static final long serialVersionUID = 1L;
+
+    private final ArrayList<Long> failedRaceIds;
 
     public YardClosingFailedException(Map<Long, RuntimeException> failuresByRaceId) {
         super(buildMessage(failuresByRaceId), failuresByRaceId.values().stream().findFirst().orElse(null));
-        this.failedRaceIds = List.copyOf(failuresByRaceId.keySet());
+        this.failedRaceIds = new ArrayList<>(failuresByRaceId.keySet());
         failuresByRaceId.values().stream().skip(1).forEach(this::addSuppressed);
     }
 
     public List<Long> getFailedRaceIds() {
-        return failedRaceIds;
+        return Collections.unmodifiableList(failedRaceIds);
     }
 
     private static String buildMessage(Map<Long, RuntimeException> failuresByRaceId) {

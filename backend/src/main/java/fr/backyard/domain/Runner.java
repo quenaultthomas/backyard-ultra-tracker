@@ -17,6 +17,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+import java.util.Comparator;
+
 @Entity
 @Table(
     name = "runner",
@@ -26,6 +28,9 @@ import jakarta.validation.constraints.Positive;
     }
 )
 public class Runner {
+
+    /** Ordre d'affichage des coureurs d'une course : dossard croissant (RG17 et RG24 inc. 3). */
+    public static final Comparator<Runner> BIB_ORDER = Comparator.comparingInt(Runner::getBib);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

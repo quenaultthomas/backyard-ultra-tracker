@@ -62,6 +62,33 @@ public class Race {
     }
 
     /**
+     * Transition unique SETUP vers RUNNING (RG13 inc. 3) : positionne l'heure de départ.
+     */
+    public void start(Instant startedAt) {
+        if (status != RaceStatus.SETUP) {
+            throw new IllegalStateException("La course " + id + " ne peut pas être démarrée : statut "
+                + status + ", attendu " + RaceStatus.SETUP);
+        }
+        if (startedAt == null) {
+            throw new IllegalArgumentException("Heure de départ obligatoire pour démarrer la course " + id);
+        }
+        this.status = RaceStatus.RUNNING;
+        this.startedAt = startedAt;
+    }
+
+    /** Unique définition de l'ouverture des inscriptions (RG14 inc. 3) : course au statut SETUP. */
+    public boolean isRegistrationOpen() {
+        return status == RaceStatus.SETUP;
+    }
+
+    /** Vrai si au moins un paramètre de boucle diffère des valeurs actuelles (RG11 inc. 3). */
+    public boolean hasDifferentLoopParameters(int otherLoopDistance, int otherLoopDuration, int otherLoopElevation) {
+        return loopDistance != otherLoopDistance
+            || loopDuration != otherLoopDuration
+            || loopElevation != otherLoopElevation;
+    }
+
+    /**
      * Transition unique RUNNING vers FINISHED (RG21, RG29).
      */
     public void finish() {

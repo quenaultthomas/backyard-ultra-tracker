@@ -17,6 +17,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.Instant;
+import java.util.Comparator;
 
 @Entity
 @Table(
@@ -26,6 +27,9 @@ import java.time.Instant;
     }
 )
 public class Passage {
+
+    /** Ordre chronologique des passages d'un coureur : numéro de yard croissant (RG26 inc. 3). */
+    public static final Comparator<Passage> YARD_ORDER = Comparator.comparingInt(Passage::getYardNumber);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

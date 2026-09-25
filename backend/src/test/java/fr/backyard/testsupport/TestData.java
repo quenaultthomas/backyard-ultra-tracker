@@ -48,6 +48,34 @@ public final class TestData {
         return race(id, 6706, 3600, 50, RaceStatus.RUNNING, T0);
     }
 
+    /** Course R1 de la spec increment 3 : id 1, "Backyard Test", 2026-10-03, 6706 m, 3600 s, 50 m D+. */
+    public static Race backyardTest(RaceStatus status) {
+        return namedRace(1L, "Backyard Test", RACE_DATE, 6706, 3600, 50, status,
+            status == RaceStatus.SETUP ? null : T0);
+    }
+
+    public static Race namedRace(long id, String name, LocalDate raceDate, int loopDistance, int loopDuration,
+                                 int loopElevation, RaceStatus status, Instant startedAt) {
+        Race race = new Race(name, raceDate, loopDistance, loopDuration, loopElevation);
+        ReflectionTestUtils.setField(race, "id", id);
+        race.setStatus(status);
+        race.setStartedAt(startedAt);
+        return race;
+    }
+
+    /** Coureur avec identifiant, dossard, nom et token explicites. */
+    public static Runner runner(long id, Race race, int bib, String name, String qrToken) {
+        Runner runner = new Runner(race, bib, name, qrToken);
+        ReflectionTestUtils.setField(runner, "id", id);
+        return runner;
+    }
+
+    /** Positionne l'identifiant d'un passage (entite sans setter d'id). */
+    public static Passage withId(Passage passage, long id) {
+        ReflectionTestUtils.setField(passage, "id", id);
+        return passage;
+    }
+
     public static Runner runner(long id, Race race, String qrToken) {
         Runner runner = new Runner(race, BIB_SEQUENCE.getAndIncrement(), "Coureur " + id, qrToken);
         ReflectionTestUtils.setField(runner, "id", id);

@@ -11,4 +11,8 @@ import java.util.List;
 public interface RaceRepository extends JpaRepository<Race, Long> {
 
     List<Race> findByStatus(RaceStatus status);
+
+    boolean existsByName(String name);
+
+    boolean existsByNameAndIdNot(String name, Long id);
 }

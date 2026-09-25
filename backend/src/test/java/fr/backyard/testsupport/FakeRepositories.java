@@ -8,6 +8,7 @@ import fr.backyard.domain.RunnerStatus;
 import fr.backyard.repository.PassageRepository;
 import fr.backyard.repository.RaceRepository;
 import fr.backyard.repository.RunnerRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyIterable;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -46,12 +48,31 @@ public final class FakeRepositories {
     private final List<Passage> savedPassages = new ArrayList<>();
     private final List<Race> savedRaces = new ArrayList<>();
 
+    private final List<Object> deletedEntities = new ArrayList<>();
+
     private long nextPassageId = 90_000L;
+    private long nextRaceId = 500L;
+    private long nextRunnerId = 8_000L;
 
     public FakeRepositories() {
         stubRaceRepository();
         stubRunnerRepository();
         stubPassageRepository();
+        stubIncrement3Queries();
+        stubDeletions();
+    }
+
+    /** Entites supprimees (coureurs, courses), dans l'ordre des appels de suppression. */
+    public List<Object> deletedEntities() {
+        return List.copyOf(deletedEntities);
+    }
+
+    public List<Race> races() {
+        return List.copyOf(races);
+    }
+
+    public List<Runner> runners() {
+        return List.copyOf(runners);
     }
 
     // ----- alimentation de l'etat -----
@@ -146,6 +167,10 @@ public final class FakeRepositories {
         when(raceRepository.save(any(Race.class))).thenAnswer(inv -> {
             Race race = inv.getArgument(0);
             savedRaces.add(race);
+            if (race.getId() == null) {
+                ReflectionTestUtils.setField(race, "id", nextRaceId++);
+                races.add(race);
+            }
             return race;
         });
     }
@@ -163,6 +188,10 @@ public final class FakeRepositories {
         when(runnerRepository.save(any(Runner.class))).thenAnswer(inv -> {
             Runner runner = inv.getArgument(0);
             savedRunners.add(runner);
+            if (runner.getId() == null) {
+                ReflectionTestUtils.setField(runner, "id", nextRunnerId++);
+                runners.add(runner);
+            }
             return runner;
         });
         when(runnerRepository.saveAll(anyIterable())).thenAnswer(inv -> {
@@ -201,6 +230,86 @@ public final class FakeRepositories {
             });
             return result;
         });
+    }
+
+    /** Requetes ajoutees par l'increment 3 (spec increment 3, section 2), derivees de l'etat en memoire. */
+    private void stubIncrement3Queries() {
+        when(raceRepository.findAll()).thenAnswer(inv -> new ArrayList<>(races));
+        when(raceRepository.findAll(any(Sort.class))).thenAnswer(inv -> sorted(races, inv.getArgument(0)));
+        when(raceRepository.existsByName(any())).thenAnswer(inv -> races.stream()
+            .anyMatch(r -> Objects.equals(r.getName(), inv.getArgument(0))));
+        when(raceRepository.existsByNameAndIdNot(any(), any())).thenAnswer(inv -> races.stream()
+            .anyMatch(r -> Objects.equals(r.getName(), inv.getArgument(0))
+                && !Objects.equals(r.getId(), inv.getArgument(1))));
+        when(runnerRepository.existsByRaceIdAndBib(any(), anyInt())).thenAnswer(inv -> runners.stream()
+            .anyMatch(r -> Objects.equals(r.getRace().getId(), inv.getArgument(0))
+                && r.getBib() == (int) inv.getArgument(1)));
+        when(runnerRepository.existsByRaceIdAndBibAndIdNot(any(), anyInt(), any())).thenAnswer(inv -> runners.stream()
+            .anyMatch(r -> Objects.equals(r.getRace().getId(), inv.getArgument(0))
+                && r.getBib() == (int) inv.getArgument(1)
+                && !Objects.equals(r.getId(), inv.getArgument(2))));
+        when(passageRepository.existsByRunnerId(any())).thenAnswer(inv -> passages.stream()
+            .anyMatch(p -> Objects.equals(p.getRunner().getId(), inv.getArgument(0))));
+        when(passageRepository.findByRunnerRaceId(any())).thenAnswer(inv -> new ArrayList<>(passages.stream()
+            .filter(p -> Objects.equals(p.getRunner().getRace().getId(), inv.getArgument(0)))
+            .toList()));
+    }
+
+    private void stubDeletions() {
+        doAnswer(inv -> deleteRunner(inv.getArgument(0))).when(runnerRepository).delete(any(Runner.class));
+        doAnswer(inv -> {
+            Iterable<Runner> toDelete = inv.getArgument(0);
+            toDelete.forEach(this::deleteRunner);
+            return null;
+        }).when(runnerRepository).deleteAll(anyIterable());
+        doAnswer(inv -> {
+            Iterable<Runner> toDelete = inv.getArgument(0);
+            toDelete.forEach(this::deleteRunner);
+            return null;
+        }).when(runnerRepository).deleteAllInBatch(anyIterable());
+        doAnswer(inv -> {
+            runners.stream().filter(r -> Objects.equals(r.getId(), inv.getArgument(0))).findFirst()
+                .ifPresent(this::deleteRunner);
+            return null;
+        }).when(runnerRepository).deleteById(any());
+        doAnswer(inv -> deleteRace(inv.getArgument(0))).when(raceRepository).delete(any(Race.class));
+        doAnswer(inv -> {
+            races.stream().filter(r -> Objects.equals(r.getId(), inv.getArgument(0))).findFirst()
+                .ifPresent(this::deleteRace);
+            return null;
+        }).when(raceRepository).deleteById(any());
+    }
+
+    private Object deleteRunner(Runner runner) {
+        runners.remove(runner);
+        deletedEntities.add(runner);
+        return null;
+    }
+
+    private Object deleteRace(Race race) {
+        races.remove(race);
+        deletedEntities.add(race);
+        return null;
+    }
+
+    /** Applique un {@link Sort} Spring Data (proprietes lues par leur getter) comme le ferait la base. */
+    private static <T> List<T> sorted(List<T> source, Sort sort) {
+        Comparator<T> comparator = (a, b) -> 0;
+        for (Sort.Order order : sort) {
+            Comparator<T> byProperty = Comparator.comparing(entity -> property(entity, order.getProperty()));
+            comparator = comparator.thenComparing(order.isAscending() ? byProperty : byProperty.reversed());
+        }
+        return new ArrayList<>(source.stream().sorted(comparator).toList());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Comparable<Object> property(Object entity, String name) {
+        try {
+            String getter = "get" + Character.toUpperCase(name.charAt(0)) + name.substring(1);
+            return (Comparable<Object>) entity.getClass().getMethod(getter).invoke(entity);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalArgumentException("Propriete de tri inconnue : " + name, e);
+        }
     }
 
     private List<Runner> runnersOfRace(Long raceId, RunnerStatus status) {

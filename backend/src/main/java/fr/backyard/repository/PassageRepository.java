@@ -13,4 +13,9 @@ public interface PassageRepository extends JpaRepository<Passage, Long> {
     List<Passage> findByRunnerId(Long runnerId);
 
     Optional<Passage> findByRunnerIdAndYardNumber(Long runnerId, int yardNumber);
+
+    boolean existsByRunnerId(Long runnerId);
+
+    /** Tous les passages des coureurs d'une course, en une seule requête (tableau de bord). */
+    List<Passage> findByRunnerRaceId(Long raceId);
 }
