@@ -110,6 +110,15 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
+            <!-- Tests d'intégration (*IT) : exécutés en phase integration-test, configuration héritée du parent Spring Boot.
+                 Leur couverture va dans jacoco-it.exec, pour que le seuil de couverture unitaire (CLAUDE.md) ne mesure que les tests unitaires. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <argLine>@{failsafeArgLine}</argLine>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -119,6 +128,15 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>prepare-agent-integration</id>
+                        <goals>
+                            <goal>prepare-agent-integration</goal>
+                        </goals>
+                        <configuration>
+                            <propertyName>failsafeArgLine</propertyName>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>report</id>
