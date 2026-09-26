@@ -56,6 +56,14 @@ class ReintegrationServiceTest {
         assertThat(runner.getDnfYard()).isNull();
     }
 
+    private static void assertStillActive(Runner... runners) {
+        for (Runner runner : runners) {
+            assertThat(runner.getStatus()).as("statut du coureur %s", runner.getId()).isEqualTo(RunnerStatus.ACTIVE);
+            assertThat(runner.getDnfReason()).isNull();
+            assertThat(runner.getDnfYard()).isNull();
+        }
+    }
+
     /** B de CA44 : SCAN yard 1 a 08:45, yard 2 a 09:50, DNF TIMEOUT dnfYard 3. */
     private Runner givenRunnerBOfCa44() {
         Runner b = runner(B_ID, r1, "tok-b");
@@ -157,7 +165,11 @@ class ReintegrationServiceTest {
 
         assertThat(atYard5.closedYard()).isEqualTo(4);
         assertReactivated(b);
-        assertThat(atYard5.timedOutRunnerIds()).doesNotContain(B_ID);
+        assertStillActive(a, c);
+        assertThat(atYard5.timedOutRunnerIds()).isEmpty();
+        assertThat(atYard5.winnerRunnerId()).isEmpty();
+        assertThat(atYard5.raceFinished()).isFalse();
+        assertThat(r1.getStatus()).as("F = {A, B, C} au yard 4 : R1 reste RUNNING").isEqualTo(RaceStatus.RUNNING);
 
         repos.withPassages(scanInWindow(a, 5), scanInWindow(c, 5));
         clock.set(at("13:00:00"));
@@ -166,7 +178,11 @@ class ReintegrationServiceTest {
         assertThat(b.getStatus()).isEqualTo(RunnerStatus.DNF);
         assertThat(b.getDnfReason()).isEqualTo(DnfReason.TIMEOUT);
         assertThat(b.getDnfYard()).isEqualTo(5);
+        assertThat(atYard6.closedYard()).isEqualTo(5);
         assertThat(atYard6.timedOutRunnerIds()).containsExactly(B_ID);
+        assertStillActive(a, c);
+        assertThat(atYard6.winnerRunnerId()).isEmpty();
+        assertThat(r1.getStatus()).as("F = {A, C} au yard 5 : R1 reste RUNNING").isEqualTo(RaceStatus.RUNNING);
     }
 
     @Test
