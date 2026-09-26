@@ -47,7 +47,7 @@ Compile sans warning + tests unitaires verts + couverture cœur métier >= 80 % 
 3. API REST : CRUD courses/coureurs, actions admin (DNF manuel, réintégration).
 4. Frontend PWA : scan, dashboard, admin, inscription.
 
-Ne jamais passer à l'incrément suivant tant que le courant n'a pas ses tests et que le testeur n'a pas rendu un verdict OK.
+Ne jamais passer à l'incrément suivant tant que le courant n'a pas ses tests, que le testeur n'a pas rendu un verdict technique OK et que l'agent fonctionnel n'a pas prononcé le GO (voir « Workflow de validation d'incrément »).
 
 ## Workflow d'orchestration
 
@@ -56,14 +56,46 @@ Pour chaque incrément, déléguer dans cet ordre aux sous-agents :
 1. `fonctionnel` : rédige la spec de l'incrément dans `docs/specs/incrementN.md` (règles, cas limites, critères d'acceptation numérotés).
 2. `testeur` : écrit les tests unitaires à partir de la spec (pas à partir du code) pour l'incrément 2, ou les complète après implémentation pour les autres.
 3. `developpeur` : implémente jusqu'à ce que les tests passent.
-4. `testeur` : lance build + tests + couverture, rend un verdict `OK` ou `KO` avec la liste des écarts.
+4. `testeur` : lance build + tests + couverture, rend un verdict **technique** `OK` ou `KO` (définition de « fini ») avec la liste des écarts. Ce n'est pas le verdict final.
 
 En cas de `KO`, retour au développeur avec les écarts (3 aller-retours maximum, puis remonter la question à l'utilisateur).
+
+Un `OK` du testeur ouvre la validation (`/valider-increment <n>`, section suivante). Le verdict final GO / GO sous réserves / NO-GO appartient exclusivement à l'agent `fonctionnel`.
 
 ## Cycle d'un incrément
 1. git-publisher (start) → branche dédiée
 2. fonctionnel → spec
 3. dev → implémentation
-4. testeur → tests unitaires
-5. Si verdict OK → git-publisher (publish) → MR
-6. Arrêt : l'humain relit et merge
+4. testeur → tests unitaires + verdict technique OK/KO
+5. Si OK → `/valider-increment <n>` : tests d'intégration, E2E, revue de cohérence, verdict de l'agent fonctionnel
+6. Si GO → git-publisher (publish) → MR
+7. Arrêt : l'humain relit et merge
+
+## Workflow de validation d'incrément
+
+Chaque incrément suit cette chaîne. Aucun incrément n'est « terminé » sans verdict écrit de l'agent fonctionnel.
+
+```
+Développement  →  test-integration-backend  →  test-e2e-frontend  →  revue-coherence-patrimoine  →  Rapport de synthèse  →  Agent fonctionnel (GO / NO-GO)
+```
+
+Commande : `/valider-increment <n>`
+
+### Agents
+- **test-integration-backend** : tests d'intégration API / persistance (JUnit + AssertJ, `@SpringBootTest` sur H2 en mode PostgreSQL, classes `*IT` exécutées par failsafe). Rapport `INC-<n>-integration.md`.
+- **test-e2e-frontend** : parcours utilisateur dans le navigateur (Playwright par défaut, à partir de l'incrément 4 ; sans objet tant qu'il n'y a pas de front). Rapport `INC-<n>-e2e.md`.
+- **revue-coherence-patrimoine** : contrôleur indépendant en lecture seule (couverture, tests orphelins, tests désactivés/affaiblis, véracité des rapports, non-régression). Rapport `INC-<n>-coherence.md`. Il constate, il ne tranche pas.
+- **Agent fonctionnel** (`fonctionnel`) : porte les exigences et critères d'acceptation (`docs/specs/increment<n>.md`), relit les rapports, et est le **seul décideur** du verdict GO / GO sous réserves / NO-GO.
+
+### Patrimoine de test
+- Référentiel : `docs/tests/PATRIMOINE.md` (matrice exigence ↔ tests), mis à jour à chaque incrément.
+- Rapports : `docs/tests/rapports/INC-<n>-*.md`, à partir de `TEMPLATE-rapport-increment.md`.
+- Suite complète backend : `mvn -B -f backend/pom.xml clean verify` (unitaires surefire `*Test` + intégration failsafe `*IT` + couverture JaCoCo).
+
+### Règles
+1. Toute exigence a au moins un test ; sinon c'est un écart consigné.
+2. Aucun test supprimé, désactivé ou assoupli sans motif écrit et accord de l'agent fonctionnel.
+3. Non-régression : la suite complète est exécutée à chaque incrément.
+4. Un résultat de test n'est cité que s'il a été réellement exécuté.
+5. Les agents de test ne modifient pas le code de production pour faire passer un test : ils remontent le bug.
+6. On ne démarre pas l'incrément n+1 tant que l'incrément n n'est pas en GO.

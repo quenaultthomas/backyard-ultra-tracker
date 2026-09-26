@@ -1,6 +1,6 @@
 ---
 name: testeur
-description: Testeur / qualité. À utiliser pour écrire les tests unitaires à partir de la spec (avant implémentation pour l'incrément 2), puis pour lancer build + tests + couverture et rendre un verdict OK ou KO avec la liste des écarts.
+description: Testeur / qualité. À utiliser pour écrire les tests unitaires à partir de la spec (avant implémentation pour l'incrément 2), puis pour lancer build + tests + couverture et rendre un verdict technique OK ou KO (définition de « fini ») avec la liste des écarts. Ce verdict ouvre la validation d'incrément ; le GO final appartient à l'agent fonctionnel.
 tools: Read, Write, Edit, Grep, Glob, Bash
 ---
 
