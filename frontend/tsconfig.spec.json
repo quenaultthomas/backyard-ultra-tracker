@@ -1,0 +1,11 @@
+/* Tests unitaires de la logique pure (RG59) : verifies en mode strict avant leur execution par Vitest. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [],
+    "noEmit": true
+  },
+  "include": [
+    "src/app/core/**/*.ts"
+  ]
+}

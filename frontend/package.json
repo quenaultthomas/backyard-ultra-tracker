@@ -1,0 +1,42 @@
+{
+  "name": "backyard-ultra-tracker-pwa",
+  "version": "0.0.1",
+  "description": "PWA du Backyard Ultra Tracker : inscription, tableau de bord, scan et administration",
+  "private": true,
+  "engines": {
+    "node": "24.21.0"
+  },
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build --configuration production",
+    "typecheck:spec": "tsc -p tsconfig.spec.json --noEmit",
+    "test": "npm run typecheck:spec && vitest run --coverage",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@angular/common": "22.2.0",
+    "@angular/compiler": "22.2.0",
+    "@angular/core": "22.2.0",
+    "@angular/platform-browser": "22.2.0",
+    "@angular/router": "22.2.0",
+    "@angular/service-worker": "22.2.0",
+    "@nuintun/qrcode": "5.0.3",
+    "rxjs": "7.8.2",
+    "tslib": "2.8.1"
+  },
+  "devDependencies": {
+    "@angular/build": "22.2.0",
+    "@angular/cli": "22.2.0",
+    "@angular/compiler-cli": "22.2.0",
+    "@vitest/coverage-v8": "5.0.2",
+    "typescript": "6.0.3",
+    "vitest": "5.0.2"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "@parcel/watcher@2.6.0": true,
+    "lmdb@3.5.6": true,
+    "msgpackr-extract@3.0.4": true
+  }
+}

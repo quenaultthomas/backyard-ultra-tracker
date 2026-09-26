@@ -1,0 +1,47 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - link "Aller au contenu" [ref=e3] [cursor=pointer]:
+    - /url: "#contenu"
+  - banner [ref=e4]:
+    - link "Backyard Ultra Tracker" [ref=e5] [cursor=pointer]:
+      - /url: /
+    - navigation "Navigation principale" [ref=e6]:
+      - link "Courses" [ref=e7] [cursor=pointer]:
+        - /url: /
+      - link "Scan" [ref=e8] [cursor=pointer]:
+        - /url: /scan
+      - link "Administration" [ref=e9] [cursor=pointer]:
+        - /url: /admin
+  - main [ref=e10]:
+    - generic [ref=e11]:
+      - heading "Scan" [level=1] [ref=e12]
+      - region "État de l'appareil" [ref=e13]:
+        - generic [ref=e14]: Hors ligne
+        - generic [ref=e15]: scanner
+        - generic [ref=e16]: 2 en attente
+        - generic [ref=e17]: Horloge vérifiée
+      - paragraph [ref=e18]: "Gardez l'application ouverte : 2 scans en attente"
+      - generic [ref=e19]:
+        - status [ref=e20]:
+          - paragraph [ref=e21]:
+            - generic [ref=e22]: ●
+            - text: Enregistré — en attente de réseau
+        - alert
+      - generic [ref=e23]:
+        - button "Activer la caméra" [ref=e24] [cursor=pointer]
+        - button "Réessayer maintenant" [ref=e25] [cursor=pointer]
+        - 'button "Son : activé" [pressed] [ref=e26] [cursor=pointer]'
+        - button "Se déconnecter" [active] [ref=e28] [cursor=pointer]
+      - generic [ref=e30]:
+        - generic [ref=e31]: Code du QR
+        - generic [ref=e32]:
+          - textbox "Code du QR" [ref=e33]
+          - button "Valider" [ref=e34] [cursor=pointer]
+      - region "Dernières captures" [ref=e35]:
+        - heading "Dernières captures" [level=2] [ref=e36]
+        - list [ref=e37]:
+          - listitem [ref=e38]: 20:40:17 — coureur inconnu — …1062 — en attente
+          - listitem [ref=e39]: 20:40:17 — coureur inconnu — …36c0 — en attente
+```

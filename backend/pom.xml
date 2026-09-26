@@ -20,6 +20,9 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- PWA (RG59 inc. 4) : code sous frontend/, Node fixé dans le dépôt (aussi dans frontend/.nvmrc). -->
+        <frontend.directory>${project.basedir}/../frontend</frontend.directory>
+        <frontend.node.version>v24.21.0</frontend.node.version>
     </properties>
 
     <dependencies>
@@ -99,6 +102,80 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <!-- PWA (RG59 inc. 4) : installation de Node, npm ci, build de production Angular, puis tests unitaires
+                 de la logique pure du front avec seuil de couverture bloquant. Tout échec fait échouer le build. -->
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>2.0.2</version>
+                <configuration>
+                    <workingDirectory>${frontend.directory}</workingDirectory>
+                    <installDirectory>${frontend.directory}</installDirectory>
+                    <nodeVersion>${frontend.node.version}</nodeVersion>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>frontend-install-node</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>frontend-npm-ci</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>ci --no-audit --no-fund</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>frontend-build</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run build</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>frontend-unit-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>test</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Copie de la sortie du build Angular dans les ressources statiques du jar (RG53, RG59 inc. 4). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-pwa</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${frontend.directory}/dist/backyard-pwa/browser</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -10,9 +10,11 @@ import fr.backyard.domain.DnfReason;
 import fr.backyard.repository.PassageRepository;
 import fr.backyard.repository.RaceRepository;
 import fr.backyard.repository.RunnerRepository;
+import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -37,6 +39,18 @@ class RacePersistenceTest {
     @Autowired
     private PassageRepository passageRepository;
 
+    @Autowired
+    private TestEntityManager entityManager;
+
+    /**
+     * Force l'écriture en base puis vide le cache de premier niveau : la lecture suivante
+     * relit réellement les lignes depuis la base (aller-retour des types, réserve R1-2).
+     */
+    private void flushAndClearPersistenceContext() {
+        entityManager.flush();
+        entityManager.clear();
+    }
+
     // ── CA1 — Persistance minimale de Race ──────────────────────────────────
     @Test
     void ca1_persistMinimalRace() {
@@ -46,7 +60,9 @@ class RacePersistenceTest {
         raceRepository.flush();
 
         assertThat(saved.getId()).isNotNull();
+        flushAndClearPersistenceContext();
         Race found = raceRepository.findById(saved.getId()).orElseThrow();
+        assertThat(found).isNotSameAs(saved);
         assertThat(found.getName()).isEqualTo("Test Race");
         assertThat(found.getRaceDate()).isEqualTo(LocalDate.of(2026, 10, 1));
         assertThat(found.getStatus()).isEqualTo(RaceStatus.SETUP);
@@ -69,7 +85,9 @@ class RacePersistenceTest {
         Race race = new Race("Null StartedAt", LocalDate.of(2026, 10, 1), 6700, 3600, 50);
         Race saved = raceRepository.saveAndFlush(race);
 
+        flushAndClearPersistenceContext();
         Race found = raceRepository.findById(saved.getId()).orElseThrow();
+        assertThat(found).isNotSameAs(saved);
         assertThat(found.getStartedAt()).isNull();
     }
 
@@ -92,7 +110,10 @@ class RacePersistenceTest {
         Runner saved = runnerRepository.saveAndFlush(runner);
 
         assertThat(saved.getId()).isNotNull();
+        flushAndClearPersistenceContext();
         Runner found = runnerRepository.findById(saved.getId()).orElseThrow();
+        assertThat(found).isNotSameAs(saved);
+        assertThat(found.getRace().getId()).isEqualTo(race.getId());
         assertThat(found.getBib()).isEqualTo(1);
         assertThat(found.getName()).isEqualTo("Alice");
         assertThat(found.getQrToken()).isEqualTo("tok-alice-001");
@@ -147,7 +168,10 @@ class RacePersistenceTest {
         Race race = raceRepository.saveAndFlush(new Race("Race CA10", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
         Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-ca10-alice"));
 
+        flushAndClearPersistenceContext();
         Runner found = runnerRepository.findById(runner.getId()).orElseThrow();
+        assertThat(found).isNotSameAs(runner);
+        assertThat(found.getStatus()).isEqualTo(RunnerStatus.ACTIVE);
         assertThat(found.getDnfReason()).isNull();
         assertThat(found.getDnfYard()).isNull();
     }
@@ -163,7 +187,10 @@ class RacePersistenceTest {
         Passage saved = passageRepository.saveAndFlush(passage);
 
         assertThat(saved.getId()).isNotNull();
+        flushAndClearPersistenceContext();
         Passage found = passageRepository.findById(saved.getId()).orElseThrow();
+        assertThat(found).isNotSameAs(saved);
+        assertThat(found.getRunner().getId()).isEqualTo(runner.getId());
         assertThat(found.getYardNumber()).isEqualTo(1);
         assertThat(found.getSource()).isEqualTo(PassageSource.SCAN);
         assertThat(found.getScannedAt()).isEqualTo(scannedAt);
@@ -178,7 +205,10 @@ class RacePersistenceTest {
 
         Passage saved = passageRepository.saveAndFlush(passage);
 
+        flushAndClearPersistenceContext();
         Passage found = passageRepository.findById(saved.getId()).orElseThrow();
+        assertThat(found).isNotSameAs(saved);
+        assertThat(found.getYardNumber()).isEqualTo(2);
         assertThat(found.getScannedAt()).isNull();
         assertThat(found.getSource()).isEqualTo(PassageSource.MANUAL);
     }
@@ -280,7 +310,10 @@ class RacePersistenceTest {
     void ca21_nullRaceNameThrows() {
         Race race = new Race(null, LocalDate.of(2026, 10, 1), 6700, 3600, 0);
         assertThatThrownBy(() -> raceRepository.saveAndFlush(race))
-            .isInstanceOf(Exception.class);
+            .isInstanceOf(ConstraintViolationException.class)
+            .satisfies(thrown -> assertThat(((ConstraintViolationException) thrown).getConstraintViolations())
+                .extracting(violation -> violation.getPropertyPath().toString())
+                .containsExactly("name"));
     }
 
     // ── CA22 — loop_elevation à zéro autorisé ─────────────────────────────────
@@ -289,13 +322,15 @@ class RacePersistenceTest {
         Race race = new Race("Flat Race CA22", LocalDate.of(2026, 10, 1), 6700, 3600, 0);
         Race saved = raceRepository.saveAndFlush(race);
 
+        flushAndClearPersistenceContext();
         Race found = raceRepository.findById(saved.getId()).orElseThrow();
+        assertThat(found).isNotSameAs(saved);
         assertThat(found.getLoopElevation()).isZero();
     }
 
-    // ── CA23 — Setters Race et Runner exercés (couverture JaCoCo) ─────────────
+    // ── TECH (hors CA, INC1-TECH1) — Setters Race et Runner exercés (couverture JaCoCo)
     @Test
-    void ca23_raceAndRunnerSettersUpdateFields() {
+    void tech_raceAndRunnerSettersUpdateFields() {
         Race race1 = raceRepository.saveAndFlush(new Race("Race CA23-1", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
         Race race2 = raceRepository.saveAndFlush(new Race("Race CA23-2", LocalDate.of(2026, 10, 2), 6700, 3600, 0));
 
