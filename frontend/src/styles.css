@@ -1,0 +1,682 @@
+/*
+ * Feuille de styles unique de la PWA, servie comme fichier (CSP style-src 'self', RG55) : aucun composant ne
+ * déclare de styles, Angular n'injecte donc aucune balise <style> à l'exécution.
+ * Lisibilité en extérieur (RG48) : texte >= 16 px, contrastes WCAG 2.1 AA, cibles tactiles >= 48 px (RG49).
+ */
+
+:root {
+  --color-text: #1a1a1a;
+  --color-muted: #595959;
+  --color-background: #ffffff;
+  --color-surface: #f3f5f4;
+  --color-border: #767676;
+  --color-primary: #0b3d2e;
+  --color-primary-text: #ffffff;
+  --color-link: #0a5c43;
+  --color-info-bg: #dbe9ff;
+  --color-info-text: #0b2e66;
+  --color-success-bg: #d8f0dc;
+  --color-success-text: #0d4a1c;
+  --color-error-bg: #fbdcdc;
+  --color-error-text: #7a0b0b;
+  --color-danger: #a30d0d;
+  --color-warning-bg: #fff1c7;
+  --color-warning-text: #5c4300;
+  --color-focus: #f5a623;
+  --target-size: 48px;
+  --gap: 8px;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+main {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+main:focus {
+  outline: none;
+}
+
+h1 {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  margin: 8px 0 16px;
+}
+
+h2 {
+  font-size: 1.35rem;
+  margin: 24px 0 8px;
+}
+
+a {
+  color: var(--color-link);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+}
+
+.skip-link:focus {
+  left: 8px;
+  top: 8px;
+  z-index: 10;
+  background: var(--color-background);
+  padding: 8px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.hidden {
+  display: none;
+}
+
+/* En-tête */
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  padding: 8px 16px;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+}
+
+.app-header a {
+  color: var(--color-primary-text);
+}
+
+.app-title {
+  font-weight: 700;
+  text-decoration: none;
+  min-height: var(--target-size);
+  display: inline-flex;
+  align-items: center;
+}
+
+.app-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+}
+
+.app-header nav a {
+  min-height: var(--target-size);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.admin-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0 16px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 16px;
+}
+
+/* Boutons et cibles tactiles (RG49) */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--target-size);
+  min-height: var(--target-size);
+  padding: 8px 16px;
+  border: 2px solid var(--color-primary);
+  border-radius: 6px;
+  background: var(--color-background);
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:disabled {
+  border-color: var(--color-border);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.button-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+}
+
+.button-primary:disabled {
+  background: var(--color-surface);
+}
+
+.button-danger {
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+  color: #ffffff;
+}
+
+.button-danger:disabled {
+  background: var(--color-surface);
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  margin: 8px 0;
+}
+
+/* Formulaires (RG51 : une étiquette par champ) */
+.form {
+  display: grid;
+  gap: 12px;
+  max-width: 32rem;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+}
+
+.field label,
+.radio-group legend {
+  font-weight: 600;
+}
+
+.field input,
+.field select {
+  min-height: var(--target-size);
+  padding: 8px 12px;
+  border: 2px solid var(--color-border);
+  border-radius: 6px;
+  font: inherit;
+  width: 100%;
+}
+
+.field input[readonly] {
+  background: var(--color-surface);
+}
+
+.field input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.field-error {
+  margin: 0;
+  min-height: 1.5em;
+  color: var(--color-error-text);
+}
+
+.field-checkbox {
+  grid-template-columns: var(--target-size) 1fr;
+  align-items: center;
+}
+
+.field-checkbox input,
+.radio-option input {
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  margin: 10px;
+}
+
+.inline-field {
+  display: flex;
+  gap: var(--gap);
+  align-items: center;
+}
+
+.inline-field input {
+  flex: 1;
+}
+
+.preview {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.radio-group {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 12px 0;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  min-height: var(--target-size);
+  gap: var(--gap);
+}
+
+/* Bandeaux : icône ou texte, jamais la couleur seule */
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border-left: 6px solid currentColor;
+  margin: 8px 0;
+}
+
+.banner-info {
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+
+.banner-success {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.banner-error {
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+
+.banner-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+.banner-finished {
+  background: var(--color-primary);
+  color: var(--color-primary-text);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* Listes en cartes */
+.card-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.card {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: var(--color-background);
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+.card-seen {
+  background: var(--color-surface);
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 0 8px;
+  border: 2px solid var(--color-warning-text);
+  border-radius: 999px;
+  color: var(--color-warning-text);
+  background: var(--color-warning-bg);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+/* Tableau de bord (RG30, RG48) */
+.subtitle,
+.loop-parameters,
+.freshness {
+  margin: 4px 0;
+}
+
+.yard-clock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 16px;
+  margin: 12px 0;
+}
+
+.yard-number,
+.countdown {
+  font-size: 2.25rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown-note {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.runner-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.runner-table th,
+.runner-table td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.runner-winner {
+  background: var(--color-success-bg);
+  font-weight: 700;
+}
+
+.runner-dnf {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.runner-dnf a {
+  color: var(--color-muted);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 8px;
+}
+
+.stats div {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.stats dt {
+  font-weight: 600;
+}
+
+.stats dd {
+  margin: 0;
+}
+
+/* Tableaux en cartes sur mobile (RG48 : 360 px sans défilement horizontal) */
+@media (max-width: 40rem) {
+  .runner-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .runner-table,
+  .runner-table tbody,
+  .runner-table tr,
+  .runner-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .runner-table tr {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    padding: 8px;
+  }
+
+  .runner-table td {
+    border: 0;
+    padding: 2px 0;
+  }
+
+  .runner-table td::before {
+    content: attr(data-label) " : ";
+    font-weight: 600;
+  }
+}
+
+/* Écran de scan (RG26, RG48, RG50) */
+.indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  margin-bottom: 12px;
+}
+
+.indicator {
+  padding: 4px 12px;
+  border: 2px solid var(--color-border);
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.indicator-error {
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+  color: #ffffff;
+}
+
+.indicator-warning {
+  border-color: var(--color-warning-text);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+.scan-result {
+  min-height: 96px;
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid var(--color-border);
+}
+
+.scan-result-text {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.tone-info {
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+  border-color: var(--color-info-text);
+}
+
+.tone-success {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  border-color: var(--color-success-text);
+}
+
+.tone-error {
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+  border-color: var(--color-error-text);
+}
+
+.tone-discreet .scan-result-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.manual-entry-first {
+  order: -1;
+  border: 2px solid var(--color-primary);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.camera-preview {
+  width: 100%;
+  max-width: 32rem;
+  border-radius: 8px;
+  background: #000000;
+}
+
+.history {
+  padding-left: 1.5rem;
+}
+
+.history li {
+  padding: 4px 0;
+}
+
+/* Dialogues modaux (RG41, RG49, RG51) */
+.dialog {
+  max-width: min(36rem, calc(100vw - 16px));
+  border: 2px solid var(--color-primary);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.dialog h2 {
+  margin-top: 0;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+/* Inscription et QR codes (RG12, RG39, RG40) */
+.registration-confirmation {
+  text-align: center;
+}
+
+.bib {
+  font-size: 1.5rem;
+}
+
+.bib strong,
+.qr-card-bib {
+  font-size: 3rem;
+  font-weight: 800;
+}
+
+.runner-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.qr-image {
+  width: 264px;
+  max-width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.token {
+  font-family: ui-monospace, "Cascadia Mono", Menlo, monospace;
+  overflow-wrap: anywhere;
+}
+
+.qr-sheet {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 12px;
+}
+
+.qr-card {
+  border: 1px dashed var(--color-border);
+  padding: 12px;
+  text-align: center;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.qr-card-bib,
+.qr-card-name {
+  margin: 0;
+}
+
+.qr-card .qr-image {
+  width: 4cm;
+}
+
+@media print {
+  .app-header,
+  .admin-bar,
+  .no-print,
+  .skip-link {
+    display: none !important;
+  }
+
+  main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .qr-image {
+    width: 4cm;
+    min-width: 3cm;
+  }
+
+  .qr-sheet {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  body:has(dialog[open]) * {
+    visibility: hidden;
+  }
+
+  body:has(dialog[open]) dialog[open],
+  body:has(dialog[open]) dialog[open] * {
+    visibility: visible;
+  }
+
+  body:has(dialog[open]) dialog[open] {
+    position: absolute;
+    inset: 0 auto auto 0;
+    border: 0;
+  }
+
+  dialog[open] .dialog-actions {
+    display: none;
+  }
+}

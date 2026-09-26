@@ -238,13 +238,23 @@ class YardClosingServiceTest {
         assertThat(repos.runnerSaveCount(w)).isZero();
         assertThat(r3.getStatus()).isEqualTo(RaceStatus.SETUP);
         assertThat(r4.getStatus()).isEqualTo(RaceStatus.FINISHED);
+        assertThat(r1.getStatus()).as("R1 sans finisher du yard 2 : FINISHED sans vainqueur")
+            .isEqualTo(RaceStatus.FINISHED);
+        assertThat(r2.getStatus()).as("R2 avec deux finishers : reste RUNNING").isEqualTo(RaceStatus.RUNNING);
         assertThat(results).hasSize(2);
         assertThat(results).filteredOn(r -> r.raceId().equals(R1_ID))
-            .singleElement().extracting(YardClosingResult::closedYard).isEqualTo(2);
+            .singleElement().satisfies(r -> {
+                assertThat(r.closedYard()).isEqualTo(2);
+                assertThat(r.timedOutRunnerIds()).containsExactly(1011L);
+                assertThat(r.winnerRunnerId()).isEmpty();
+                assertThat(r.raceFinished()).isTrue();
+            });
         assertThat(results).filteredOn(r -> r.raceId().equals(R2_ID))
             .singleElement().satisfies(r -> {
                 assertThat(r.closedYard()).isEqualTo(1);
                 assertThat(r.timedOutRunnerIds()).containsExactly(2002L);
+                assertThat(r.winnerRunnerId()).isEmpty();
+                assertThat(r.raceFinished()).isFalse();
             });
         verify(repos.raceRepository).findByStatus(RaceStatus.RUNNING);
         verify(repos.raceRepository, never()).findByStatus(RaceStatus.SETUP);
@@ -274,6 +284,8 @@ class YardClosingServiceTest {
 
         assertTimedOut(z, 1);
         assertActive(y, v);
+        assertThat(r2.getStatus()).as("R2 entierement traitee, deux finishers : reste RUNNING")
+            .isEqualTo(RaceStatus.RUNNING);
         assertThat(thrown).isInstanceOf(RuntimeException.class);
         assertThat(thrown).isNotSameAs(original);
         assertThat(mentionsNumber(thrown.getMessage(), R1_ID))

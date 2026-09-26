@@ -287,3 +287,124 @@ Les tests d'intégration de persistance peuvent utiliser H2 (plus rapide, dialec
 
 **PO8 — Comportement de `findByRunnerIdAndYardNumber` en cas d'absence**
 La méthode peut retourner `Optional<Passage>` ou `Passage` nullable. Le choix `Optional` est recommandé pour la cohérence avec les conventions Spring Data, mais doit être validé avec l'équipe.
+
+---
+
+## Addendum (2026-09-26)
+
+> Origine : réserve **R1-3** du verdict fonctionnel INC-1 (section 8 de `docs/tests/rapports/INC-1-integration.md`, « Écarts ouverts » de `docs/tests/PATRIMOINE.md`). Des règles et cas limites de cette spec n'avaient aucun critère d'acceptation : RG11, RG15, CL12 et les contraintes `CHECK` de la migration V1 (RG1, RG6 `bib > 0`, RG13 `yard_number >= 1`).
+> Cet addendum **ajoute** des CA numérotés à la suite des CA existants (CA23 à CA31). Aucun CA existant (CA1 à CA22) n'est renuméroté ni modifié. Aucune RG n'est modifiée.
+
+### A1. Collision de numérotation avec un test existant
+
+Le nouveau **CA23** réutilise un numéro déjà porté par le nom d'un test existant, `persistence/RacePersistenceTest.java#ca23_raceAndRunnerSettersUpdateFields`, qui ne correspond à aucun CA (test technique `INC1-TECH1`). La réserve **R1-1** exige de le renommer en `tech_raceAndRunnerSettersUpdateFields`. **Ce renommage doit être fait avant, ou dans le même commit que, l'ajout des tests du nouveau CA23**, pour qu'aucun test nommé `ca23_...` ne vérifie autre chose que le CA23 ci-dessous.
+
+### A2. Conventions de test propres à l'addendum
+
+- Les tests de persistance de l'addendum appliquent la règle de la réserve R1-2 : `flush()` puis `clear()` de l'`EntityManager` avant toute relecture, pour relire réellement depuis la base.
+- Une exception attendue est toujours d'un type précis (`DataIntegrityViolationException`, `jakarta.validation.ConstraintViolationException`, `IllegalArgumentException`) : jamais `Exception` ni `RuntimeException`. Si la couche Spring enveloppe l'exception, le test vérifie la cause du type attendu.
+- Les CA « contrainte CHECK » visent **le schéma V1** et non les annotations Bean Validation des entités (qui rejettent certaines valeurs avant la base, par exemple `@Positive` sur `bib`). Pour atteindre la contrainte, ils insèrent la ligne par une requête SQL native (`JdbcTemplate` ou requête native de l'`EntityManager`) qui contourne Bean Validation. Chaque CA vérifie en plus le rejet par le chemin JPA normal.
+- Ces tests tournent sur H2 en mode PostgreSQL (PO7). La réserve transverse **RT1** (rejouer la suite sur un vrai PostgreSQL) s'applique à eux aussi.
+
+### A3. Précision sur RG10 (sans modification de la règle)
+
+RG10 indique que `dnf_reason` et `dnf_yard` ne sont renseignés que si le statut est `DNF` ou `WINNER`. L'incrément 2 (RG21 et RG29 inc. 2, CA33 inc. 2) précise qu'un coureur `WINNER` a `dnf_reason = null` et `dnf_yard = null`. RG10 est donc lue ainsi : ces champs **peuvent** être non nuls seulement pour `DNF`, et ils sont nuls pour `ACTIVE` et `WINNER`. CA23 vérifie cette lecture.
+
+### A4. Nouveaux critères d'acceptation
+
+**CA23 — Cohérence DNF portée par le domaine (couvre RG10, RG11)** [unit + persistance]
+Donné une `Race` R (loop_distance 6700, loop_duration 3600, loop_elevation 100) et un `Runner` A (bib 1, name "Alice", qr_token "tok-ca23-a") au statut `ACTIVE`.
+- Quand `A.markDnf(null, 3)`. Alors `IllegalArgumentException` ; A reste `ACTIVE`, `dnfReason = null`, `dnfYard = null`.
+- Quand `A.markDnf(DnfReason.VOLUNTARY, 0)`. Alors `IllegalArgumentException` ; A reste inchangé.
+- Quand `A.markDnf(DnfReason.TIMEOUT, 3)`. Alors A : `DNF`, `dnfReason = TIMEOUT`, `dnfYard = 3`. Persisté, puis `flush()` + `clear()`, puis relu par `findById` : `DNF`, `TIMEOUT`, `3`.
+- Donné un `Runner` B (bib 2, "tok-ca23-b") `ACTIVE`. Quand `B.markWinner()`. Alors B : `WINNER`, `dnfReason = null`, `dnfYard = null`, y compris après persistance et relecture (`flush()` + `clear()`).
+
+**CA24 — Aucun contournement de la cohérence DNF dans le code de production (couvre RG11)** [test d'architecture]
+Donné les classes de production (`backend/src/main/java`). Quand on recherche les appels à `Runner.setStatus`, `Runner.setDnfReason` et `Runner.setDnfYard` (ArchUnit ou analyse des sources, au choix du testeur). Alors aucun appel n'existe hors de la classe `Runner` : toute mise en `DNF` passe par `Runner.markDnf`, qui garantit RG11. (Constat au 2026-09-26 : ces setters ne sont appelés que depuis `src/test`. Voir PO9.)
+
+**CA25 — Immuabilité des passages (couvre RG15)** [unit + test d'architecture]
+- Par réflexion sur `Passage` : aucune méthode publique dont le nom commence par `set` ; aucune méthode publique autre que les accesseurs `getId`, `getRunner`, `getScannedAt`, `getYardNumber`, `getSource` et les méthodes héritées d'`Object`. Les champs `runner`, `scannedAt`, `yardNumber` et `source` ne sont affectés que par le constructeur.
+- `PassageRepository` ne déclare aucune méthode annotée `@Modifying` ni aucune requête `UPDATE` ou `DELETE`.
+- Aucune classe de production n'appelle une méthode de suppression de `PassageRepository` (`delete`, `deleteById`, `deleteAll`, `deleteAllInBatch`, `deleteAllById`, `deleteInBatch`).
+- Donné un passage persisté (yard 1, SCAN, scanned_at `2026-10-01T08:45:00Z`). Quand on appelle `passageRepository.save(...)` une seconde fois sur l'entité relue, puis `flush()` + `clear()` et relecture. Alors les quatre champs sont inchangés et `passageRepository.count()` est inchangé.
+
+**CA26 — Nom obligatoire et non vide pour Runner et Race (couvre CL12, RG6, RG1)** [persistance]
+Donné une `Race` persistée.
+- Quand on persiste (`saveAndFlush`) un `Runner` bib 1, qr_token "tok-ca26-null", `name = null`. Alors l'enregistrement est rejeté par une `ConstraintViolationException` portant sur la propriété `name`, ou par une `DataIntegrityViolationException` (NOT NULL) ; aucune ligne n'est créée.
+- Quand on persiste un `Runner` bib 2, qr_token "tok-ca26-empty", `name = ""`. Alors `ConstraintViolationException` sur `name` (la base, qui n'a qu'un NOT NULL, ne rejetterait pas la chaîne vide : c'est la validation du domaine qui porte la règle).
+- Même résultat avec `name = "   "` (bib 3, "tok-ca26-blank").
+- Quand on persiste une `Race` avec `name = "   "`. Alors `ConstraintViolationException` sur `name` (complète CA21, qui ne teste que `null`).
+- Dans chaque cas, `runnerRepository.count()` (ou `raceRepository.count()`) est inchangé après l'échec.
+
+**CA27 — Contraintes CHECK des paramètres de boucle (couvre RG1, CL10)** [persistance, SQL natif + JPA]
+Par insertion SQL native dans `race` (name, race_date `2026-10-01`, status `SETUP`) :
+- `loop_distance = 0` (duration 3600, elevation 0) : `DataIntegrityViolationException` ;
+- `loop_duration = 0` (distance 6700, elevation 0) : `DataIntegrityViolationException` ;
+- `loop_elevation = -1` (distance 6700, duration 3600) : `DataIntegrityViolationException` ;
+- valeurs limites `loop_distance = 1`, `loop_duration = 1`, `loop_elevation = 0` : insertion acceptée.
+Par le chemin JPA (`raceRepository.saveAndFlush`) : `new Race("CA27-jpa-0", 2026-10-01, 0, 3600, 0)` est rejetée (`DataIntegrityViolationException` ou `ConstraintViolationException`) et aucune course n'est créée.
+
+**CA28 — Contrainte CHECK du dossard (couvre RG6)** [persistance, SQL natif + JPA]
+Donné une `Race` persistée d'id R. Par insertion SQL native dans `runner` (race_id R, name "X", status `ACTIVE`, qr_token distinct à chaque ligne) :
+- `bib = 0` : `DataIntegrityViolationException` ;
+- `bib = -1` : `DataIntegrityViolationException` ;
+- `bib = 1` : insertion acceptée.
+Par le chemin JPA : `new Runner(race, 0, "Zero", "tok-ca28-jpa")` est rejeté par une `ConstraintViolationException` sur `bib` (ou une `DataIntegrityViolationException`), aucun coureur créé.
+
+**CA29 — Contrainte CHECK du numéro de yard (couvre RG13)** [persistance, SQL natif + JPA]
+Donné un `Runner` persisté d'id U. Par insertion SQL native dans `passage` (runner_id U, source `SCAN`, scanned_at `2026-10-01T08:45:00Z`) :
+- `yard_number = 0` : `DataIntegrityViolationException` ;
+- `yard_number = -1` : `DataIntegrityViolationException` ;
+- `yard_number = 1` : insertion acceptée.
+Par le chemin JPA : `new Passage(runner, 0, PassageSource.SCAN, 2026-10-01T08:45:00Z)` est rejeté par une `ConstraintViolationException` sur `yardNumber` (ou une `DataIntegrityViolationException`), aucun passage créé.
+
+**CA30 — Suppression d'une Race avec coureurs bloquée (couvre CL8, RG5)** [intégration]
+Donné une `Race` persistée avec un `Runner` rattaché. Quand on supprime la course (`raceRepository.deleteById` puis `flush()`). Alors `DataIntegrityViolationException` (clé étrangère `fk_runner_race`, `ON DELETE RESTRICT`) ; la course et le coureur existent toujours après l'échec.
+*(Formalise un cas limite déjà testé par `it/SchemaAndContextStartupIT.java#deletingRaceWithRunnersIsBlockedByForeignKeyRestrict` : rattachement à faire dans le patrimoine, sans nouveau test si ce test vérifie déjà ces assertions.)*
+
+**CA31 — Suppression d'un Runner avec passages bloquée (couvre CL9, RG12)** [intégration]
+Donné un `Runner` persisté avec un `Passage`. Quand on supprime le coureur puis `flush()`. Alors `DataIntegrityViolationException` (`fk_passage_runner`, `ON DELETE RESTRICT`) ; le coureur et le passage existent toujours.
+*(Même remarque : déjà testé par `it/SchemaAndContextStartupIT.java#deletingRunnerWithPassagesIsBlockedByForeignKeyRestrict`.)*
+
+### A5. Table de couverture RG / CL → CA (après addendum)
+
+| Règle / cas limite | CA |
+|---|---|
+| RG1 | CA1, CA21, CA26, CA27 |
+| RG2 | CA1, CA2 |
+| RG3 | CA3 |
+| RG4 | CA4 |
+| RG5 | CA5, CA30 |
+| RG6 | CA5, CA26, CA28 |
+| RG7 | CA7, CA8 |
+| RG8 | CA9 |
+| RG9 | CA5, CA6 |
+| RG10 | CA10, CA23 |
+| RG11 | **CA23, CA24** (nouveaux) |
+| RG12 | CA11, CA31 |
+| RG13 | CA11, CA29 |
+| RG14 | CA12 |
+| RG15 | **CA25** (nouveau) |
+| RG16 | CA13 |
+| RG17 | CA20 |
+| RG18 | CA20 |
+| RG19 | CA1, CA5, CA11 |
+| RG20 | CA14, CA15, CA16, CA17, CA18, CA19 |
+| CL1 | CA3 |
+| CL2 | CA12 |
+| CL3 | CA14 |
+| CL4 | CA7 |
+| CL5 | CA8 |
+| CL6 | CA9 |
+| CL7 | CA13 |
+| CL8 | **CA30** (nouveau, formalise un test existant) |
+| CL9 | **CA31** (nouveau, formalise un test existant) |
+| CL10 | CA22, CA27 |
+| CL11 | CA21, CA26 |
+| CL12 | **CA26** (nouveau) |
+
+Toutes les RG et tous les CL de cette spec ont désormais au moins un CA.
+
+### A6. Point ouvert ajouté
+
+**PO9 — Setters publics permettant de contourner RG11 et les transitions d'état.** `Runner.setStatus`, `setDnfReason`, `setDnfYard` et `Race.setStatus`, `setStartedAt` sont publics. Ils ne sont appelés que par les tests (constat du 2026-09-26), mais rien n'empêche un futur code de production de créer un `DNF` sans raison ou une course `RUNNING` sans `started_at`. HYPOTHÈSE : ils sont conservés, et CA24 interdit leur usage en production pour `Runner`. Alternative recommandée : les supprimer ou les restreindre (visibilité paquet, ou constructeurs et fabriques de test), et adapter les jeux de données de test (`testsupport/TestData.java` et d'autres). Ce refactoring touche des tests existants : il demande l'accord de l'agent fonctionnel, qui l'accorderait à condition qu'aucune assertion ne soit affaiblie.
