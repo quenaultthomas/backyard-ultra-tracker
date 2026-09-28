@@ -40,11 +40,14 @@ test.describe('@INC-4 @INC4-CA26 Authorization jamais envoyé au public', () => 
     await page.goto(`/courses/${race.id}`);
     await page.waitForTimeout(10_000); // laisse le polling du tableau de bord faire plusieurs appels E4
 
+    // Écart mineur comblé (reprise du 2026-09-27) : les deux attentes fixes de 500 ms sont remplacées par une
+    // assertion sur un état observable (l'écran affiché, ce qui suppose qu'au moins une réponse
+    // /api/public/** a été reçue avec succès, puisque ces écrans n'affichent leurs données qu'après elle).
     await page.goto(`/coureurs/${registration.runnerId}`);
-    await page.waitForTimeout(500);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Public Runner');
 
     await page.goto(`/inscription/${race.id}`);
-    await page.waitForTimeout(500);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(race.name);
 
     expect(publicRequestsWithAuth).toEqual([]);
     expect(publicUnauthorized).toEqual([]);

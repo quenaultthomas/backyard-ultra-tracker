@@ -5,7 +5,7 @@ import { Api, uniqueRun } from '../fixtures/api';
  * CA21 — Routes et liens directs (RG5, RG45). Chaque route de la liste fermée s'ouvre directement (lien,
  * favori, rechargement), dans un contexte neuf (sans service worker installé au préalable).
  */
-test.describe('@INC-4 @INC4-CA21 Routes et liens directs', () => {
+test.describe('@INC-4 @smoke @INC4-CA21 Routes et liens directs', () => {
   let raceId: number;
   let runnerId: number;
 

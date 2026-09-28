@@ -39,6 +39,25 @@ test.describe('@INC-4 @INC4-CA25 Stockage des identifiants', () => {
       } catch {
         // Base absente : rien à ajouter.
       }
+      // Cache Storage (écart mineur comblé, reprise du 2026-09-27) : contenu des réponses mises en cache, pas
+      // seulement leur présence, pour qu'un identifiant éventuellement mis en cache dans un corps ou une URL
+      // soit bien détecté par les assertions `not.toContain(...)` ci-dessous.
+      try {
+        const cacheNames = await caches.keys();
+        const cacheParts: string[] = [];
+        for (const name of cacheNames) {
+          const cache = await caches.open(name);
+          const requests = await cache.keys();
+          for (const request of requests) {
+            const response = await cache.match(request);
+            const body = response ? await response.text() : '';
+            cacheParts.push(`${request.url}::${body}`);
+          }
+        }
+        parts.push(cacheParts.join(';'));
+      } catch {
+        // Cache Storage indisponible : rien à ajouter.
+      }
       return parts.join('|');
     });
   }

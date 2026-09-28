@@ -18,7 +18,11 @@ const requireSignedIn: CanActivateFn = async (_route, state) => {
   return router.createUrlTree(['/connexion'], { queryParams: { retour: state.url } });
 };
 
-/** Routes de la PWA (RG5), liste fermée. Aucune ne commence par /api. */
+/**
+ * Routes de la PWA (RG5), liste fermée. Aucune ne commence par /api. Le garde de connexion ne porte que sur les
+ * routes admin réelles : une URL inconnue sous /admin ne correspond à aucun enfant de `admin`, le routeur passe
+ * donc à la route `**` finale et affiche « Page introuvable », connecté ou non (CA21).
+ */
 export const routes: Routes = [
   {
     path: '',
@@ -69,11 +73,6 @@ export const routes: Routes = [
         path: 'courses/:raceId/qr',
         title: 'QR codes — Backyard Ultra Tracker',
         loadComponent: () => import('./pages/admin/admin-qr-sheet-page').then((m) => m.AdminQrSheetPage),
-      },
-      {
-        path: '**',
-        title: 'Page introuvable — Backyard Ultra Tracker',
-        loadComponent: () => import('./pages/not-found/not-found-page').then((m) => m.NotFoundPage),
       },
     ],
   },

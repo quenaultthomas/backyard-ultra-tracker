@@ -14,10 +14,17 @@ import { Byte, Encoder } from '@nuintun/qrcode';
 
 const MODULE_PX = 8;
 const MARGIN_MODULES = 4;
-const FRAME_COUNT = 15;
 const FRAME_RATE = 10;
+/**
+ * Le QR n'est diffusé que pendant les premières images du fichier, suivies d'images blanches jusqu'à la fin
+ * de la boucle (RG17, PO15) : cela suffit à exercer l'anti-rebond (plusieurs lectures identiques
+ * consécutives, une seule capture), sans re-déclencher indéfiniment « déjà enregistré » à chaque image
+ * suivante, ce qui rendrait le bandeau vert illisible par le test entre deux lectures (RG50).
+ */
+const QR_FRAME_COUNT = 4;
+const BLANK_FRAME_COUNT = 80; // 8 s à 10 im/s : largement au-delà des 5 s d'observation de CA27.
 
-/** Génère un fichier Y4M contenant le QR code de `token`, et rend son chemin. */
+/** Génère un fichier Y4M contenant le QR code de `token` (puis du blanc), et rend son chemin. */
 export function generateQrCodeVideo(token: string): string {
   const encoded = new Encoder({ level: 'M' }).encode(new Byte(token));
   const modules = encoded.size;
@@ -25,16 +32,17 @@ export function generateQrCodeVideo(token: string): string {
   const rawSize = modules * MODULE_PX + marginPx * 2;
   const size = rawSize % 2 === 0 ? rawSize : rawSize + 1; // I420 : dimensions paires
 
-  const luma = new Uint8Array(size * size).fill(255); // fond blanc
+  const qrLuma = new Uint8Array(size * size).fill(255); // fond blanc
   for (let y = 0; y < modules * MODULE_PX; y++) {
     const moduleY = Math.floor(y / MODULE_PX);
     for (let x = 0; x < modules * MODULE_PX; x++) {
       const moduleX = Math.floor(x / MODULE_PX);
       if (encoded.get(moduleX, moduleY) === 1) {
-        luma[(y + marginPx) * size + (x + marginPx)] = 0; // module sombre
+        qrLuma[(y + marginPx) * size + (x + marginPx)] = 0; // module sombre
       }
     }
   }
+  const blankLuma = new Uint8Array(size * size).fill(255);
 
   const chromaSize = size / 2;
   const chroma = new Uint8Array(chromaSize * chromaSize).fill(128); // achromatique
@@ -42,8 +50,11 @@ export function generateQrCodeVideo(token: string): string {
   const header = `YUV4MPEG2 W${size} H${size} F${FRAME_RATE}:1 Ip A1:1 C420jpeg\n`;
   const frameHeader = 'FRAME\n';
   const chunks: Uint8Array[] = [Buffer.from(header, 'ascii')];
-  for (let frame = 0; frame < FRAME_COUNT; frame++) {
-    chunks.push(Buffer.from(frameHeader, 'ascii'), luma, chroma, chroma);
+  for (let frame = 0; frame < QR_FRAME_COUNT; frame++) {
+    chunks.push(Buffer.from(frameHeader, 'ascii'), qrLuma, chroma, chroma);
+  }
+  for (let frame = 0; frame < BLANK_FRAME_COUNT; frame++) {
+    chunks.push(Buffer.from(frameHeader, 'ascii'), blankLuma, chroma, chroma);
   }
 
   const directory = mkdtempSync(join(tmpdir(), 'backyard-e2e-qr-'));

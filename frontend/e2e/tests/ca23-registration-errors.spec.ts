@@ -39,8 +39,11 @@ test.describe('@INC-4 @INC4-CA23 Inscription — erreurs', () => {
     });
     await page.goto(`/inscription/${raceId}`);
     await page.getByLabel('Nom').fill('Dan');
+    // Deux clics quasi simultanés : `dispatchEvent` déclenche l'événement directement, sans attendre
+    // l'actionabilité (un `.click()` classique échouerait sur le second appel dès que le premier a désactivé
+    // ou fait disparaître le bouton).
     const button = page.getByRole('button', { name: "S'inscrire" });
-    await Promise.all([button.click(), button.click({ force: true })]);
+    await Promise.all([button.dispatchEvent('click'), button.dispatchEvent('click')]);
     await expect(page.locator('.bib')).toBeVisible();
     expect(registrationRequests).toBe(1);
     const after = await api.adminRunners(raceId);

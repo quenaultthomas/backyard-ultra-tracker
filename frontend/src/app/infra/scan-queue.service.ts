@@ -1,5 +1,6 @@
 import { effect, inject, Injectable, signal } from '@angular/core';
 import { API_PATHS } from '../core/api-paths';
+import { canEmit, EmitterLock, EmitterRole } from '../core/emitter-role';
 import { RawHttpResult, SCAN_TIMEOUT_MS } from '../core/http-classification';
 import { captureFeedback, ScanFeedback, serverFeedback } from '../core/scan-feedback';
 import { CaptureResult, QueueEvent, QueueSnapshot, ScanQueue } from '../core/scan-queue';
@@ -46,12 +47,20 @@ export class ScanQueueService {
     newLocalId: () => crypto.randomUUID(),
   });
   private readonly channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(CHANNEL);
+  private readonly emitterRole = new EmitterRole({
+    lock: browserEmitterLock(),
+    queue: this.queue,
+    canEmit: () => canEmit(this.authState.session() !== null, this.queue.snapshot().suspension),
+    onFailure: (error: unknown) => this.reportFailure(error),
+  });
   private started: Promise<void> | null = null;
+  private opened = false;
 
   constructor() {
     this.queue.subscribe((event) => this.onQueueEvent(event));
     effect(() => {
       this.queue.setSendingEnabled(this.authState.session() !== null);
+      this.updateEmitterRole();
     });
   }
 
@@ -95,7 +104,8 @@ export class ScanQueueService {
       this.reportFailure(error);
     }
     this.refreshSnapshot();
-    this.claimEmitterRole();
+    this.opened = true;
+    this.updateEmitterRole();
     this.channel?.addEventListener('message', () => {
       this.queue.refresh().catch((error: unknown) => this.reportFailure(error));
     });
@@ -119,28 +129,32 @@ export class ScanQueueService {
     }, PURGE_INTERVAL_MS);
   }
 
-  /** Un seul émetteur par appareil, même avec plusieurs onglets (RG21) ; les autres affichent la même file. */
-  private claimEmitterRole(): void {
-    if (!('locks' in navigator)) {
-      this.queue.setEmitter(true);
-      return;
+  /**
+   * Un seul émetteur par appareil, même avec plusieurs onglets (RG21), et seulement parmi les contextes qui
+   * peuvent envoyer (« émetteur effectif ») ; les autres affichent la même file. Sans effet avant l'ouverture.
+   */
+  private updateEmitterRole(): void {
+    if (this.opened) {
+      this.emitterRole.update();
     }
-    navigator.locks.request(EMITTER_LOCK, () => {
-      this.queue.setEmitter(true);
-      return new Promise<void>(() => undefined);
-    }).catch((error: unknown) => this.reportFailure(error));
   }
 
   private async send(body: string): Promise<RawHttpResult> {
     return (await this.api.exchange('POST', API_PATHS.scan, body, { timeoutMs: SCAN_TIMEOUT_MS })).raw;
   }
 
+  /**
+   * Le retour d'un résultat serveur n'est donné que pour les captures de ce contexte (`accepted`, `rejected`),
+   * y compris quand un autre onglet émetteur les a envoyées : leur état final arrive alors par la diffusion
+   * (BroadcastChannel) puis la relecture de la file (RG50, arbitrage OBS-T2).
+   */
   private onQueueEvent(event: QueueEvent): void {
     if (event.type === 'failure') {
       this.reportFailure(event.error);
       return;
     }
     this.refreshSnapshot();
+    this.updateEmitterRole();
     const feedback = serverFeedback(event, Date.now());
     if (feedback !== null) {
       this.show(feedback);
@@ -168,4 +182,15 @@ export class ScanQueueService {
     console.error('Erreur de la file locale des scans', error);
     this.failure.set('Erreur du stockage local des scans : gardez cet écran ouvert et notez les dossards.');
   }
+}
+
+/**
+ * Verrou d'émetteur partagé entre les onglets de l'appareil (Web Locks). Sans Web Locks, le contexte est seul
+ * candidat : le verrou est accordé immédiatement.
+ */
+function browserEmitterLock(): EmitterLock {
+  if (!('locks' in navigator)) {
+    return { request: (whileHeld) => whileHeld() };
+  }
+  return { request: (whileHeld, signal) => navigator.locks.request(EMITTER_LOCK, { signal }, whileHeld) };
 }

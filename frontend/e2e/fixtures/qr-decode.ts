@@ -1,5 +1,5 @@
 import { binarize, Decoder, Detector, grayscale } from '@nuintun/qrcode';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 /**
  * Décodage réel d'un QR affiché par la page (CA22, CA36 : « le QR code affiché, décodé par le test »).
@@ -7,13 +7,13 @@ import type { Page } from '@playwright/test';
  * pixels bruts (décodage GIF natif du navigateur) ; la matrice de bits est ensuite détectée et décodée côté
  * test, avec les mêmes fonctions que `QrFrameReader` (grayscale, binarize, Detector, Decoder), mais dans une
  * instance de bibliothèque distincte de celle de l'application.
+ *
+ * @param pageOrScope la page entière (avec un sélecteur global), ou un `Locator` déjà borné à une zone
+ *                    précise (ex. une vignette de la planche QR), pour distinguer plusieurs QR sur l'écran.
+ * @param selector    sélecteur de l'image, relatif à `pageOrScope`.
  */
-export async function decodeQrImage(page: Page, selector: string): Promise<string | null> {
-  const pixels = await page.evaluate((sel) => {
-    const img = document.querySelector(sel) as HTMLImageElement | null;
-    if (img === null) {
-      return null;
-    }
+export async function decodeQrImage(pageOrScope: Page | Locator, selector: string): Promise<string | null> {
+  const pixels = await pageOrScope.locator(selector).first().evaluate((img: HTMLImageElement) => {
     const canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
@@ -24,7 +24,7 @@ export async function decodeQrImage(page: Page, selector: string): Promise<strin
     context.drawImage(img, 0, 0);
     const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
     return { width: canvas.width, height: canvas.height, data: Array.from(imageData.data) };
-  }, selector);
+  });
   if (pixels === null) {
     return null;
   }

@@ -148,6 +148,19 @@ export class Api {
     return expectOk(response);
   }
 
+  /**
+   * E6 : scan (utilisé uniquement pour préparer des données de test hors du parcours sous test, ex. CA32,
+   * CA37, où c'est le tableau de bord ou l'administration qui est vérifié, pas l'écran de scan lui-même,
+   * déjà couvert par CA27 à CA31).
+   */
+  async scan(qrToken: string, scannedAt?: string): Promise<Response> {
+    return fetch(this.url('/api/scan/passages'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: SCANNER_AUTH },
+      body: JSON.stringify({ qrToken, scannedAt: scannedAt ?? new Date().toISOString() }),
+    });
+  }
+
   /** E4 : tableau de bord public. */
   async board(raceId: number): Promise<RaceBoardResponse> {
     const response = await fetch(this.url(`/api/public/races/${raceId}/board`));
@@ -157,6 +170,15 @@ export class Api {
   /** E5 : détail public d'un coureur. */
   async runnerDetail(runnerId: number): Promise<RunnerDetailResponse> {
     const response = await fetch(this.url(`/api/public/runners/${runnerId}`));
+    return expectOk(response);
+  }
+
+  /** E18 : réintégration admin (préparation de données hors du parcours admin lui-même, cf. CA35 dédié). */
+  async reintegrate(runnerId: number): Promise<unknown> {
+    const response = await fetch(this.url(`/api/admin/runners/${runnerId}/reintegration`), {
+      method: 'POST',
+      headers: { Authorization: ADMIN_AUTH },
+    });
     return expectOk(response);
   }
 
