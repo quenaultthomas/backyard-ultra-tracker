@@ -11,8 +11,10 @@ Outil de suivi de courses "backyard ultra" amateurs. Budget quasi nul, hébergem
 ## Modèle de données
 
 - **Race** : id, name, race_date, status (setup/running/finished), started_at, loop_distance (m), loop_duration (s), loop_elevation (D+ m)
-- **Runner** : id, race_id, bib, name, qr_token (opaque), status (active/dnf/winner), dnf_reason (voluntary/timeout/manual/other), dnf_yard
-- **Passage** : id, runner_id, scanned_at (null si recréé), yard_number, source (scan/manual)
+- **Runner** : id, race_id, account_id (nullable), bib, name (vidé à partir de l'incrément 5 : nom affiché = pseudo du compte, ou « Coureur n°{bib} » sans compte), qr_token (opaque), status (active/dnf/winner), dnf_reason (voluntary/timeout/manual/other), dnf_yard
+- **Passage** : id, runner_id, scanned_at (null si recréé), yard_number, source (scan/manual). Aucun auteur de scan enregistré.
+- **Account** (coureur, incrément 5) : id, pseudo (unique globalement, insensible à la casse), password_hash (BCrypt). Rien d'autre (ni email, ni téléphone, ni nom réel, ni rôle). Un Account peut être lié à plusieurs Runner, un par course.
+- **ScannerAccount** (bénévole, incrément 7) : id, username (pseudonyme), password_hash (BCrypt), active. Entité distincte d'Account.
 
 Principe : les passages sont une donnée brute immuable. Yard courant, tours, distance, dénivelé, allure et classement sont DÉRIVÉS des paramètres de la course et jamais stockés.
 
@@ -22,6 +24,8 @@ Principe : les passages sont une donnée brute immuable. Yard courant, tours, di
 - **DNF manuel** : action admin avec confirmation, jamais via le scan QR.
 - **Réintégration** : correction d'erreur. Recréer les passages manquants (source=manual, scanned_at=null) pour chaque yard entre dnf_yard et le yard courant. Exclus du calcul d'allure, badge "corrigé".
 - **Filet réseau** : le scan est enregistré localement d'abord (file + retry), puis envoyé à l'API.
+- **Comptes et accès** (incréments 5 à 7) : HTTP Basic sans état partout ; le référentiel de comptes dépend du préfixe d'URL (`/api/account/**` → comptes coureurs, `/api/scan/**` et `/api/admin/**` → staff : configuration + scanneurs). Connexion mémorisée 24 h glissantes côté client. Mot de passe oublié : réinitialisation uniquement par l'admin (aucun canal email) ; le coureur peut changer lui-même son mot de passe une fois connecté. Espace admin ni visible ni accessible au public.
+- **Minimisation des données** : un pseudo ne sort pas du RGPD (IP, horodatages restent des données personnelles) ; on collecte le minimum. Journaux serveur (application + nginx) conservés 7 jours.
 
 ## Stack
 
@@ -46,6 +50,9 @@ Compile sans warning + tests unitaires verts + couverture cœur métier >= 80 % 
 2. Logique métier core (tests d'abord) : calculs dérivés, auto-DNF, réintégration.
 3. API REST : CRUD courses/coureurs, actions admin (DNF manuel, réintégration).
 4. Frontend PWA : scan, dashboard, admin, inscription.
+5. Comptes pseudo coureurs (`docs/specs/increment5.md`).
+6. Séparation admin / public (`docs/specs/increment6.md`).
+7. Comptes scanneurs nominatifs (`docs/specs/increment7.md`).
 
 Ne jamais passer à l'incrément suivant tant que le courant n'a pas ses tests, que le testeur n'a pas rendu un verdict technique OK et que l'agent fonctionnel n'a pas prononcé le GO (voir « Workflow de validation d'incrément »).
 
