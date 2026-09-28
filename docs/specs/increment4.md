@@ -8,6 +8,21 @@
 > - PO6 à PO26 (hors PO13) : hypothèses par défaut appliquées dans les RG et CA, remplaçables par une décision de l'utilisateur.
 > Prérequis : incréments 1 à 3 en GO sous réserves (`docs/tests/PATRIMOINE.md`). API de référence : `docs/specs/increment3.md` (endpoints E1 à E18, RG5/RG6 erreurs, RG28 à RG34 sécurité).
 > Numérotation RG / CA / PO propre à cet incrément. Les références aux autres specs sont notées « RG15 (inc. 3) », « PO8 (inc. 2) », etc.
+>
+> **Amendements du 2026-09-27 (agent fonctionnel, verdict NO-GO de la validation INC-4)** :
+> - **BUG-2** (défaut de spec) : CA29, CA31, CA37 et CA43 décrivaient des effectifs incompatibles avec la règle de victoire de `CLAUDE.md` (CA33, CA34 et CA39 inc. 2). Des coureurs compagnons sont ajoutés aux énoncés, et CA43 devient un scénario indépendant. Les attendus vérifiés ne changent pas.
+> - **BUG-3** : RG21 est complétée (émetteur effectif) et CL12 est précisé. Deux nouveaux CA : CA44 [E2E] et CA45 [front-unit].
+> - **COH4-2** : RG57.4 (et les conventions de la section 12.C) autorisent une fenêtre d'observation fixe quand l'énoncé d'un CA en impose explicitement la durée.
+> - **CA29, étape 2** : l'affichage hors ligne par le service worker passe dans CA39, qui est renforcé en conséquence (ouverture complète hors ligne, écart WebKit admis au titre de RG58).
+> - **CA21 inchangé** (BUG-1 : c'est le code qu'il faut corriger).
+>
+> **Arbitrages du 2026-09-27 pendant la reprise (agent fonctionnel, écarts remontés par le testeur)** :
+> - **OBS-T1 (RG22), accepté tel quel** : la prise du rôle d'émetteur devient un déclencheur d'essai immédiat. L'état de backoff appartient au contexte émetteur et ne se transmet pas. CA45 est complété (variante « transfert de rôle »).
+> - **OBS-T2 (RG50), correction exigée** : le retour serveur de moins de 5 s est donné par le contexte qui a fait la capture, quel que soit l'émetteur. CL12 et CA44 sont complétés (étape 4), et un nouveau CA46 [front-unit] est ajouté.
+>
+> **Amendements du 2026-09-28 (agent fonctionnel, verdict de revalidation de l'INC-4 : GO sous réserves)** :
+> - **CA39 sous Chromium** : l'écart déclaré (E4 reçoit des réponses 200 du vrai serveur malgré la coupure émulée) est arbitré. Il devient la réserve **R4-1**, avec des conditions de levée écrites dans CA39. Aucun attendu de CA39 n'est retiré, et le cas reste un échec tant qu'il n'est pas levé.
+> - **Section 14** : RT1 n'est plus une condition du GO de l'INC-4 (décision de l'utilisateur du 2026-09-27, option b). Elle reste bloquante avant tout déploiement sur le VPS.
 
 ---
 
@@ -252,6 +267,17 @@ Règles :
 - Un élément en échec TRANSITOIRE **bloque** la file (tête de file) jusqu'à son succès ou son rejet définitif. C'est ce qui garantit l'ordre exigé par la règle du scan tardif (RG14 inc. 2, PO8 inc. 2) : le yard `k-1` d'un coureur est toujours envoyé avant son yard `k`.
 - Il y a au plus **une requête de scan en cours par appareil**, même si plusieurs onglets ou fenêtres de la PWA sont ouverts. Un seul contexte est émetteur (verrou partagé entre onglets), les autres affichent l'état de la même file.
 - L'ordre FIFO est garanti **par appareil** seulement. Entre deux appareils, aucun ordre n'est garanti (PO14).
+- **Émetteur effectif (amendement du 2026-09-27, BUG-3).** Le rôle d'émetteur ne doit jamais bloquer l'envoi. Conditions : au moins un contexte de la PWA ouvert sur l'appareil dispose d'identifiants autorisés au scan (SCANNER ou ADMIN), le réseau est disponible et aucune attente de backoff (RG22) n'est en cours. Alors l'élément de tête est envoyé, quel que soit :
+  - le contexte qui détient le verrou ;
+  - l'écran affiché dans chaque contexte ;
+  - l'ordre d'ouverture, de rechargement ou de fermeture des contextes.
+  En particulier :
+  - un contexte émetteur averti d'un ajout à la file par un autre contexte traite cet ajout comme une nouvelle capture (RG22) ;
+  - un contexte qui ne peut pas envoyer (sans identifiants) ne garde pas le rôle d'émetteur aux dépens d'un contexte qui le peut.
+  Le moyen est laissé au développeur (transfert du rôle, délégation de l'envoi, etc.), sous trois conditions :
+  - au plus une requête de scan en cours par appareil (ci-dessus) ;
+  - aucun envoi en double (CL12) ;
+  - **RG7 inchangée** : aucun nouveau stockage ni partage des identifiants au-delà de ce que RG7 autorise.
 
 **RG22 — Nouvel essai avec backoff**
 - Après le `n`-ième échec TRANSITOIRE consécutif de l'élément de tête, le prochain essai a lieu après `délai(n) = min(2^(n−1), 60)` secondes, multiplié par un facteur aléatoire uniforme dans `[1,0 ; 1,2]`. Délais de base : 1, 2, 4, 8, 16, 32, 60, 60… s.
@@ -261,7 +287,9 @@ Règles :
   - l'événement `online` du navigateur ;
   - le retour de l'application au premier plan ;
   - une connexion réussie ;
-  - le bouton « Réessayer maintenant ».
+  - le bouton « Réessayer maintenant » ;
+  - la prise du rôle d'émetteur par un contexte (RG21), ajoutée par l'arbitrage OBS-T1 du 2026-09-27.
+- **État de backoff propre à l'émetteur (arbitrage OBS-T1 du 2026-09-27).** Le compteur d'échecs consécutifs et l'attente en cours appartiennent au contexte émetteur. Ils ne sont pas transmis lors d'un transfert de rôle. Le nouvel émetteur envoie la tête de file sans attendre la fin du backoff de l'ancien émetteur. Son compteur part de 0, même si la tête de file est la même. Les essais supplémentaires qui en résultent sont admis : un transfert de rôle est un événement rare (fermeture, rechargement, connexion ou déconnexion d'un onglet), et l'idempotence (RG23) exclut tout doublon. Les invariants de RG21 restent exigés : une seule requête en cours par appareil, et l'ordre FIFO.
 - Une nouvelle capture déclenche le traitement de la file si aucune attente de backoff n'est en cours.
 - L'envoi n'a lieu que lorsque l'application est ouverte. Tant que la file n'est pas vide, l'écran affiche « Gardez l'application ouverte : N scans en attente ». Si l'utilisateur ferme la page avec une file non vide, le navigateur demande confirmation quand il le permet (`beforeunload`).
 
@@ -461,6 +489,11 @@ Chaque événement est signalé par une **couleur**, une **icône et un texte** 
 
 - Un résultat serveur qui arrive plus de 5 s après sa capture (envoi différé) **ne déclenche ni son ni vibration**, pour ne pas le confondre avec le scan en cours. Il met seulement à jour l'historique et les compteurs.
 - Un bouton « Son » permet de couper ou de rétablir le son. Ce réglage est mémorisé sur l'appareil. Le son est activé par défaut.
+- **Contexte qui signale le résultat (arbitrage OBS-T2 du 2026-09-27).** Le retour d'un résultat serveur de moins de 5 s (bandeau vert ou rouge, texte, son, vibration) est donné par le **contexte qui a fait la capture**. Cela vaut même si l'envoi a été fait par un autre contexte émetteur (RG21, CL12), y compris un onglet de tableau de bord ouvert avec des identifiants SCANNER mémorisés.
+  - Les autres contextes, émetteur compris, ne jouent ni son ni vibration pour ce résultat. Ils mettent seulement à jour l'historique et les compteurs.
+  - Le délai de 5 s est mesuré entre la capture et la prise en compte de l'état final par le contexte de capture. Au-delà, la règle de l'envoi différé ci-dessus s'applique.
+  - Si le contexte de capture n'est plus ouvert, aucun contexte ne joue de son ni de vibration.
+  - Le moyen est laissé au développeur, sous les conditions de RG21 : une seule requête en cours par appareil, aucun envoi en double, RG7 inchangée.
 
 **RG51 — Accessibilité sémantique**
 - `lang="fr"` sur le document.
@@ -535,7 +568,7 @@ Aucun endpoint de manipulation du temps, de réinitialisation de données ou de 
 **CL9 — Horloge de l'appareil décalée.** Corrigée par RG4 et RG19. Sans mesure préalable, un appareil en avance produit un 400 « scan dans le futur » (rejet définitif, visible), d'où l'avertissement « Horloge non vérifiée ».
 **CL10 — Longue coupure.** 200 scans en attente sont envoyés un par un, dans l'ordre, dès le retour du réseau. Aucun n'est perdu, et l'avancement est visible (compteur « en attente » décroissant).
 **CL11 — Application tuée pendant un envoi.** L'élément `EN_COURS` repasse `EN_ATTENTE` au redémarrage et il est renvoyé : 200 idempotent s'il avait été enregistré.
-**CL12 — Plusieurs onglets.** Un seul émetteur (RG21), aucun envoi en double simultané.
+**CL12 — Plusieurs onglets.** Un seul émetteur (RG21), aucun envoi en double simultané. Exemple : un tableau de bord ouvert avant `/scan` (ou `/scan` rechargé pendant que le tableau de bord reste ouvert) sur le même appareil. Un scan capturé sur `/scan` connecté est quand même envoyé, sans autre action (RG21, « émetteur effectif », CA44, CA45). L'onglet qui capture affiche le résultat de moins de 5 s (bandeau, son, vibration), même s'il n'est pas émetteur (RG50, arbitrage OBS-T2 du 2026-09-27, CA44 étape 4, CA46). Cela vaut aussi pour deux onglets `/scan` connectés, ou pour un tableau de bord ouvert avec des identifiants SCANNER mémorisés.
 **CL13 — Déconnexion avec file non vide.** Confirmation (RG9). La file est conservée et reprend à la connexion suivante.
 **CL14 — Double clic sur « S'inscrire » ou « Confirmer le DNF ».** Une seule requête (RG12, RG41).
 **CL15 — Données admin périmées.** DNF manuel sur un coureur déjà mis DNF par l'auto-DNF : 409 affiché, puis rechargement.
@@ -696,7 +729,10 @@ Pour les 12 combinaisons (statut course × statut coureur, plus la course seule)
 Conventions communes à tous les CA E2E (voir RG57 et RG58) :
 - `T0` = `startedAt` renvoyé par E12.
 - Les instants `T0 + x s` sont des cibles, avec une marge d'au moins 5 s par rapport à toute cloche.
-- Les attentes sont des assertions avec délai maximal. Le seul délai fixe autorisé est l'attente d'une cloche.
+- Les attentes sont des assertions avec délai maximal. Seuls deux délais fixes sont autorisés :
+  - l'attente d'une cloche ;
+  - une fenêtre d'observation dont l'énoncé du CA fixe explicitement la durée (ex. CA26 « pendant 10 s », CA32 étape 7).
+  Toute autre attente fixe est interdite (RG57.4).
 - La vérification « côté serveur » se fait par l'API (E4, E5, E13), depuis le test et non depuis la page.
 
 **CA21 — Routes et liens directs [E2E] (RG5, RG45)**
@@ -745,10 +781,11 @@ Navigateurs (RG58) : le volet caméra est exécuté sous Chromium (flux caméra 
 - Saisie de `bonjour`, puis Entrée : « QR non reconnu », aucune requête E6.
 
 **CA29 — Coupure réseau, reprise FIFO et réactivation [E2E] (RG14, RG19 à RG24, CL1)**
-Donné la course `E2E-FIFO-{run}` (1000 m, **30 s**, 10 m), avec Alice (1) et Bob (2), démarrée à `T0`. Connecté SCANNER **avec « Rester connecté 24 h »** (indispensable au rechargement de l'étape 2), en ligne. Au départ, Bob est scanné à `T0 + 5 s` (en ligne, 200).
+Donné la course `E2E-FIFO-{run}` (1000 m, **30 s**, 10 m), avec Alice (1), Bob (2) et Zoé (3), démarrée à `T0`. Connecté SCANNER **avec « Rester connecté 24 h »** (indispensable au rechargement de l'étape 2), en ligne. Au départ, Bob est scanné à `T0 + 5 s` (en ligne, 200). Zoé est scannée au yard 1 avant `T0 + 8 s`, par l'écran ou par l'API (E6).
+Zoé est une compagne ajoutée par l'amendement du 2026-09-27 (BUG-2). Avec deux coureurs seulement, Bob serait le seul à terminer le yard 1 : il serait déclaré vainqueur dès la clôture de ce yard (CA33 et CA39 inc. 2, règle de `CLAUDE.md`), et la course s'arrêterait avant la réactivation. Zoé garde deux finishers au yard 1 (CA34 inc. 2).
 1. À `T0 + 8 s` : contexte **hors ligne**. Saisie du token d'Alice à `T0 + 10 s`. Alors bandeau bleu « Enregistré — en attente de réseau », compteur « 1 en attente », et E5 (depuis le test) ne montre aucun passage pour Alice.
-2. Rechargement de `/scan` hors ligne : la page s'affiche (service worker) et le compteur indique toujours « 1 en attente » (persistance).
-3. Attente de `T0 + 33 s` (yard 2 ; clôture du yard 1 faite). Côté serveur : Alice `DNF` `TIMEOUT` `dnfYard 1`, Bob `ACTIVE`.
+2. Rechargement de `/scan`, avec toutes les requêtes `/api/**` bloquées (hors ligne ou interception) du début à la fin du rechargement : le compteur indique toujours « 1 en attente » (persistance, RG20). Amendement du 2026-09-27 : l'affichage des écrans par le service worker, réseau coupé, est vérifié par CA39.
+3. Attente de `T0 + 33 s` (yard 2 ; clôture du yard 1 faite). Côté serveur : Alice `DNF` `TIMEOUT` `dnfYard 1`, Bob et Zoé `ACTIVE`.
 4. À `T0 + 36 s`, toujours hors ligne : saisie du token d'Alice. Compteur « 2 en attente ». Saisie du token de Bob : « 3 en attente ».
 5. À `T0 + 40 s` : contexte **en ligne**. Alors, avant `T0 + 50 s`, le compteur revient à 0, sans aucun rejet. Journal réseau : trois requêtes E6 émises dans l'ordre Alice (scan du yard 1), Alice (yard 2), Bob (yard 2). Chaque requête n'est émise qu'après la réponse de la précédente.
 6. Côté serveur (E5) : Alice `ACTIVE`, passages yard 1 et yard 2 `SCAN`, dont les `scannedAt` sont ceux capturés aux étapes 1 et 4 (à la milliseconde, égaux aux corps émis). Bob : passages yard 1 et yard 2. La première réponse d'Alice a `yardNumber = 1` et `runnerStatus = "ACTIVE"` (réactivation).
@@ -761,7 +798,8 @@ Donné la course de CA27, en ligne. Les deux premières requêtes E6 sont interc
 - Élément finalement `ACCEPTÉ` : « Dossard 3 — Eve — yard 1 ». E5 : un seul passage pour Eve.
 
 **CA31 — Rejet définitif et poursuite de la file [E2E] (RG24, RG25, CL2)**
-Donné la course `E2E-REJ-{run}` (1000 m, 30 s), avec Chloé (1) jamais scannée, et Dan (2). Démarrée à `T0`. Dan est scanné en ligne à `T0 + 5 s` (yard 1) et à `T0 + 35 s` (yard 2).
+Donné la course `E2E-REJ-{run}` (1000 m, 30 s), avec Chloé (1) jamais scannée, Dan (2) et Zoé (3). Démarrée à `T0`. Dan est scanné en ligne à `T0 + 5 s` (yard 1) et à `T0 + 35 s` (yard 2). Zoé est scannée aux yards 1 et 2, dans les mêmes fenêtres, par l'écran ou par l'API (E6).
+Zoé est une compagne ajoutée par l'amendement du 2026-09-27 (BUG-2). Sans elle, Dan, seul à terminer le yard 1, serait vainqueur dès `T0 + 30 s` (CA33 inc. 2).
 - À `T0 + 65 s` (yard 3 ; Chloé DNF au yard 1 depuis `T0 + 30 s`), hors ligne : saisie de Chloé, puis de Dan. Retour en ligne à `T0 + 68 s`.
 - Chloé : `REJETÉ`, avec le `detail` du serveur (409 `BUSINESS_CONFLICT`), bandeau et compteur rouges « 1 rejeté ».
 - Dan est envoyé **après** Chloé et reçoit 200 « Dossard 2 — Dan — yard 3 » : la file ne s'est pas bloquée sur le rejet.
@@ -809,12 +847,13 @@ Connecté ADMIN :
 
 **CA37 — Deux courses en parallèle [E2E] (RG35, CL5)**
 Données :
-- `E2E-P1-{run}` : 1000 m, 30 s, 10 m, avec Alice P1 (dossard 1), démarrée à `T1` ;
-- `E2E-P2-{run}` : 2000 m, 45 s, 20 m, avec Alice P2 (dossard 1), démarrée à `T2 = T1 + 10 s` (±2 s).
-Deux onglets de tableau de bord ouverts, un par course. Sur **un seul** écran `/scan`, scan d'Alice P1 à `T1 + 15 s` et d'Alice P2 à `T1 + 17 s`.
-- Réponses : « Dossard 1 — Alice P1 — yard 1 » et « Dossard 1 — Alice P2 — yard 1 ».
-- À `T1 + 35 s` : P1 affiche « Yard 2 » et P2 « Yard 1 ».
-- P1 ne liste qu'Alice P1 (1 tour, `1,00 km`, `10 m D+`) ; P2 ne liste qu'Alice P2 (1 tour, `2,00 km`, `20 m D+`).
+- `E2E-P1-{run}` : 1000 m, 30 s, 10 m, avec Alice P1 (dossard 1) et Bob P1 (dossard 2), démarrée à `T1` ;
+- `E2E-P2-{run}` : 2000 m, 45 s, 20 m, avec Alice P2 (dossard 1) et Bob P2 (dossard 2), démarrée à `T2 = T1 + 10 s` (±2 s).
+Bob P1 et Bob P2 sont des compagnons ajoutés par l'amendement du 2026-09-27 (BUG-2). Ils sont scannés au yard 1 de leur course par l'écran ou par l'API (E6). Sans eux, chaque course n'aurait qu'un coureur : il serait vainqueur à la première clôture (CA39 inc. 2), et P1 ne pourrait pas afficher « Yard 2 » en `RUNNING`.
+Deux onglets de tableau de bord ouverts, un par course, **dans le même navigateur** que l'écran `/scan` (même appareil) et ouverts **avant** lui (RG21, « émetteur effectif », CL12). Sur **un seul** écran `/scan`, scan d'Alice P1 à `T1 + 15 s` et d'Alice P2 à `T1 + 17 s`.
+- Réponses : « Dossard 1 — Alice P1 — yard 1 » et « Dossard 1 — Alice P2 — yard 1 », chacune affichée moins de 5 s après sa capture.
+- Entre `T1 + 35 s` et `T1 + 50 s` : P1 affiche « Yard 2 » et P2 « Yard 1 ».
+- P1 ne liste que les coureurs de P1 (2 lignes ; Alice P1 : 1 tour, `1,00 km`, `10 m D+`) ; P2 ne liste que ceux de P2 (2 lignes ; Alice P2 : 1 tour, `2,00 km`, `20 m D+`).
 - Les deux comptes à rebours sont différents.
 - L'accueil liste les deux courses « En cours ».
 
@@ -826,6 +865,17 @@ Deux onglets de tableau de bord ouverts, un par course. Sur **un seul** écran `
 - Le manifeste lu par le test contient `name`, `short_name`, `start_url "/"`, `display "standalone"`, une icône 192×192 et une 512×512 dont une `maskable`.
 - Après une visite en ligne, puis passage **hors ligne** : `/`, `/scan`, `/admin` et `/courses/{id}` s'affichent (pas de page d'erreur du navigateur). `/scan` permet une capture (compteur « 1 en attente ») ; `/courses/{id}` affiche « Hors ligne ».
 - Le Cache Storage ne contient aucune réponse d'une URL `/api/**`.
+Précisions (amendement du 2026-09-27) :
+- **Chromium : ouverture complète.** Chaque route est ouverte par une navigation complète (ouverture de l'URL ou rechargement), réseau coupé. Le test prouve que le document vient du service worker et non du réseau (ex. `response.fromServiceWorker()`, ou un réseau coupé qui s'applique aussi au service worker). Une navigation interne du routeur ne suffit pas.
+- **WebKit : navigation interne.** Une limite du pilote (LIM-E2E-2) empêche toute navigation complète hors ligne. C'est un écart admis au titre de RG58 : le volet WebKit peut se faire par navigation interne, après une première visite en ligne de chaque route.
+- **Échec d'E4 obligatoire.** Sur `/courses/{id}`, l'échec d'E4 doit être observé : « Hors ligne » ou, selon RG45, le bandeau « Données non actualisées depuis X s ». L'affichage de données présentées comme à jour, sans l'un de ces deux signaux, est un échec du CA. Si l'outil ne peut pas faire échouer E4 sous Chromium avec le service worker actif, le rapport le déclare comme écart à arbitrer. Ce n'est jamais un succès.
+Arbitrage du 2026-09-28 (réserve **R4-1**) :
+- **Constat.** Sous Chromium, la navigation hors ligne est bien servie par le service worker (`fromServiceWorker()` vrai sur les 4 routes). En revanche, E4 reçoit des réponses 200 du vrai serveur après `setOffline(true)`. Une réponse 200 du serveur prouve que la coupure émulée ne s'est pas appliquée à cette requête : c'est une limite de l'outil (LIM-E2E-1), pas un défaut de l'application. L'affichage « Hors ligne » sur `/courses/{id}` est démontré sous WebKit, sans repli, et par les tests [front-unit] de RG45.
+- **Statut.** Le test Chromium reste `ACTIF` et en échec déclaré. Il est interdit de le marquer `skip`, `fixme` ou `fail`, et d'accepter une issue alternative. Tant que R4-1 n'est pas levée, CA39 est « satisfait sous WebKit, en écart sous Chromium ».
+- **Levée de R4-1**, avant tout déploiement sur le VPS, par l'une des voies suivantes :
+  1. **Nouvelle technique de coupure.** Sous Chromium, avec le service worker actif, un test E2E observe l'échec d'E4 sur `/courses/{id}` : « Hors ligne » ou bandeau « Données non actualisées depuis X s ». La coupure doit s'appliquer aussi aux requêtes relayées par le service worker. Pistes : émulation réseau appliquée à la cible du service worker, blocage de `/api/**` qui intercepte le trafic du service worker, ou API rendue injoignable pendant le test. Aucun changement du code de production et aucun endpoint de test (RG56) ;
+  2. **Recette manuelle**, à défaut, sur un vrai téléphone Android avec Chrome et la PWA installée. En mode avion, `/`, `/scan`, `/admin` et `/courses/{id}` s'ouvrent ; `/scan` accepte une capture (« 1 en attente ») ; `/courses/{id}` affiche « Hors ligne » ou le bandeau de fraîcheur. La recette est consignée dans un rapport daté (appareil, versions, captures d'écran).
+- **Dans tous les cas**, le contrôle « Cache Storage sans URL `/api/**` » doit aussi être exécuté sous Chromium : l'échec actuel interrompt le test avant ce contrôle. Réordonner ou scinder le test est permis, à condition qu'aucune assertion ne soit retirée ni affaiblie.
 
 **CA40 — Correction d'horloge [E2E] (RG4, RG19, CL9)**
 Donné la course de CA27, et l'horloge **du navigateur seul** avancée de 60 s (horloge simulée de l'outil E2E ; l'horloge serveur est réelle).
@@ -845,8 +895,54 @@ Avec les API son et vibration instrumentées par le test :
 - scan capturé hors ligne puis accepté plus de 5 s après : aucun son ni aucune vibration au moment de l'acceptation.
 
 **CA43 — Détail coureur [E2E] (RG34, CL4)**
-Pour Chloé en fin de CA32 : `/coureurs/{id}` liste le yard 1 « corrigé », heure `—`, temps de boucle `—`.
-Pour Alice : yard 1 et yard 2 « scan », avec une heure et un temps de boucle au format `m:ss`.
+Scénario indépendant de CA32 (amendement du 2026-09-27, BUG-2).
+Donné la course `E2E-DETAIL-{run}` (1000 m, 30 s, 10 m), avec R (1), U (2) et V (3), démarrée à `T0` :
+- U et V sont scannés au yard 1 (E6) ; ils sont deux finishers, donc la course continue (CA34 inc. 2) ;
+- R n'est pas scanné : il est `DNF` hors délai au yard 1 à la clôture de `T0 + 30 s` ;
+- R est réintégré par l'admin pendant le yard 2 ;
+- R est scanné à `T0 + 38 s` (yard 2, marge d'au moins 5 s par rapport à la cloche, RG57.4).
+Alors `/coureurs/{id de R}` liste :
+- le yard 1 « corrigé », heure `—`, temps de boucle `—` ;
+- le yard 2 « scan », avec une heure `HH:mm:ss` et un temps de boucle au format `m:ss`.
+
+**CA44 — Émetteur effectif avec plusieurs onglets sur le même appareil [E2E] (RG21, RG22, CL12)** *(ajouté le 2026-09-27, BUG-3)*
+Donné la course `E2E-TABS-{run}` (1000 m, 3600 s, 10 m), `RUNNING`, avec Alice (1), Bob (2), Chloé (3) et Dan (4, ajouté par l'arbitrage OBS-T2 du 2026-09-27). Tous les onglets sont ouverts dans le **même contexte de navigateur** (même appareil). Le journal réseau couvre tous les onglets du contexte.
+1. L'onglet A ouvre `/courses/{id}` en anonyme, **en premier**. Puis l'onglet B ouvre `/scan` et se connecte SCANNER **sans** « Rester connecté ». Capture en ligne du token d'Alice sur B. Alors, en moins de 5 s :
+   - B affiche « Dossard 1 — Alice — yard 1 » et « 0 en attente » ;
+   - E5 montre un passage `SCAN` au yard 1 pour Alice.
+   Aucune autre action n'est faite entre la capture et ce constat : ni « Réessayer maintenant », ni changement d'onglet, ni événement `online`.
+2. A reste ouvert. On recharge B, on se reconnecte SCANNER sans « Rester connecté », puis on capture Bob. Alors, en moins de 5 s : « Dossard 2 — Bob — yard 1 », « 0 en attente », et E5 montre un passage pour Bob.
+3. On ferme B. On ouvre un onglet C sur `/scan`, connecté SCANNER **avec** « Rester connecté », puis on capture Chloé. Alors, en moins de 5 s : « Dossard 3 — Chloé — yard 1 », « 0 en attente ».
+4. *(Étape ajoutée par l'arbitrage OBS-T2 du 2026-09-27.)* On ferme C. On recharge A, qui reprend les identifiants SCANNER mémorisés à l'étape 3 et devient ainsi le seul contexte capable d'émettre. On ouvre ensuite un onglet D sur `/scan` : il est connecté par les identifiants mémorisés, sans nouvelle saisie. On capture Dan sur D. Alors, en moins de 5 s, sans autre action :
+   - D affiche le bandeau vert « Dossard 4 — Dan — yard 1 » et « 0 en attente » (RG50 : c'est le contexte de capture qui signale le résultat, qu'il soit émetteur ou non) ;
+   - E5 montre un passage `SCAN` au yard 1 pour Dan.
+   Si l'implémentation fait passer le rôle d'émetteur à D, l'attendu est le même.
+5. Sur tout le parcours, on relève au journal réseau :
+   - exactement 4 requêtes E6, une par capture (aucun envoi en double, CL12) ;
+   - jamais deux requêtes E6 en cours au même instant (RG21).
+Exécuté sous Chromium et sous WebKit (RG58). Le service worker peut être bloqué (`serviceWorkers: 'block'`, LIM-E2E-1) : le verrou et la diffusion entre onglets n'en dépendent pas.
+
+**CA45 — Traitement d'un ajout venu d'un autre contexte [front-unit] (RG21, RG22)** *(ajouté le 2026-09-27, BUG-3)*
+Donné deux instances de la file partageant le même stockage simulé : E est émettrice, envoi autorisé, serveur simulé en ligne ; N n'est pas émettrice.
+- Quand N ajoute un élément S1 et notifie l'ajout, sans autre déclencheur (ni `online`, ni bouton, ni capture dans E). Alors E émet exactement une requête E6 pour S1, avec le corps enregistré à la capture (RG23), et S1 passe `ACCEPTÉ`.
+- Variante : E attend un nouvel essai (backoff de 32 s en cours sur un élément de tête S0). Quand N ajoute S1 et notifie l'ajout. Alors aucune requête n'est émise avant la fin de l'attente (RG22, « si aucune attente de backoff n'est en cours »). Puis S0 est envoyé, puis S1, dans cet ordre (RG21).
+- N n'émet aucune requête E6 pendant tout le test (hors variante suivante).
+- **Variante « transfert de rôle »** *(ajoutée par l'arbitrage OBS-T1 du 2026-09-27, RG22)*. E a subi 6 échecs TRANSITOIRES consécutifs sur la tête S0 et attend un nouvel essai (backoff de 32 s en cours). E libère le rôle (fermeture simulée), et N le prend. Alors :
+  - N envoie S0 immédiatement, sans attendre la fin des 32 s, avec le corps enregistré à la capture (RG23) ;
+  - E n'émet plus aucune requête ;
+  - si cet envoi échoue en TRANSITOIRE, le nouvel essai de N a lieu après `délai(1)`, soit entre 1,0 et 1,2 s (compteur repartant de 0) ;
+  - à aucun moment deux requêtes E6 ne sont en cours ensemble.
+
+**CA46 — Retour du scan donné par le contexte de capture [front-unit] (RG50, RG21, CL12)** *(ajouté par l'arbitrage OBS-T2 du 2026-09-27)*
+Donné deux instances de la file partageant le même stockage simulé, chacune avec son lecteur de retour instrumenté (son, vibration, bandeau). E est émettrice, envoi autorisé, serveur simulé en ligne. N n'est pas émettrice et fait les captures. Horloge simulée.
+- **Acceptation rapide** : N capture S1 à `t`. E envoie S1 et reçoit 200 (Alice, dossard 1, yard 3) à `t + 1 s`. Alors, avant `t + 5 s` :
+  - N affiche le bandeau vert « Dossard 1 — Alice — yard 3 », avec 2 bips et la vibration 2 × 50 ms de CA42, en plus du bip et de la vibration de 50 ms de la capture ;
+  - E ne joue aucun son et aucune vibration, ni à l'envoi ni au résultat.
+- **Rejet rapide** : même montage, avec une réponse 409 `BUSINESS_CONFLICT` à `t + 1 s`, dont le `detail` est « Scan tardif » (RG24). Alors N affiche le bandeau rouge avec ce `detail` et « À signaler à l'organisateur », 3 bips graves et une vibration `[200, 100, 200]`. E ne joue rien.
+- **Résultat différé** : N capture S2 à `t`, et E reçoit l'acceptation à `t + 6 s`. Alors ni N ni E ne jouent de son ou de vibration pour ce résultat. L'historique de N montre S2 `ACCEPTÉ`.
+- **Contexte de capture fermé** : N capture S3 puis est fermée avant la réponse, reçue à `t + 1 s`. Alors E ne joue ni son ni vibration. S3 est `ACCEPTÉ` dans la file.
+- **Non-régression** : quand l'émetteur E capture lui-même (sans N), le comportement de CA42 est inchangé.
+- Dans toutes les variantes, exactement une requête E6 par élément.
 
 ### D. Couverture RG → CA
 
@@ -872,8 +968,8 @@ Pour Alice : yard 1 et yard 2 « scan », avec une heure et un temps de boucle a
 | RG18 | CA28 |
 | RG19 | CA11, CA27, CA29, CA40 |
 | RG20 | CA16, CA29 |
-| RG21 | CA14, CA29 |
-| RG22 | CA10, CA14, CA30 |
+| RG21 | CA14, CA29, CA37, CA44, CA45, CA46 |
+| RG22 | CA10, CA14, CA30, CA44, CA45 |
 | RG23 | CA15, CA30 |
 | RG24 | CA9, CA14, CA29, CA30, CA31 |
 | RG25 | CA31 |
@@ -901,7 +997,7 @@ Pour Alice : yard 1 et yard 2 « scan », avec une heure et un temps de boucle a
 | RG47 | CA39 |
 | RG48 | CA41 |
 | RG49 | CA41 |
-| RG50 | CA42 |
+| RG50 | CA42, CA44 (étape 4), CA46 |
 | RG51 | CA41 |
 | RG52 | CA1, CA2 |
 | RG53 | CA3, CA38 |
@@ -918,7 +1014,10 @@ Pour Alice : yard 1 et yard 2 « scan », avec une heure et un temps de boucle a
 1. **Horloge serveur réelle.** Aucune horloge serveur n'est simulée. Aucun endpoint de temps n'existe (RG56).
 2. **Yards courts.** Les parcours avec cloche utilisent des courses à `loopDuration = 30 s` (45 s pour la seconde course de CA37). C'est une valeur légitime de l'API (`loopDuration > 0`, RG9 inc. 3), sans API de test. Les parcours sans cloche utilisent 3600 s, pour qu'aucune bascule ne survienne pendant le test.
 3. **Clôture rapide.** Le planificateur tourne avec `backyard.yard-closing.fixed-delay-ms=1000` (valeur actuelle de `application.properties`). Un profil E2E peut la réduire à 500 ms par **propriété** : l'auto-DNF est alors visible moins de 1 s après la cloche.
-4. **Ancrage sur `T0`.** Les instants sont calculés à partir de `startedAt` renvoyé par E12, jamais à partir de l'horloge du test. Chaque action a une marge d'au moins 5 s par rapport à une cloche. Les vérifications sont des assertions avec délai maximal. Le seul délai fixe autorisé est l'attente d'une cloche.
+4. **Ancrage sur `T0`.** Les instants sont calculés à partir de `startedAt` renvoyé par E12, jamais à partir de l'horloge du test. Chaque action a une marge d'au moins 5 s par rapport à une cloche. Les vérifications sont des assertions avec délai maximal. Seuls deux délais fixes sont autorisés (amendement du 2026-09-27, COH4-2) :
+   - l'attente d'une cloche ;
+   - une fenêtre d'observation dont l'énoncé du CA fixe explicitement la durée (ex. CA26 « pendant 10 s »).
+   Toute autre attente fixe (délai de « stabilisation » après une navigation, par exemple) est remplacée par une assertion avec délai maximal sur un état observable.
 5. **Horloge du navigateur.** L'horloge simulée de l'outil E2E n'est utilisée que pour ce qui ne dépend que du front : backoff, expiration à 24 h, rétention, compte à rebours, décalage d'horloge (CA40). Elle n'est jamais utilisée pour « avancer » la course.
 6. **Réseau.** La coupure est simulée par le mode hors ligne du contexte de navigateur, ou par l'interception des requêtes. Les erreurs 401 et 503 sont simulées par interception côté navigateur. Aucun comportement serveur n'est modifié.
 7. **Caméra.** Un flux vidéo simulé contenant le QR code (option de lancement du navigateur, disponible sous Chromium) sert à CA27 (RG58 pour WebKit). Les autres CA de scan utilisent la saisie manuelle (RG18), qui suit le même chemin après la lecture.
@@ -1049,6 +1148,9 @@ Le GO de l'INC-4 exige, en plus des CA ci-dessus :
   - R1-3 (tests des CA23 à CA31 de l'addendum INC-1) ;
   - R2-1 ;
   - R3-1 ;
-  - RT1 (PostgreSQL réel et recette HTTPS) ;
+  - ~~RT1 (PostgreSQL réel et recette HTTPS)~~ : **retirée des conditions du GO de l'INC-4** par décision écrite de l'utilisateur du 2026-09-27 (option b, `docs/tests/rapports/INC-4-synthese.md` section 9). RT1 reste une **condition bloquante avant tout déploiement sur le VPS**. Elle comprend la suite `*IT` complète et le démarrage en profil `prod` (Flyway + `ddl-auto=validate`) contre un PostgreSQL de même version majeure que le VPS, ainsi que la recette HTTPS (RG34 inc. 3). Elle est suivie comme réserve du GO de l'INC-4 (amendement du 2026-09-28, COH4B-5) ;
   - RT3 (sortie du compilateur, backend **et** front) ;
-- des E2E réellement exécutés : un E2E « sans objet » vaut NO-GO (RT2).
+- des E2E réellement exécutés : un E2E « sans objet » vaut NO-GO (RT2) ;
+- depuis l'amendement du 2026-09-27, les nouveaux CA44 et CA45, verts, et depuis les arbitrages OBS-T1 et OBS-T2 du même jour, l'étape 4 de CA44, la variante « transfert de rôle » de CA45 et CA46, verts. Les assertions des tests E2E doivent reprendre les valeurs chiffrées de chaque CA. Tout attendu non vérifié ou élargi (borne, texte, issue alternative) est un écart déclaré dans le rapport, jamais un « PASS ».
+
+**Conditions avant tout déploiement sur le VPS** (ajout du 2026-09-28) : levée de RT1 (voir ci-dessus) et de R4-1 (CA39 sous Chromium, conditions dans CA39).

@@ -24,7 +24,10 @@ import { Scheduler, TimerHandle } from './scheduler';
  * - les éléments EN_ATTENTE partent un par un, dans l'ordre de la file, depuis un seul émetteur par appareil ;
  * - un échec TRANSITOIRE bloque la tête de file et programme un nouvel essai avec backoff, sans abandon ;
  * - 401 et 403 suspendent la file sans rien perdre ; un rejet définitif passe à l'élément suivant ;
- * - chaque envoi d'un élément transmet exactement le même corps (idempotence, RG23).
+ * - chaque envoi d'un élément transmet exactement le même corps (idempotence, RG23) ;
+ * - le résultat serveur d'une capture est signalé (`accepted`, `rejected`) par le seul contexte qui l'a faite, qu'il
+ *   l'ait envoyée lui-même ou qu'il en observe l'état final dans le stockage partagé ; le contexte qui envoie la
+ *   capture d'un autre contexte n'émet qu'un `foreign-result` (RG50, arbitrage OBS-T2).
  * Aucune dépendance au navigateur : stockage, transport, horloges et minuterie sont injectés.
  */
 
@@ -61,8 +64,12 @@ export type CaptureResult =
   | { readonly kind: 'storage-failed'; readonly item: ScanItem; readonly error: unknown };
 
 export type QueueEvent =
+  /** Acceptation d'une capture faite par ce contexte (envoyée ici ou observée dans le stockage partagé). */
   | { readonly type: 'accepted'; readonly item: ScanItem; readonly persisted: boolean }
+  /** Rejet d'une capture faite par ce contexte (envoyée ici ou observée dans le stockage partagé). */
   | { readonly type: 'rejected'; readonly item: ScanItem; readonly persisted: boolean }
+  /** État final, obtenu par ce contexte émetteur, d'une capture d'un autre contexte (ouvert ou fermé). */
+  | { readonly type: 'foreign-result'; readonly item: ScanItem }
   | { readonly type: 'retrying'; readonly item: ScanItem; readonly delayMs: number }
   | { readonly type: 'suspended'; readonly item: ScanItem; readonly suspension: Suspension }
   | { readonly type: 'changed' }
@@ -86,6 +93,11 @@ export class ScanQueue {
   private unreadable: StoredRecord[] = [];
   private readonly debouncer = new CaptureDebouncer();
   private readonly listeners = new Set<(event: QueueEvent) => void>();
+  /**
+   * Captures (ou renvois) faits par ce contexte dont le résultat n'a pas encore été signalé : lui seul le signale,
+   * une seule fois (RG50). Propre au contexte, cet ensemble disparaît avec lui.
+   */
+  private readonly awaitingResult = new Set<string>();
   private emitter = false;
   private sendingEnabled = false;
   private sending = false;
@@ -95,6 +107,7 @@ export class ScanQueue {
   private headId: string | null = null;
   private consecutiveFailures = 0;
   private lastTransientFailureAt: number | null = null;
+  private idleWaiters: (() => void)[] = [];
 
   constructor(private readonly deps: ScanQueueDependencies) {}
 
@@ -104,13 +117,15 @@ export class ScanQueue {
    */
   async open(): Promise<void> {
     await this.load();
-    for (const item of this.items.filter((candidate) => candidate.state === 'EN_COURS')) {
-      await this.persist({ ...item, state: 'EN_ATTENTE' });
-    }
+    await this.resumeInterruptedSends();
     await this.purgeExpired();
   }
 
-  /** Relecture du stockage (modifications d'un autre onglet), sans toucher à l'élément en cours d'envoi. */
+  /**
+   * Relecture du stockage (modifications d'un autre onglet), sans toucher à l'élément en cours d'envoi. Un ajout
+   * venu d'un autre contexte est traité comme une nouvelle capture : l'émetteur relance l'envoi, sans
+   * court-circuiter une attente de backoff (RG21 « émetteur effectif », RG22).
+   */
   async refresh(): Promise<void> {
     const inFlight = this.items.find((item) => item.localId === this.inFlightId);
     await this.load();
@@ -118,12 +133,19 @@ export class ScanQueue {
       this.replaceInMemory(inFlight);
     }
     this.notify({ type: 'changed' });
+    this.processInBackground();
   }
 
-  /** Ce contexte devient (ou cesse d'être) l'unique émetteur de l'appareil (RG21). */
+  /**
+   * Ce contexte devient (ou cesse d'être) l'unique émetteur de l'appareil (RG21). En prenant le rôle, il relit
+   * le stockage et reprend les éléments laissés EN_COURS par un contexte fermé pendant un envoi : un contexte
+   * vivant ne rend le rôle qu'une fois son envoi terminé (`whenIdle`), l'idempotence (RG23) couvre le renvoi.
+   */
   setEmitter(emitter: boolean): void {
     this.emitter = emitter;
-    this.processInBackground();
+    if (emitter) {
+      this.inBackground(this.takeOverSending());
+    }
   }
 
   /**
@@ -166,6 +188,7 @@ export class ScanQueue {
       return { kind: 'storage-failed', item, error };
     }
     this.items.push(item);
+    this.awaitingResult.add(item.localId);
     this.notify({ type: 'changed' });
     this.processInBackground();
     return { kind: 'captured', item };
@@ -187,6 +210,7 @@ export class ScanQueue {
       return;
     }
     await this.persist({ ...item, state: 'EN_ATTENTE', queuePosition: this.nextQueuePosition(), nextAttemptAt: null });
+    this.awaitingResult.add(localId);
     this.notify({ type: 'changed' });
     this.processInBackground();
   }
@@ -200,8 +224,17 @@ export class ScanQueue {
     }
     if (expired.length > 0) {
       this.items = this.items.filter((item) => !expired.includes(item));
+      expired.forEach((item) => this.awaitingResult.delete(item.localId));
       this.notify({ type: 'changed' });
     }
+  }
+
+  /** Résolue quand plus aucun envoi n'est en cours : permet de rendre le rôle d'émetteur sans envoi en double. */
+  whenIdle(): Promise<void> {
+    if (!this.sending) {
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => this.idleWaiters.push(resolve));
   }
 
   subscribe(listener: (event: QueueEvent) => void): () => void {
@@ -241,7 +274,14 @@ export class ScanQueue {
     } finally {
       this.sending = false;
       this.inFlightId = null;
+      this.releaseIdleWaiters();
     }
+  }
+
+  private releaseIdleWaiters(): void {
+    const waiters = this.idleWaiters;
+    this.idleWaiters = [];
+    waiters.forEach((resolve) => resolve());
   }
 
   private canSend(): boolean {
@@ -292,7 +332,9 @@ export class ScanQueue {
     const accepted = await this.persist({
       ...item, state: 'ACCEPTÉ', response: result.body, acceptedAt: this.deps.now(), lastError: null,
     });
-    this.notify({ type: 'accepted', item: accepted, persisted: true });
+    this.notify(this.takeAwaitedResult(accepted)
+      ? { type: 'accepted', item: accepted, persisted: true }
+      : { type: 'foreign-result', item: accepted });
   }
 
   private async reject(item: ScanItem, result: ClassifiedResult<ScanResponse>): Promise<void> {
@@ -300,7 +342,9 @@ export class ScanQueue {
     const rejected = await this.persist({
       ...item, state: 'REJETÉ', lastError: scanError(result), seen: false, seenAt: null,
     });
-    this.notify({ type: 'rejected', item: rejected, persisted: true });
+    this.notify(this.takeAwaitedResult(rejected)
+      ? { type: 'rejected', item: rejected, persisted: true }
+      : { type: 'foreign-result', item: rejected });
   }
 
   private async suspend(item: ScanItem, result: ClassifiedResult<ScanResponse>, responseClass: ResponseClass):
@@ -342,6 +386,24 @@ export class ScanQueue {
     });
   }
 
+  private async takeOverSending(): Promise<void> {
+    await this.load();
+    await this.resumeInterruptedSends();
+    this.notify({ type: 'changed' });
+    await this.process();
+  }
+
+  /** Éléments restés EN_COURS sans envoi vivant (application tuée ou contexte fermé) : de nouveau EN_ATTENTE. */
+  private async resumeInterruptedSends(): Promise<void> {
+    for (const item of this.items.filter((candidate) => candidate.state === 'EN_COURS')) {
+      await this.persist({ ...item, state: 'EN_ATTENTE' });
+    }
+  }
+
+  /**
+   * Relecture du stockage partagé. Une capture de ce contexte qu'un autre contexte émetteur a fait passer à un état
+   * final est signalée ici, au moment où ce contexte en prend connaissance (RG50, arbitrage OBS-T2).
+   */
   private async load(): Promise<void> {
     const reading = readStoredItems(await this.deps.storage.loadAll());
     this.items = reading.items;
@@ -349,6 +411,16 @@ export class ScanQueue {
     for (const migrated of reading.migrated) {
       await this.deps.storage.save(migrated);
     }
+    this.items
+      .filter((item) => !isPending(item) && this.takeAwaitedResult(item))
+      .forEach((item) => this.notify({
+        type: item.state === 'ACCEPTÉ' ? 'accepted' : 'rejected', item, persisted: true,
+      }));
+  }
+
+  /** Vrai, une seule fois, si ce contexte attend le résultat de cet élément (capture ou renvoi faits ici). */
+  private takeAwaitedResult(item: ScanItem): boolean {
+    return this.awaitingResult.delete(item.localId);
   }
 
   private async persist(item: ScanItem): Promise<ScanItem> {

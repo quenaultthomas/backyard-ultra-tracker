@@ -7,6 +7,7 @@ import fr.backyard.service.RaceBoardService;
 import fr.backyard.service.RaceService;
 import fr.backyard.service.ReintegrationService;
 import fr.backyard.service.RunnerService;
+import fr.backyard.service.SessionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -56,6 +57,8 @@ abstract class ApiSliceTest {
     ManualDnfService manualDnfService;
     @MockitoBean
     ReintegrationService reintegrationService;
+    @MockitoBean
+    SessionService sessionService;
 
     /** Corps d'erreur RFC 9457 de RG5 avec statut, code et instance attendus. */
     static ResultMatcher[] problem(int httpStatus, String code, String instance) {

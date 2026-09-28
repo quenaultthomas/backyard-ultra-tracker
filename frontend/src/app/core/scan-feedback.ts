@@ -7,6 +7,8 @@ import { ScanItem } from './scan-item';
  * Retour multicanal du scan (RG50, RG24, RG26) : couleur, icône et texte, son, vibration, région aria-live.
  * Un résultat serveur arrivé plus de 5 s après sa capture ne déclenche ni son ni vibration et ne remplace pas
  * le dernier résultat affiché (PO16) : il ne met à jour que l'historique et les compteurs.
+ * Seul le contexte qui a fait la capture reçoit `accepted` ou `rejected` (voir `ScanQueue`) ; le contexte émetteur
+ * qui envoie la capture d'un autre contexte reçoit `foreign-result`, sans aucun retour (RG50, arbitrage OBS-T2).
  */
 
 export const LIVE_FEEDBACK_WINDOW_MS = 5_000;

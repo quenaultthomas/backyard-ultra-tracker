@@ -3,7 +3,7 @@ import { Api, uniqueRun } from '../fixtures/api';
 import { decodeQrImage } from '../fixtures/qr-decode';
 
 /** CA22 — Inscription (RG11, RG12, RG2). */
-test.describe('@INC-4 @INC4-CA22 Inscription', () => {
+test.describe('@INC-4 @smoke @INC4-CA22 Inscription', () => {
   let raceId: number;
   const run = uniqueRun();
 

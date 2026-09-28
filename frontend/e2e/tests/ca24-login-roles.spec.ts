@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { Api, uniqueRun } from '../fixtures/api';
 
 /** CA24 — Connexion et rôles 401/403 (RG6, RG10, RG36). */
-test.describe('@INC-4 @INC4-CA24 Connexion et rôles', () => {
+test.describe('@INC-4 @smoke @INC4-CA24 Connexion et rôles', () => {
   // Service worker désactivé : l'interception réseau du test (page.route) doit voir la requête de scan, pas
   // le service worker de l'application, qui la relaierait avant que Playwright ne puisse la remplacer.
   test.use({ serviceWorkers: 'block' });
@@ -26,15 +26,60 @@ test.describe('@INC-4 @INC4-CA24 Connexion et rôles', () => {
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page.getByText('Identifiants invalides')).toBeVisible();
 
-    const storage = await page.evaluate(async () => {
-      const local = JSON.stringify(localStorage);
-      const cookies = document.cookie;
-      const dbs = await indexedDB.databases();
-      return { local, cookies, dbs };
+    // Écart mineur comblé (reprise du 2026-09-27) : sessionStorage, contenu d'IndexedDB (pas seulement la
+    // liste des bases) et Cache Storage sont désormais inspectés, en plus de localStorage et des cookies.
+    const dump = await page.evaluate(async () => {
+      const parts: string[] = [JSON.stringify(localStorage), JSON.stringify(sessionStorage), document.cookie];
+      const dbNames = (await indexedDB.databases()).map((db) => db.name).filter((name): name is string => !!name);
+      for (const name of dbNames) {
+        try {
+          const db = await new Promise<IDBDatabase>((resolve, reject) => {
+            const request = indexedDB.open(name);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+          });
+          for (const storeName of Array.from(db.objectStoreNames)) {
+            const records = await new Promise<unknown[]>((resolve, reject) => {
+              const tx = db.transaction(storeName, 'readonly');
+              const out: unknown[] = [];
+              const cursorReq = tx.objectStore(storeName).openCursor();
+              cursorReq.onsuccess = () => {
+                const cursor = cursorReq.result;
+                if (cursor !== null) {
+                  out.push(cursor.value);
+                  cursor.continue();
+                }
+              };
+              tx.oncomplete = () => resolve(out);
+              tx.onerror = () => reject(tx.error);
+            });
+            parts.push(JSON.stringify(records));
+          }
+        } catch {
+          // Base inaccessible : rien à ajouter.
+        }
+      }
+      try {
+        const cacheNames = await caches.keys();
+        const cacheParts: string[] = [];
+        for (const cacheName of cacheNames) {
+          const cache = await caches.open(cacheName);
+          const requests = await cache.keys();
+          for (const request of requests) {
+            const response = await cache.match(request);
+            cacheParts.push(`${request.url}::${response ? await response.text() : ''}`);
+          }
+        }
+        parts.push(cacheParts.join(';'));
+      } catch {
+        // Cache Storage indisponible : rien à ajouter.
+      }
+      return parts.join('|');
     });
-    expect(storage.local).not.toContain('admin-secret');
-    expect(storage.local).not.toContain('mauvais');
-    expect(storage.cookies).toBe('');
+    expect(dump).not.toContain('admin-secret');
+    expect(dump).not.toContain('mauvais');
+    expect(dump).not.toContain('YWRtaW4tdGVzdDphZG1pbi1zZWNyZXQ=');
+    expect(await page.context().cookies()).toEqual([]);
   });
 
   /**
