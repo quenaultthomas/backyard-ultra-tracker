@@ -45,7 +45,7 @@ test.describe('@INC-4 @INC4-CA30 Backoff sur erreur serveur', () => {
     await expect(page.locator('.indicator').filter({ hasText: 'Serveur injoignable' })).toBeVisible({ timeout: 5_000 });
     await expect(page.getByText('1 en attente')).toBeVisible();
 
-    await expect(page.getByText(`Dossard ${eve.bib} — Eve Backoff`, { exact: false }))
+    await expect(page.getByText(`Dossard ${eve.bib} — ${eve.name}`, { exact: false }))
       .toBeVisible({ timeout: 30_000 });
 
     expect(attempt).toBe(3);

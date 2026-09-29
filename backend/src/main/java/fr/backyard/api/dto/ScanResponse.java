@@ -21,7 +21,7 @@ public record ScanResponse(
 
     public static ScanResponse from(Passage passage) {
         Runner runner = passage.getRunner();
-        return new ScanResponse(passage.getId(), runner.getId(), runner.getBib(), runner.getName(),
+        return new ScanResponse(passage.getId(), runner.getId(), runner.getBib(), runner.displayName(),
             runner.getStatus(), passage.getYardNumber(), passage.getSource(), passage.getScannedAt());
     }
 }

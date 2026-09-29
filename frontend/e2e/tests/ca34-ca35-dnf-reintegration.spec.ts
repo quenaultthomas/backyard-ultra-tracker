@@ -25,7 +25,7 @@ test.describe('@INC-4 @smoke @INC4-CA34 @INC4-CA35 DNF manuel puis réintégrati
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page.getByRole('heading', { level: 1 })).toContainText(`E2E-ADM-${run}`);
 
-    const bobCard = page.locator('li.card').filter({ hasText: 'Bob Adm' });
+    const bobCard = page.locator('li.card').filter({ hasText: bob.name });
     let dnfRequests = 0;
     page.on('request', (request) => {
       if (request.method() === 'POST' && request.url().endsWith(`/api/admin/runners/${bob.runnerId}/dnf`)) {
@@ -41,7 +41,7 @@ test.describe('@INC-4 @smoke @INC4-CA34 @INC4-CA35 DNF manuel puis réintégrati
     await bobCard.getByRole('button', { name: 'Déclarer DNF' }).click();
     const dnfDialog = page.locator('app-confirm-dialog').filter({ hasText: 'Déclarer DNF' });
     const dnfDialogElement = dnfDialog.locator('dialog');
-    await expect(dnfDialog).toContainText(`${bob.bib} — Bob Adm`);
+    await expect(dnfDialog).toContainText(`${bob.bib} — ${bob.name}`);
     const reasons = dnfDialog.locator('input[name="dnf-reason"]');
     await expect(reasons).toHaveCount(3);
     for (const value of ['VOLUNTARY', 'MANUAL', 'OTHER']) {

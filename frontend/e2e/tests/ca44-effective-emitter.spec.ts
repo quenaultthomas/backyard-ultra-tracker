@@ -76,7 +76,7 @@ test.describe('@INC-4 @INC4-CA44 Émetteur effectif avec plusieurs onglets', () 
     const pageB = await context.newPage();
     await pageB.goto('/scan');
     await loginScanner(pageB, false);
-    await captureAndExpect(pageB, alice.qrToken, 'Dossard 1 — Alice — yard 1');
+    await captureAndExpect(pageB, alice.qrToken, `Dossard 1 — ${alice.name} — yard 1`);
     const aliceDetail = await api.runnerDetail(alice.runnerId);
     expect(aliceDetail.passages).toHaveLength(1);
     expect(aliceDetail.passages[0].source).toBe('SCAN');
@@ -85,7 +85,7 @@ test.describe('@INC-4 @INC4-CA44 Émetteur effectif avec plusieurs onglets', () 
     // 2. A reste ouvert. Rechargement de B, reconnexion, capture de Bob.
     await pageB.reload();
     await loginScanner(pageB, false);
-    await captureAndExpect(pageB, bob.qrToken, 'Dossard 2 — Bob — yard 1');
+    await captureAndExpect(pageB, bob.qrToken, `Dossard 2 — ${bob.name} — yard 1`);
     const bobDetail = await api.runnerDetail(bob.runnerId);
     expect(bobDetail.passages).toHaveLength(1);
     expect(bobDetail.passages[0].source).toBe('SCAN');
@@ -95,7 +95,7 @@ test.describe('@INC-4 @INC4-CA44 Émetteur effectif avec plusieurs onglets', () 
     const pageC = await context.newPage();
     await pageC.goto('/scan');
     await loginScanner(pageC, true);
-    await captureAndExpect(pageC, chloe.qrToken, 'Dossard 3 — Chloé — yard 1');
+    await captureAndExpect(pageC, chloe.qrToken, `Dossard 3 — ${chloe.name} — yard 1`);
     const chloeDetail = await api.runnerDetail(chloe.runnerId);
     expect(chloeDetail.passages).toHaveLength(1);
     expect(chloeDetail.passages[0].source).toBe('SCAN');
@@ -116,7 +116,7 @@ test.describe('@INC-4 @INC4-CA44 Émetteur effectif avec plusieurs onglets', () 
     // RG50 (arbitrage OBS-T2) : c'est le contexte de capture (D) qui doit afficher le bandeau vert et
     // « 0 en attente », qu'il soit émetteur ou non. La correction de production correspondante est en place
     // et cette assertion passe réellement.
-    await captureAndExpect(pageD, dan.qrToken, 'Dossard 4 — Dan — yard 1');
+    await captureAndExpect(pageD, dan.qrToken, `Dossard 4 — ${dan.name} — yard 1`);
     const danDetail = await api.runnerDetail(dan.runnerId);
     expect(danDetail.passages).toHaveLength(1);
     expect(danDetail.passages[0].source).toBe('SCAN');

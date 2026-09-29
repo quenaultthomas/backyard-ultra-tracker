@@ -54,7 +54,7 @@ test.describe('@INC-4 @INC4-CA29 Coupure réseau, FIFO et réactivation', () => 
     await waitUntil(t0 + 5_000);
     await page.getByLabel('Code du QR').fill(bob.qrToken);
     await page.getByRole('button', { name: 'Valider' }).click();
-    await expect(page.getByText(`Dossard ${bob.bib} — Bob Fifo`, { exact: false })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(`Dossard ${bob.bib} — ${bob.name}`, { exact: false })).toBeVisible({ timeout: 5_000 });
     await api.scan(zoe.qrToken, new Date().toISOString());
 
     // 1. T0 + 8 s : hors ligne. Capture d'Alice à T0 + 10 s.

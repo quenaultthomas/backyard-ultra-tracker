@@ -62,7 +62,7 @@ public class RaceBoardService {
         Race race = runner.getRace();
         List<Passage> passages = passageRepository.findByRunnerId(runnerId);
         RunnerStats stats = statsCalculator.compute(race, passages);
-        return new RunnerDetailView(runner.getId(), race.getId(), runner.getBib(), runner.getName(),
+        return new RunnerDetailView(runner.getId(), race.getId(), runner.getBib(), runner.displayName(),
             runner.getStatus(), runner.getDnfReason(), runner.getDnfYard(), stats.completedLoops(),
             stats.distanceMeters(), stats.elevationMeters(), stats.averagePaceSecondsPerKm(), stats.corrected(),
             passageViews(race, passages));
@@ -79,7 +79,7 @@ public class RaceBoardService {
 
     private RunnerBoardEntry boardEntry(Race race, Runner runner, List<Passage> passages) {
         RunnerStats stats = statsCalculator.compute(race, passages);
-        return new RunnerBoardEntry(runner.getId(), runner.getBib(), runner.getName(), runner.getStatus(),
+        return new RunnerBoardEntry(runner.getId(), runner.getBib(), runner.displayName(), runner.getStatus(),
             runner.getDnfReason(), runner.getDnfYard(), stats.completedLoops(), stats.distanceMeters(),
             stats.elevationMeters(), stats.averagePaceSecondsPerKm(), stats.corrected());
     }

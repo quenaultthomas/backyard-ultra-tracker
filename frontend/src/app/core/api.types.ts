@@ -70,21 +70,30 @@ export interface RunnerDetailResponse extends RunnerBoardEntry {
   readonly passages: readonly PassageResponse[];
 }
 
-/** E3. */
+/** E3 et E20 (inc. 5) : `name` est le nom affiché, `pseudo` le pseudo stocké (minuscules). */
 export interface RegistrationResponse {
   readonly runnerId: number;
   readonly raceId: number;
   readonly bib: number;
   readonly name: string;
+  readonly pseudo: string | null;
   readonly qrToken: string;
 }
 
-/** E13, E14, E15, E17. */
+/** E3 (inc. 5) : le pseudo est envoyé tel que saisi. */
+export interface RegistrationRequest {
+  readonly pseudo: string;
+  readonly password: string;
+}
+
+/** E13, E14, E15, E17 : `accountId` et `pseudo` valent null sans compte (RG12 inc. 5). */
 export interface AdminRunnerResponse {
   readonly id: number;
   readonly raceId: number;
   readonly bib: number;
   readonly name: string;
+  readonly accountId: number | null;
+  readonly pseudo: string | null;
   readonly qrToken: string;
   readonly status: RunnerStatus;
   readonly dnfReason: DnfReason | null;
@@ -114,6 +123,36 @@ export interface SessionResponse {
   readonly username: string;
   readonly role: Role;
   readonly serverTime: string;
+}
+
+/** Une inscription de E21 (RG11 inc. 5). */
+export interface AccountRegistration {
+  readonly raceId: number;
+  readonly raceName: string;
+  readonly raceDate: string;
+  readonly raceStatus: RaceStatus;
+  readonly runnerId: number;
+  readonly bib: number;
+  readonly status: RunnerStatus;
+  readonly qrToken: string;
+}
+
+/** E21 (RG11 inc. 5). */
+export interface AccountRegistrationsResponse {
+  readonly pseudo: string;
+  readonly registrations: readonly AccountRegistration[];
+}
+
+/** E22, E23 (RG14, RG19 inc. 5). */
+export interface PasswordChangeRequest {
+  readonly newPassword: string;
+}
+
+/** Élément de E25 (RG24 inc. 5). */
+export interface AccountSummary {
+  readonly accountId: number;
+  readonly pseudo: string;
+  readonly runnerCount: number;
 }
 
 export interface FieldError {

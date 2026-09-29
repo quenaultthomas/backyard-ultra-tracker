@@ -41,7 +41,7 @@ test.describe('@INC-4 @INC4-CA43 Détail coureur', () => {
     await api.scan(runner.qrToken, new Date().toISOString());
 
     await page.goto(`/coureurs/${runner.runnerId}`);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Runner Detail');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(runner.name);
     const yard1Row = page.locator('tbody tr').filter({ has: page.locator('td[data-label="Yard"]', { hasText: '1' }) });
     await expect(yard1Row.locator('td[data-label="Source"]')).toHaveText('corrigé', { timeout: 10_000 });
     await expect(yard1Row.locator('td[data-label="Heure de scan"]')).toHaveText('—');

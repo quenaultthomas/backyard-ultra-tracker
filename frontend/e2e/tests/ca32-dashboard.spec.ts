@@ -45,9 +45,9 @@ test.describe('@INC-4 @INC4-CA32 Tableau de bord : bascule, auto-DNF, vainqueur'
 
     // 1. Avant le départ.
     await expect(page.getByText('Course non démarrée')).toBeVisible();
-    await expect(runnerRow(page, 'Alice Dash')).toContainText('0');
-    await expect(runnerRow(page, 'Alice Dash')).toContainText('0,00 km');
-    await expect(runnerRow(page, 'Alice Dash')).toContainText('—');
+    await expect(runnerRow(page, alice.name)).toContainText('0');
+    await expect(runnerRow(page, alice.name)).toContainText('0,00 km');
+    await expect(runnerRow(page, alice.name)).toContainText('—');
 
     // 2. Démarrage par l'admin.
     const beforeStart = Date.now();
@@ -70,29 +70,29 @@ test.describe('@INC-4 @INC4-CA32 Tableau de bord : bascule, auto-DNF, vainqueur'
     await api.scan(alice.qrToken, new Date().toISOString());
     await api.scan(bob.qrToken, new Date().toISOString());
 
-    await expect(runnerRow(page, 'Alice Dash')).toContainText('1,00 km', { timeout: 11_000 });
-    await expect(runnerRow(page, 'Alice Dash')).toContainText('10 m D+');
-    await expect(runnerRow(page, 'Alice Dash').locator('td').nth(3)).toHaveText('1');
-    await expect(runnerRow(page, 'Alice Dash').locator('td').nth(6)).not.toHaveText('—');
-    await expect(runnerRow(page, 'Bob Dash')).toContainText('1,00 km');
-    await expect(runnerRow(page, 'Bob Dash').locator('td').nth(3)).toHaveText('1');
-    await expect(runnerRow(page, 'Bob Dash').locator('td').nth(6)).not.toHaveText('—');
-    await expect(runnerRow(page, 'Chloé Dash')).toContainText('0,00 km');
+    await expect(runnerRow(page, alice.name)).toContainText('1,00 km', { timeout: 11_000 });
+    await expect(runnerRow(page, alice.name)).toContainText('10 m D+');
+    await expect(runnerRow(page, alice.name).locator('td').nth(3)).toHaveText('1');
+    await expect(runnerRow(page, alice.name).locator('td').nth(6)).not.toHaveText('—');
+    await expect(runnerRow(page, bob.name)).toContainText('1,00 km');
+    await expect(runnerRow(page, bob.name).locator('td').nth(3)).toHaveText('1');
+    await expect(runnerRow(page, bob.name).locator('td').nth(6)).not.toHaveText('—');
+    await expect(runnerRow(page, chloe.name)).toContainText('0,00 km');
 
     // 4. Après la cloche T0 + 30 s.
     await waitUntil(t0 + 32_000);
     await expect(page.getByText('Yard 2', { exact: false })).toBeVisible({ timeout: 4_000 });
-    await expect(runnerRow(page, 'Chloé Dash')).toContainText('DNF hors délai au yard 1');
-    await expect(runnerRow(page, 'Alice Dash')).toContainText('En course');
-    await expect(runnerRow(page, 'Bob Dash')).toContainText('En course');
+    await expect(runnerRow(page, chloe.name)).toContainText('DNF hors délai au yard 1');
+    await expect(runnerRow(page, alice.name)).toContainText('En course');
+    await expect(runnerRow(page, bob.name)).toContainText('En course');
 
     // 5. Réintégration de Chloé (admin) à T0 + 38 s.
     await waitUntil(t0 + 38_000);
     await api.reintegrate(chloe.runnerId);
-    await expect(runnerRow(page, 'Chloé Dash')).toContainText('En course', { timeout: 4_000 });
-    await expect(runnerRow(page, 'Chloé Dash')).toContainText('corrigé');
-    await expect(runnerRow(page, 'Chloé Dash')).toContainText('1,00 km');
-    await expect(runnerRow(page, 'Chloé Dash').locator('td').nth(6)).toHaveText('—');
+    await expect(runnerRow(page, chloe.name)).toContainText('En course', { timeout: 4_000 });
+    await expect(runnerRow(page, chloe.name)).toContainText('corrigé');
+    await expect(runnerRow(page, chloe.name)).toContainText('1,00 km');
+    await expect(runnerRow(page, chloe.name).locator('td').nth(6)).toHaveText('—');
 
     // 6. Alice seule à T0 + 45 s ; vainqueur après la cloche T0 + 60 s.
     await waitUntil(t0 + 45_000);
@@ -100,10 +100,10 @@ test.describe('@INC-4 @INC4-CA32 Tableau de bord : bascule, auto-DNF, vainqueur'
 
     await waitUntil(t0 + 62_000);
     await expect(page.getByText('Course terminée', { exact: false })).toBeVisible({ timeout: 6_000 });
-    await expect(page.getByText('Vainqueur : dossard 1 — Alice Dash — 2 tours', { exact: false })).toBeVisible();
-    await expect(runnerRow(page, 'Bob Dash')).toContainText('DNF hors délai au yard 2');
-    await expect(runnerRow(page, 'Chloé Dash')).toContainText('DNF hors délai au yard 2');
-    await expect(runnerRow(page, 'Chloé Dash')).toContainText('corrigé');
+    await expect(page.getByText(`Vainqueur : dossard 1 — ${alice.name} — 2 tours`, { exact: false })).toBeVisible();
+    await expect(runnerRow(page, bob.name)).toContainText('DNF hors délai au yard 2');
+    await expect(runnerRow(page, chloe.name)).toContainText('DNF hors délai au yard 2');
+    await expect(runnerRow(page, chloe.name)).toContainText('corrigé');
 
     // 7. Journal réseau sur une fenêtre de 10 s pendant le yard 2 : 3 à 5 requêtes E4, jamais 2 simultanées,
     // sans Authorization. On mesure sur la fenêtre [T0+32s, T0+42s] déjà couverte par le journal ci-dessus.

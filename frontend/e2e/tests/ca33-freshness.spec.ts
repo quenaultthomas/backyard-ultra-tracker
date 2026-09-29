@@ -15,7 +15,7 @@ test.describe('@INC-4 @INC4-CA33 Fraîcheur du tableau de bord', () => {
     const race = await api.createRace({
       name: `E2E-FRESH-${run}`, loopDistance: 1000, loopDuration: 3600, loopElevation: 10,
     });
-    await api.register(race.id, 'Runner Fresh');
+    const runner = await api.register(race.id, 'Runner Fresh');
     await api.startRace(race.id);
 
     await page.goto(`/courses/${race.id}`);
@@ -29,7 +29,7 @@ test.describe('@INC-4 @INC4-CA33 Fraîcheur du tableau de bord', () => {
     expect(Date.now() - blockedAt).toBeGreaterThan(9_000);
 
     // Les dernières données restent affichées.
-    await expect(page.getByText('Runner Fresh')).toBeVisible();
+    await expect(page.getByText(runner.name)).toBeVisible();
 
     await context.unroute('**/board');
     const unblockedAt = Date.now();

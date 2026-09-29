@@ -101,13 +101,13 @@ test.describe('@INC-4 @INC4-CA36 Administration des courses et des coureurs', ()
     await expect(page.locator('li.qr-card')).toHaveCount(2);
     const runners = await api.adminRunners(raceId);
     for (const runner of runners) {
-      const card = page.locator('li.qr-card').filter({ hasText: String(runner.bib) });
+      const card = page.locator('li.qr-card').filter({ hasText: runner.name });
       const decoded = await decodeQrImage(card, 'img.qr-image');
       expect(decoded).toBe(runner.qrToken);
     }
 
     await loginAdmin(page, `/admin/courses/${raceId}`);
-    const runnerOneCard = page.locator('li.card').filter({ hasText: 'Coureur Un' });
+    const runnerOneCard = page.locator('li.card').filter({ hasText: runner1.name });
     await expect(runnerOneCard.locator('app-qr-image')).toHaveCount(0);
     await runnerOneCard.getByRole('button', { name: 'Afficher le QR' }).click();
     const qrDialog = page.locator('app-confirm-dialog').filter({ hasText: 'QR code du coureur' });
@@ -118,13 +118,13 @@ test.describe('@INC-4 @INC4-CA36 Administration des courses et des coureurs', ()
     // ("Coureur Deux") disparaît (remplacé par des libellés et des valeurs de champs), donc les champs sont
     // ciblés par leur identifiant stable (`#bib-{id}`, `#name-{id}`, RunnerAdminPage), pas par le texte de
     // la carte.
-    const runnerTwoCard = page.locator('li.card').filter({ hasText: 'Coureur Deux' });
+    const runnerTwoCard = page.locator('li.card').filter({ hasText: runner2.name });
     await runnerTwoCard.getByRole('button', { name: 'Modifier' }).click();
     const bibInput = page.locator(`#bib-${runner2.runnerId}`);
     await bibInput.fill('5');
     // Un seul coureur est en édition à la fois : le bouton "Enregistrer" est sans ambiguïté sur la page.
     await page.getByRole('button', { name: 'Enregistrer' }).click();
-    await expect(page.locator('li.card').filter({ hasText: 'Coureur Deux' })).toContainText('5');
+    await expect(page.locator('li.card').filter({ hasText: runner2.name })).toContainText('5');
 
     // Le dossard 5 est bien relu par E13 (écart mineur comblé, reprise du 2026-09-27), pas seulement affiché
     // par l'écran qui vient de l'enregistrer.
@@ -133,10 +133,12 @@ test.describe('@INC-4 @INC4-CA36 Administration des courses et des coureurs', ()
     expect(renamedRunner?.bib).toBe(5);
 
     // Suppression du dossard 5.
-    await page.locator('li.card').filter({ hasText: 'Coureur Deux' }).getByRole('button', { name: 'Supprimer' }).click();
+    // `exact: true` : la carte porte désormais aussi « Supprimer le compte » (RG17 inc. 5).
+    await page.locator('li.card').filter({ hasText: runner2.name })
+      .getByRole('button', { name: 'Supprimer', exact: true }).click();
     await page.locator('app-confirm-dialog').filter({ hasText: 'Supprimer le coureur' })
-      .getByRole('button', { name: 'Supprimer' }).click();
-    await expect(page.locator('li.card').filter({ hasText: 'Coureur Deux' })).toHaveCount(0);
+      .getByRole('button', { name: 'Supprimer', exact: true }).click();
+    await expect(page.locator('li.card').filter({ hasText: runner2.name })).toHaveCount(0);
     expect((await api.adminRunners(raceId)).length).toBe(1);
 
     // Démarrage.
@@ -160,7 +162,7 @@ test.describe('@INC-4 @INC4-CA36 Administration des courses et des coureurs', ()
     await expect(page.getByText('En cours', { exact: false })).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText('départ à', { exact: false })).toBeVisible();
     await expect(startTrigger).toHaveCount(0);
-    await expect(page.locator('.toolbar').getByRole('button', { name: 'Supprimer' })).toHaveCount(0);
+    await expect(page.locator('.toolbar').getByRole('button', { name: 'Supprimer', exact: true })).toHaveCount(0);
 
     // Action hors ligne : message dédié, aucune mise en file, nom inchangé après reconnexion.
     const raceBefore = await api.race(raceId);

@@ -35,6 +35,10 @@ export const ADMIN_TIMEOUT_MS = 15_000;
 
 export const SERVER_UNREACHABLE = 'Serveur injoignable';
 
+/** RG23 inc. 5 : limitation de débit du reverse proxy, quel que soit le corps de la réponse (non ProblemDetail). */
+export const TOO_MANY_ATTEMPTS_STATUS = 429;
+export const TOO_MANY_ATTEMPTS = 'Trop de tentatives. Réessayez dans une minute.';
+
 /** Classe d'une réponse HTTP reçue (RG3). Une réponse non JSON est toujours TRANSITOIRE. */
 export function classifyResponse(status: number, json: boolean, code: string | null): ResponseClass {
   if (!json) {
@@ -93,6 +97,9 @@ export function readProblem(status: number, body: unknown): ApiProblem {
  * une absence de réponse ou une réponse non JSON. Jamais de trace technique.
  */
 export function errorMessage(result: ClassifiedResult<unknown>): string {
+  if (isTooManyAttempts(result)) {
+    return TOO_MANY_ATTEMPTS;
+  }
   if (result.failure !== null) {
     return SERVER_UNREACHABLE;
   }
@@ -110,6 +117,11 @@ export function fieldErrors(result: ClassifiedResult<unknown>): ReadonlyMap<stri
     errors.set(error.field, previous ? `${previous} ; ${error.message}` : error.message);
   }
   return errors;
+}
+
+/** RG23 inc. 5 : réponse 429 du reverse proxy, JSON ou non. Jamais de nouvel essai automatique. */
+export function isTooManyAttempts(result: ClassifiedResult<unknown>): boolean {
+  return result.status === TOO_MANY_ATTEMPTS_STATUS;
 }
 
 export function hasCode(result: ClassifiedResult<unknown>, code: string): boolean {

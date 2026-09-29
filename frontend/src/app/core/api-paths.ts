@@ -5,10 +5,23 @@
  */
 
 const PROTECTED_PATH = /^\/api\/(scan|admin)(\/|$)/;
+const RUNNER_ACCOUNT_PATH = /^\/api\/account(\/|$)/;
 
-/** Vrai si l'en-tête Authorization doit accompagner une requête vers ce chemin relatif. */
+/** Vrai si l'en-tête Authorization des comptes ADMIN/SCANNER doit accompagner une requête vers ce chemin relatif. */
 export function requiresAuthorization(path: string): boolean {
-  return path.startsWith('/') && !path.startsWith('//') && PROTECTED_PATH.test(path);
+  return isSameOriginPath(path) && PROTECTED_PATH.test(path);
+}
+
+/**
+ * RG21 inc. 5 : vrai si les identifiants du compte coureur doivent accompagner une requête vers ce chemin relatif,
+ * c'est-à-dire uniquement vers `/api/account/**` de l'origine de l'application.
+ */
+export function requiresRunnerAuthorization(path: string): boolean {
+  return isSameOriginPath(path) && RUNNER_ACCOUNT_PATH.test(path);
+}
+
+function isSameOriginPath(path: string): boolean {
+  return path.startsWith('/') && !path.startsWith('//');
 }
 
 export const API_PATHS = {
@@ -29,4 +42,13 @@ export const API_PATHS = {
   adminDnf: (runnerId: number | string) => `/api/admin/runners/${encodeURIComponent(String(runnerId))}/dnf`,
   adminReintegration: (runnerId: number | string) =>
     `/api/admin/runners/${encodeURIComponent(String(runnerId))}/reintegration`,
+  accountRegistrations: (raceId: number | string) =>
+    `/api/account/races/${encodeURIComponent(String(raceId))}/registrations`,
+  accountMe: '/api/account/me',
+  accountPassword: '/api/account/password',
+  adminAccounts: (pseudo?: string) =>
+    pseudo === undefined ? '/api/admin/accounts' : `/api/admin/accounts?pseudo=${encodeURIComponent(pseudo)}`,
+  adminAccount: (accountId: number | string) => `/api/admin/accounts/${encodeURIComponent(String(accountId))}`,
+  adminAccountPassword: (accountId: number | string) =>
+    `/api/admin/accounts/${encodeURIComponent(String(accountId))}/password`,
 } as const;

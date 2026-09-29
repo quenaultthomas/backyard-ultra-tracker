@@ -48,7 +48,7 @@ public class AdminRunnerController {
 
     @PutMapping("/{runnerId}")
     public AdminRunnerResponse update(@PathVariable Long runnerId, @Valid @RequestBody RunnerUpdateRequest request) {
-        return AdminRunnerResponse.from(runnerService.update(runnerId, request.bib(), request.name()));
+        return AdminRunnerResponse.from(runnerService.update(runnerId, request.bib()));
     }
 
     @DeleteMapping("/{runnerId}")

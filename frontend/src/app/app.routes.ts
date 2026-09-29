@@ -2,6 +2,8 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router, Routes } from '@angular/router';
 import { SessionService } from './infra/session.service';
 import { AuthState } from './infra/auth-state';
+import { RunnerAuthState } from './infra/runner-auth-state';
+import { RUNNER_LOGIN_ROUTE, RunnerSessionService } from './infra/runner-session.service';
 
 /**
  * Sans connexion, l'administration affiche l'écran de connexion et n'émet aucune requête /api/admin/** (RG36).
@@ -16,6 +18,18 @@ const requireSignedIn: CanActivateFn = async (_route, state) => {
     return true;
   }
   return router.createUrlTree(['/connexion'], { queryParams: { retour: state.url } });
+};
+
+/** « Mes inscriptions » exige une connexion coureur (RG21 inc. 5) ; sinon, écran de connexion coureur. */
+const requireRunnerSignedIn: CanActivateFn = async (_route, state) => {
+  const runnerSession = inject(RunnerSessionService);
+  const runnerAuth = inject(RunnerAuthState);
+  const router = inject(Router);
+  await runnerSession.ready;
+  if (runnerAuth.session() !== null) {
+    return true;
+  }
+  return router.createUrlTree([RUNNER_LOGIN_ROUTE], { queryParams: { retour: state.url } });
 };
 
 /**
@@ -50,6 +64,17 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login-page').then((m) => m.LoginPage),
   },
   {
+    path: 'compte',
+    title: 'Mes inscriptions — Backyard Ultra Tracker',
+    canActivate: [requireRunnerSignedIn],
+    loadComponent: () => import('./pages/account/account-page').then((m) => m.AccountPage),
+  },
+  {
+    path: 'compte/connexion',
+    title: 'Connexion coureur — Backyard Ultra Tracker',
+    loadComponent: () => import('./pages/account/runner-login-page').then((m) => m.RunnerLoginPage),
+  },
+  {
     path: 'scan',
     title: 'Scan — Backyard Ultra Tracker',
     loadComponent: () => import('./pages/scan/scan-page').then((m) => m.ScanPage),
@@ -68,6 +93,11 @@ export const routes: Routes = [
         path: 'courses/:raceId',
         title: 'Course (admin) — Backyard Ultra Tracker',
         loadComponent: () => import('./pages/admin/admin-race-page').then((m) => m.AdminRacePage),
+      },
+      {
+        path: 'comptes',
+        title: 'Comptes (admin) — Backyard Ultra Tracker',
+        loadComponent: () => import('./pages/admin/admin-accounts-page').then((m) => m.AdminAccountsPage),
       },
       {
         path: 'courses/:raceId/qr',

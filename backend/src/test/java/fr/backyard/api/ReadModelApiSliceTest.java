@@ -122,7 +122,7 @@ class ReadModelApiSliceTest extends ApiSliceTest {
         when(raceBoardService.runnerDetail(12L)).thenReturn(detailOfCa44());
         Race r1 = backyardTest(RaceStatus.RUNNING);
         when(passageRecordingService.recordScan(SECRET_TOKEN, at("08:45:00")))
-            .thenReturn(withId(scan(runner(12L, r1, 6, "Alice", SECRET_TOKEN), 1, at("08:45:00")), 40L));
+            .thenReturn(withId(scan(runner(12L, r1, 6, SECRET_TOKEN), 1, at("08:45:00")), 40L));
 
         String board = mvc.perform(get("/api/public/races/1/board"))
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);

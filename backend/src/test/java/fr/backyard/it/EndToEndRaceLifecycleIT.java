@@ -108,7 +108,7 @@ class EndToEndRaceLifecycleIT extends AbstractApiIT {
             .andExpect(jsonPath("$.runners", org.hamcrest.Matchers.hasSize(3)))
             // Alice (bib 1) : scan reel yard 1, allure calculee, non corrigee
             .andExpect(jsonPath("$.runners[0].bib").value(1))
-            .andExpect(jsonPath("$.runners[0].name").value("Alice"))
+            .andExpect(jsonPath("$.runners[0].name").value("alice"))
             .andExpect(jsonPath("$.runners[0].status").value("ACTIVE"))
             .andExpect(jsonPath("$.runners[0].completedLoops").value(1))
             .andExpect(jsonPath("$.runners[0].distanceMeters").value(6706))
@@ -117,7 +117,7 @@ class EndToEndRaceLifecycleIT extends AbstractApiIT {
             .andExpect(jsonPath("$.runners[0].corrected").value(false))
             // Bob (bib 2) : reintegre, passage MANUAL, allure non definie, badge corrige
             .andExpect(jsonPath("$.runners[1].bib").value(2))
-            .andExpect(jsonPath("$.runners[1].name").value("Bob"))
+            .andExpect(jsonPath("$.runners[1].name").value("bob"))
             .andExpect(jsonPath("$.runners[1].status").value("ACTIVE"))
             .andExpect(jsonPath("$.runners[1].dnfReason").value(nullValue()))
             .andExpect(jsonPath("$.runners[1].completedLoops").value(1))
@@ -126,7 +126,7 @@ class EndToEndRaceLifecycleIT extends AbstractApiIT {
             .andExpect(jsonPath("$.runners[1].corrected").value(true))
             // Charlie (bib 3) : scan reel yard 1, allure calculee, non corrige
             .andExpect(jsonPath("$.runners[2].bib").value(3))
-            .andExpect(jsonPath("$.runners[2].name").value("Charlie"))
+            .andExpect(jsonPath("$.runners[2].name").value("charlie"))
             .andExpect(jsonPath("$.runners[2].completedLoops").value(1))
             .andExpect(jsonPath("$.runners[2].averagePaceSecondsPerKm").value(447))
             .andExpect(jsonPath("$.runners[2].corrected").value(false));

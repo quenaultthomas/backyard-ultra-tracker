@@ -63,9 +63,9 @@ public final class TestData {
         return race;
     }
 
-    /** Coureur avec identifiant, dossard, nom et token explicites. */
-    public static Runner runner(long id, Race race, int bib, String name, String qrToken) {
-        Runner runner = new Runner(race, bib, name, qrToken);
+    /** Coureur sans compte avec identifiant, dossard et token explicites. */
+    public static Runner runner(long id, Race race, int bib, String qrToken) {
+        Runner runner = new Runner(race, bib, qrToken);
         ReflectionTestUtils.setField(runner, "id", id);
         return runner;
     }
@@ -77,7 +77,7 @@ public final class TestData {
     }
 
     public static Runner runner(long id, Race race, String qrToken) {
-        Runner runner = new Runner(race, BIB_SEQUENCE.getAndIncrement(), "Coureur " + id, qrToken);
+        Runner runner = new Runner(race, BIB_SEQUENCE.getAndIncrement(), qrToken);
         ReflectionTestUtils.setField(runner, "id", id);
         return runner;
     }

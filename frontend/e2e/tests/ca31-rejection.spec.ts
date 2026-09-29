@@ -71,7 +71,7 @@ test.describe('@INC-4 @INC4-CA31 Rejet définitif et poursuite de la file', () =
     await waitUntil(t0 + 5_000);
     await page.getByLabel('Code du QR').fill(dan.qrToken);
     await page.getByRole('button', { name: 'Valider' }).click();
-    await expect(page.getByText(`Dossard ${dan.bib} — Dan Rej`, { exact: false })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(`Dossard ${dan.bib} — ${dan.name}`, { exact: false })).toBeVisible({ timeout: 5_000 });
     await api.scan(zoe.qrToken, new Date().toISOString());
 
     await waitUntil(t0 + 35_000);
@@ -102,7 +102,7 @@ test.describe('@INC-4 @INC4-CA31 Rejet définitif et poursuite de la file', () =
     await context.setOffline(false);
 
     await expect(page.locator('.indicator').filter({ hasText: /rejeté/ })).toContainText('1 rejeté', { timeout: 15_000 });
-    await expect(page.getByText(`Dossard ${dan.bib} — Dan Rej — yard 3`, { exact: false }))
+    await expect(page.getByText(`Dossard ${dan.bib} — ${dan.name} — yard 3`, { exact: false }))
       .toBeVisible({ timeout: 15_000 });
 
     const rejectionCard = page.locator('.rejections li');

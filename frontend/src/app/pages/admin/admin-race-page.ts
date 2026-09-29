@@ -6,6 +6,7 @@ import {
   AdminRunnerResponse,
   DnfReason,
   RaceRequest,
+  AccountSummary,
   RaceResponse,
   ReintegrationResponse,
 } from '../../core/api.types';
@@ -21,8 +22,9 @@ import {
 } from '../../core/formats';
 import { ADMIN_TIMEOUT_MS, ClassifiedResult, fieldErrors } from '../../core/http-classification';
 import { adminFailureMessage, shouldReloadAfterFailure } from '../../core/outcomes';
-import { parseInteger, positiveInteger, requiredText } from '../../core/validation';
+import { parseInteger, positiveInteger } from '../../core/validation';
 import { ApiClient, HttpMethod } from '../../infra/api-client';
+import { AccountAdminActions } from '../../shared/account-admin-actions';
 import { ConfirmDialog } from '../../shared/confirm-dialog';
 import { QrImage } from '../../shared/qr-image';
 import { RaceForm } from './race-form';
@@ -49,7 +51,7 @@ type PendingAction =
  */
 @Component({
   selector: 'app-admin-race-page',
-  imports: [RouterLink, ConfirmDialog, QrImage, RaceForm],
+  imports: [RouterLink, AccountAdminActions, ConfirmDialog, QrImage, RaceForm],
   template: `
     @if (race(); as data) {
       <h1>{{ data.name }}</h1>
@@ -105,15 +107,9 @@ type PendingAction =
                   <div class="field">
                     <label [for]="'bib-' + runner.id">Dossard</label>
                     <input [id]="'bib-' + runner.id" type="number" inputmode="numeric" min="1"
-                           [readOnly]="!can(runner, 'EDIT_BIB_AND_NAME')" [value]="editBib()"
+                           [readOnly]="!can(runner, 'EDIT_BIB')" [value]="editBib()"
                            (input)="editBib.set(value($event))" [attr.aria-invalid]="runnerError('bib') !== null" />
                     <p class="field-error">{{ runnerError('bib') ?? '' }}</p>
-                  </div>
-                  <div class="field">
-                    <label [for]="'name-' + runner.id">Nom</label>
-                    <input [id]="'name-' + runner.id" type="text" maxlength="255" [value]="editName()"
-                           (input)="editName.set(value($event))" [attr.aria-invalid]="runnerError('name') !== null" />
-                    <p class="field-error">{{ runnerError('name') ?? '' }}</p>
                   </div>
                   <div class="toolbar">
                     <button type="submit" class="button button-primary" [disabled]="busy()">Enregistrer</button>
@@ -122,8 +118,9 @@ type PendingAction =
                 </form>
               } @else {
                 <p class="runner-line"><strong>{{ runner.bib }}</strong> — {{ runner.name }} — {{ runnerStatus(runner) }}</p>
+                <p class="runner-pseudo">Pseudo : {{ runner.pseudo ?? '' }}</p>
                 <div class="toolbar">
-                  @if (can(runner, 'EDIT_BIB_AND_NAME') || can(runner, 'EDIT_NAME')) {
+                  @if (can(runner, 'EDIT_BIB')) {
                     <button type="button" class="button" (click)="startRunnerEdit(runner)">Modifier</button>
                   }
                   @if (can(runner, 'SHOW_QR')) {
@@ -137,6 +134,11 @@ type PendingAction =
                   }
                   @if (can(runner, 'DELETE')) {
                     <button type="button" class="button button-danger" (click)="ask({ kind: 'delete-runner', runner })">Supprimer</button>
+                  }
+                  @if (runner.accountId !== null && runner.pseudo !== null) {
+                    <app-account-admin-actions [accountId]="runner.accountId" [pseudo]="runner.pseudo"
+                                               [registrationCount]="registrationCount(runner.accountId)"
+                                               (reported)="reportAccountAction($event)" (deleted)="reload()" />
                   }
                 </div>
               }
@@ -216,8 +218,9 @@ export class AdminRacePage implements OnInit {
   protected readonly dnfReason = signal<DnfReason | null>(null);
   protected readonly editingRunnerId = signal<number | null>(null);
   protected readonly editBib = signal('');
-  protected readonly editName = signal('');
   private readonly runnerErrors = signal<ReadonlyMap<string, string>>(new Map());
+  /** Nombre d'inscriptions par compte (E25), pour la confirmation de suppression d'un compte (RG17 inc. 5). */
+  private readonly registrationCounts = signal<ReadonlyMap<number, number>>(new Map());
 
   protected readonly raceActionSet = computed(() => {
     const race = this.race();
@@ -322,7 +325,6 @@ export class AdminRacePage implements OnInit {
   protected startRunnerEdit(runner: AdminRunnerResponse): void {
     this.runnerErrors.set(new Map());
     this.editBib.set(String(runner.bib));
-    this.editName.set(runner.name);
     this.editingRunnerId.set(runner.id);
   }
 
@@ -330,19 +332,15 @@ export class AdminRacePage implements OnInit {
     event.preventDefault();
     const errors = new Map<string, string>();
     const bibError = positiveInteger(this.editBib());
-    const nameError = requiredText(this.editName());
     if (bibError !== null) {
       errors.set('bib', bibError);
-    }
-    if (nameError !== null) {
-      errors.set('name', nameError);
     }
     this.runnerErrors.set(errors);
     if (errors.size > 0) {
       return;
     }
     const result = await this.act<AdminRunnerResponse>('PUT', API_PATHS.adminRunner(runner.id), {
-      bib: parseInteger(this.editBib()), name: this.editName().trim(),
+      bib: parseInteger(this.editBib()),
     });
     if (result === null) {
       return;
@@ -351,6 +349,15 @@ export class AdminRacePage implements OnInit {
     if (result.responseClass === 'SUCCESS') {
       this.editingRunnerId.set(null);
     }
+  }
+
+  protected registrationCount(accountId: number): number {
+    return this.registrationCounts().get(accountId) ?? 0;
+  }
+
+  protected reportAccountAction(outcome: { readonly ok: boolean; readonly message: string }): void {
+    this.info.set(outcome.ok ? outcome.message : null);
+    this.message.set(outcome.ok ? null : outcome.message);
   }
 
   protected runnerError(field: string): string | null {
@@ -417,12 +424,13 @@ export class AdminRacePage implements OnInit {
     return result;
   }
 
-  private async reload(): Promise<void> {
-    const [race, runners] = await Promise.all([
+  protected async reload(): Promise<void> {
+    const [race, runners, accounts] = await Promise.all([
       this.api.request<RaceResponse>('GET', API_PATHS.adminRace(this.raceId()), { timeoutMs: ADMIN_TIMEOUT_MS }),
       this.api.request<AdminRunnerResponse[]>('GET', API_PATHS.adminRaceRunners(this.raceId()), {
         timeoutMs: ADMIN_TIMEOUT_MS,
       }),
+      this.api.request<AccountSummary[]>('GET', API_PATHS.adminAccounts(), { timeoutMs: ADMIN_TIMEOUT_MS }),
     ]);
     if (race.responseClass === 'SUCCESS' && race.body !== null) {
       this.race.set(race.body);
@@ -431,6 +439,9 @@ export class AdminRacePage implements OnInit {
     }
     if (runners.responseClass === 'SUCCESS' && runners.body !== null) {
       this.runners.set(runners.body);
+    }
+    if (accounts.responseClass === 'SUCCESS' && accounts.body !== null) {
+      this.registrationCounts.set(new Map(accounts.body.map((account) => [account.accountId, account.runnerCount])));
     }
   }
 }

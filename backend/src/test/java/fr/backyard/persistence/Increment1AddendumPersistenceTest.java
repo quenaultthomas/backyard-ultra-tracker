@@ -109,7 +109,7 @@ class Increment1AddendumPersistenceTest {
     @DisplayName("CA23 - un coureur DNF TIMEOUT yard 3 est relu depuis la base avec DNF, TIMEOUT, 3")
     void ca23_dnfRunnerIsPersistedWithReasonAndYard() {
         Race race = persistedRace("Race CA23");
-        Runner alice = new Runner(race, 1, "Alice", "tok-ca23-a");
+        Runner alice = new Runner(race, 1, "tok-ca23-a");
         alice.markDnf(DnfReason.TIMEOUT, 3);
         Runner saved = runnerRepository.saveAndFlush(alice);
 
@@ -127,7 +127,7 @@ class Increment1AddendumPersistenceTest {
     @DisplayName("CA23 - un coureur WINNER est relu depuis la base avec dnfReason et dnfYard null")
     void ca23_winnerIsPersistedWithoutDnfFields() {
         Race race = persistedRace("Race CA23");
-        Runner bob = new Runner(race, 2, "Bob", "tok-ca23-b");
+        Runner bob = new Runner(race, 2, "tok-ca23-b");
         bob.markWinner();
         Runner saved = runnerRepository.saveAndFlush(bob);
 
@@ -147,7 +147,7 @@ class Increment1AddendumPersistenceTest {
     @DisplayName("CA25 - re-sauvegarder un passage relu ne change ni ses champs ni le nombre de passages")
     void ca25_savingAPersistedPassageAgainChangesNothing() {
         Race race = persistedRace("Race CA25");
-        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-ca25"));
+        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "tok-ca25"));
         Passage saved = passageRepository.saveAndFlush(new Passage(runner, 1, PassageSource.SCAN, SCANNED_AT));
         flushAndClearPersistenceContext();
         long countBefore = passageRepository.count();
@@ -169,44 +169,44 @@ class Increment1AddendumPersistenceTest {
 
     @Test
     @Tag("INC1-CA26")
-    @DisplayName("CA26 - Runner avec name null : rejete (ConstraintViolation sur name ou NOT NULL), aucune ligne")
-    void ca26_runnerWithNullNameIsRejected() {
+    @DisplayName("CA26 (inc. 1) / RG6 (inc. 5) - Runner sans nom : accepte, une ligne de plus, runner.name NULL en base")
+    void ca26_runnerWithoutNameIsAccepted() {
         Race race = persistedRace("Race CA26");
         long runnersBefore = countRows("runner");
 
-        Throwable thrown = catchThrowable(() ->
-            runnerRepository.saveAndFlush(new Runner(race, 1, null, "tok-ca26-null")));
+        runnerRepository.saveAndFlush(new Runner(race, 1, "tok-ca26-null"));
 
-        assertRejectedByValidationOnOrDatabase(thrown, "name");
-        assertThat(countRows("runner")).isEqualTo(runnersBefore);
+        assertThat(countRows("runner")).isEqualTo(runnersBefore + 1);
+        assertThat(jdbc.queryForObject("SELECT name FROM runner WHERE qr_token = ?", String.class, "tok-ca26-null"))
+            .isNull();
     }
 
     @Test
     @Tag("INC1-CA26")
-    @DisplayName("CA26 - Runner avec name vide \"\" : ConstraintViolationException sur name, aucune ligne")
-    void ca26_runnerWithEmptyNameIsRejectedByDomainValidation() {
+    @DisplayName("CA26 (inc. 1) / RG18 (inc. 5) - Runner sans compte relu depuis la base : nom affiche « Coureur n°2 »")
+    void ca26_runnerWithoutAccountIsReloadedWithNeutralName() {
         Race race = persistedRace("Race CA26");
         long runnersBefore = countRows("runner");
 
-        Throwable thrown = catchThrowable(() ->
-            runnerRepository.saveAndFlush(new Runner(race, 2, "", "tok-ca26-empty")));
+        Runner saved = runnerRepository.saveAndFlush(new Runner(race, 2, "tok-ca26-empty"));
+        entityManager.clear();
 
-        assertViolationOnlyOn(thrown, "name");
-        assertThat(countRows("runner")).isEqualTo(runnersBefore);
+        assertThat(countRows("runner")).isEqualTo(runnersBefore + 1);
+        assertThat(runnerRepository.findById(saved.getId()).orElseThrow().displayName()).isEqualTo("Coureur n°2");
     }
 
     @Test
     @Tag("INC1-CA26")
-    @DisplayName("CA26 - Runner avec name blanc \"   \" : ConstraintViolationException sur name, aucune ligne")
-    void ca26_runnerWithBlankNameIsRejectedByDomainValidation() {
+    @DisplayName("CA26 (inc. 1) / RG6 (inc. 5) - Runner sans compte : runner.name NULL en base (relu par id)")
+    void ca26_runnerNameColumnStaysNull() {
         Race race = persistedRace("Race CA26");
         long runnersBefore = countRows("runner");
 
-        Throwable thrown = catchThrowable(() ->
-            runnerRepository.saveAndFlush(new Runner(race, 3, "   ", "tok-ca26-blank")));
+        Runner saved = runnerRepository.saveAndFlush(new Runner(race, 3, "tok-ca26-blank"));
+        entityManager.clear();
 
-        assertViolationOnlyOn(thrown, "name");
-        assertThat(countRows("runner")).isEqualTo(runnersBefore);
+        assertThat(countRows("runner")).isEqualTo(runnersBefore + 1);
+        assertThat(jdbc.queryForObject("SELECT name FROM runner WHERE id = ?", String.class, saved.getId())).isNull();
     }
 
     @Test
@@ -324,7 +324,7 @@ class Increment1AddendumPersistenceTest {
         long runnerRowsBefore = countRows("runner");
 
         Throwable thrown = catchThrowable(() ->
-            runnerRepository.saveAndFlush(new Runner(race, 0, "Zero", "tok-ca28-jpa")));
+            runnerRepository.saveAndFlush(new Runner(race, 0, "tok-ca28-jpa")));
 
         assertRejectedByValidationOnOrDatabase(thrown, "bib");
         assertThat(countRows("runner")).isEqualTo(runnerRowsBefore);
@@ -334,7 +334,7 @@ class Increment1AddendumPersistenceTest {
 
     private Runner persistedRunner() {
         Race race = persistedRace("Race CA29");
-        return runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-ca29"));
+        return runnerRepository.saveAndFlush(new Runner(race, 1, "tok-ca29"));
     }
 
     private void insertPassageNatively(long runnerId, int yardNumber) {

@@ -33,7 +33,7 @@ test.describe('@INC-4 @INC4-CA40 Correction d\'horloge', () => {
 
     await page.getByLabel('Code du QR').fill(runner.qrToken);
     await page.getByRole('button', { name: 'Valider' }).click();
-    await expect(page.getByText(`Dossard ${runner.bib} — Runner Clock`, { exact: false }))
+    await expect(page.getByText(`Dossard ${runner.bib} — ${runner.name}`, { exact: false }))
       .toBeVisible({ timeout: 10_000 });
     await expect(page.getByText('QR non reconnu')).toHaveCount(0);
     await expect(page.locator('.rejections li')).toHaveCount(0);

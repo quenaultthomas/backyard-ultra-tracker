@@ -60,13 +60,13 @@ class QrTokenUniquenessIT extends AbstractApiIT {
 
         mvc.perform(post("/api/public/races/" + race1Id + "/registrations")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Alice\"}"))
+                .content("{\"pseudo\":\"Alice\",\"password\":\"motdepasse-1\"}"))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.qrToken").value(FIXED_TOKEN));
 
         mvc.perform(post("/api/public/races/" + race2Id + "/registrations")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Bob\"}"))
+                .content("{\"pseudo\":\"Bob\",\"password\":\"motdepasse-1\"}"))
             .andExpect(status().isConflict())
             .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
             .andExpect(jsonPath("$.code").value("DATA_INTEGRITY"))

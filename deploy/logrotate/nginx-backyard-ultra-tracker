@@ -1,0 +1,23 @@
+# Rotation des journaux d'accès et d'erreur nginx du Backyard Ultra Tracker (RG22 inc. 5).
+# Installation par l'exploitant : copier dans /etc/logrotate.d/nginx-backyard-ultra-tracker.
+# Rotation quotidienne, 6 archives au plus : le fichier courant et ses archives couvrent au plus 7 jours
+# calendaires. Au-delà, les archives sont supprimées, sans archivage ailleurs.
+# Les journaux nginx par défaut (/var/log/nginx/access.log, error.log) contiennent aussi des adresses IP :
+# la règle /etc/logrotate.d/nginx fournie par la distribution doit recevoir les mêmes valeurs
+# (daily, rotate 6, maxage 7) ou être remplacée par ce fichier en y ajoutant ces deux chemins.
+/var/log/nginx/backyard-ultra-tracker.access.log
+/var/log/nginx/backyard-ultra-tracker.error.log
+{
+    daily
+    rotate 6
+    maxage 7
+    missingok
+    notifempty
+    compress
+    delaycompress
+    create 0640 www-data adm
+    sharedscripts
+    postrotate
+        if [ -f /run/nginx.pid ]; then kill -USR1 "$(cat /run/nginx.pid)"; fi
+    endscript
+}

@@ -46,8 +46,8 @@ class RaceBoardServiceTest {
     @DisplayName("CA40 - tableau de bord a 10:20 : serverTime, yard 3, fin 11:00, stats par coureur tries par dossard, une seule requete de passages")
     void ca40_boardOfRunningRace() {
         Race r1 = backyardTest(RaceStatus.RUNNING);
-        Runner b = asDnf(runner(2L, r1, 2, "B", "tok-b"), DnfReason.VOLUNTARY, 2);
-        Runner a = runner(1L, r1, 1, "A", "tok-a");
+        Runner b = asDnf(runner(2L, r1, 2, "tok-b"), DnfReason.VOLUNTARY, 2);
+        Runner a = runner(1L, r1, 1, "tok-a");
         repos.withRaces(r1).withRunners(b, a).withPassages(
             scan(b, 1, at("08:45:00")),
             scan(a, 1, at("08:45:00")),
@@ -62,7 +62,7 @@ class RaceBoardServiceTest {
         assertThat(board.runners()).extracting(RunnerBoardEntry::runnerId).containsExactly(1L, 2L);
         RunnerBoardEntry entryA = board.runners().get(0);
         assertThat(entryA.bib()).isEqualTo(1);
-        assertThat(entryA.name()).isEqualTo("A");
+        assertThat(entryA.name()).isEqualTo("Coureur n°1");
         assertThat(entryA.status()).isEqualTo(RunnerStatus.ACTIVE);
         assertThat(entryA.dnfReason()).isNull();
         assertThat(entryA.dnfYard()).isNull();
@@ -87,7 +87,7 @@ class RaceBoardServiceTest {
     @DisplayName("CA41 - tableau de bord d'une course SETUP : yard 0, fin null, coureur sans passage a 0 tour et allure vide")
     void ca41_boardOfSetupRace() {
         Race r1 = backyardTest(RaceStatus.SETUP);
-        repos.withRaces(r1).withRunners(runner(1L, r1, 1, "A", "tok-a"));
+        repos.withRaces(r1).withRunners(runner(1L, r1, 1, "tok-a"));
 
         RaceBoardView board = serviceAt(at("10:20:00")).board(1L);
 
@@ -123,8 +123,8 @@ class RaceBoardServiceTest {
     void ca43_parallelRaces() {
         Race r1 = backyardTest(RaceStatus.RUNNING);
         Race r2 = namedRace(2L, "Backyard Court", RACE_DATE, 6706, 1800, 50, RaceStatus.RUNNING, at("09:30:00"));
-        Runner a = runner(1L, r1, 1, "A", "tok-a");
-        Runner y = runner(3L, r2, 1, "Y", "tok-y");
+        Runner a = runner(1L, r1, 1, "tok-a");
+        Runner y = runner(3L, r2, 1, "tok-y");
         repos.withRaces(r1, r2).withRunners(a, y)
             .withPassages(scan(a, 1, at("08:45:00")), scan(y, 1, at("09:55:00")));
         RaceBoardService service = serviceAt(at("10:10:00"));
@@ -145,7 +145,7 @@ class RaceBoardServiceTest {
     @DisplayName("CA44 - detail d'un coureur : passages tries par yard, temps de boucle et badge corrige derives, stats")
     void ca44_runnerDetail() {
         Race r1 = backyardTest(RaceStatus.RUNNING);
-        Runner alice = runner(12L, r1, 6, "Alice", "tok-secret");
+        Runner alice = runner(12L, r1, 6, "tok-secret");
         repos.withRaces(r1).withRunners(alice)
             .withPassages(manual(alice, 2), scan(alice, 1, at("08:45:00")));
 
@@ -154,7 +154,7 @@ class RaceBoardServiceTest {
         assertThat(detail.runnerId()).isEqualTo(12L);
         assertThat(detail.raceId()).isEqualTo(1L);
         assertThat(detail.bib()).isEqualTo(6);
-        assertThat(detail.name()).isEqualTo("Alice");
+        assertThat(detail.name()).isEqualTo("Coureur n°6");
         assertThat(detail.status()).isEqualTo(RunnerStatus.ACTIVE);
         assertThat(detail.passages()).extracting(PassageView::yardNumber).containsExactly(1, 2);
         PassageView yard1 = detail.passages().get(0);
@@ -178,7 +178,7 @@ class RaceBoardServiceTest {
     @DisplayName("CA44 / RG26 - le detail ne depend pas du statut de la course")
     void ca44_runnerDetailIndependentOfRaceStatus(RaceStatus status) {
         Race r1 = backyardTest(status);
-        Runner alice = runner(12L, r1, 6, "Alice", "tok-secret");
+        Runner alice = runner(12L, r1, 6, "tok-secret");
         repos.withRaces(r1).withRunners(alice);
 
         RunnerDetailView detail = serviceAt(at("10:20:00")).runnerDetail(12L);

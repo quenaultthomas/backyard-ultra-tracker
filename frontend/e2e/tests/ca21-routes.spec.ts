@@ -8,6 +8,7 @@ import { Api, uniqueRun } from '../fixtures/api';
 test.describe('@INC-4 @smoke @INC4-CA21 Routes et liens directs', () => {
   let raceId: number;
   let runnerId: number;
+  let runnerName: string;
 
   test.beforeAll(async ({}, testInfo) => {
     const api = new Api(testInfo.project.use.baseURL as string);
@@ -16,6 +17,7 @@ test.describe('@INC-4 @smoke @INC4-CA21 Routes et liens directs', () => {
     raceId = race.id;
     const registration = await api.register(raceId, 'Alice Routes');
     runnerId = registration.runnerId;
+    runnerName = registration.name;
   });
 
   const staticRoutes: readonly { path: string; heading: string }[] = [
@@ -42,9 +44,9 @@ test.describe('@INC-4 @smoke @INC4-CA21 Routes et liens directs', () => {
 
   test('/coureurs/{id} affiche le détail du coureur', async ({ page }) => {
     await page.goto(`/coureurs/${runnerId}`);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Alice Routes');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(runnerName);
     await page.reload();
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Alice Routes');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(runnerName);
   });
 
   test('/inscription/{id} affiche le formulaire', async ({ page }) => {
