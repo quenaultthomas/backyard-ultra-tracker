@@ -44,7 +44,7 @@ test.describe('@INC-4 @INC4-CA26 Authorization jamais envoyé au public', () => 
     // assertion sur un état observable (l'écran affiché, ce qui suppose qu'au moins une réponse
     // /api/public/** a été reçue avec succès, puisque ces écrans n'affichent leurs données qu'après elle).
     await page.goto(`/coureurs/${registration.runnerId}`);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Public Runner');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(registration.name);
 
     await page.goto(`/inscription/${race.id}`);
     await expect(page.getByRole('heading', { level: 1 })).toContainText(race.name);

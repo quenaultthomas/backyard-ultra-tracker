@@ -25,6 +25,7 @@ import { RaceForm } from './race-form';
       <div class="toolbar">
         <button type="button" class="button button-primary" (click)="startCreation()">Créer une course</button>
         <button type="button" class="button" (click)="load()">Actualiser</button>
+        <a class="button" routerLink="/admin/comptes">Comptes</a>
       </div>
     }
     @if (races(); as list) {

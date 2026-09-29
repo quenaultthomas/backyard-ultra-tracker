@@ -1,7 +1,14 @@
 import { inject, Injectable } from '@angular/core';
-import { requiresAuthorization } from '../core/api-paths';
+import {
+  authorizationFor,
+  credentialEvent,
+  CredentialEvent,
+  credentialScope,
+  CredentialSources,
+} from '../core/credential-routing';
 import { classify, ClassifiedResult, RawHttpResult } from '../core/http-classification';
 import { AuthState } from './auth-state';
+import { RunnerAuthState } from './runner-auth-state';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -19,13 +26,20 @@ export interface RequestOptions {
 }
 
 /**
- * Accès HTTP à l'API de la même origine. L'en-tête Authorization n'est ajouté qu'aux chemins protégés (RG8).
- * Toute réponse est classée (RG3) ; aucune exception n'est levée pour une erreur HTTP ou réseau. Un 401 sur une
- * requête protégée faite avec les identifiants de la session est signalé à {@link AuthState} (RG10).
+ * Accès HTTP à l'API de la même origine. L'en-tête Authorization n'est ajouté qu'aux chemins protégés, avec les
+ * identifiants de leur emplacement : ADMIN/SCANNER vers `/api/scan|admin/**` (RG8 inc. 4), coureur vers
+ * `/api/account/**` (RG21 inc. 5). Toute réponse est classée (RG3) ; aucune exception n'est levée pour une erreur
+ * HTTP ou réseau. Un 401 sur une requête protégée faite avec les identifiants d'un emplacement est signalé à l'état
+ * de cet emplacement seulement ({@link AuthState} ou {@link RunnerAuthState}).
  */
 @Injectable({ providedIn: 'root' })
 export class ApiClient {
   private readonly authState = inject(AuthState);
+  private readonly runnerAuthState = inject(RunnerAuthState);
+  private readonly sources: CredentialSources = {
+    staffAuthorization: () => this.authState.authorization(),
+    runnerAuthorization: () => this.runnerAuthState.authorization(),
+  };
 
   async request<T>(method: HttpMethod, path: string, options: RequestOptions): Promise<ApiResult<T>> {
     const body = options.body === undefined ? undefined : JSON.stringify(options.body);
@@ -44,15 +58,32 @@ export class ApiClient {
    */
   async exchange(method: HttpMethod, path: string, body: string | undefined, options: RequestOptions):
     Promise<{ readonly raw: RawHttpResult; readonly sentAt: number; readonly receivedAt: number }> {
-    const protectedPath = requiresAuthorization(path);
-    const authorization = protectedPath ? options.authorization ?? await this.authState.authorization() : null;
+    const scope = credentialScope(path);
+    const authorization = scope === null ? null : options.authorization ?? await authorizationFor(path, this.sources);
     const sentAt = Date.now();
     const raw = await fetchRaw(method, path, body, authorization, options.timeoutMs);
     const receivedAt = Date.now();
-    if (protectedPath && options.authorization === undefined && classify(raw).responseClass === 'AUTH') {
-      this.authState.reportUnauthorized();
+    if (options.authorization === undefined) {
+      await this.applyCredentialEvent(credentialEvent(path, classify(raw).responseClass));
     }
     return { raw, sentAt, receivedAt };
+  }
+
+  /** Un 401 n'efface que l'emplacement concerné ; un 2xx coureur prolonge l'expiration glissante (RG21 inc. 5). */
+  private async applyCredentialEvent(event: CredentialEvent | null): Promise<void> {
+    switch (event) {
+      case 'STAFF_UNAUTHORIZED':
+        this.authState.reportUnauthorized();
+        return;
+      case 'RUNNER_UNAUTHORIZED':
+        this.runnerAuthState.reportUnauthorized();
+        return;
+      case 'RUNNER_ACTIVITY':
+        await this.runnerAuthState.recordActivity();
+        return;
+      default:
+        return;
+    }
   }
 }
 

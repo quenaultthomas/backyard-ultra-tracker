@@ -60,30 +60,30 @@ test.describe('@INC-4 @INC4-CA37 Deux courses en parallèle', () => {
     await waitUntil(t1 + 15_000);
     await page.getByLabel('Code du QR').fill(aliceP1.qrToken);
     await page.getByRole('button', { name: 'Valider' }).click();
-    await expect(page.getByText('Dossard 1 — Alice P1 — yard 1', { exact: false })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(`Dossard 1 — ${aliceP1.name} — yard 1`, { exact: false })).toBeVisible({ timeout: 15_000 });
     await api.scan(bobP1.qrToken, new Date().toISOString());
 
     await waitUntil(t1 + 17_000);
     await page.getByLabel('Code du QR').fill(aliceP2.qrToken);
     await page.getByRole('button', { name: 'Valider' }).click();
-    await expect(page.getByText('Dossard 1 — Alice P2 — yard 1', { exact: false })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(`Dossard 1 — ${aliceP2.name} — yard 1`, { exact: false })).toBeVisible({ timeout: 15_000 });
     await api.scan(bobP2.qrToken, new Date().toISOString());
 
     await expect(boardP1.getByText('Yard 2', { exact: false })).toBeVisible({ timeout: 30_000 });
     await expect(boardP2.getByText('Yard 1', { exact: false })).toBeVisible();
 
     // P1 ne liste que les coureurs de P1 (Alice et Bob), pas ceux de P2, et réciproquement (RG35).
-    const rowP1 = boardP1.locator('tr').filter({ hasText: 'Alice P1' });
+    const rowP1 = boardP1.locator('tr').filter({ hasText: aliceP1.name });
     await expect(rowP1).toContainText('1,00 km');
     await expect(rowP1).toContainText('10 m D+');
     await expect(boardP1.locator('tbody tr')).toHaveCount(2);
-    await expect(boardP1.getByText('Alice P2')).toHaveCount(0);
+    await expect(boardP1.getByText(aliceP2.name)).toHaveCount(0);
 
-    const rowP2 = boardP2.locator('tr').filter({ hasText: 'Alice P2' });
+    const rowP2 = boardP2.locator('tr').filter({ hasText: aliceP2.name });
     await expect(rowP2).toContainText('2,00 km');
     await expect(rowP2).toContainText('20 m D+');
     await expect(boardP2.locator('tbody tr')).toHaveCount(2);
-    await expect(boardP2.getByText('Alice P1')).toHaveCount(0);
+    await expect(boardP2.getByText(aliceP1.name)).toHaveCount(0);
 
     const countdown1 = await boardP1.locator('.countdown').textContent();
     const countdown2 = await boardP2.locator('.countdown').textContent();

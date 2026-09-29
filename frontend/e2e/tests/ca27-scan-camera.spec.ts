@@ -61,7 +61,7 @@ test.describe('@INC-4 @INC4-CA27 Scan nominal', () => {
 
         beforeActivation = Date.now();
         await cameraPage.getByRole('button', { name: 'Activer la caméra' }).click();
-        await expect(cameraPage.getByText(`Dossard ${alice.bib} — Alice — yard 1`, { exact: false }))
+        await expect(cameraPage.getByText(`Dossard ${alice.bib} — ${alice.name} — yard 1`, { exact: false }))
           .toBeVisible({ timeout: 5_000 });
         const afterDisplay = Date.now();
         expect(afterDisplay - beforeActivation).toBeLessThan(5_000);
@@ -85,7 +85,7 @@ test.describe('@INC-4 @INC4-CA27 Scan nominal', () => {
       beforeActivation = Date.now();
       await page.getByLabel('Code du QR').fill(alice.qrToken);
       await page.getByRole('button', { name: 'Valider' }).click();
-      await expect(page.getByText(`Dossard ${alice.bib} — Alice — yard 1`, { exact: false })).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByText(`Dossard ${alice.bib} — ${alice.name} — yard 1`, { exact: false })).toBeVisible({ timeout: 5_000 });
       const afterDisplay = Date.now();
       expect(afterDisplay - beforeActivation).toBeLessThan(5_000);
     }

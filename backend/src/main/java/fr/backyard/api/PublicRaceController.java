@@ -49,7 +49,7 @@ public class PublicRaceController {
     @PostMapping("/{raceId}/registrations")
     public ResponseEntity<RegistrationResponse> register(@PathVariable Long raceId,
                                                          @Valid @RequestBody RegistrationRequest request) {
-        Runner runner = runnerService.register(raceId, request.name());
+        Runner runner = runnerService.register(raceId, request.pseudo(), request.password());
         return ResponseEntity.created(URI.create("/api/public/runners/" + runner.getId()))
             .body(RegistrationResponse.from(runner));
     }

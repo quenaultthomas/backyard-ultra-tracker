@@ -10,6 +10,7 @@ import org.springframework.test.json.JsonCompareMode;
 
 import java.util.List;
 
+import static fr.backyard.testsupport.AccountFakes.account;
 import static fr.backyard.testsupport.TestData.backyardTest;
 import static fr.backyard.testsupport.TestData.runner;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -36,37 +37,39 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RunnerApiSliceTest extends ApiSliceTest {
 
     private final Race r1 = backyardTest(RaceStatus.SETUP);
-    private final Runner alice = runner(12L, r1, 6, "Alice", TOKEN);
+    private final Runner alice = runner(12L, r1, 6, TOKEN);
 
     @Test
     @DisplayName("CA24 - inscription publique : 201, Location /api/public/runners/12, corps avec qrToken")
     void ca24_publicRegistration() throws Exception {
-        when(runnerService.register(1L, "Alice")).thenReturn(alice);
+        Runner aliceWithAccount = fr.backyard.testsupport.AccountFakes.runner(12L, r1, 6,
+            account(5L, "alice", "$2a$04$hash"), TOKEN);
+        when(runnerService.register(1L, "Alice", "motdepasse-1")).thenReturn(aliceWithAccount);
 
         mvc.perform(post("/api/public/races/1/registrations")
-                .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Alice\"}"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"pseudo\":\"Alice\",\"password\":\"motdepasse-1\"}"))
             .andExpect(status().isCreated())
             .andExpect(header().string("Location", "/api/public/runners/12"))
-            .andExpect(content().json("{\"runnerId\":12,\"raceId\":1,\"bib\":6,\"name\":\"Alice\","
+            .andExpect(content().json("{\"runnerId\":12,\"raceId\":1,\"bib\":6,\"name\":\"alice\",\"pseudo\":\"alice\","
                 + "\"qrToken\":\"" + TOKEN + "\"}", JsonCompareMode.STRICT));
     }
 
     @Test
-    @DisplayName("CA25 - inscription avec un nom blanc : 400 VALIDATION_FAILED sur name, service non appele")
-    void ca25_blankNameIsRejected() throws Exception {
+    @DisplayName("CA25 (inc. 3) / RG2 (inc. 5) - inscription avec un pseudo blanc : 400 VALIDATION_FAILED sur pseudo seul, service non appele")
+    void ca25_blankPseudoIsRejected() throws Exception {
         mvc.perform(post("/api/public/races/1/registrations")
-                .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"  \"}"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"pseudo\":\"  \",\"password\":\"motdepasse-1\"}"))
             .andExpectAll(problem(400, "VALIDATION_FAILED", "/api/public/races/1/registrations"))
-            .andExpect(jsonPath("$.errors[*].field", containsInAnyOrder("name")));
+            .andExpect(jsonPath("$.errors[*].field", containsInAnyOrder("pseudo")));
 
-        verify(runnerService, never()).register(anyLong(), anyString());
+        verify(runnerService, never()).register(anyLong(), anyString(), anyString());
     }
 
     @Test
     @DisplayName("CA28 - GET /api/admin/races/1/runners : 200, 3 elements, chacun avec son qrToken")
     void ca28_adminRunnerList() throws Exception {
         when(runnerService.listByRace(1L)).thenReturn(List.of(
-            runner(21L, r1, 1, "Un", "tok-1"), runner(23L, r1, 3, "Trois", "tok-3"), runner(25L, r1, 5, "Cinq", "tok-5")));
+            runner(21L, r1, 1, "tok-1"), runner(23L, r1, 3, "tok-3"), runner(25L, r1, 5, "tok-5")));
 
         mvc.perform(get("/api/admin/races/1/runners").header("Authorization", ADMIN))
             .andExpect(status().isOk())
@@ -83,37 +86,37 @@ class RunnerApiSliceTest extends ApiSliceTest {
 
         mvc.perform(get("/api/admin/runners/12").header("Authorization", ADMIN))
             .andExpect(status().isOk())
-            .andExpect(content().json("{\"id\":12,\"raceId\":1,\"bib\":6,\"name\":\"Alice\",\"qrToken\":\""
+            .andExpect(content().json("{\"id\":12,\"raceId\":1,\"bib\":6,\"name\":\"Coureur n°6\",\"accountId\":null,\"pseudo\":null,\"qrToken\":\""
                 + TOKEN + "\",\"status\":\"ACTIVE\",\"dnfReason\":null,\"dnfYard\":null}", JsonCompareMode.STRICT));
     }
 
     @Test
-    @DisplayName("CA30 - PUT coureur avec bib 0 et nom vide : 400 VALIDATION_FAILED sur bib et name, service non appele")
+    @DisplayName("CA30 (inc. 3) / RG18 (inc. 5) - PUT coureur avec bib 0 et nom vide : 400 VALIDATION_FAILED sur bib seul (name ignore), service non appele")
     void ca30_invalidRunnerUpdate() throws Exception {
         mvc.perform(put("/api/admin/runners/12").header("Authorization", ADMIN)
                 .contentType(MediaType.APPLICATION_JSON).content("{\"bib\":0,\"name\":\"\"}"))
             .andExpectAll(problem(400, "VALIDATION_FAILED", "/api/admin/runners/12"))
-            .andExpect(jsonPath("$.errors[*].field", containsInAnyOrder("bib", "name")));
+            .andExpect(jsonPath("$.errors[*].field", containsInAnyOrder("bib")));
 
-        verify(runnerService, never()).update(anyLong(), anyInt(), anyString());
+        verify(runnerService, never()).update(anyLong(), anyInt());
     }
 
     @Test
-    @DisplayName("CA30 - PUT coureur avec status et qrToken dans le JSON : 200, service appele avec (12, 7, 'Alice B.') uniquement")
+    @DisplayName("CA30 (inc. 3) / RG18 (inc. 5) - PUT coureur avec name, status et qrToken dans le JSON : 200, service appele avec (12, 7) uniquement, name « Coureur n°7 »")
     void ca30_unknownPropertiesAreIgnored() throws Exception {
-        Runner updated = runner(12L, r1, 7, "Alice B.", TOKEN);
-        when(runnerService.update(12L, 7, "Alice B.")).thenReturn(updated);
+        Runner updated = runner(12L, r1, 7, TOKEN);
+        when(runnerService.update(12L, 7)).thenReturn(updated);
 
         mvc.perform(put("/api/admin/runners/12").header("Authorization", ADMIN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"bib\":7,\"name\":\"Alice B.\",\"status\":\"WINNER\",\"qrToken\":\"x\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.bib").value(7))
-            .andExpect(jsonPath("$.name").value("Alice B."))
+            .andExpect(jsonPath("$.name").value("Coureur n°7"))
             .andExpect(jsonPath("$.status").value("ACTIVE"))
             .andExpect(jsonPath("$.qrToken").value(TOKEN));
 
-        verify(runnerService).update(12L, 7, "Alice B.");
+        verify(runnerService).update(12L, 7);
         verifyNoMoreInteractions(runnerService);
     }
 

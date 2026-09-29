@@ -6,7 +6,7 @@ import { RaceStatus, RunnerStatus } from './api.types';
  */
 
 export type RaceAction = 'EDIT_ALL_FIELDS' | 'EDIT_NAME_AND_DATE' | 'DELETE' | 'START' | 'PRINT_QR';
-export type RunnerAction = 'EDIT_BIB_AND_NAME' | 'EDIT_NAME' | 'DELETE' | 'SHOW_QR' | 'DECLARE_DNF' | 'REINTEGRATE';
+export type RunnerAction = 'EDIT_BIB' | 'DELETE' | 'SHOW_QR' | 'DECLARE_DNF' | 'REINTEGRATE';
 
 interface StatusActions {
   readonly race: readonly RaceAction[];
@@ -17,7 +17,7 @@ const ACTIONS_BY_RACE_STATUS: Readonly<Record<RaceStatus, StatusActions>> = {
   SETUP: {
     race: ['EDIT_ALL_FIELDS', 'DELETE', 'START', 'PRINT_QR'],
     runner: {
-      ACTIVE: ['EDIT_BIB_AND_NAME', 'DELETE', 'SHOW_QR'],
+      ACTIVE: ['EDIT_BIB', 'DELETE', 'SHOW_QR'],
       DNF: [],
       WINNER: [],
     },
@@ -25,17 +25,17 @@ const ACTIONS_BY_RACE_STATUS: Readonly<Record<RaceStatus, StatusActions>> = {
   RUNNING: {
     race: ['EDIT_NAME_AND_DATE', 'PRINT_QR'],
     runner: {
-      ACTIVE: ['EDIT_NAME', 'SHOW_QR', 'DECLARE_DNF'],
-      DNF: ['EDIT_NAME', 'SHOW_QR', 'REINTEGRATE'],
+      ACTIVE: ['SHOW_QR', 'DECLARE_DNF'],
+      DNF: ['SHOW_QR', 'REINTEGRATE'],
       WINNER: [],
     },
   },
   FINISHED: {
     race: ['EDIT_NAME_AND_DATE', 'PRINT_QR'],
     runner: {
-      ACTIVE: ['EDIT_NAME', 'SHOW_QR'],
-      DNF: ['EDIT_NAME', 'SHOW_QR'],
-      WINNER: ['EDIT_NAME', 'SHOW_QR'],
+      ACTIVE: ['SHOW_QR'],
+      DNF: ['SHOW_QR'],
+      WINNER: ['SHOW_QR'],
     },
   },
 };

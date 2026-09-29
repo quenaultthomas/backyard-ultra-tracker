@@ -182,8 +182,8 @@ class RaceServiceTest {
     @DisplayName("CA17 - suppression d'une course SETUP avec 2 coureurs : coureurs supprimes puis la course")
     void ca17_deleteSetupRaceWithRunners() {
         Race r1 = backyardTest(RaceStatus.SETUP);
-        Runner a = runner(11L, r1, 1, "Alice", "tok-a");
-        Runner b = runner(12L, r1, 2, "Bob", "tok-b");
+        Runner a = runner(11L, r1, 1, "tok-a");
+        Runner b = runner(12L, r1, 2, "tok-b");
         repos.withRaces(r1).withRunners(a, b);
 
         service.delete(1L);
@@ -200,7 +200,7 @@ class RaceServiceTest {
     @DisplayName("CA18 - suppression d'une course RUNNING ou FINISHED : BusinessConflictException citant le statut, aucune suppression")
     void ca18_deleteNonSetupRaceIsRejected(RaceStatus status) {
         Race r1 = backyardTest(status);
-        repos.withRaces(r1).withRunners(runner(11L, r1, 1, "Alice", "tok-a"));
+        repos.withRaces(r1).withRunners(runner(11L, r1, 1, "tok-a"));
 
         assertThatThrownBy(() -> service.delete(1L))
             .isInstanceOf(BusinessConflictException.class)

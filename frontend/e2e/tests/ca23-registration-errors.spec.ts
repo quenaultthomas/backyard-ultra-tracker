@@ -1,7 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { Api, uniqueRun } from '../fixtures/api';
+import { Api, DEFAULT_RUNNER_PASSWORD, uniqueRun } from '../fixtures/api';
 
-/** CA23 — Inscription : erreurs (RG11, RG13, CL14). */
+/**
+ * CA23 — Inscription : erreurs (RG11, RG13, CL14).
+ * Adaptation INC-5 (RG17, RG7 inc. 5) : « nom » devient « pseudo » (champ, message d'erreur), avec mot de passe
+ * et confirmation.
+ */
 test.describe('@INC-4 @INC4-CA23 Inscription — erreurs', () => {
   let raceId: number;
   const run = uniqueRun();
@@ -14,7 +18,7 @@ test.describe('@INC-4 @INC4-CA23 Inscription — erreurs', () => {
     raceId = race.id;
   });
 
-  test('nom blanc : message sous le champ, aucune requête E3', async ({ page }) => {
+  test('pseudo blanc : message sous le champ, aucune requête E3', async ({ page }) => {
     let registrationRequests = 0;
     page.on('request', (request) => {
       if (request.method() === 'POST' && request.url().includes('/registrations')) {
@@ -22,9 +26,11 @@ test.describe('@INC-4 @INC4-CA23 Inscription — erreurs', () => {
       }
     });
     await page.goto(`/inscription/${raceId}`);
-    await page.getByLabel('Nom').fill('   ');
+    await page.getByLabel('Pseudo').fill('   ');
+    await page.getByLabel('Mot de passe', { exact: true }).fill(DEFAULT_RUNNER_PASSWORD);
+    await page.getByLabel('Confirmer le mot de passe').fill(DEFAULT_RUNNER_PASSWORD);
     await page.getByRole('button', { name: "S'inscrire" }).click();
-    await expect(page.locator('#runner-name-error')).not.toBeEmpty();
+    await expect(page.locator('#registration-pseudo-error')).not.toBeEmpty();
     expect(registrationRequests).toBe(0);
   });
 
@@ -38,7 +44,9 @@ test.describe('@INC-4 @INC4-CA23 Inscription — erreurs', () => {
       }
     });
     await page.goto(`/inscription/${raceId}`);
-    await page.getByLabel('Nom').fill('Dan');
+    await page.getByLabel('Pseudo').fill(`Dan-${run}`);
+    await page.getByLabel('Mot de passe', { exact: true }).fill(DEFAULT_RUNNER_PASSWORD);
+    await page.getByLabel('Confirmer le mot de passe').fill(DEFAULT_RUNNER_PASSWORD);
     // Deux clics quasi simultanés : `dispatchEvent` déclenche l'événement directement, sans attendre
     // l'actionabilité (un `.click()` classique échouerait sur le second appel dès que le premier a désactivé
     // ou fait disparaître le bouton).
@@ -55,7 +63,7 @@ test.describe('@INC-4 @INC4-CA23 Inscription — erreurs', () => {
     await api.startRace(raceId);
     await page.goto(`/inscription/${raceId}`);
     await expect(page.getByText('Inscriptions fermées')).toBeVisible();
-    await expect(page.getByLabel('Nom')).toHaveCount(0);
+    await expect(page.getByLabel('Pseudo')).toHaveCount(0);
   });
 
   test('course inexistante : "Course introuvable"', async ({ page }) => {

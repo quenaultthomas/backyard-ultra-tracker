@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Spec increment 4 - CA7 [back-IT] (RG56) : au démarrage du contexte complet avec le profil "test", la liste
  * des correspondances de Spring MVC (contrôleurs {@code @RequestMapping}, ressources statiques et renvois vers
- * {@code index.html} de RG53) ne contient que E1 à E19 et les chemins fermés de {@code PwaPaths}. Aucun chemin
+ * {@code index.html} de RG53) ne contient que E1 à E25 (E20 à E25 : docs/specs/increment5.md, §0) et les chemins fermés de {@code PwaPaths}. Aucun chemin
  * ne contient "test", "clock", "time", "reset" ou "close". Introspection réelle des beans
  * {@link RequestMappingHandlerMapping} et {@link AbstractUrlHandlerMapping} du contexte, pas une relecture des
  * seules constantes de {@code PwaPaths}.
@@ -34,8 +34,8 @@ class NoTestEndpointsIT extends AbstractApiIT {
 
     private static final List<String> FORBIDDEN_WORDS = List.of("test", "clock", "time", "reset", "close");
 
-    /** E1 à E19 (docs/specs/increment3.md, docs/specs/increment4.md RG52) : un motif par groupe de méthodes
-     * HTTP partageant un même chemin. 14 motifs uniques pour 19 méthodes {@code @RequestMapping}. */
+    /** E1 à E25 (docs/specs/increment3.md, docs/specs/increment4.md RG52, docs/specs/increment5.md §0) : un motif
+     * par groupe de méthodes HTTP partageant un même chemin. 20 motifs uniques pour 25 méthodes {@code @RequestMapping}. */
     private static final Set<String> EXPECTED_API_PATTERNS = Set.of(
         "/api/admin/races",
         "/api/admin/races/{raceId}",
@@ -50,7 +50,13 @@ class NoTestEndpointsIT extends AbstractApiIT {
         "/api/public/races/{raceId}/board",
         "/api/public/runners/{runnerId}",
         "/api/scan/passages",
-        "/api/scan/me");
+        "/api/scan/me",
+        "/api/account/races/{raceId}/registrations",
+        "/api/account/me",
+        "/api/account/password",
+        "/api/admin/accounts",
+        "/api/admin/accounts/{accountId}/password",
+        "/api/admin/accounts/{accountId}");
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -70,8 +76,8 @@ class NoTestEndpointsIT extends AbstractApiIT {
     private static final Set<String> EXPECTED_NON_API_PATTERNS = Set.of("/error", "/manifest.webmanifest");
 
     @Test
-    @DisplayName("CA7 - les correspondances @RequestMapping sous /api/** sont exactement E1 à E19 "
-        + "(14 motifs uniques, 19 méthodes) ; les autres se limitent au manifeste et à /error")
+    @DisplayName("CA7 (inc. 4) - les correspondances @RequestMapping sous /api/** sont exactement E1 à E25 "
+        + "(20 motifs uniques, 25 méthodes) ; les autres se limitent au manifeste et à /error")
     void ca7_requestMappingsAreExactlyTheDocumentedEndpoints() {
         Map<RequestMappingInfo, org.springframework.web.method.HandlerMethod> handlerMethods = allRequestMappings();
 
@@ -90,7 +96,7 @@ class NoTestEndpointsIT extends AbstractApiIT {
             }
         }
 
-        assertThat(apiMethodCount).as("nombre de méthodes @RequestMapping sous /api/** (E1 à E19)").isEqualTo(19);
+        assertThat(apiMethodCount).as("nombre de méthodes @RequestMapping sous /api/** (E1 à E25)").isEqualTo(25);
         assertThat(apiPatterns).as("motifs uniques des correspondances @RequestMapping sous /api/**")
             .isEqualTo(EXPECTED_API_PATTERNS);
         assertThat(nonApiPatterns).as("motifs @RequestMapping hors /api/** (manifeste, erreur standard)")

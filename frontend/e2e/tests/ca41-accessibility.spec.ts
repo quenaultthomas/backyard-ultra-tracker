@@ -21,7 +21,7 @@ test.describe('@INC-4 @INC4-CA41 Accessibilité et cibles tactiles', () => {
     const race = await api.createRace({
       name: `E2E-A11Y-${run}`, loopDistance: 1000, loopDuration: 3600, loopElevation: 10,
     });
-    await api.register(race.id, 'Runner A11y');
+    const a11yRunner = await api.register(race.id, 'Runner A11y');
     await api.startRace(race.id);
 
     await page.goto('/');
@@ -51,7 +51,7 @@ test.describe('@INC-4 @INC4-CA41 Accessibilité et cibles tactiles', () => {
     // différence de Chromium, ne place pas le focus sur un bouton lors d'un simple clic souris — un clic
     // laisserait donc le focus « avant ouverture » sur un autre élément, et fausserait la vérification du
     // retour de focus ci-dessous, qui restaure précisément ce qui était focus au moment de l'ouverture.
-    const runnerCard = page.locator('li.card').filter({ hasText: 'Runner A11y' });
+    const runnerCard = page.locator('li.card').filter({ hasText: a11yRunner.name });
     const dnfTrigger = runnerCard.getByRole('button', { name: 'Déclarer DNF' });
     await dnfTrigger.focus();
     await dnfTrigger.press('Enter');

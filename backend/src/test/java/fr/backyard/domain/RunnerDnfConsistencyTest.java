@@ -22,7 +22,7 @@ class RunnerDnfConsistencyTest {
     @Test
     @DisplayName("CA23 - markDnf(null, 3) : IllegalArgumentException, le coureur reste ACTIVE sans champ DNF")
     void ca23_markDnfWithoutReasonIsRejectedAndRunnerUnchanged() {
-        Runner alice = new Runner(race, 1, "Alice", "tok-ca23-a");
+        Runner alice = new Runner(race, 1, "tok-ca23-a");
 
         assertThatThrownBy(() -> alice.markDnf(null, 3)).isInstanceOf(IllegalArgumentException.class);
 
@@ -34,7 +34,7 @@ class RunnerDnfConsistencyTest {
     @Test
     @DisplayName("CA23 - markDnf(VOLUNTARY, 0) : IllegalArgumentException (dnf_yard >= 1), le coureur reste inchange")
     void ca23_markDnfWithYardZeroIsRejectedAndRunnerUnchanged() {
-        Runner alice = new Runner(race, 1, "Alice", "tok-ca23-a");
+        Runner alice = new Runner(race, 1, "tok-ca23-a");
 
         assertThatThrownBy(() -> alice.markDnf(DnfReason.VOLUNTARY, 0)).isInstanceOf(IllegalArgumentException.class);
 
@@ -46,7 +46,7 @@ class RunnerDnfConsistencyTest {
     @Test
     @DisplayName("CA23 - markDnf(TIMEOUT, 3) : DNF, dnfReason TIMEOUT, dnfYard 3")
     void ca23_markDnfSetsStatusReasonAndYardTogether() {
-        Runner alice = new Runner(race, 1, "Alice", "tok-ca23-a");
+        Runner alice = new Runner(race, 1, "tok-ca23-a");
 
         alice.markDnf(DnfReason.TIMEOUT, 3);
 
@@ -58,7 +58,7 @@ class RunnerDnfConsistencyTest {
     @Test
     @DisplayName("CA23 - markWinner() : WINNER, dnfReason et dnfYard null (lecture A3 de RG10)")
     void ca23_markWinnerLeavesDnfFieldsNull() {
-        Runner bob = new Runner(race, 2, "Bob", "tok-ca23-b");
+        Runner bob = new Runner(race, 2, "tok-ca23-b");
 
         bob.markWinner();
 

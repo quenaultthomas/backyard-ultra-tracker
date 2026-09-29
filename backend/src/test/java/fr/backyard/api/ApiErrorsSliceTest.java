@@ -149,11 +149,11 @@ class ApiErrorsSliceTest extends ApiSliceTest {
     @Test
     @DisplayName("CA8 - DataIntegrityViolationException : 409 DATA_INTEGRITY, detail sans nom de contrainte")
     void ca8_dataIntegrityViolation() throws Exception {
-        when(runnerService.register(1L, "Alice")).thenThrow(new DataIntegrityViolationException(
+        when(runnerService.register(1L, "Alice", "motdepasse-1")).thenThrow(new DataIntegrityViolationException(
             "could not execute statement; constraint [uq_runner_race_bib]; SQL [insert into runner ...]"));
 
         mvc.perform(post("/api/public/races/1/registrations")
-                .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Alice\"}"))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"pseudo\":\"Alice\",\"password\":\"motdepasse-1\"}"))
             .andExpectAll(problem(409, "DATA_INTEGRITY", "/api/public/races/1/registrations"))
             .andExpect(jsonPath("$.detail").value(not(containsString("uq_runner_race_bib"))))
             .andExpect(jsonPath("$.detail").value(not(containsString("SQL"))));

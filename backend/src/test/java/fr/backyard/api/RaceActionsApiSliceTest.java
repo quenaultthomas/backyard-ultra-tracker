@@ -47,7 +47,7 @@ class RaceActionsApiSliceTest extends ApiSliceTest {
     private static final Instant SCANNED_AT = Instant.parse("2026-10-03T08:45:00Z");
 
     private final Race r1 = backyardTest(RaceStatus.RUNNING);
-    private final Runner alice = runner(12L, r1, 6, "Alice", "tok-b");
+    private final Runner alice = runner(12L, r1, 6, "tok-b");
 
     private org.springframework.test.web.servlet.ResultActions postScan(String body) throws Exception {
         return mvc.perform(post("/api/scan/passages").header("Authorization", SCANNER)
@@ -62,7 +62,7 @@ class RaceActionsApiSliceTest extends ApiSliceTest {
 
         postScan(SCAN_BODY)
             .andExpect(status().isOk())
-            .andExpect(content().json("{\"passageId\":40,\"runnerId\":12,\"bib\":6,\"runnerName\":\"Alice\","
+            .andExpect(content().json("{\"passageId\":40,\"runnerId\":12,\"bib\":6,\"runnerName\":\"Coureur n°6\","
                 + "\"runnerStatus\":\"ACTIVE\",\"yardNumber\":1,\"source\":\"SCAN\","
                 + "\"scannedAt\":\"2026-10-03T08:45:00Z\"}", JsonCompareMode.STRICT));
 
@@ -82,7 +82,7 @@ class RaceActionsApiSliceTest extends ApiSliceTest {
     @Test
     @DisplayName("CA33 - scan de reactivation automatique : 200, yardNumber 3, runnerStatus ACTIVE")
     void ca33_reactivationScan() throws Exception {
-        Runner reactivated = runner(7L, r1, 3, "Bob", "tok-bob");
+        Runner reactivated = runner(7L, r1, 3, "tok-bob");
         when(passageRecordingService.recordScan("tok-bob", at("10:59:30")))
             .thenReturn(withId(scan(reactivated, 3, at("10:59:30")), 41L));
 
@@ -137,7 +137,7 @@ class RaceActionsApiSliceTest extends ApiSliceTest {
     @Test
     @DisplayName("CA35 - DNF manuel : 200, status DNF, dnfReason VOLUNTARY, dnfYard 3 ; service appele avec (7, VOLUNTARY)")
     void ca35_manualDnf() throws Exception {
-        Runner bob = asDnf(runner(7L, r1, 3, "Bob", "tok-bob"), DnfReason.VOLUNTARY, 3);
+        Runner bob = asDnf(runner(7L, r1, 3, "tok-bob"), DnfReason.VOLUNTARY, 3);
         when(manualDnfService.declareDnf(7L, DnfReason.VOLUNTARY)).thenReturn(bob);
 
         mvc.perform(post("/api/admin/runners/7/dnf").header("Authorization", ADMIN)
@@ -172,7 +172,7 @@ class RaceActionsApiSliceTest extends ApiSliceTest {
     @Test
     @DisplayName("CA37 - reintegration : 200, coureur ACTIVE, passages recrees yard 3 et 4 MANUAL, scannedAt et loopTimeMillis null, corrected true")
     void ca37_reintegration() throws Exception {
-        Runner bob = runner(7L, r1, 3, "Bob", "tok-bob");
+        Runner bob = runner(7L, r1, 3, "tok-bob");
         List<Passage> recreated = List.of(manual(bob, 3), manual(bob, 4));
         when(reintegrationService.reintegrate(7L)).thenReturn(recreated);
         when(runnerService.get(7L)).thenReturn(bob);
@@ -204,7 +204,7 @@ class RaceActionsApiSliceTest extends ApiSliceTest {
     @Test
     @DisplayName("CA38 - reintegration sans passage a recreer : 200, recreatedPassages vide")
     void ca38_reintegrationWithoutPassage() throws Exception {
-        Runner bob = runner(7L, r1, 3, "Bob", "tok-bob");
+        Runner bob = runner(7L, r1, 3, "tok-bob");
         when(reintegrationService.reintegrate(7L)).thenReturn(List.of());
         when(runnerService.get(7L)).thenReturn(bob);
 

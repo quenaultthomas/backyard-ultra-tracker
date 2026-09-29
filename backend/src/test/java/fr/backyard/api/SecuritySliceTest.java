@@ -52,14 +52,14 @@ class SecuritySliceTest extends ApiSliceTest {
         + "\"loopDistance\":6706,\"loopDuration\":3600,\"loopElevation\":50}";
 
     private final Race r1 = backyardTest(RaceStatus.SETUP);
-    private final Runner alice = runner(12L, r1, 6, "Alice", TOKEN);
+    private final Runner alice = runner(12L, r1, 6, TOKEN);
 
     @BeforeEach
     void servicesReturnValidResults() {
         when(raceService.list()).thenReturn(List.of(r1,
             namedRace(2L, "Autre", LocalDate.of(2026, 11, 1), 5000, 3600, 0, RaceStatus.SETUP, null)));
         when(raceService.create(any())).thenReturn(r1);
-        when(runnerService.register(1L, "Alice")).thenReturn(alice);
+        when(runnerService.register(1L, "Alice", "motdepasse-1")).thenReturn(alice);
         when(raceBoardService.board(1L)).thenReturn(new RaceBoardView(r1, at("07:00:00"), 0, null, List.of()));
         when(raceBoardService.runnerDetail(12L)).thenReturn(new RunnerDetailView(12L, 1L, 6, "Alice",
             fr.backyard.domain.RunnerStatus.ACTIVE, null, null, 0, 0L, 0L, OptionalInt.empty(), false, List.of()));
@@ -201,7 +201,7 @@ class SecuritySliceTest extends ApiSliceTest {
         mvc.perform(get("/api/public/races"))
             .andExpect(status().isOk()).andExpect(header().doesNotExist("Set-Cookie"));
         mvc.perform(post("/api/public/races/1/registrations").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Alice\"}"))
+                .content("{\"pseudo\":\"Alice\",\"password\":\"motdepasse-1\"}"))
             .andExpect(status().isCreated()).andExpect(header().doesNotExist("Set-Cookie"));
         mvc.perform(get("/api/public/races/1/board"))
             .andExpect(status().isOk()).andExpect(header().doesNotExist("Set-Cookie"));

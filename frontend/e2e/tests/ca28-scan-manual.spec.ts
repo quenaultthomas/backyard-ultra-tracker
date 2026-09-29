@@ -52,7 +52,7 @@ test.describe('@INC-4 @smoke @INC4-CA28 Caméra refusée et saisie manuelle', ()
 
     await page.getByLabel('Code du QR').fill(bob.qrToken);
     await page.getByLabel('Code du QR').press('Enter');
-    await expect(page.getByText(`Dossard ${bob.bib} — Bob`, { exact: false })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(`Dossard ${bob.bib} — ${bob.name}`, { exact: false })).toBeVisible({ timeout: 5_000 });
 
     await page.getByLabel('Code du QR').fill('bonjour');
     await page.getByLabel('Code du QR').press('Enter');

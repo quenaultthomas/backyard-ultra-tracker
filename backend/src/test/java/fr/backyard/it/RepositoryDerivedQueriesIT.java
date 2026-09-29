@@ -68,8 +68,8 @@ class RepositoryDerivedQueriesIT extends AbstractApiIT {
         Race race = raceRepository.saveAndFlush(
             new Race("IT Repo ExistsBibAndIdNot", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
         trackRaceForCleanup(race.getId());
-        Runner alice = runnerRepository.saveAndFlush(new Runner(race, 6, "Alice", "tok-it-bib-alice"));
-        Runner bob = runnerRepository.saveAndFlush(new Runner(race, 7, "Bob", "tok-it-bib-bob"));
+        Runner alice = runnerRepository.saveAndFlush(new Runner(race, 6, "tok-it-bib-alice"));
+        Runner bob = runnerRepository.saveAndFlush(new Runner(race, 7, "tok-it-bib-bob"));
 
         assertThat(runnerRepository.existsByRaceIdAndBibAndIdNot(race.getId(), 6, alice.getId()))
             .as("Alice ne doit pas se detecter elle-meme").isFalse();
@@ -91,7 +91,7 @@ class RepositoryDerivedQueriesIT extends AbstractApiIT {
         Race race = raceRepository.saveAndFlush(
             new Race("IT Repo ExistsBib", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
         trackRaceForCleanup(race.getId());
-        Runner alice = runnerRepository.saveAndFlush(new Runner(race, 3, "Alice", "tok-it-existsbib-alice"));
+        Runner alice = runnerRepository.saveAndFlush(new Runner(race, 3, "tok-it-existsbib-alice"));
 
         assertThat(runnerRepository.existsByRaceIdAndBib(race.getId(), 3)).isTrue();
         assertThat(runnerRepository.existsByRaceIdAndBib(race.getId(), 99)).isFalse();
@@ -107,8 +107,8 @@ class RepositoryDerivedQueriesIT extends AbstractApiIT {
         Race race = raceRepository.saveAndFlush(
             new Race("IT Repo ExistsPassage", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
         trackRaceForCleanup(race.getId());
-        Runner withPassage = runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-it-exists-passage"));
-        Runner withoutPassage = runnerRepository.saveAndFlush(new Runner(race, 2, "Bob", "tok-it-no-passage"));
+        Runner withPassage = runnerRepository.saveAndFlush(new Runner(race, 1, "tok-it-exists-passage"));
+        Runner withoutPassage = runnerRepository.saveAndFlush(new Runner(race, 2, "tok-it-no-passage"));
         passageRepository.saveAndFlush(
             new Passage(withPassage, 1, PassageSource.SCAN, Instant.parse("2026-10-01T08:00:00Z")));
 
@@ -128,9 +128,9 @@ class RepositoryDerivedQueriesIT extends AbstractApiIT {
             new Race("IT Repo FindByRunnerRaceId 2", LocalDate.of(2026, 10, 2), 6700, 3600, 0));
         trackRaceForCleanup(race1.getId());
         trackRaceForCleanup(race2.getId());
-        Runner alice = runnerRepository.saveAndFlush(new Runner(race1, 1, "Alice", "tok-it-frr-alice"));
-        Runner bob = runnerRepository.saveAndFlush(new Runner(race1, 2, "Bob", "tok-it-frr-bob"));
-        Runner carol = runnerRepository.saveAndFlush(new Runner(race2, 1, "Carol", "tok-it-frr-carol"));
+        Runner alice = runnerRepository.saveAndFlush(new Runner(race1, 1, "tok-it-frr-alice"));
+        Runner bob = runnerRepository.saveAndFlush(new Runner(race1, 2, "tok-it-frr-bob"));
+        Runner carol = runnerRepository.saveAndFlush(new Runner(race2, 1, "tok-it-frr-carol"));
         passageRepository.saveAndFlush(
             new Passage(alice, 1, PassageSource.SCAN, Instant.parse("2026-10-01T08:45:00Z")));
         passageRepository.saveAndFlush(

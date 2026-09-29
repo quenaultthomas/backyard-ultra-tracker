@@ -11,15 +11,15 @@ describe('CA20 - table de visibilité des actions (RG38)', () => {
   });
 
   it.each([
-    ['SETUP', 'ACTIVE', ['EDIT_BIB_AND_NAME', 'DELETE', 'SHOW_QR']],
+    ['SETUP', 'ACTIVE', ['EDIT_BIB', 'DELETE', 'SHOW_QR']],
     ['SETUP', 'DNF', []],
     ['SETUP', 'WINNER', []],
-    ['RUNNING', 'ACTIVE', ['EDIT_NAME', 'SHOW_QR', 'DECLARE_DNF']],
-    ['RUNNING', 'DNF', ['EDIT_NAME', 'SHOW_QR', 'REINTEGRATE']],
+    ['RUNNING', 'ACTIVE', ['SHOW_QR', 'DECLARE_DNF']],
+    ['RUNNING', 'DNF', ['SHOW_QR', 'REINTEGRATE']],
     ['RUNNING', 'WINNER', []],
-    ['FINISHED', 'ACTIVE', ['EDIT_NAME', 'SHOW_QR']],
-    ['FINISHED', 'DNF', ['EDIT_NAME', 'SHOW_QR']],
-    ['FINISHED', 'WINNER', ['EDIT_NAME', 'SHOW_QR']],
+    ['FINISHED', 'ACTIVE', ['SHOW_QR']],
+    ['FINISHED', 'DNF', ['SHOW_QR']],
+    ['FINISHED', 'WINNER', ['SHOW_QR']],
   ] as const)('course %s × coureur %s : %j', (raceStatus, runnerStatus, expected) => {
     expect([...runnerActions(raceStatus, runnerStatus)].sort()).toEqual([...expected].sort());
   });

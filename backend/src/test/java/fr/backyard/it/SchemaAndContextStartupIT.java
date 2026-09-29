@@ -78,7 +78,7 @@ class SchemaAndContextStartupIT extends AbstractApiIT {
     void deletingRaceWithRunnersIsBlockedByForeignKeyRestrict() {
         Race race = raceRepository.saveAndFlush(
             new Race("IT CL8 " + Instant.now(), LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-it-cl8-" + race.getId()));
+        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "tok-it-cl8-" + race.getId()));
 
         try {
             assertThatThrownBy(() -> raceRepository.delete(race))
@@ -96,7 +96,7 @@ class SchemaAndContextStartupIT extends AbstractApiIT {
     void deletingRunnerWithPassagesIsBlockedByForeignKeyRestrict() {
         Race race = raceRepository.saveAndFlush(
             new Race("IT CL9 " + Instant.now(), LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "Bob", "tok-it-cl9-" + race.getId()));
+        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "tok-it-cl9-" + race.getId()));
         Passage passage = passageRepository.saveAndFlush(
             new Passage(runner, 1, PassageSource.SCAN, Instant.parse("2026-10-01T08:00:00Z")));
 

@@ -91,7 +91,7 @@ test.describe('@INC-4 @INC4-CA42 Feedback du scan', () => {
     await resetRecorders(page);
     await page.getByLabel('Code du QR').fill(runner.qrToken);
     await page.getByRole('button', { name: 'Valider' }).click();
-    await expect(page.getByText(`Dossard ${runner.bib} — Runner Feedback`, { exact: false }))
+    await expect(page.getByText(`Dossard ${runner.bib} — ${runner.name}`, { exact: false }))
       .toBeVisible({ timeout: 10_000 });
 
     const beeps = await page.evaluate(() => window.__beeps);
@@ -188,7 +188,7 @@ test.describe('@INC-4 @INC4-CA42 Feedback du scan', () => {
     await resetRecorders(page);
     await page.getByLabel('Code du QR').fill(runner.qrToken);
     await page.getByRole('button', { name: 'Valider' }).click();
-    await expect(page.getByText(`Dossard ${runner.bib} — Runner Silence`, { exact: false }))
+    await expect(page.getByText(`Dossard ${runner.bib} — ${runner.name}`, { exact: false }))
       .toBeVisible({ timeout: 10_000 });
     const beeps = await page.evaluate(() => window.__beeps);
     expect(beeps).toEqual([]);

@@ -105,7 +105,7 @@ class RacePersistenceTest {
     @Test
     void ca5_persistMinimalRunner() {
         Race race = raceRepository.saveAndFlush(new Race("Race CA5", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        Runner runner = new Runner(race, 1, "Alice", "tok-alice-001");
+        Runner runner = new Runner(race, 1, "tok-alice-001");
 
         Runner saved = runnerRepository.saveAndFlush(runner);
 
@@ -115,7 +115,7 @@ class RacePersistenceTest {
         assertThat(found).isNotSameAs(saved);
         assertThat(found.getRace().getId()).isEqualTo(race.getId());
         assertThat(found.getBib()).isEqualTo(1);
-        assertThat(found.getName()).isEqualTo("Alice");
+        assertThat(found.displayName()).isEqualTo("Coureur n°1");
         assertThat(found.getQrToken()).isEqualTo("tok-alice-001");
         assertThat(found.getStatus()).isEqualTo(RunnerStatus.ACTIVE);
     }
@@ -124,7 +124,7 @@ class RacePersistenceTest {
     @Test
     void ca6_defaultRunnerStatusIsActive() {
         Race race = new Race("Race CA6", LocalDate.of(2026, 10, 1), 6700, 3600, 0);
-        Runner runner = new Runner(race, 1, "Bob", "tok-bob-001");
+        Runner runner = new Runner(race, 1, "tok-bob-001");
         assertThat(runner.getStatus()).isEqualTo(RunnerStatus.ACTIVE);
     }
 
@@ -132,10 +132,10 @@ class RacePersistenceTest {
     @Test
     void ca7_duplicateBibSameRaceThrows() {
         Race race = raceRepository.saveAndFlush(new Race("Race CA7", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-ca7-alice"));
+        runnerRepository.saveAndFlush(new Runner(race, 1, "tok-ca7-alice"));
 
         assertThatThrownBy(() ->
-            runnerRepository.saveAndFlush(new Runner(race, 1, "Bob", "tok-ca7-bob"))
+            runnerRepository.saveAndFlush(new Runner(race, 1, "tok-ca7-bob"))
         ).isInstanceOf(DataIntegrityViolationException.class);
     }
 
@@ -145,8 +145,8 @@ class RacePersistenceTest {
         Race race1 = raceRepository.saveAndFlush(new Race("Race CA8-1", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
         Race race2 = raceRepository.saveAndFlush(new Race("Race CA8-2", LocalDate.of(2026, 10, 2), 6700, 3600, 0));
 
-        Runner r1 = runnerRepository.saveAndFlush(new Runner(race1, 1, "Alice", "tok-ca8-alice"));
-        Runner r2 = runnerRepository.saveAndFlush(new Runner(race2, 1, "Bob", "tok-ca8-bob"));
+        Runner r1 = runnerRepository.saveAndFlush(new Runner(race1, 1, "tok-ca8-alice"));
+        Runner r2 = runnerRepository.saveAndFlush(new Runner(race2, 1, "tok-ca8-bob"));
 
         assertThat(r1.getId()).isNotEqualTo(r2.getId());
     }
@@ -155,10 +155,10 @@ class RacePersistenceTest {
     @Test
     void ca9_duplicateQrTokenThrows() {
         Race race = raceRepository.saveAndFlush(new Race("Race CA9", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-dup"));
+        runnerRepository.saveAndFlush(new Runner(race, 1, "tok-dup"));
 
         assertThatThrownBy(() ->
-            runnerRepository.saveAndFlush(new Runner(race, 2, "Bob", "tok-dup"))
+            runnerRepository.saveAndFlush(new Runner(race, 2, "tok-dup"))
         ).isInstanceOf(DataIntegrityViolationException.class);
     }
 
@@ -166,7 +166,7 @@ class RacePersistenceTest {
     @Test
     void ca10_dnfFieldsNullableForActiveRunner() {
         Race race = raceRepository.saveAndFlush(new Race("Race CA10", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-ca10-alice"));
+        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "tok-ca10-alice"));
 
         flushAndClearPersistenceContext();
         Runner found = runnerRepository.findById(runner.getId()).orElseThrow();
@@ -180,7 +180,7 @@ class RacePersistenceTest {
     @Test
     void ca11_persistPassageWithScannedAt() {
         Race race = raceRepository.saveAndFlush(new Race("Race CA11", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-ca11"));
+        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "tok-ca11"));
         Instant scannedAt = Instant.parse("2026-10-01T08:00:00Z");
         Passage passage = new Passage(runner, 1, PassageSource.SCAN, scannedAt);
 
@@ -200,7 +200,7 @@ class RacePersistenceTest {
     @Test
     void ca12_manualPassageWithNullScannedAt() {
         Race race = raceRepository.saveAndFlush(new Race("Race CA12", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-ca12"));
+        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "tok-ca12"));
         Passage passage = new Passage(runner, 2, PassageSource.MANUAL, null);
 
         Passage saved = passageRepository.saveAndFlush(passage);
@@ -217,7 +217,7 @@ class RacePersistenceTest {
     @Test
     void ca13_duplicatePassageSameRunnerYardThrows() {
         Race race = raceRepository.saveAndFlush(new Race("Race CA13", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-ca13"));
+        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "tok-ca13"));
         passageRepository.saveAndFlush(new Passage(runner, 1, PassageSource.SCAN, Instant.now()));
 
         assertThatThrownBy(() ->
@@ -229,7 +229,7 @@ class RacePersistenceTest {
     @Test
     void ca14_runnerWithNoPassages() {
         Race race = raceRepository.saveAndFlush(new Race("Race CA14", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-ca14"));
+        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "tok-ca14"));
 
         List<Passage> passages = passageRepository.findByRunnerId(runner.getId());
         assertThat(passages).isNotNull().isEmpty();
@@ -240,10 +240,10 @@ class RacePersistenceTest {
     void ca15_findByRaceIdReturnsAllRunners() {
         Race race1 = raceRepository.saveAndFlush(new Race("Race CA15-1", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
         Race race2 = raceRepository.saveAndFlush(new Race("Race CA15-2", LocalDate.of(2026, 10, 2), 6700, 3600, 0));
-        runnerRepository.saveAndFlush(new Runner(race1, 1, "A", "tok-ca15-a"));
-        runnerRepository.saveAndFlush(new Runner(race1, 2, "B", "tok-ca15-b"));
-        runnerRepository.saveAndFlush(new Runner(race1, 3, "C", "tok-ca15-c"));
-        runnerRepository.saveAndFlush(new Runner(race2, 1, "D", "tok-ca15-d"));
+        runnerRepository.saveAndFlush(new Runner(race1, 1, "tok-ca15-a"));
+        runnerRepository.saveAndFlush(new Runner(race1, 2, "tok-ca15-b"));
+        runnerRepository.saveAndFlush(new Runner(race1, 3, "tok-ca15-c"));
+        runnerRepository.saveAndFlush(new Runner(race2, 1, "tok-ca15-d"));
 
         List<Runner> runners = runnerRepository.findByRaceId(race1.getId());
         assertThat(runners).hasSize(3);
@@ -254,7 +254,7 @@ class RacePersistenceTest {
     @Test
     void ca16_findByQrTokenReturnsCorrectRunner() {
         Race race = raceRepository.saveAndFlush(new Race("Race CA16", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-unique-xyz"));
+        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "tok-unique-xyz"));
 
         Optional<Runner> found = runnerRepository.findByQrToken("tok-unique-xyz");
         assertThat(found).isPresent();
@@ -265,9 +265,9 @@ class RacePersistenceTest {
     @Test
     void ca17_findByRaceIdAndStatusFilters() {
         Race race = raceRepository.saveAndFlush(new Race("Race CA17", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        Runner active1 = runnerRepository.saveAndFlush(new Runner(race, 1, "A", "tok-ca17-a"));
-        Runner active2 = runnerRepository.saveAndFlush(new Runner(race, 2, "B", "tok-ca17-b"));
-        Runner dnfRunner = new Runner(race, 3, "C", "tok-ca17-c");
+        Runner active1 = runnerRepository.saveAndFlush(new Runner(race, 1, "tok-ca17-a"));
+        Runner active2 = runnerRepository.saveAndFlush(new Runner(race, 2, "tok-ca17-b"));
+        Runner dnfRunner = new Runner(race, 3, "tok-ca17-c");
         dnfRunner.setStatus(RunnerStatus.DNF);
         dnfRunner.setDnfReason(DnfReason.TIMEOUT);
         dnfRunner.setDnfYard(1);
@@ -296,7 +296,7 @@ class RacePersistenceTest {
     @Test
     void ca19_findByRunnerIdAndYardNumberReturnsCorrectPassage() {
         Race race = raceRepository.saveAndFlush(new Race("Race CA19", LocalDate.of(2026, 10, 1), 6700, 3600, 0));
-        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "Alice", "tok-ca19"));
+        Runner runner = runnerRepository.saveAndFlush(new Runner(race, 1, "tok-ca19"));
         passageRepository.saveAndFlush(new Passage(runner, 3, PassageSource.SCAN, Instant.now()));
         passageRepository.saveAndFlush(new Passage(runner, 4, PassageSource.SCAN, Instant.now()));
 
@@ -349,16 +349,15 @@ class RacePersistenceTest {
         assertThat(savedRace.getLoopElevation()).isEqualTo(200);
 
         // Runner setters
-        Runner runner = runnerRepository.saveAndFlush(new Runner(race1, 10, "InitName", "tok-ca23-init"));
+        Runner runner = runnerRepository.saveAndFlush(new Runner(race1, 10, "tok-ca23-init"));
         runner.setRace(race2);
         runner.setBib(20);
-        runner.setName("UpdatedName");
         runner.setQrToken("tok-ca23-updated");
         Runner savedRunner = runnerRepository.saveAndFlush(runner);
 
         assertThat(savedRunner.getRace().getId()).isEqualTo(race2.getId());
         assertThat(savedRunner.getBib()).isEqualTo(20);
-        assertThat(savedRunner.getName()).isEqualTo("UpdatedName");
+        assertThat(savedRunner.displayName()).isEqualTo("Coureur n°20");
         assertThat(savedRunner.getQrToken()).isEqualTo("tok-ca23-updated");
     }
 }

@@ -427,6 +427,65 @@ notes de la ligne). Reproduit à l'identique sur 4 exécutions complètes consé
 Détail, commandes exactes, bugs et limites d'outillage (LIM-E2E-1, LIM-E2E-2) : `docs/tests/rapports/INC-4-e2e.md`,
 section « Reprise 2026-09-27 ».
 
+### Incrément 5 — Comptes pseudo coureurs : backend (`/valider-increment 5`, étape intégration)
+
+Sources : `docs/specs/increment5.md` (révision 5), arbitrage `docs/tests/rapports/INC-5-arbitrage-N1.md`, rapport `docs/tests/rapports/INC-5-integration.md`. Exécution du 2026-09-29 : `mvn -B -f backend/pom.xml clean verify` BUILD SUCCESS, surefire 414/414, failsafe 76/76 (dont 23 IT ajoutés par `test-integration-backend`). Les tests unitaires, slice et développeur sont référencés par chemin et nom. CA25, CA26, CA28, CA37, CA38, CA41, CA44 (E2E) et CA27, CA35, CA36 (front-unit) : hors de cette section.
+
+| Exigence | Incrément | Description | Type | Test (chemin / nom) | Statut | Dernier résultat | Notes |
+|---|---|---|---|---|---|---|---|
+| INC5-CA1 | INC-5 | Schéma V2, UNIQUE pseudo, colonnes de account | INT | it/AccountFlowIT.java#ca1_schema | ACTIF | PASS 2026-09-29 | Développeur |
+| INC5-CA1 | INC-5 | Somme de contrôle Flyway de V1 inchangée | INT | it/FlywayV1ChecksumIT.java#ca1_v1ChecksumUnchanged | ACTIF | PASS 2026-09-29 | Ajouté (valeur relevée sur V1 identique à HEAD) |
+| INC5-CA2 | INC-5 | Format et normalisation du pseudo | UNIT | api/AccountApiSliceTest.java#ca2_acceptedPseudos ; #ca2_refusedPseudos ; domain/PseudoTest.java | ACTIF | PASS 2026-09-29 | Revue « un seul endroit » non automatisée ici |
+| INC5-CA3 | INC-5 | Format du mot de passe (E3, E22, E23) | INT | it/AccountContractIT.java#ca3_passwordLengthsThroughRealChain | ACTIF | PASS 2026-09-29 | Ajouté. Aussi api/AccountApiSliceTest.java#ca3_* et domain/PasswordPolicyTest.java (UNIT) |
+| INC5-CA4 | INC-5 | Hash BCrypt coût 12, bean unique, hash staff de coût 4 | INT | it/AccountFlowIT.java#ca6_registrationStoresNormalizedPseudoAndCost12Hash ; #ca17_passwordResetAndChange ; #ca4_staffHashOfCost4StillVerified | ACTIF | PASS 2026-09-29 | Développeur |
+| INC5-CA5 | INC-5 | Aucun secret en réponse, 204 sans corps | INT | it/AccountContractIT.java#ca5_noSecretInAnyResponse | ACTIF | PASS 2026-09-29 | Ajouté. Aussi api/AccountApiSliceTest.java (UNIT) |
+| INC5-CA6 | INC-5 | Inscription avec création de compte | INT | it/AccountFlowIT.java#ca6_registrationStoresNormalizedPseudoAndCost12Hash | ACTIF | PASS 2026-09-29 | Aussi service/RunnerAccountRegistrationTest.java, api/AccountApiSliceTest.java (UNIT) |
+| INC5-CA7 | INC-5 | Pseudo déjà pris, toutes casses, contrôle applicatif | INT | it/AccountFlowIT.java#ca7_duplicatePseudoAndCaseInsensitiveLogin | ACTIF | PASS 2026-09-29 | Développeur |
+| INC5-CA8 | INC-5 | Créations simultanées | INT | it/AccountFlowIT.java#ca8_concurrentCreations | ACTIF | PASS 2026-09-29 | Variante « même course » non testée. RT1 |
+| INC5-CA9 | INC-5 | E20 : inscription d'un compte existant | INT | it/AccountContractIT.java#ca9_registerExistingAccountToAnotherRace | ACTIF | PASS 2026-09-29 | Ajouté |
+| INC5-CA10 | INC-5 | Titulaire : 409 sur E3, puis E20 | INT | it/AccountContractIT.java#ca10_ownerCannotCreateSecondAccountButRegistersWithE20 | ACTIF | PASS 2026-09-29 | Ajouté. Voir écart E-INC5-2 |
+| INC5-CA11 | INC-5 | Ancien corps refusé | UNIT | api/AccountApiSliceTest.java (CA11) | ACTIF | PASS 2026-09-29 | Slice |
+| INC5-CA12 | INC-5 | Authentification HTTP Basic | INT | it/AccountContractIT.java#ca12_basicAuthenticationOutcomes | ACTIF | PASS 2026-09-29 | Ajouté. Aussi slice |
+| INC5-CA13 | INC-5 | Matrice d'accès (401 croisés) | INT | it/AccountContractIT.java#ca13_accessMatrix | ACTIF | PASS 2026-09-29 | Ajouté. Aussi api/AccountApiSliceTest.java (CA13 x3) |
+| INC5-CA14 | INC-5 | Mes inscriptions triées | INT | it/AccountContractIT.java#ca14_myRegistrationsSortedByRaceDate | ACTIF | PASS 2026-09-29 | Ajouté |
+| INC5-CA15 | INC-5 | Compte visible en admin | INT | it/AccountContractIT.java#ca15_adminSeesAccountOfRunner | ACTIF | PASS 2026-09-29 | Ajouté |
+| INC5-CA16 | INC-5 | Aucune corrélation publique | INT | it/AccountContractIT.java#ca16_noPublicTechnicalCorrelation | ACTIF | PASS 2026-09-29 | Ajouté |
+| INC5-CA17 | INC-5 | Réinitialisation par l'admin | INT | it/AccountFlowIT.java#ca17_passwordResetAndChange | ACTIF | PASS 2026-09-29 | E20 non enchaîné après E22 (mineur) |
+| INC5-CA18 | INC-5 | Réinitialisation : erreurs | INT | it/AccountContractIT.java#ca18_resetPasswordErrors | ACTIF | PASS 2026-09-29 | Ajouté |
+| INC5-CA19 | INC-5 | Aucune procédure automatisée | INT | it/AccountFlowIT.java#ca19_noAutomatedPasswordProcedure | ACTIF | PASS 2026-09-29 | Développeur |
+| INC5-CA20 | INC-5 | Journaux sans secret ni pseudo | INT | it/AccountFlowIT.java#ca20_logsWithoutSecretsNorPseudo | ACTIF | PASS 2026-09-29 | Voir écart E-INC5-1 |
+| INC5-CA21 | INC-5 | Non-régression, coureur sans compte | INT | suite complète ; it/AccountContractIT.java#ca31_legacyRunnerKeepsRaceBehaviourUnderNeutralName | ACTIF | PASS 2026-09-29 | Ajouté. Adaptations N1 : `INC-5-arbitrage-N1.md` |
+| INC5-CA22 | INC-5 | Pseudo égal à un compte technique | INT | it/AccountContractIT.java#ca22_pseudoEqualToTechnicalAccount | ACTIF | PASS 2026-09-29 | Ajouté. Aussi slice |
+| INC5-CA23 | INC-5 | Compte conservé après suppression du coureur | INT | it/AccountContractIT.java#ca23_accountSurvivesRunnerDeletion | ACTIF | PASS 2026-09-29 | Ajouté. Aussi service/RunnerAccountRegistrationTest.java |
+| INC5-CA24 | INC-5 | Courses en parallèle | INT | it/AccountContractIT.java#ca24_runnerStatusPerRace | ACTIF | PASS 2026-09-29 | Ajouté. Aussi service/AccountServiceTest.java |
+| INC5-CA29 | INC-5 | Deux pseudos dans la même course | INT | it/AccountContractIT.java#ca29_twoDifferentPseudosInSameRace | ACTIF | PASS 2026-09-29 | Ajouté. Aussi service/AccountServiceTest.java |
+| INC5-CA30 | INC-5 | Nom affiché dérivé du pseudo, E15 sans nom | INT | it/AccountFlowIT.java#ca6_registrationStoresNormalizedPseudoAndCost12Hash | ACTIF | PASS 2026-09-29 | Développeur |
+| INC5-CA31 | INC-5 | Migration V2 sur données V1 | INT | it/V2MigrationIT.java#ca31_migrationPurgesNamesAndKeepsRaceData ; it/AccountContractIT.java#ca31_legacyRunnerKeepsRaceBehaviourUnderNeutralName | ACTIF | PASS 2026-09-29 | Partie HTTP sur base V2 avec ligne SQL nommée : limite consignée au rapport |
+| INC5-CA32 | INC-5 | Changement de mot de passe par le coureur | INT | it/AccountFlowIT.java#ca17_passwordResetAndChange ; it/AccountContractIT.java#ca32_changePasswordErrorsAndRoles | ACTIF | PASS 2026-09-29 | |
+| INC5-CA33 | INC-5 | Suppression d'un compte | INT | it/AccountFlowIT.java#ca33_deleteAccountDetachesRunners ; it/AccountContractIT.java#ca33_deleteAccountAccessRules | ACTIF | PASS 2026-09-29 | |
+| INC5-CA34 | INC-5 | Nom d'un coureur détaché | INT | it/AccountFlowIT.java#ca33_deleteAccountDetachesRunners ; it/AccountContractIT.java#ca34_detachedRunnerDisplayNameFollowsBib | ACTIF | PASS 2026-09-29 | E5 d'un détaché non asserté directement |
+| INC5-CA39 | INC-5 | Conservation des journaux [config] | INT | it/ProdLoggingConfigIT.java#ca39_dailyRollingFileWithSixArchives ; it/DeployConfigIT.java#ca39_logRetentionConfigFiles | ACTIF | PASS 2026-09-29 | [manuel] VPS : réserve prévisible |
+| INC5-CA40 | INC-5 | Limitation de débit nginx [config] | INT | it/DeployConfigIT.java#ca40_nginxRateLimiting | ACTIF | PASS 2026-09-29 | [manuel] VPS : réserve prévisible |
+| INC5-CA42 | INC-5 | Liste et recherche des comptes | INT | it/AccountContractIT.java#ca42_listAndSearchAccounts | ACTIF | PASS 2026-09-29 | Ajouté. Aussi slice et service |
+| INC5-CA43 | INC-5 | Recherche littérale sur H2 | INT | it/AccountFlowIT.java#ca43_literalSearch | ACTIF | PASS 2026-09-29 | RT1 (LIKE ESCAPE sur PostgreSQL) |
+| INC5-RG18 (E6, E4) | INC-5 | Point d'interprétation 2 : `runnerName` du scan = nom affiché | INT | it/AccountContractIT.java#rg18_scanResponseAndBoardCarryDisplayName | ACTIF | PASS 2026-09-29 | Ajouté (demande de l'arbitrage N1) |
+| INC5-C3 | INC-5 | Nettoyage d'`AbstractApiIT` : compte inscrit à deux courses (E20) | INT | it/AccountContractIT.java (ca5, ca9, ca14, ca16, ca24, ca42) | ACTIF | PASS 2026-09-29 | Ajouté |
+
+### Incrément 5 — Parcours E2E (agent `test-e2e-frontend`, `/valider-increment 5`)
+
+Sources : `docs/specs/increment5.md` (révision 5), rapport `docs/tests/rapports/INC-5-e2e.md`. Playwright 1.55.1, Chromium et WebKit, backend réel (profil `test`, H2). Exécution du 2026-09-29 : suite complète 115/116 (Chromium + WebKit), seul échec CA39 Chromium, préexistant (INC4-CA39, LIM-E2E-1). Adaptations des tests existants (N1, catégories A et B, aucune C) : détail et soumission à l'agent fonctionnel dans le rapport, section 5.
+
+| Exigence | Incrément | Description | Type | Test (chemin / nom) | Statut | Dernier résultat | Notes |
+|---|---|---|---|---|---|---|---|
+| INC5-CA25 | INC-5 | Inscription, réaffichage du QR, pseudo déjà pris [E2E] (RG17, RG7, RG11) | E2E | e2e/tests/inc5-ca25-registration-qr.spec.ts (1 cas) | ACTIF | PASS 2026-09-29 (Chromium, WebKit) | OBS-E2E-1 : lien « J'ai déjà un compte » affiché deux fois après le 409 |
+| INC5-CA26 | INC-5 | Réinitialisation par l'admin [E2E] (RG14, RG17) | E2E | e2e/tests/inc5-ca26-admin-reset.spec.ts (1 cas) | ACTIF | PASS 2026-09-29 (Chromium, WebKit) | |
+| INC5-CA28 | INC-5 | Inscription avec un compte existant [E2E] (RG8, RG17, CL1) | E2E | e2e/tests/inc5-ca28-existing-account.spec.ts (1 cas) | ACTIF | PASS 2026-09-29 (Chromium, WebKit) | |
+| INC5-CA37 | INC-5 | Changement de mot de passe par le coureur [E2E] (RG17, RG19, RG21) | E2E | e2e/tests/inc5-ca37-password-change.spec.ts (1 cas) | ACTIF | PASS 2026-09-29 (Chromium, WebKit) | OBS-E2E-2 : avec « Rester connecté », la valeur `Authorization` (base64) est en IndexedDB, comme le prévoit RG21 ; aucun mot de passe en clair |
+| INC5-CA38 | INC-5 | Suppression d'un compte par l'admin [E2E] (RG17, RG20) | E2E | e2e/tests/inc5-ca38-admin-delete-account.spec.ts (1 cas) | ACTIF | PASS 2026-09-29 (Chromium, WebKit) | |
+| INC5-CA41 | INC-5 | Affichage d'un 429 [E2E] (RG23, CL20) | E2E | e2e/tests/inc5-ca41-too-many-attempts.spec.ts (2 cas : E3, E21) | ACTIF | PASS 2026-09-29 (Chromium, WebKit) | 429 simulé par interception (service worker bloqué) ; nginx réel : CA40 [manuel] |
+| INC5-A11Y | INC-5 | Accessibilité des écrans de comptes (axe, WCAG A/AA) | E2E | e2e/tests/inc5-accessibility.spec.ts (1 cas) | ACTIF | PASS 2026-09-29 (Chromium, WebKit) | Transverse, sans CA numéroté |
+| INC4-* (adaptés N1) | INC-5 | Tests E2E de l'inc. 4 adaptés à RG17, RG18 (fixture `register`, noms affichés, formulaire pseudo) | E2E | e2e/fixtures/api.ts ; ca21, ca22, ca23, ca26 à ca37, ca40 à ca44 | ACTIF | PASS 2026-09-29 (hors CA39 Chromium) | Catégories A et B uniquement, aucune C, voir `INC-5-e2e.md` section 5. Soumis à l'agent fonctionnel |
+
 ## Écarts ouverts
 
 | Exigence | Incrément | Écart constaté | Décision agent fonctionnel | Échéance |
@@ -472,3 +531,7 @@ Aucun test en quarantaine.
 | INC-3 | docs/tests/rapports/INC-3-integration.md (+ INC-3-e2e.md, INC-3-coherence.md), mode rattrapage | GO sous réserves (R3-1, RT1, RT2, RT3, RT4) | 2026-09-26 |
 | INC-4 | docs/tests/rapports/INC-4-synthese.md (+ INC-4-integration.md, INC-4-e2e.md, INC-4-coherence.md) | **NO-GO**. Motifs : CA21 non satisfait (BUG-1) ; BUG-3 bloquant (RG21, RG22) ; attendus E2E non vérifiés sans déclaration (CA39, CA31, CA32, CA41, CA42) ; RT1 non levée ; contrôle négatif de CA5 non fait avec `mvn`. Réserves levées : R1-1, R1-2, R1-3, R2-1, R3-1, RT2, RT3 (ce run), RT4. Spec amendée (BUG-2, RG21, CL12, RG57.4, CA29, CA39, CA43, nouveaux CA44 et CA45) | 2026-09-27 |
 | INC-4 | docs/tests/rapports/INC-4-synthese.md, section R7 (+ INC-4-integration.md §7bis, INC-4-e2e.md « Reprise » et « Correctifs », INC-4-coherence.md du 2026-09-28) | **GO sous réserves** (revalidation après le NO-GO du 2026-09-27). Actions correctives 1 à 7, 9, 11 et 12 levées ; action 8 à terminer avant la MR (M1, M2). Réserves : **RT1** (PostgreSQL réel, profil `prod`, recette HTTPS) et **R4-1** (CA39 sous Chromium), bloquantes avant tout déploiement sur le VPS ; **R4-2** (libellés de la matrice), non bloquante. RT3 levée pour ce run (0 `[WARNING]`, 0 `[ERROR]`). Spec amendée (CA39 : arbitrage R4-1 ; section 14 : RT1, option b) | 2026-09-28 |
+| E-INC5-1 | INC-5 | Le WARN de `ApiExceptionHandler` écrit le `detail` de tout 4xx, donc le pseudo en clair sur un 409 de E3 (« Pseudo déjà utilisé : lievre »). CA20 est satisfait (il ne vise que l'échec d'authentification et les INFO de E22, E23, E24), mais la minimisation (RG16) est en cause | À trancher par l'agent fonctionnel (test-integration-backend, 2026-09-29) : retirer le pseudo de la ligne de journal, ou accepter et amender RG16/CA20 | Avant le verdict de l'INC-5 |
+| E-INC5-2 | INC-5 | CA10 attend un `accountId` dans la réponse E20, absent de `RegistrationResponse` (même corps que E3, RG7 ; RG13 interdit l'identifiant côté public). Lien vérifié en base par l'IT | Correction de rédaction de la spec (agent fonctionnel) | Prochaine révision de la spec (non bloquant) |
+| INC5-CA39, CA40 [manuel] | INC-5 | Vérifications sur le VPS non exécutables (journaux de plus de 7 jours ; 429 nginx après 2 minutes sans requête) | Réserves prévisibles du verdict (arbitrage N1). Action pour l'exploitant | Avant tout déploiement sur le VPS |
+| INC5 RT1 (H2, transverse) | INC-5 | V2, LIKE ESCAPE (CA43), index unique concurrent (CA8), `uq_runner_race_account` jamais exécutés sur PostgreSQL réel | Voir RT1 (même échéance) | Avant tout déploiement sur le VPS |

@@ -1,4 +1,5 @@
 import { CredentialPersistence, Session } from '../core/credentials';
+import { RunnerCredentialPersistence, RunnerSession } from '../core/runner-credentials';
 import { ScanItem, StoredRecord } from '../core/scan-item';
 import { ScanQueueStorage } from '../core/scan-queue';
 
@@ -13,6 +14,7 @@ const DATABASE_VERSION = 1;
 const SCAN_QUEUE_STORE = 'scan-queue';
 const CREDENTIALS_STORE = 'credentials';
 const SCANNER_CREDENTIALS_KEY = 'scanner';
+const RUNNER_CREDENTIALS_KEY = 'runner';
 
 let database: Promise<IDBDatabase> | null = null;
 
@@ -81,6 +83,17 @@ export const indexedDbScanQueueStorage: ScanQueueStorage = {
   },
   remove: async (key: string) => {
     await withStore(SCAN_QUEUE_STORE, 'readwrite', (store) => store.delete(key));
+  },
+};
+
+/** Identifiants coureur mémorisés 24 h glissantes (RG21 inc. 5) : emplacement distinct de celui du SCANNER. */
+export const indexedDbRunnerCredentialPersistence: RunnerCredentialPersistence = {
+  read: () => withStore<unknown>(CREDENTIALS_STORE, 'readonly', (store) => store.get(RUNNER_CREDENTIALS_KEY)),
+  write: async (session: RunnerSession) => {
+    await withStore(CREDENTIALS_STORE, 'readwrite', (store) => store.put(session, RUNNER_CREDENTIALS_KEY));
+  },
+  clear: async () => {
+    await withStore(CREDENTIALS_STORE, 'readwrite', (store) => store.delete(RUNNER_CREDENTIALS_KEY));
   },
 };
 

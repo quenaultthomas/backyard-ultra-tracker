@@ -1,7 +1,7 @@
 package fr.backyard.it.support;
 
-import fr.backyard.domain.Passage;
 import fr.backyard.domain.Runner;
+import fr.backyard.repository.AccountRepository;
 import fr.backyard.repository.PassageRepository;
 import fr.backyard.repository.RaceRepository;
 import fr.backyard.repository.RunnerRepository;
@@ -21,7 +21,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -64,6 +66,9 @@ public abstract class AbstractApiIT {
     @Autowired
     protected PassageRepository passageRepository;
 
+    @Autowired
+    protected AccountRepository accountRepository;
+
     private final List<Long> createdRaceIds = new ArrayList<>();
 
     /** Horloge de test unique du contexte (bean partagé entre tests : toujours remise à {@link #DEFAULT_INSTANT}). */
@@ -86,16 +91,32 @@ public abstract class AbstractApiIT {
         createdRaceIds.add(raceId);
     }
 
-    /** Nettoyage déterministe : passages puis coureurs puis courses, dans l'ordre imposé par les FK RESTRICT. */
+    /**
+     * Nettoyage déterministe en deux phases, dans l'ordre imposé par les FK RESTRICT :
+     * <ol>
+     *   <li>passages puis coureurs de <strong>toutes</strong> les courses suivies, en collectant les
+     *       {@code accountId} non nuls (un compte peut être inscrit à plusieurs courses suivies, E20) ;</li>
+     *   <li>comptes collectés (sans doublon), une fois qu'aucun coureur suivi ne les référence plus ;</li>
+     *   <li>courses suivies.</li>
+     * </ol>
+     * Limite : un compte dont tous les coureurs ont été supprimés pendant le test (E16) n'est pas collecté ;
+     * l'IT qui crée ce cas nettoie elle-même ce compte.
+     */
     @AfterEach
     void cleanUpCreatedRaces() {
+        Set<Long> accountIds = new LinkedHashSet<>();
         for (Long raceId : createdRaceIds) {
             List<Runner> runners = runnerRepository.findByRaceId(raceId);
             for (Runner runner : runners) {
-                List<Passage> passages = passageRepository.findByRunnerId(runner.getId());
-                passageRepository.deleteAll(passages);
+                passageRepository.deleteAll(passageRepository.findByRunnerId(runner.getId()));
+                if (runner.accountId() != null) {
+                    accountIds.add(runner.accountId());
+                }
             }
             runnerRepository.deleteAll(runners);
+        }
+        accountRepository.deleteAllById(accountIds);
+        for (Long raceId : createdRaceIds) {
             raceRepository.findById(raceId).ifPresent(raceRepository::delete);
         }
         createdRaceIds.clear();
@@ -115,10 +136,10 @@ public abstract class AbstractApiIT {
     }
 
     /** Inscrit un coureur via l'API publique réelle et renvoie son id (extrait de Location). */
-    protected Long register(Long raceId, String name) throws Exception {
+    protected Long register(Long raceId, String pseudo) throws Exception {
         String location = mvc.perform(post("/api/public/races/" + raceId + "/registrations")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"" + name + "\"}"))
+                .content("{\"pseudo\":\"" + pseudo + "\",\"password\":\"motdepasse-1\"}"))
             .andExpect(status().isCreated())
             .andReturn().getResponse().getHeader("Location");
         return extractId(location);

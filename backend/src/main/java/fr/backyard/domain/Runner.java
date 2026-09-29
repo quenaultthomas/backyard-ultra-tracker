@@ -19,18 +19,26 @@ import jakarta.validation.constraints.Positive;
 
 import java.util.Comparator;
 
+/**
+ * Coureur inscrit à une course. La colonne {@code runner.name} n'est plus mappée depuis l'incrément 5 : elle reste
+ * vide et n'est jamais écrite (RG6, RG18 inc. 5) ; le nom affiché est dérivé par {@link #displayName()}.
+ */
 @Entity
 @Table(
     name = "runner",
     uniqueConstraints = {
         @UniqueConstraint(name = "uq_runner_race_bib", columnNames = {"race_id", "bib"}),
-        @UniqueConstraint(name = "uq_runner_qr_token", columnNames = {"qr_token"})
+        @UniqueConstraint(name = "uq_runner_qr_token", columnNames = {"qr_token"}),
+        @UniqueConstraint(name = "uq_runner_race_account", columnNames = {"race_id", "account_id"})
     }
 )
 public class Runner {
 
     /** Ordre d'affichage des coureurs d'une course : dossard croissant (RG17 et RG24 inc. 3). */
     public static final Comparator<Runner> BIB_ORDER = Comparator.comparingInt(Runner::getBib);
+
+    /** Préfixe du nom affiché d'un coureur sans compte (RG18 inc. 5). */
+    public static final String NO_ACCOUNT_NAME_PREFIX = "Coureur n°";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,13 +49,17 @@ public class Runner {
     @JoinColumn(name = "race_id", nullable = false, foreignKey = @ForeignKey(name = "fk_runner_race"))
     private Race race;
 
+    /**
+     * Compte du coureur (RG4 inc. 5) : null pour un coureur antérieur à l'incrément 5 ou détaché par la suppression
+     * de son compte. Chargé avec le coureur, puisque le nom affiché en dépend (RG18).
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "account_id", foreignKey = @ForeignKey(name = "fk_runner_account"))
+    private Account account;
+
     @Positive
     @Column(nullable = false)
     private int bib;
-
-    @NotBlank
-    @Column(nullable = false)
-    private String name;
 
     @NotBlank
     @Column(name = "qr_token", nullable = false, length = 36)
@@ -68,12 +80,41 @@ public class Runner {
     protected Runner() {
     }
 
-    public Runner(Race race, int bib, String name, String qrToken) {
+    /** Coureur sans compte (données antérieures à l'incrément 5, jeux de test). */
+    public Runner(Race race, int bib, String qrToken) {
+        this(race, bib, null, qrToken);
+    }
+
+    /** Coureur lié à un compte (RG7, RG8 inc. 5) ; le lien n'est plus modifié, sauf par {@link #detachAccount()}. */
+    public Runner(Race race, int bib, Account account, String qrToken) {
         this.race = race;
         this.bib = bib;
-        this.name = name;
+        this.account = account;
         this.qrToken = qrToken;
         this.status = RunnerStatus.ACTIVE;
+    }
+
+    /**
+     * Unique calcul du nom affiché d'un coureur (RG18 inc. 5) : le pseudo de son compte, tel que stocké, ou
+     * « Coureur n°{bib} » sans compte (dossard actuel, en décimal).
+     */
+    public String displayName() {
+        return account == null ? NO_ACCOUNT_NAME_PREFIX + bib : account.getPseudo();
+    }
+
+    /** Seule modification du lien au compte (RG4, RG20 inc. 5) : passage à null à la suppression du compte. */
+    public void detachAccount() {
+        this.account = null;
+    }
+
+    /** Identifiant du compte lié, ou null sans compte (RG12 inc. 5). */
+    public Long accountId() {
+        return account == null ? null : account.getId();
+    }
+
+    /** Pseudo du compte lié, ou null sans compte (RG12 inc. 5). */
+    public String accountPseudo() {
+        return account == null ? null : account.getPseudo();
     }
 
     /**
@@ -135,20 +176,16 @@ public class Runner {
         this.race = race;
     }
 
+    public Account getAccount() {
+        return account;
+    }
+
     public int getBib() {
         return bib;
     }
 
     public void setBib(int bib) {
         this.bib = bib;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getQrToken() {

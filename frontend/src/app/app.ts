@@ -3,6 +3,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs';
 import { ScanQueueService } from './infra/scan-queue.service';
+import { RunnerSessionService } from './infra/runner-session.service';
 import { SessionService } from './infra/session.service';
 
 /**
@@ -18,6 +19,7 @@ import { SessionService } from './infra/session.service';
       <a routerLink="/" class="app-title">Backyard Ultra Tracker</a>
       <nav aria-label="Navigation principale">
         <a routerLink="/">Courses</a>
+        <a routerLink="/compte">Mes inscriptions</a>
         <a routerLink="/scan">Scan</a>
         <a routerLink="/admin">Administration</a>
       </nav>
@@ -39,6 +41,7 @@ export class App {
 
   constructor() {
     inject(SessionService);
+    inject(RunnerSessionService);
     void inject(ScanQueueService).start();
     if (this.swUpdate.isEnabled) {
       this.swUpdate.versionUpdates

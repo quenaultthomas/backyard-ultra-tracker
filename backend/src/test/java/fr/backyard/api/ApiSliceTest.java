@@ -4,6 +4,7 @@ import fr.backyard.config.SecurityConfig;
 import fr.backyard.service.ManualDnfService;
 import fr.backyard.service.PassageRecordingService;
 import fr.backyard.service.RaceBoardService;
+import fr.backyard.service.AccountService;
 import fr.backyard.service.RaceService;
 import fr.backyard.service.ReintegrationService;
 import fr.backyard.service.RunnerService;
@@ -59,6 +60,8 @@ abstract class ApiSliceTest {
     ReintegrationService reintegrationService;
     @MockitoBean
     SessionService sessionService;
+    @MockitoBean
+    AccountService accountService;
 
     /** Corps d'erreur RFC 9457 de RG5 avec statut, code et instance attendus. */
     static ResultMatcher[] problem(int httpStatus, String code, String instance) {
