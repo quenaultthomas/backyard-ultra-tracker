@@ -145,8 +145,9 @@ public class ApiExceptionHandler {
     private static ResponseEntity<ProblemDetail> respond(ProblemDetail problem, HttpServletRequest request,
                                                          HttpHeaders headers) {
         if (HttpStatus.valueOf(problem.getStatus()).is4xxClientError()) {
+            // Le detail est volontairement absent du journal : il peut contenir un pseudo (RG16).
             LOG.warn("Requête refusée {} {} : {} {}", request.getMethod(), request.getRequestURI(),
-                problem.getStatus(), problem.getDetail());
+                problem.getStatus(), problem.getProperties() == null ? null : problem.getProperties().get("code"));
         }
         return build(problem, headers);
     }
