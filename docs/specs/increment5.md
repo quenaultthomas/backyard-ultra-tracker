@@ -169,7 +169,7 @@ Une migration `V2__account.sql` :
 
 **RG18 — Nom affiché d'un coureur** *(PO4 tranché : `Runner.name` remplacé par le pseudo ; PO13 et PO14 TRANCHÉS (utilisateur, 2026-09-28) : libellé neutre)*
 - Le nom affiché d'un coureur lié à un compte est le **pseudo de son compte**, tel que stocké, donc en minuscules (RG2), lu au moment de la réponse. Il n'est jamais recopié dans `runner.name`, qui reste `null` pour tout coureur.
-- Les réponses qui exposaient `name` le conservent, avec pour valeur le nom affiché : E4 et E5 (public), E13 à E18 (`AdminRunnerResponse`), E3 et E20.
+- Les réponses qui exposaient `name` le conservent, avec pour valeur le nom affiché : E4 et E5 (public), E13 à E18 (`AdminRunnerResponse`), E3 et E20. *(Erratum du 2026-09-30, arbitrage N1 point 2 : E6, scan, renvoie aussi le nom affiché dans `runnerName`.)*
 - Nom affiché d'un coureur **sans compte** : **« Coureur n°{bib} »**, où `{bib}` est le dossard actuel en décimal, sans zéro de tête (exemple : `Coureur n°1`, `Coureur n°12`). La règle est la même pour :
   - un coureur antérieur à l'incrément, dont le nom a été purgé par V2 (PO13) ;
   - un coureur détaché par la suppression de son compte (RG20, PO14) : aucune copie du pseudo n'est conservée.
@@ -303,6 +303,7 @@ Aucun endpoint public de mot de passe oublié, de question secrète ou d'envoi d
 **RG16 — Minimisation dans les données et les journaux** *(H7 validée, PO11)*
 - Aucune adresse IP ni aucun horodatage de connexion n'est stocké en base.
 - Aucun journal applicatif ne contient : mot de passe, hash, en-tête `Authorization`. Un échec d'authentification est journalisé au niveau WARN **sans le pseudo présenté**.
+- *(Précisé le 2026-09-30, arbitrage N2 : COH5-3 / E-INC5-1)* **Aucune ligne de journal applicatif, à aucun niveau, ne contient un pseudo**, y compris la ligne WARN écrite pour toute réponse 4xx : celle-ci ne reprend pas le `detail` de la réponse, mais uniquement méthode, chemin, statut et `code` d'erreur. Le 409 « Pseudo déjà utilisé : {pseudo}… » de E3 n'écrit donc jamais le pseudo dans le journal (le corps de la réponse HTTP, lui, le contient : RG5).
 - Conservation des journaux : RG22.
 
 **RG22 — Conservation des journaux : 7 jours** *(PO5 tranché)*
@@ -448,7 +449,7 @@ Donné le compte A « Lievre », inscrit en R1 (dossard 1), authentifié. Quand 
 **CA10 — Titulaire d'un compte : pas de second compte, liaison par E20 (RG5, RG7, RG8, CL13) [unit + slice]**
 Donné A « Lievre » / `motdepasse-1`, inscrit en R1 (dossard 1).
 - Quand E3 sur R2 avec `{"pseudo":"Lievre","password":"motdepasse-1"}`. Alors 409 `BUSINESS_CONFLICT`, `detail` contenant « connectez-vous ». Nombre de comptes inchangé (1), R2 sans coureur.
-- Puis A s'authentifie avec `Lievre` / `motdepasse-1` et appelle `POST /api/account/races/2/registrations`. Alors 201, coureur de R2 `bib = 1`, `accountId` égal à celui de A. La base contient toujours 1 seul compte, de pseudo `lievre`.
+- Puis A s'authentifie avec `Lievre` / `motdepasse-1` et appelle `POST /api/account/races/2/registrations`. Alors 201, coureur de R2 `bib = 1`, réponse avec `pseudo = "lievre"` (la réponse de E20 n'expose pas `accountId`, RG8 et RG13) ; le coureur créé est lié au compte de A, ce qui se vérifie en base (`runner.account_id` égal à l'identifiant de A) ou par E13 (`accountId`, RG12). La base contient toujours 1 seul compte, de pseudo `lievre`. *(Rédaction corrigée le 2026-09-30, arbitrage N2 : COH5-8, E-INC5-2.)*
 
 **CA11 — Ancien corps refusé (RG7) [slice]**
 Quand E3 avec `{"name":"Alice"}`. Alors 400 `VALIDATION_FAILED`, `errors` contient `pseudo` et `password` ; service non appelé.
@@ -489,7 +490,7 @@ ADMIN : compte 99 inexistant → 404 `RESOURCE_NOT_FOUND` ; `{"newPassword":"cou
 Au démarrage du contexte complet, les seules correspondances Spring MVC dont le chemin contient `password` sont `PUT /api/admin/accounts/{accountId}/password` et `PUT /api/account/password`. Aucune correspondance ne contient `reset`, `forgot` ou `recover`.
 
 **CA20 — Journaux sans secret ni pseudo (RG3, RG16, RG19, RG20) [unit ou IT, capture des journaux]**
-Pendant une inscription réussie de `Lievre`, une authentification échouée avec `Lievre` et `motdepasse-2`, un changement de mot de passe vers `nouveau-mdp-43`, une réinitialisation vers `nouveau-mdp-42` et une suppression de compte : les journaux capturés ne contiennent ni `motdepasse-1`, ni `motdepasse-2`, ni `nouveau-mdp-42`, ni `nouveau-mdp-43`, ni `$2a$`/`$2b$`/`$2y$`, ni `Authorization`. La ligne WARN de l'échec et les lignes INFO du changement, de la réinitialisation et de la suppression ne contiennent `lievre` dans aucune casse (recherche insensible à la casse, révision 5).
+Pendant une inscription réussie de `Lievre`, une authentification échouée avec `Lievre` et `motdepasse-2`, un changement de mot de passe vers `nouveau-mdp-43`, une réinitialisation vers `nouveau-mdp-42` et une suppression de compte : les journaux capturés ne contiennent ni `motdepasse-1`, ni `motdepasse-2`, ni `nouveau-mdp-42`, ni `nouveau-mdp-43`, ni `$2a$`/`$2b$`/`$2y$`, ni `Authorization`. La ligne WARN de l'échec et les lignes INFO du changement, de la réinitialisation et de la suppression ne contiennent `lievre` dans aucune casse (recherche insensible à la casse, révision 5). *(Précisé le 2026-09-30, COH5-3)* Plus généralement, **aucune ligne capturée pendant ce scénario** ne contient `lievre`, y compris la ligne WARN d'un 409 de E3 : sur E3 avec `Lievre` déjà pris (CA7), la réponse HTTP contient `lievre` dans son `detail`, mais le journal capturé n'en contient aucune occurrence (recherche insensible à la casse).
 
 **CA21 — Non-régression et coureurs sans compte (RG6, CL5, CL12) [IT]**
 - `mvn -B -f backend/pom.xml clean verify` est vert, tests des incréments 1 à 4 compris, sans test désactivé.
@@ -627,7 +628,7 @@ Coureur `Lievre` et SCANNER `scanner-test` connectés sur le même appareil :
 - « Se déconnecter » sur `/compte` conserve ceux de `scanner-test`.
 
 **CA37 — Parcours de changement de mot de passe (RG17, RG19, RG21) [E2E]**
-Connecté `Lievre-{run}` sur `/compte` avec « Rester connecté » : saisie de `nouveau-mdp-43` deux fois, une seule requête E23, 204. Après rechargement, `/compte` s'affiche sans nouvelle connexion, avec le pseudo `lievre-{run}` (révision 5). Après « Se déconnecter », la connexion avec l'ancien mot de passe affiche « Identifiants invalides » ; avec `nouveau-mdp-43`, elle réussit. Ni l'un ni l'autre mot de passe n'apparaît dans `localStorage`, `sessionStorage`, les cookies ou l'URL.
+Connecté `Lievre-{run}` sur `/compte` avec « Rester connecté » : saisie de `nouveau-mdp-43` deux fois, une seule requête E23, 204. Après rechargement, `/compte` s'affiche sans nouvelle connexion, avec le pseudo `lievre-{run}` (révision 5). Après « Se déconnecter », la connexion avec l'ancien mot de passe affiche « Identifiants invalides » ; avec `nouveau-mdp-43`, elle réussit. Ni l'un ni l'autre mot de passe n'apparaît **en clair** dans `localStorage`, `sessionStorage`, les cookies ou l'URL. *(Précisé le 2026-09-30, OBS-E2E-2 : la valeur `Authorization` en base64 conservée dans IndexedDB avec « Rester connecté » est prévue par RG21 et n'est pas un mot de passe en clair ; après E23 elle est remplacée par celle du nouveau mot de passe.)*
 
 **CA38 — Parcours de suppression d'un compte par l'admin (RG17, RG20) [E2E]**
 Connecté ADMIN sur `/admin/courses/{R}` avec `Lievre-{run}` inscrit : la confirmation affiche « Supprimer le compte lievre-{run} ? … » (révision 5) ; « Supprimer le compte » → « Annuler » : aucune requête ; « Confirmer » : une seule requête E24, 204. Après rechargement de la liste, le coureur est toujours présent avec son dossard, la colonne « Pseudo » est vide et le nom affiché est « Coureur n°{bib} », avec le dossard du coureur. Une connexion coureur avec `Lievre-{run}` affiche « Identifiants invalides ».

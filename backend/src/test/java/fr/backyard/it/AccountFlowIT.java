@@ -399,4 +399,89 @@ class AccountFlowIT {
         assertThat(expected.values())
             .allSatisfy(line -> assertThat(line.toLowerCase(Locale.ROOT)).doesNotContain("lievre"));
     }
+
+    @Test
+    @Tag("INC5-CA20")
+    @DisplayName("CA20 / RG16 - un 409 sur E3 (pseudo deja pris) : le corps cite le pseudo, aucune ligne de journal ne contient « lievre »")
+    void ca20_conflictOnRegistrationLeavesNoPseudoInLogs() throws Exception {
+        // given
+        Long r1 = setupRace("IT5 Journaux 409", LocalDate.of(2026, 10, 3));
+        registerNew(r1, "lievre", "motdepasse-1").andExpect(status().isCreated());
+        logs.list.clear();
+
+        // when
+        registerNew(r1, "Lievre", "motdepasse-1")
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("BUSINESS_CONFLICT"))
+            .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("lievre")));
+
+        // then : le refus est bien journalise (test non vacueux), sans pseudo dans aucune ligne ni aucun argument
+        List<ILoggingEvent> events = new ArrayList<>(logs.list);
+        assertThat(events).extracting(ILoggingEvent::getFormattedMessage)
+            .anySatisfy(line -> assertThat(line).contains("Requête refusée POST").contains("409"));
+        assertThat(events).allSatisfy(event -> {
+            assertThat(event.getFormattedMessage().toLowerCase(Locale.ROOT)).doesNotContain("lievre");
+            assertThat(event.getMessage().toLowerCase(Locale.ROOT)).doesNotContain("lievre");
+        });
+    }
+
+    @Test
+    @Tag("INC5-CA17")
+    @DisplayName("CA17 - apres E22 : E23 accepte (204) puis E20 accepte (201) sans changement de mot de passe prealable")
+    void ca17_changePasswordThenRegisterExistingAfterReset() throws Exception {
+        // given
+        Long r1 = setupRace("IT5 Apres reinit R1", LocalDate.of(2026, 10, 3));
+        Long r2 = setupRace("IT5 Apres reinit R2", LocalDate.of(2026, 11, 7));
+        registerNew(r1, "Lievre", "motdepasse-1").andExpect(status().isCreated());
+        Long accountId = account("lievre").getId();
+        perform(put("/api/admin/accounts/" + accountId + "/password").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"newPassword\":\"nouveau-mdp-42\"}"), ADMIN).andExpect(status().isNoContent());
+        String reset = basic("Lievre", "nouveau-mdp-42");
+
+        // when / then : E23 avec le mot de passe reinitialise
+        perform(put("/api/account/password").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"newPassword\":\"nouveau-mdp-43\"}"), reset).andExpect(status().isNoContent());
+        // E20 avec le mot de passe issu de E23
+        perform(post("/api/account/races/" + r2 + "/registrations"), basic("Lievre", "nouveau-mdp-43"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.raceId").value(r2));
+        assertThat(runnerRepository.findByAccountId(accountId)).hasSize(2);
+    }
+
+    @Test
+    @Tag("INC5-CA17")
+    @DisplayName("CA17 - apres E22 : E20 accepte (201) directement avec le mot de passe reinitialise, sans E23")
+    void ca17_registerExistingDirectlyAfterReset() throws Exception {
+        // given
+        Long r1 = setupRace("IT5 Apres reinit directe R1", LocalDate.of(2026, 10, 3));
+        Long r2 = setupRace("IT5 Apres reinit directe R2", LocalDate.of(2026, 11, 7));
+        registerNew(r1, "Lievre", "motdepasse-1").andExpect(status().isCreated());
+        Long accountId = account("lievre").getId();
+        perform(put("/api/admin/accounts/" + accountId + "/password").contentType(MediaType.APPLICATION_JSON)
+            .content("{\"newPassword\":\"nouveau-mdp-42\"}"), ADMIN).andExpect(status().isNoContent());
+
+        // when / then
+        perform(post("/api/account/races/" + r2 + "/registrations"), basic("Lievre", "nouveau-mdp-42"))
+            .andExpect(status().isCreated());
+        assertThat(runnerRepository.findByAccountId(accountId)).hasSize(2);
+    }
+
+    @Test
+    @Tag("INC5-CA34")
+    @DisplayName("CA34 - E5 d'un coureur detache : name = « Coureur n°1 », sans pseudo ni accountId")
+    void ca34_publicRunnerOfDetachedRunnerShowsBibName() throws Exception {
+        // given
+        Long r1 = setupRace("IT5 E5 detache", LocalDate.of(2026, 10, 3));
+        registerNew(r1, "Lievre", "motdepasse-1").andExpect(status().isCreated());
+        Long runnerId = runnerRepository.findByRaceId(r1).getFirst().getId();
+        perform(get("/api/public/runners/" + runnerId), null).andExpect(jsonPath("$.name").value("lievre"));
+        perform(delete("/api/admin/accounts/" + account("lievre").getId()), ADMIN).andExpect(status().isNoContent());
+
+        // when / then
+        perform(get("/api/public/runners/" + runnerId), null)
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Coureur n°1"))
+            .andExpect(jsonPath("$.pseudo").doesNotExist())
+            .andExpect(jsonPath("$.accountId").doesNotExist());
+    }
 }

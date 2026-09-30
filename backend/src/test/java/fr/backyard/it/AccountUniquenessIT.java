@@ -33,7 +33,7 @@ class AccountUniquenessIT extends AbstractApiIT {
     @Autowired
     JdbcTemplate jdbc;
 
-    private int register(Long raceId, String pseudo) throws Exception {
+    private int registerStatus(Long raceId, String pseudo) throws Exception {
         return mvc.perform(post("/api/public/races/" + raceId + "/registrations")
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"pseudo\":\"" + pseudo + "\",\"password\":\"motdepasse-1\"}"))
@@ -45,8 +45,8 @@ class AccountUniquenessIT extends AbstractApiIT {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         try {
             List<Callable<Integer>> calls = List.of(
-                () -> { start.await(); return register(raceA, pseudoA); },
-                () -> { start.await(); return register(raceB, pseudoB); });
+                () -> { start.await(); return registerStatus(raceA, pseudoA); },
+                () -> { start.await(); return registerStatus(raceB, pseudoB); });
             List<Future<Integer>> futures = new ArrayList<>();
             calls.forEach(call -> futures.add(executor.submit(call)));
             start.countDown();
@@ -85,6 +85,22 @@ class AccountUniquenessIT extends AbstractApiIT {
             .isInstanceOf(DataIntegrityViolationException.class);
         assertThat(runnerRepository.findByRaceId(r1)).hasSize(1);
         assertThat(jdbc.update(insert, r2, 1, "tok-autre-course", accountId)).isEqualTo(1);
+    }
+
+    @Test
+    @Tag("INC5-CA1")
+    @DisplayName("CA1 - la suppression SQL d'un compte porteur d'un coureur est rejetee (FK RESTRICT) ; compte et coureur intacts")
+    void ca1_accountForeignKeyIsRestrict() throws Exception {
+        // given
+        Long r1 = createSetupRace("IT5U fk restrict");
+        trackRaceForCleanup(r1);
+        register(r1, "Lievre");
+        Long accountId = accountRepository.findByPseudo("lievre").orElseThrow().getId();
+        // when / then
+        assertThatThrownBy(() -> jdbc.update("DELETE FROM account WHERE id = ?", accountId))
+            .isInstanceOf(DataIntegrityViolationException.class);
+        assertThat(accountRepository.findById(accountId)).isPresent();
+        assertThat(runnerRepository.findByAccountId(accountId)).hasSize(1);
     }
 
     @Test
