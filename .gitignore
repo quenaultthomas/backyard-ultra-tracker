@@ -6,6 +6,7 @@ frontend/.angular/
 .vscode/
 *.log
 .env
+.env.prod
 
 e2e/node_modules/
 e2e/test-results/
