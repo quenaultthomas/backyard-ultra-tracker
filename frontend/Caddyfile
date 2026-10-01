@@ -1,10 +1,14 @@
 {
-	# Pas d'API d'administration ni de HTTPS automatique avant l'incrément 0.4.
+	# Pas d'API d'administration. HTTPS automatique actif uniquement pour un nom d'hôte :
+	# le site par défaut :80 (dev, E2E) reste en HTTP sans redirection.
 	admin off
-	auto_https off
+	# Conteneur non root : pas d'installation de l'autorité locale dans le magasin système.
+	skip_install_trust
 }
 
-:80 {
+# Adresse du site : :80 par défaut ; en production, ADRESSE_SITE=${DOMAINE} active HTTPS
+# (Let's Encrypt, ou autorité interne pour localhost) et la redirection HTTP vers HTTPS.
+{$ADRESSE_SITE::80} {
 	encode zstd gzip
 
 	header {
@@ -41,4 +45,13 @@
 		try_files {path} /index.html
 		file_server
 	}
+}
+
+# Site interne du healthcheck de production (le port 80 y redirige vers HTTPS).
+# Écoute uniquement en local, jamais publié : sert la page d'accueil.
+http://127.0.0.1:8081 {
+	bind 127.0.0.1
+	root * /srv
+	rewrite * /index.html
+	file_server
 }

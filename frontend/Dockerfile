@@ -18,4 +18,4 @@ RUN addgroup -S web \
 COPY --chown=root:root Caddyfile /etc/caddy/Caddyfile
 COPY --from=build --chown=root:root /app/dist/frontend/browser /srv
 USER web
-EXPOSE 80
+EXPOSE 80 443 443/udp
