@@ -1,0 +1,17 @@
+{
+  "name": "backyard-ultra-tracker-e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Tests E2E Playwright de Backyard Ultra Tracker",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.0.0",
+    "typescript": "5.9.3"
+  }
+}
