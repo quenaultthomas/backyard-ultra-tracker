@@ -1,0 +1,12 @@
+<main class="accueil">
+  <h1 class="titre" data-testid="titre">Backyard Ultra Tracker</h1>
+  <p
+    class="etat-api"
+    [class]="'etat-api--' + etatApi().toLowerCase()"
+    role="status"
+    aria-live="polite"
+  >
+    <span class="pastille" aria-hidden="true"></span>
+    <span data-testid="etat-api">{{ libelleEtatApi() }}</span>
+  </p>
+</main>
