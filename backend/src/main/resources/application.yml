@@ -1,0 +1,29 @@
+# Connexion a la base : fournie exclusivement par variables d'environnement
+# (SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD).
+# Aucun identifiant n'est code en dur ici.
+spring:
+  application:
+    name: backyard-ultra-tracker
+  datasource:
+    hikari:
+      # Base injoignable : echec rapide (health DOWN en ~5 s au lieu de 30 s).
+      connection-timeout: 5000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+      # Pas de groupes liveness/readiness : la reponse se limite a {"status":"UP"}.
+      probes:
+        enabled: false

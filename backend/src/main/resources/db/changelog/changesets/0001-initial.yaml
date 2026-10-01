@@ -1,0 +1,3 @@
+# Changelog initial : aucune table metier en 0.1.
+# Toute evolution du schema passe par un nouveau fichier de changesets.
+databaseChangeLog: []

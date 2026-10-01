@@ -1,0 +1,48 @@
+name: backyard-ultra-tracker
+
+services:
+  base:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_DB: ${BASE_NOM:-backyard}
+      POSTGRES_USER: ${BASE_UTILISATEUR:-backyard}
+      POSTGRES_PASSWORD: ${BASE_MOT_DE_PASSE:-backyard}
+    volumes:
+      - donnees-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build:
+      context: ./backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://base:5432/${BASE_NOM:-backyard}
+      SPRING_DATASOURCE_USERNAME: ${BASE_UTILISATEUR:-backyard}
+      SPRING_DATASOURCE_PASSWORD: ${BASE_MOT_DE_PASSE:-backyard}
+    depends_on:
+      base:
+        condition: service_healthy
+    # Publie en local pour le test manuel ; ferme en production (increment 0.4).
+    ports:
+      - "8080:8080"
+    healthcheck:
+      # L'image JRE ne contient ni curl ni wget : requete HTTP via bash et /dev/tcp.
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/localhost/8080
+          && printf 'GET /actuator/health HTTP/1.0\r\nHost: localhost\r\n\r\n' >&3
+          && grep -q '"status":"UP"' <&3
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  donnees-postgres:
