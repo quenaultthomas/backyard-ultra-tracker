@@ -1,389 +1,291 @@
-# Spec Incrément 7 — Rôle scanneur
+# Spec Incrément 7 — Écran de connexion unique et inscription autonome
 
 > Projet : Backyard Ultra Tracker
-> Date de rédaction : 2026-09-28
-> - Révision 1 : mise en conformité avec la demande initiale de l'utilisateur.
-> - Révision 2 (2026-09-28) : intégration des décisions de l'utilisateur sur PO1 à PO8. L'option B (accès par poste) est écartée : la comparaison A/B et les marques [H1] sont retirées. Ajouts : RG13, RG14, CL8 à CL10, CA13 à CA15, PO9, PO10. Correction d'une contradiction avec RG7 (inc. 4) sur l'expiration de 24 h (RG10).
->
-> - Révision 3 (2026-09-28) : intégration des décisions de l'utilisateur sur PO9, PO10 et PO15 (inc. 5).
->   - PO9 : entité distincte, référentiels indépendants ; l'hypothèse H11 de cet incrément est retirée. RG2, RG4 et CA15 sont réécrits.
->   - PO10 : limitation nginx sur E19 seulement.
->   - PO15 (inc. 5) : accès croisés en 401 ; RG1, CA1 et CA2 évoluent.
->   - Les endpoints sont décalés de E25–E29 à **E26–E30**, puisque l'inc. 5 a créé E25 (PO17 inc. 5).
->   - Ajouts : RG15, CL11 à CL13, CA16 à CA18, PO11.
->
-> - Révision 4 (2026-09-28) : l'utilisateur a tranché PO11 (mêmes seuils que `/api/account/**`). H12 est confirmée et devient une règle (RG15, CA16). Le contrôle de collision au démarrage est confirmé (RG2, PO9). Aucun nouvel élément.
->
-> Statut : **validée pour développement.** Aucun point ouvert ne subsiste.
-> **Aucune implémentation ne démarre avant le GO de l'incrément 6** (règle 6 du workflow de validation, `CLAUDE.md`).
-> Numérotation propre à l'incrément. Références externes : « RG21 (inc. 4) », « RG29 (inc. 3) », « RG22 (inc. 5) ».
+> Date de rédaction : 2026-10-01
+> **Statut : validée par l'utilisateur sur D1, D2-bis et D7 ; les autres décisions (D2, D3, D4, D5, D6, D8, D9, D10, D11) sont retenues par défaut, à confirmer par l'utilisateur** (section 8). Tant que ces points ne sont pas confirmés, une contradiction de l'utilisateur sur l'un d'eux réécrit les règles marquées « [défaut] ».
+> **Historique de numérotation** : ce document était le brouillon « incrément 8 » (`increment8-connexion-inscription.md`). Sur décision de l'utilisateur (D7, 2026-10-01), il devient l'**incrément 7**, exécuté **avant** les comptes scanneurs, qui deviennent l'**incrément 8** (`docs/specs/increment8.md`, anciennement `increment7.md`).
+> **Dépendance** : l'incrément 6 (GO sous réserves, MR en cours) doit être mergé avant implémentation (règle 6 du workflow). Cette spec amende RG2 de l'inc. 6 (RG4 ci-dessous).
+> Numérotation propre à l'incrément. Références externes : « RG2 (inc. 6) », « RG21 (inc. 5) », « RG15 (inc. 8) ».
+> **Endpoint créé : E26** (`POST /api/public/accounts`). Les endpoints des comptes scanneurs (inc. 8) deviennent E27 à E31 (ancien E26 à E30, décalés d'un rang).
 
-**Besoin exprimé (mot pour mot).** « Rôle "scanneur" : l'admin doit pouvoir déclarer des comptes ou des postes "scanneur", limités au pointage des passages, sans les autres droits admin. Précise si un scanneur a un compte nominatif ou un simple accès par poste/appareil, et le lien avec le filet réseau déjà prévu (scan local puis envoi API). »
-
-**Réponse (PO1 tranché) : compte nominatif pseudonyme par bénévole.** Un identifiant sans nom réel et un mot de passe, créés par l'admin, désactivables, en HTTP Basic comme les autres comptes (inc. 3 et 5). La file de scans reste celle de l'appareil (PO5).
+**Besoin exprimé (propriétaire du produit, 2026-10-01).** « Rajouter à un incrément à venir un écran de connexion préalable pour discriminer les coureurs, des bénévoles et des admins. Prévoir également un écran d'inscription au système. » Constat à l'origine : en validant l'inc. 6, on ne peut pas créer de compte, seulement se connecter ; la création n'existe qu'à l'inscription à une course (RG7 inc. 5).
 
 ---
 
-## 0. Existant et changements
+## 0. Cadrage et existant
 
-| Sujet | Existant | Ce que l'incrément 7 change |
-|---|---|---|
-| Accès au scan | **Un seul** compte SCANNER, partagé par tous les bénévoles et toutes les courses, défini par `BACKYARD_SECURITY_SCANNER_*` (RG28, RG32 inc. 3). Un mot de passe divulgué impose de changer la variable et de redémarrer. | L'admin **crée, désactive et réactive** des comptes scanneurs nominatifs depuis l'interface, sans redémarrage (RG2, RG3). Le compte partagé est **conservé en secours** (RG5). |
-| Droits du rôle SCANNER | `/api/scan/**` : E6 (scan) et E19 (`/api/scan/me`). 403 sur `/api/admin/**` (RG29 inc. 3) ; 401 sur `/api/account/**` (RG10 inc. 5, PO15 inc. 5). | **Inchangés** : les comptes déclarés ont exactement ces droits (RG1), sur toutes les courses (RG13). |
-| Authentification | HTTP Basic pour ADMIN, SCANNER (inc. 3) et comptes pseudo (inc. 5). Référentiel choisi selon le préfixe d'URL : comptes pseudo sur `/api/account/**`, comptes staff ailleurs (PO15 inc. 5). | HTTP Basic aussi pour les scanneurs déclarés, qui rejoignent le référentiel **staff** (RG4). |
-| Limitation de débit | nginx sur E3 et `/api/account/**` (RG23 inc. 5) ; rien sur `/api/scan/**` (PO25 inc. 3). | `limit_req` sur E19 seulement ; E6 reste non limité (RG15). |
-| Conservation des identifiants | SCANNER : « Rester connecté 24 h », expiration **absolue** (RG7 inc. 4). Coureurs : 24 h **glissantes** (RG21 inc. 5). | 24 h **glissantes** pour toute connexion de rôle SCANNER (RG10). |
-| Filet réseau | File locale par appareil, capture indépendante du réseau et des identifiants, FIFO, émetteur effectif, backoff, idempotence, suspension sur 401 ou 403 (RG14 à RG27 inc. 4, RG21 amendée). | Règles inchangées. Leur comportement face à la désactivation, à l'expiration et au changement d'utilisateur est précisé (section 3). |
-| Passages | `Passage` sans auteur (inc. 1). | **Inchangé** : aucun auteur enregistré (RG14). |
+### Ce qui existe (relu sur le code : `SecurityConfig`, `app.routes.ts`, `app.ts`, `login-page.ts`)
+| Sujet | Existant |
+|---|---|
+| Deux écrans de connexion distincts | `/connexion` (staff : ADMIN et SCANNER, validé par E19 `/api/scan/me`, emplacement d'identifiants « staff ») et `/compte/connexion` (coureur, validé par E21 `/api/account/me`, emplacement « coureur »). |
+| Discrimination du profil | **Aucune par le compte** : c'est l'**écran choisi** (donc le préfixe d'URL appelé) qui décide du référentiel (PO15 inc. 5). Pas d'endpoint qui dise « quel type de compte est-ce ». Après connexion staff, E19 renvoie `role` (ADMIN ou SCANNER) et le front dirige vers `/admin` ou `/scan`. |
+| Création de compte | Uniquement par E3 `POST /api/public/races/{raceId}/registrations` (RG7 inc. 5). Les comptes sans coureur existent déjà (CL21 inc. 5 : listés par E25). |
+| Liens publics | En-tête : « Courses », « Mes inscriptions » (`/compte`), « Scan ». Aucun lien vers `/connexion` hors bouton « Se connecter » de `/scan` (RG2 inc. 6). |
+| Comptes scanneurs | **Inc. 8** (validée, non implémentée, exécutée après celle-ci) : créés par l'admin, pas d'auto-inscription. |
 
-### Endpoints créés par cet incrément
-Numérotation à la suite de l'inc. 5 (E25, liste des comptes, PO17 inc. 5). Décalage d'un rang par rapport à la révision 2.
+### Le besoin, en deux volets
+- **(a) Écran de connexion unique d'entrée** qui oriente vers le bon parcours : coureur → `/compte`, bénévole → `/scan`, admin → `/admin`.
+- **(b) Écran d'inscription autonome** : créer un compte **coureur** (pseudo + mot de passe) sans choisir de course.
 
-| # | Endpoint | Rôle | Règle |
+---
+
+## 1. Analyse d'impact et conflits
+
+### 1.1 Conflits avec l'inc. 6 (séparation admin / public)
+| # | Règle inc. 6 | Conflit | Traitement |
 |---|---|---|---|
-| E26 | `POST /api/admin/scanners` | ADMIN | RG3 |
-| E27 | `GET /api/admin/scanners` | ADMIN | RG3 |
-| E28 | `PUT /api/admin/scanners/{id}/password` | ADMIN | RG3 |
-| E29 | `POST /api/admin/scanners/{id}/deactivate` | ADMIN | RG3 |
-| E30 | `POST /api/admin/scanners/{id}/activate` | ADMIN | RG3 |
+| C1 | **RG2** : aucun lien public vers `/connexion` hors bouton de `/scan` ; mot « Administration » interdit. | Un écran d'entrée doit être atteignable depuis le public. | Amendement tracé (RG4, D2 retenue par défaut) : lien `/connexion` autorisé ; liens `/admin/**` et mot « Administration » restent interdits. |
+| C2 | **RG7** : l'écran de connexion ne mentionne jamais l'administration. | « Discriminer les admins ». | **D1 = option A (tranchée)** : pas de choix « Administrateur » ; l'admin passe par « Bénévole » (E19 accepte déjà ADMIN et SCANNER, PO7 inc. 6). RG7 conservée. |
+| C3 | **RG3 / PO2** : `/admin/**` = « Page introuvable » pour tout non-ADMIN ; **PO4** : URL `/connexion` connue de l'admin. | Aucun avec l'option A. | Inchangé. |
+| C4 | **RG6 / CL7** : identifiants coureur sur l'écran staff = 401, rien conservé. | Compatible. | Inchangé (CL1 ci-dessous). |
+| C5 | Tests E2E de l'inc. 6 (`ca2`, `ca10`, `ca11`) qui vérifient l'absence de lien vers `/connexion`. | Évolution. | Motif écrit et accord de l'agent fonctionnel (règle 2), voir CA19. |
+| C6 | **RG5** (blocs admin non préchargés). | Aucun. | Aucun import de code admin dans les nouveaux écrans. |
+| C7 | **CA1 inc. 6** (matrice 25 × 4). | Un 26e endpoint public. | Table additionnelle de l'inc. 7 (CA5) ; le test de l'inc. 6 reste inchangé. |
+
+### 1.2 Conflits avec l'inc. 5
+| # | Règle inc. 5 | Conflit |
+|---|---|---|
+| C8 | **RG9 / PO15** : référentiel par préfixe d'URL, HTTP Basic sans état, aucun endpoint de connexion. | Écarte tout champ unique sans choix de profil (option C du brouillon). Respectée : le choix de l'entrée décide du référentiel. |
+| C9 | **CL10 inc. 5** : un nom peut exister dans les deux référentiels, avec le même mot de passe. | Respectée : aucune priorité arbitraire, chaque entrée désigne son référentiel. |
+| C10 | **RG21 inc. 5** : deux emplacements d'identifiants distincts. | Respectée : l'écran écrit dans l'emplacement du profil choisi. |
+| C11 | **RG7 / PO6 inc. 5** : compte créé avec une inscription à une course ; inscription sans compte exclue. | E26 ajoute une création de compte sans course. L'inscription sans compte reste exclue. L'hypothèse « compte ⇒ au moins une inscription » tombe ; les comptes vides sont déjà gérés (CL21, E25, `runnerCount` = 0). |
+| C12 | **RG23 inc. 5** : limitation nginx ; BCrypt coût 12. | E26 hache à chaque appel : limite nginx obligatoire (RG6). |
+
+### 1.3 Interaction avec l'inc. 8 (scanneurs nominatifs, exécutée après)
+- Pas d'auto-inscription de bénévoles : l'écran d'inscription ne crée que des comptes coureurs (RG1 inc. 5, rôle RUNNER seulement).
+- Homonymie (PO9 inc. 8) : E26 ne consulte pas `ScannerAccount` ; aucun 409 ne révèle un identifiant scanneur. Les tests d'homonymie (CA15 inc. 8) sont portés par l'inc. 8.
+- La connexion d'un scanneur déclaré passera par l'entrée « Bénévole » de l'écran de cet incrément, sans changement d'écran (RG1).
+- Les numéros d'endpoints de l'inc. 8 sont E27 à E31.
+
+### 1.4 RGPD et minimisation
+- Aucune nouvelle donnée : `pseudo` + hash (RG1 inc. 5). Aucun type de compte persisté.
+- Avertissement de RG17 (inc. 5) repris : « N'utilisez pas votre nom réel… ».
+- Aucun endpoint de résolution de profil (énumération des comptes staff, contraire à la minimisation et à PO3/PO4 inc. 6).
+- Pas de purge des comptes inutilisés : aucune date de création n'est stockée [défaut D6].
 
 ---
 
-## 1. Périmètre
+## 2. Option retenue pour la connexion (D1 tranchée : option A)
+
+Deux entrées visibles, « Coureur » et « Bénévole ». L'utilisateur choisit le profil ; l'entrée fixe le référentiel (E21 ou E19). L'admin se connecte par « Bénévole » et est dirigé vers `/admin` d'après le `role` de E19. Aucun changement d'API hors E26. Options écartées par l'utilisateur : B (trois choix dont « Administrateur », incompatible avec PO2, PO4 et RG7 de l'inc. 6), C (un champ unique, profil deviné : ambiguïté d'identifiants, énumération, double charge BCrypt), D (écrans séparés).
+
+---
+
+## 3. Ordre d'exécution (D7 tranchée)
+
+Cet incrément est l'**incrément 7**, avant les comptes scanneurs (inc. 8). Conséquences : `CLAUDE.md` (liste des incréments, ligne ScannerAccount) et les specs 5, 6 et 8 sont mises à jour pour la renumérotation ; endpoints : E26 ici, E27 à E31 pour les scanneurs. L'inc. 6 reste GO sous réserves : il doit être mergé avant l'implémentation de cet incrément.
+
+---
+
+## 4. Périmètre
 
 ### Inclus
-- Entité des comptes scanneurs, migration versionnée.
-- Création, liste, réinitialisation du mot de passe, désactivation et réactivation par l'admin (API et écran).
-- Authentification HTTP Basic des scanneurs déclarés, par l'écran `/connexion` et E19 existants.
-- Alignement de la conservation des identifiants SCANNER sur 24 h glissantes.
-- Précision du comportement du filet réseau face à la désactivation, à l'expiration et au changement d'utilisateur.
-- Limitation de débit nginx sur E19 (`GET /api/scan/me`), configuration versionnée.
+- Écran de connexion unique (route `/connexion`, inchangée), deux entrées (RG1).
+- Écran d'inscription autonome `/inscription` et endpoint E26 [défaut D3].
+- Liens publics « Se connecter » et « Créer un compte » dans l'en-tête [défaut D2].
+- Orientation après connexion : coureur → `/compte`, bénévole → `/scan`, admin → `/admin`.
+- Limitation nginx de E26 [défaut D5].
+- Évolution motivée des tests E2E de l'inc. 6 concernés (CA19).
 
-### Explicitement exclu
-- Limitation de débit de E6 (`POST /api/scan/passages`) et de tout autre chemin `/api/scan/**` (PO10).
-- Unicité d'un identifiant scanneur vis-à-vis des pseudos coureurs (PO9).
-- Accès par poste ou appareil appairé (PO1, option B écartée).
-- Affectation d'un scanneur à certaines courses (PO2).
-- Enregistrement de l'auteur d'un passage (PO3) ; le schéma de `passage` ne change pas.
-- Suppression d'un compte scanneur (PO7).
-- Mot de passe généré par le serveur (PO8).
-- Refus des scans capturés après une désactivation (PO5).
-- Toute modification des règles de course et des règles du filet réseau de l'inc. 4.
+### Exclu
+- Choix « Administrateur » visible ; endpoint de résolution de profil ; saisie sans choix de profil.
+- Auto-inscription de bénévoles ou d'admins (comptes scanneurs : inc. 8, créés par l'admin) [défaut D11].
+- Email, vérification d'adresse, mot de passe oublié automatisé (RG15 inc. 5), modification du pseudo.
+- Purge automatique des comptes sans inscription [défaut D6].
+- Barrière de connexion obligatoire (D2-bis tranchée : le suivi public et le lien d'inscription public restent ouverts).
+- Toute modification des règles de course, du filet réseau, du modèle de données (aucune migration).
+- Changement du mécanisme HTTP Basic sans état et du référentiel par préfixe d'URL.
 
 ---
 
-## 2. Règles de gestion
+## 5. Règles de gestion
 
-### A. Déclaration et droits
+**RG1 — Écran de connexion unique, deux entrées visibles** *(D1 tranchée, option A)*
+- `/connexion` affiche « Connexion » et **deux entrées** : « Coureur » et « Bénévole ». L'entrée choisie fixe le référentiel : « Coureur » valide par E21 (`/api/account/me`), « Bénévole » par E19 (`/api/scan/me`). Aucune requête avant la soumission.
+- L'écran **ne mentionne jamais** « Administration » ni « administrateur » et n'a aucun lien vers `/admin/**` (RG7 inc. 6 conservée).
+- Le choix de l'entrée n'est ni stocké ni envoyé au serveur ; il détermine seulement l'endpoint de validation et l'emplacement d'identifiants écrit (RG21 inc. 5, RG7 inc. 4).
+- Entrée par défaut : « Coureur », sauf retour demandé vers `/scan` (RG6 inc. 4) ou paramètre `profil=benevole`.
 
-**RG1 — Droits limités au pointage**
-Un compte scanneur déclaré a uniquement le rôle `SCANNER` (autorité `ROLE_SCANNER`), avec les droits de RG29 (inc. 3) et RG10 (inc. 5) :
-- `/api/scan/**` (E6, E19) : autorisé ;
-- `/api/admin/**` : 403 ;
-- `/api/account/**` (inc. 5) : 401, car ce chemin ne reconnaît que les comptes pseudo (PO15 inc. 5 tranché, RG4) ;
-- `/api/public/**` : autorisé.
-Il n'a ni DNF manuel, ni réintégration, ni gestion de course, de coureur, de compte ou de scanneur, ni accès aux `qrToken` via l'admin. Côté front, `/admin/**` affiche « Page introuvable » (RG3 inc. 6).
+**RG2 — Orientation après connexion**
+- « Coureur » réussie (E21 = 200) : retour demandé s'il est interne et sûr (contrôle de `LoginPage.destination`), sinon `/compte`.
+- « Bénévole » réussie (E19 = 200) : retour demandé, sinon `/admin` si `role = ADMIN`, `/scan` si `role = SCANNER` (comportement actuel).
+- 401 : « Identifiants invalides », rien conservé, aucune requête rejouée (RG6 inc. 6) ; aide neutre « Vérifiez le type de compte choisi », identique que l'identifiant existe ou non dans l'autre référentiel [défaut D1-bis].
+- 429 : « Trop de tentatives. Réessayez dans une minute. » (RG23 inc. 5).
+- Les deux emplacements d'identifiants restent indépendants (RG21 inc. 5).
 
-**RG2 — Entité ScannerAccount** *(PO1 tranché ; PO9 TRANCHÉ (utilisateur, 2026-09-28) : entité distincte, référentiels indépendants)*
-- Entité `ScannerAccount`, distincte d'`Account` (inc. 5). `Account` reste sans rôle (RG1 inc. 5) et n'est pas modifié.
-- Attributs : `id`, `username`, `password_hash` (BCrypt, coût 12), `active`. Rien d'autre : ni nom réel, ni contact, ni date de dernière connexion, ni adresse IP.
-- `username` : format du pseudo de RG2 (inc. 5), non modifiable, unique parmi les comptes scanneurs sans tenir compte de la casse (index unique sur `lower(username)`, même mécanisme et même réserve H2 que RG5 inc. 5).
-- `username` est distinct, sans tenir compte de la casse, du nom du compte ADMIN et du compte SCANNER de configuration : 409 à la création (E26).
-- **Aucune unicité vis-à-vis des pseudos coureurs** : `benevole-07` peut exister à la fois comme scanneur et comme compte pseudo. Le préfixe d'URL lève l'ambiguïté (RG4, PO15 inc. 5). La création d'un scanneur ne consulte pas `Account`, et E3 (inc. 5) ne consulte pas `ScannerAccount` : aucun 409 ne révèle l'existence d'un identifiant de l'autre référentiel.
-- **Collision introduite par la configuration** : si, au démarrage, `BACKYARD_SECURITY_ADMIN_USERNAME` ou `BACKYARD_SECURITY_SCANNER_USERNAME` égale, sans tenir compte de la casse, le `username` d'un compte scanneur en base (actif ou non), l'application **refuse de démarrer**. Le message nomme la variable d'environnement concernée, comme pour RG32 (inc. 3), dont c'est l'extension. Aucun nom du référentiel staff ne peut donc désigner deux comptes. *(Choix confirmé (utilisateur, 2026-09-28).)*
-- Mot de passe : RG3 (inc. 5).
-- Le formulaire rappelle : « Identifiant sans nom réel (ex. benevole-07) ».
-- Migration versionnée (`V3`), sans modifier les migrations existantes.
+**RG3 — Routes de connexion existantes** [défaut D4]
+- `/compte/connexion` reste valide : écran unique, entrée « Coureur » préselectionnée (les parcours et tests de l'inc. 5 sont conservés).
+- La garde de `/compte` renvoie vers l'écran unique, entrée « Coureur », avec retour vers `/compte`.
+- Le bouton « Se connecter » de `/scan` mène à `/connexion`, retour vers `/scan`, entrée « Bénévole » préselectionnée.
 
-**RG3 — Gestion par l'admin (rôle ADMIN)** *(PO7, PO8 tranchés)*
-- **E26** `POST /api/admin/scanners` `{username, password}` : le mot de passe initial est **saisi par l'admin**. 201, compte actif. Erreurs 400 (format, RG2 et RG3 inc. 5) et 409 (nom déjà pris par un scanneur ou par un compte de configuration, RG2).
-- **E27** `GET /api/admin/scanners` : liste triée par `username` (`id`, `username`, `active`), sans mot de passe ni hash. Le compte SCANNER de configuration n'y figure pas.
-- **E28** `PUT /api/admin/scanners/{id}/password` `{newPassword}` : 204 ; 400 ; 404. Mot de passe saisi par l'admin, sans obligation de changement ensuite (comme RG14 inc. 5).
-- **E29** `POST /api/admin/scanners/{id}/deactivate` et **E30** `.../activate` : 200 avec le compte ; 404. Idempotents.
-- **Aucune suppression** : il n'existe aucun endpoint de suppression d'un compte scanneur. Un compte désactivé reste en base et dans la liste.
+**RG4 — Liens publics d'accès** [défaut D2 ; amende RG2 et CA2 de l'inc. 6]
+- Sans connexion active, l'en-tête commun affiche « Se connecter » (vers `/connexion`) et « Créer un compte » (vers `/inscription`).
+- Avec une connexion coureur ou bénévole active : « Connecté : {pseudo ou identifiant} » et « Se déconnecter ».
+- Le mot « Administration » et tout lien vers `/admin/**` restent **interdits** dans l'en-tête et sur toutes les pages publiques.
+- Amendement de RG2 (inc. 6) : l'interdiction de lier `/connexion` est levée ; l'interdiction de lier `/admin/**` est conservée.
 
-**RG4 — Authentification et révocation** *(PO1 tranché : HTTP Basic)*
-- Un compte scanneur actif s'authentifie en **HTTP Basic**, API sans état (RG28, RG31 inc. 3), par l'écran `/connexion` et E19, inchangés (RG6 inc. 4).
-- Un compte désactivé, ou un mot de passe faux, donne 401 `UNAUTHENTICATED`, avec un `detail` identique à celui d'un nom inconnu, sans `WWW-Authenticate`.
-- Chaque requête est vérifiée contre l'état du compte en base au moment où elle est traitée : la désactivation prend effet **dès la requête suivante**, sur tous les appareils, sans redémarrage. Une requête déjà authentifiée et en cours de traitement se termine normalement.
-- **Référentiel** *(PO9 et PO15 inc. 5 tranchés)* : les scanneurs déclarés font partie du référentiel **staff**, avec les comptes de configuration ADMIN et SCANNER. Ce référentiel sert sur tous les chemins sauf `/api/account/**` (RG9 inc. 5).
-  - Un scanneur n'est jamais cherché sur `/api/account/**`, et un compte pseudo jamais ailleurs.
-  - Un identifiant scanneur homonyme d'un pseudo coureur désigne donc le scanneur sur `/api/scan/**` et le compte pseudo sur `/api/account/**`, **même si les mots de passe sont identiques**.
-  - Dans le référentiel staff, un nom désigne au plus un compte (RG2) : l'ordre de consultation n'a aucun effet.
+**RG5 — Inscription autonome : E26** [défaut D3]
+`POST /api/public/accounts`, corps `{"pseudo", "password"}`, anonyme. Ordre des contrôles :
+1. format du pseudo et du mot de passe : 400 `VALIDATION_FAILED` (RG2 et RG3 inc. 5, normalisation par `Pseudo` seul, RG9 inc. 6) ;
+2. pseudo normalisé déjà porté : 409 `BUSINESS_CONFLICT`, `detail` « Pseudo déjà utilisé : {pseudo}. Si c'est votre compte, connectez-vous. » (valeur normalisée) ;
+3. création du compte seul : hash BCrypt coût 12 par l'encodeur unique ; aucun coureur, aucune course, aucun `qrToken`.
+- Réponse 201 `{"pseudo": <valeur stockée, minuscules>}`. Ni mot de passe, ni hash, ni `accountId` (RG13 inc. 5).
+- RG1 à RG5 de l'inc. 5 s'appliquent sans exception.
+- Rôle à la connexion : `RUNNER` seulement. E26 ne consulte ni `ScannerAccount` ni les comptes de configuration.
+- Journal : aucun pseudo ; une ligne INFO « compte créé {accountId} » est admise (RG16 inc. 5).
+- Accès (RG10 inc. 5) : `/api/public/**` : anonyme, SCANNER et ADMIN autorisés ; compte pseudo présentant ses identifiants : 401 (inchangé).
 
-**RG5 — Compte SCANNER de configuration conservé en secours** *(PO4 tranché)*
-- Le compte défini par `BACKYARD_SECURITY_SCANNER_*` reste inchangé (RG28, RG32 inc. 3) : même rôle, mêmes droits, même mode de changement (variable d'environnement et redémarrage).
-- Il n'est ni listé, ni désactivable, ni réinitialisable par E26 à E30.
-- Le compte ADMIN peut toujours scanner (PO19 inc. 3).
+**RG6 — Limitation de débit de E26** [défaut D5]
+- nginx, `limit_req`, clé `$binary_remote_addr`, `limit_req_status 429`, versionné sous `deploy/nginx/` ; rien dans l'application.
+- **Même zone « inscription » que E3** (10 requêtes par minute et par IP, rafale 5, `nodelay`, RG23 inc. 5).
+- Évolution motivée de CA40 (inc. 5) : l'assertion « aucun autre `location` n'a de `limit_req` » admet le `location` exact de `POST /api/public/accounts`. L'inc. 8 ajoutera celui de E19 (RG15 inc. 8).
+- PWA : un 429 affiche « Trop de tentatives. Réessayez dans une minute. », sans nouvel essai.
 
-**RG6 — Journalisation**
-- Création, désactivation, réactivation et réinitialisation sont journalisées en INFO avec l'`id` et l'identifiant, jamais le mot de passe ni le hash.
-- Les règles de minimisation de RG16 (inc. 5) s'appliquent : un échec d'authentification est journalisé en WARN sans le nom présenté.
-- Aucune ligne de journal n'associe un scan à un compte (RG14).
-- Conservation : **7 jours**, avec le périmètre et la rotation de RG22 (inc. 5). Aucune configuration supplémentaire.
+**RG7 — Écran d'inscription `/inscription`**
+- Route publique, ajoutée à la liste fermée des routes (RG5 inc. 4) et aux chemins front servis par Spring Boot (RG53 inc. 4). À ne pas confondre avec `/inscription/{raceId}` (inchangée).
+- Champs « Pseudo », « Mot de passe », « Confirmer le mot de passe », case « Rester connecté 24 h sur cet appareil » (décochée par défaut, RG21 inc. 5). Validation miroir (RG2, RG3 inc. 5) ; mots de passe différents : aucune requête. Mention de RG17 inc. 5.
+- Aide : « Bénévole : votre compte est créé par l'organisateur. » (aucune mention de l'administration) [défaut D10, D11].
+- Succès (201) : connexion automatique en coureur par E21 (mêmes identifiants, un seul appel), puis `/compte` (« Aucune inscription pour le moment » et lien « Voir les courses ») ou l'écran demandé (`retour`, par exemple `/inscription/{raceId}` où « M'inscrire à cette course » envoie E20) [défaut D8].
+- 409 : le `detail` est affiché avec le lien « J'ai déjà un compte » vers `/connexion` (entrée « Coureur »). 400 : message de champ. 429 : message de RG6.
+- Aucune requête rejouée. Aucun identifiant dans une URL, un journal ou un message (RG21 inc. 5).
 
-**RG7 — Écran admin « Scanneurs »**
-- `/admin/scanneurs` permet de créer un compte (identifiant et mot de passe saisis), de réinitialiser son mot de passe et de le désactiver ou le réactiver. Aucun bouton de suppression.
-- La réinitialisation, la désactivation et la réactivation demandent une confirmation.
-- Chaque action envoie une seule requête, sans rejeu (RG43 inc. 4).
-- L'écran fait partie du module admin chargé à la demande (RG5 inc. 6).
+**RG8 — Inscription à une course inchangée**
+- `/inscription/{raceId}` (E3, E20), le lien « J'ai déjà un compte » et les confirmations restent identiques (RG7, RG8, RG17 inc. 5). Le lien « J'ai déjà un compte » mène à l'écran unique, entrée « Coureur ».
+- Un compte créé par E26 s'inscrit à une course par E20, jamais par E3 (409, CL13 inc. 5).
 
-**RG13 — Toutes les courses** *(PO2 tranché)*
-Un compte scanneur n'est affecté à aucune course : il scanne toutes les courses, comme le compte de configuration. Aucune table de liaison, aucun contrôle de course dans `PassageRecordingService`.
+**RG9 — Point d'entrée, pas de barrière** *(D2-bis tranchée)*
+- Accueil, tableau de bord, détail coureur et inscription à une course restent accessibles **sans connexion**.
+- Les routes qui exigent un profil renvoient vers l'écran unique avec `retour` : `/compte` (coureur) ; `/scan` garde son fonctionnement actuel (capture sans connexion, envoi suspendu, RG14 inc. 4).
 
-**RG14 — Aucun auteur de passage** *(PO3 tranché)*
-L'auteur d'un passage n'est enregistré nulle part : ni colonne sur `passage`, ni journal. Le corps de E6 reste `{"qrToken", "scannedAt"}`. Un passage créé par un scanneur déclaré est indiscernable d'un passage créé par le compte de configuration ou par l'ADMIN.
-
-**RG15 — Limitation des tentatives de connexion sur E19** *(PO10 TRANCHÉ (utilisateur, 2026-09-28) : option b ; PO11 TRANCHÉ (utilisateur, 2026-09-28) : mêmes seuils que `/api/account/**`)*
-- nginx applique `limit_req` à **E19 `GET /api/scan/me` seulement**, c'est-à-dire l'appel qui valide les identifiants à la connexion (RG6 inc. 4). Mêmes principes que RG23 (inc. 5) :
-  - clé = `$binary_remote_addr` ;
-  - `limit_req_status 429` ;
-  - zone propre à E19, distincte des zones de l'inscription et de `/api/account/**` ;
-  - configuration versionnée sous `deploy/nginx/` ;
-  - rien dans l'application.
-- Seuils (PO11) : ceux de `/api/account/**` (RG23 inc. 5), soit 30 requêtes par minute et par IP (`rate=30r/m`), rafale de 10 (`burst=10`), `nodelay`. Dans une zone propre à E19, 11 requêtes simultanées depuis une même IP sont admises, puis une toutes les 2 s.
-- **E6 `POST /api/scan/passages` n'est jamais limité**, ni aucun autre chemin `/api/scan/**`. La vidange d'une file après une coupure n'est donc jamais freinée, et la file ne reçoit jamais de 429 de nginx. Le classement des réponses (RG24 inc. 4) est inchangé.
-- Côté PWA, une réponse 429 de E19 pendant une connexion sur `/connexion` affiche « Trop de tentatives. Réessayez dans une minute. » (message de RG23 inc. 5). Rien n'est conservé dans l'emplacement ADMIN/SCANNER, et la requête n'est pas rejouée. Comme pour toute réponse non 2xx, ce 429 ne prolonge pas l'expiration (RG10).
-- **Évolution motivée de CA40 (inc. 5)** : son assertion [config] « aucun autre `location` n'a de `limit_req` » admet désormais aussi le `location` exact de `/api/scan/me`.
+**RG10 — Non-régression de la sécurité**
+- L'API ne change pas hors E26 : matrice E1 à E25 de l'inc. 6 inchangée ; HTTP Basic sans état ; référentiel par préfixe d'URL.
+- `/admin/**` pour un non-ADMIN : « Page introuvable » (RG3 inc. 6).
+- Aucun bloc admin dans l'écran de connexion ni d'inscription (RG5 inc. 6).
 
 ---
 
-## 3. Lien avec le filet réseau (inc. 4, RG14 à RG27)
+## 6. Cas limites
 
-**RG8 — Principes inchangés**
-Cet incrément ne modifie aucune des règles suivantes :
-- capture indépendante du réseau et des identifiants (RG14) ;
-- horodatage fixé à la capture (RG19) ;
-- file persistante **par appareil** (RG20) ;
-- FIFO et émetteur effectif, y compris l'amendement BUG-3 et l'arbitrage OBS-T1 (RG21, RG22) ;
-- idempotence (RG23) ;
-- traitement des réponses (RG24) ;
-- rejets (RG25).
-
-**RG9 — Compte désactivé avec des scans en attente** *(PO5 tranché)*
-- Au premier envoi après la désactivation, l'appareil reçoit 401. La tête de file reste `EN_ATTENTE`, la file est **suspendue sans rien perdre**, les identifiants de l'appareil sont effacés et l'écran de connexion s'affiche (RG10, RG24 inc. 4).
-- Les éléments `EN_ATTENTE` ne sont jamais supprimés automatiquement (RG27 inc. 4).
-- La capture reste possible (RG14 inc. 4).
-- La file reprend dès qu'un compte **actif** est connecté sur l'appareil. Les scans sont envoyés avec leur `scannedAt` d'origine, et le serveur les traite normalement.
-- **Conséquence assumée (PO5)** : les scans capturés **après** la désactivation, par exemple sur un appareil perdu, sont acceptés s'ils sont envoyés plus tard par un compte actif. Aucune règle ne les distingue.
-
-**RG10 — Conservation des identifiants SCANNER : 24 h glissantes** *(PO6 tranché)*
-- « Rester connecté 24 h sur cet appareil » (décochée par défaut) suit la règle d'expiration **glissante** de RG21 (inc. 5) : la date d'expiration vaut `instant de la dernière activité + 24 h`, une activité étant une requête envoyée avec ces identifiants qui reçoit une réponse **2xx** (connexion par E19, envoi E6 accepté).
-- **Correction d'une contradiction** : RG7 (inc. 4) fixe l'expiration du SCANNER à `instant de connexion + 24 h` (absolue). La PWA ne distingue pas un scanneur déclaré du compte de configuration (E19 renvoie `role = "SCANNER"` pour les deux) : la règle glissante s'applique donc à **toute connexion de rôle SCANNER**, compte de configuration compris. RG7 (inc. 4) est amendée en ce sens. CA18 (inc. 4), qui vérifie l'expiration sans activité intermédiaire, reste valable sans modification.
-- Le compte ADMIN reste en mémoire uniquement (RG7 inc. 4, inchangée).
-- Les identifiants peuvent expirer hors ligne, puisque la capture n'est pas une activité. La capture continue (RG14 inc. 4). Au retour du réseau, en l'absence d'identifiants, l'écran affiche « Non connecté : envoi suspendu ». Rien n'est perdu, et l'envoi reprend après une connexion (RG22 inc. 4, essai immédiat).
-- Le yard est déterminé par `scannedAt` (RG19 inc. 4). Un envoi retardé reste soumis aux règles existantes du scan tardif et de la réactivation (RG14 et RG30 à RG32 inc. 2). Une suspension longue peut donc aboutir à des rejets 409 définitifs (RG24 inc. 4), à signaler à l'organisateur. Ce comportement existe déjà ; cet incrément ne le change pas.
-
-**RG11 — Changement d'utilisateur sur un appareil dont la file n'est pas vide** *(PO5 tranché : la file appartient à l'appareil)*
-- La déconnexion demande confirmation quand la file n'est pas vide, sans vider la file (RG9 inc. 4).
-- La file appartient à l'**appareil**, pas au compte. Les scans en attente partent sous le compte connecté **au moment de l'envoi**, dans l'ordre FIFO.
-- Les rejets déjà affichés (RG25 inc. 4) restent visibles.
-- Sans auteur enregistré (RG14), ce transfert est sans effet sur les données.
-
-**RG12 — Idempotence entre comptes**
-- Un même élément de file, renvoyé par un autre compte après un changement d'utilisateur ou une désactivation, transmet exactement le même corps (RG23 inc. 4).
-- Si le passage existe déjà, le serveur répond 200 avec ce passage (RG15 inc. 2), quel que soit le compte qui renvoie : aucun doublon n'est créé.
+**CL1 — Coureur qui choisit « Bénévole ».** E19 = 401 : « Identifiants invalides », rien conservé ; identifiants coureur éventuels intacts (RG6 inc. 6).
+**CL2 — Bénévole ou admin qui choisit « Coureur ».** E21 = 401, même message. Pas d'essai croisé.
+**CL3 — Identifiant présent dans les deux référentiels, même mot de passe** (CL10 inc. 5). Chaque entrée désigne le compte de son référentiel.
+**CL4 — Admin.** Entrée « Bénévole », arrivée sur `/admin` (ou sur le retour demandé). Ni l'écran ni l'en-tête ne contiennent « Administration ».
+**CL5 — Pseudo existant ou à la casse près** (« Lievre » alors que `lievre` existe) : 409 (normalisation avant contrôle). Pseudo égal à un nom ADMIN ou SCANNER de configuration : accepté, sans droit (RG9, CL10 inc. 5).
+**CL6 — Créations simultanées du même pseudo.** Une seule réussit (201), l'autre 409 ; aucun compte orphelin supplémentaire.
+**CL7 — Compte sans inscription.** `/compte` affiche une liste vide ; E25 le liste avec `runnerCount = 0` ; l'admin peut le réinitialiser ou le supprimer.
+**CL8 — Déjà connecté en coureur, ouvre `/inscription`.** « Vous êtes connecté en tant que {pseudo} » et lien vers `/compte`, sans formulaire [défaut D9].
+**CL9 — Rafale de créations depuis une même IP** (Wi-Fi du site). Au-delà du seuil, 429 ; la zone est partagée avec E3 (conséquence assumée).
+**CL10 — Réseau coupé pendant la création.** Erreur « serveur injoignable », aucun rejeu ; si la requête avait abouti, un nouvel essai donne 409 avec le lien de connexion.
+**CL11 — Ancienne PWA en cache.** Les anciens écrans fonctionnent comme avant ; E26 n'est pas appelé (RG46 inc. 4).
+**CL12 — Sans objet.** Bascule de yard, passage manuel ou scan, coureur réintégré, plusieurs courses, course non démarrée, coureur sans passage : aucune règle de course modifiée (CA19).
 
 ---
 
-## 4. Cas limites
+## 7. Critères d'acceptation
 
-**CL1 — Désactivation pendant une coupure réseau.** L'appareil continue de capturer. Au retour du réseau : 401, file suspendue, puis reprise après la connexion d'un compte actif (RG9).
-**CL2 — Désactivation pendant un envoi (élément `EN_COURS`).** Si la requête était déjà authentifiée, elle aboutit (200) ; sinon, 401. Dans les deux cas, pas de doublon au renvoi (RG12).
-**CL3 — Un même compte connecté sur deux appareils.** Deux files indépendantes, sans ordre garanti entre elles (RG21 inc. 4, PO14 inc. 4). La désactivation coupe les deux.
-**CL4 — Téléphone partagé, relève sans déconnexion.** Les scans du second bénévole partent sous le compte du premier. C'est sans effet, puisque aucun auteur n'est enregistré (RG14).
-**CL5 — Plusieurs courses en parallèle.** Un compte scanneur scanne toutes les courses (RG13).
-**CL6 — Course non démarrée, bascule de yard, passage manuel, réintégration, coureur sans passage.** Règles inchangées. Un scan envoyé par un compte déclaré est traité exactement comme un scan du compte SCANNER de configuration (CA8).
-**CL7 — ADMIN qui scanne.** Il le peut toujours (PO19 inc. 3). Ce n'est pas un compte scanneur déclaré, et il n'est pas concerné par la désactivation.
-**CL8 — Compte désactivé puis réactivé.** Les appareils dont les identifiants ont été effacés par le 401 (RG9) demandent une nouvelle connexion ; un appareil qui n'a fait aucune requête entre-temps garde ses identifiants et les utilise normalement après la réactivation.
-**CL9 — Course sur plusieurs jours.** Un bénévole connecté avec « Rester connecté » dont au moins un envoi est accepté toutes les 24 h reste connecté. Après 24 h sans réponse 2xx, y compris hors ligne, il doit se reconnecter ; les scans capturés entre-temps restent en file (RG10).
-**CL10 — Compte de configuration.** Il reste utilisable en secours quand tous les comptes déclarés sont désactivés ; il n'apparaît pas dans `/admin/scanneurs`, et son « Rester connecté » suit aussi la règle glissante (RG10).
-**CL11 — Nom de configuration modifié pour égaler un scanneur déclaré.** L'exploitant change `BACKYARD_SECURITY_SCANNER_USERNAME` en `BENEVOLE-07` alors que le scanneur `benevole-07` existe, même désactivé. Au redémarrage, l'application refuse de démarrer, et le message nomme la variable (RG2).
-**CL12 — Vidange d'une file après une coupure.** Un appareil renvoie des dizaines de scans en rafale au retour du réseau : aucun ne reçoit 429, puisque E6 n'est pas limité (RG15). Seules les connexions répétées par E19 depuis une même IP peuvent être freinées, par exemple plusieurs bénévoles qui se connectent en même temps sur le Wi-Fi du site.
-**CL13 — Identifiant scanneur homonyme d'un pseudo coureur.** Un bénévole scanneur `benevole-07` crée aussi un compte coureur `benevole-07`. Les deux coexistent, et chaque chemin désigne le compte de son référentiel (RG2, RG4). La désactivation du scanneur ne touche pas le compte coureur, et réciproquement.
+Comptes de test : ADMIN `admin-test` / `admin-secret`, SCANNER `scanner-test` / `scanner-secret`, compte pseudo `Lievre` / `motdepasse-1`, nouveau compte `nouveau-{run}` / `motdepasse-9`.
 
----
+**CA1 — E26 crée un compte seul (RG5) [slice + IT]**
+Donné aucun compte `nouveau-1`. `POST /api/public/accounts {"pseudo":"  Nouveau-1 ","password":"motdepasse-9"}` (anonyme) : 201, corps `{"pseudo":"nouveau-1"}` sans autre propriété ; en base : 1 ligne `account` (pseudo `nouveau-1`, hash BCrypt coût 12 vérifiant `motdepasse-9`), 0 `runner` ; le corps ne contient ni `password`, ni hash, ni `accountId`.
 
-## 5. Critères d'acceptation
+**CA2 — Validations de E26 (RG5) [slice]**
+Pseudo `ab` → 400 sur `pseudo` ; `a b c` → 400 ; mot de passe `court12` (7 caractères) → 400 sur le mot de passe ; mot de passe de 73 octets → 400 ; corps vide → 400 ; le service n'est appelé dans aucun cas.
 
-Comptes de test : ADMIN `admin-test` / `admin-secret`, SCANNER de configuration `scanner-test` / `scanner-secret`. Scanneurs déclarés : `benevole-07` / `motdepasse-7` et `benevole-02` / `motdepasse-2`. Étiquettes : voir la spec de l'inc. 5.
+**CA3 — Pseudo déjà pris (RG5, CL5) [IT]**
+Donné `lievre`. `POST` avec `Lievre`, puis `LIEVRE`, puis `lievre` : 409 `BUSINESS_CONFLICT` chaque fois ; le `detail` contient `lievre` ; `count(account WHERE pseudo='lievre')` = 1. Avec le mot de passe `motdepasse-1` de `Lievre` : 409 aussi (E26 ne connecte jamais).
 
-**CA1 — Droits limités (RG1) [slice]**
-`benevole-07` actif :
-- `GET /api/scan/me` → 200, `role = "SCANNER"`, `username = "benevole-07"` ;
-- `POST /api/scan/passages` avec un `qrToken` d'une course `RUNNING` → 200 ;
-- `GET /api/admin/races`, `POST /api/admin/runners/1/dnf`, `GET /api/admin/scanners` → 403 ;
-- `GET /api/account/me` → 401, avec le même `detail` qu'un nom inconnu (*évolution motivée, PO15 inc. 5* : 403 dans la révision 2) ;
-- `GET /api/public/races` → 200.
+**CA4 — Créations simultanées (CL6) [IT]**
+10 appels concurrents avec le même pseudo : un seul 201, neuf 409, un seul compte en base.
 
-**CA2 — Déclaration par l'admin (RG2, RG3) [unit + slice]**
-En ADMIN :
-- création de `benevole-07` / `motdepasse-7` → 201, `active = true`, hash en base commençant par `$2` et vérifiant `motdepasse-7` ;
-- `BENEVOLE-07` → 409 ; `admin-test` → 409 ; `SCANNER-TEST` → 409 ; `ab` → 400 ; mot de passe `court12` → 400 ;
-- la liste renvoie `benevole-02` puis `benevole-07`, sans propriété `password` ni `passwordHash`, et sans `scanner-test`.
-Les endpoints E26 à E30 renvoient 401 en anonyme, 403 pour `benevole-07` et pour `scanner-test`, et 401 pour un compte pseudo (*évolution motivée, PO15 inc. 5* : 403 dans la révision 2).
+**CA5 — Matrice d'accès de E26 (RG5, RG10) [slice]**
+Anonyme, SCANNER, ADMIN : 201 ; `Lievre` présentant ses identifiants : 401 « Identifiants invalides » sans `WWW-Authenticate` ; `admin-test:mauvais` : 401. Test de table additionnel (E26 × 4 profils) ; CA1 de l'inc. 6 (25 × 4 = 100 cas) reste vert sans modification.
 
-**CA3 — Révocation immédiate (RG4, CL3, CL8) [IT]**
-- `benevole-07` obtient 200 sur `/api/scan/me`.
-- L'ADMIN le désactive (200). La requête suivante de `benevole-07` reçoit 401, avec un `detail` égal à celui d'un nom inconnu.
-- Une seconde désactivation renvoie 200, sans changement. Après réactivation : 200 avec `motdepasse-7`.
-- Réinitialisation vers `nouveau-mdp-77` : `motdepasse-7` → 401, `nouveau-mdp-77` → 200.
-- Aucun redémarrage n'a lieu pendant le test.
+**CA6 — Compte créé : RUNNER seulement (RG5, CL3) [IT]**
+Après CA1, `nouveau-1` / `motdepasse-9` : `GET /api/account/me` → 200, `pseudo = "nouveau-1"`, liste de coureurs vide ; `GET /api/scan/me` et `GET /api/admin/races` → 401.
 
-**CA4 — Scans en attente au moment de la désactivation (RG9, CL1) [E2E]**
-1. `benevole-07` est connecté sur `/scan`, réseau coupé. On capture trois coureurs A, B et C d'une course `RUNNING` : 3 éléments en attente.
-2. L'ADMIN désactive `benevole-07` par l'API, puis le réseau revient.
-3. Premier envoi : 401. L'écran de connexion s'affiche, les 3 éléments restent « en attente », et aucun n'est `REJETÉ`.
-4. On capture D pendant la suspension : 4 éléments en attente.
-5. Connexion de `benevole-02` : les 4 éléments sont envoyés dans l'ordre A, B, C, D et reçoivent 200. E5 montre, pour chaque coureur, le passage avec le `scannedAt` de sa capture, y compris D, capturé après la désactivation.
+**CA7 — Inscription d'un compte vide à une course (RG8, CL7) [IT]**
+`nouveau-1` : `POST /api/account/races/{raceId}/registrations` sur une course `SETUP` → 201 avec dossard et `qrToken` ; `POST /api/public/races/{raceId}/registrations` avec `nouveau-1` → 409.
 
-**CA5 — Expiration hors ligne (RG10, CL9) [E2E]**
-1. `benevole-07` est connecté avec « Rester connecté 24 h ». On coupe le réseau et on avance l'horloge du navigateur de 24 h et 1 min (horloge simulée).
-2. On capture un coureur : l'élément est mis en file, et l'écran indique « Non connecté : envoi suspendu ».
-3. Le réseau revient : aucune requête E6 n'est émise tant qu'on ne s'est pas connecté. Rien n'est perdu.
-4. Après connexion de `benevole-07`, l'élément est envoyé et reçoit 200.
+**CA8 — Écran unique : deux entrées, aucune mention de l'administration (RG1) [E2E]**
+Sur `/connexion`, contexte neuf : « Coureur » et « Bénévole » visibles ; aucun texte « Administration » ni « administrateur » ; aucun `a[href]` vers `/admin` ; aucune requête avant la soumission.
 
-**CA6 — Changement d'utilisateur avec une file non vide (RG11, CL4) [E2E]**
-- `benevole-07` a 2 éléments en attente, réseau coupé. « Se déconnecter » affiche « 2 scans en attente ne seront envoyés qu'après une nouvelle connexion. Se déconnecter ? ».
-- Après confirmation, la file compte toujours 2 éléments.
-- Connexion de `benevole-02`, puis retour du réseau : les 2 éléments sont envoyés sous `benevole-02` (l'en-tête `Authorization` des requêtes E6 est celui de `benevole-02`) et reçoivent 200.
+**CA9 — Orientation par profil (RG2, CL4) [E2E]**
+(a) « Coureur » + `Lievre-{run}` : E21 = 200, arrivée sur `/compte`. (b) « Bénévole » + `scanner-test` : E19 = 200, arrivée sur `/scan`. (c) « Bénévole » + `admin-test` : E19 = 200, arrivée sur `/admin` qui liste les courses. (d) Avec `retour=/scan`, l'ADMIN revient sur `/scan` (CA11 inc. 6 inchangé).
 
-**CA7 — Idempotence entre comptes (RG12, CL2) [IT]**
-- Le même corps `{"qrToken": T, "scannedAt": "2026-10-03T08:45:00.000Z"}` est envoyé à E6 par `benevole-07`, puis par `benevole-02`.
-- Les deux réponses sont 200 et contiennent le même `passageId`.
-- La course compte exactement un passage pour ce coureur et ce yard.
+**CA10 — Mauvaise entrée (CL1, CL2, CL3) [E2E]**
+(a) `Lievre-{run}` sur « Bénévole » : E19 = 401, « Identifiants invalides », rien dans l'emplacement bénévole (stockages vidés), `/scan` redemande une connexion. (b) `scanner-test` sur « Coureur » : E21 = 401, même message ; `localStorage`, `sessionStorage`, IndexedDB et Cache Storage sans mot de passe ni Basic. (c) Message identique pour un identifiant inconnu et pour un identifiant existant dans l'autre référentiel.
 
-**CA8 — Scan d'un compte déclaré identique au compte de configuration (RG1, RG13, RG14, CL5, CL6) [IT]**
-- Deux courses `RUNNING` R1 et R2, un coureur dans chacune. Le coureur de R1 est scanné par `benevole-07`, celui de R2 par `benevole-07` aussi : deux 200.
-- Dans des conditions identiques, un scan par `scanner-test` produit un passage aux mêmes champs (yard, `SCAN`, `scanned_at`).
-- La table `passage` a exactement les colonnes de V1 : aucune colonne d'auteur. Aucune table de liaison entre scanneurs et courses n'existe.
+**CA11 — Indépendance des emplacements (RG2) [E2E]**
+Connexion coureur puis bénévole dans le même contexte : `/compte` affiche toujours les inscriptions de `Lievre-{run}`, `/scan` envoie avec le Basic bénévole ; la déconnexion coureur n'efface pas la connexion bénévole.
 
-**CA9 — Journaux (RG6, RG14) [unit ou IT, capture des journaux]**
-- La création, la désactivation, la réactivation et la réinitialisation de `benevole-07` produisent chacune une ligne INFO avec son `id` et `benevole-07`, sans `motdepasse-7`, `nouveau-mdp-77` ni `$2`.
-- Une authentification échouée de `benevole-07` produit une ligne WARN sans `benevole-07`.
-- Aucun scan ne produit de ligne contenant `benevole-07`.
+**CA12 — Écran d'inscription autonome (RG7, CL8) [E2E]**
+(a) `/inscription` : champs « Pseudo », « Mot de passe », « Confirmer le mot de passe » ; mots de passe différents : aucune requête. (b) Soumission valide `nouveau-{run}` : une seule requête E26 (201) puis une seule E21 (200) ; arrivée sur `/compte` avec « Aucune inscription pour le moment ». (c) Pseudo pris : 409, `detail` affiché avec « J'ai déjà un compte » vers `/connexion` ; aucun mot de passe dans l'URL ni dans les stockages (« Rester connecté » décochée). (d) Réponse E26 remplacée par un 429 à corps HTML : « Trop de tentatives. Réessayez dans une minute. », une seule requête. (e) Connecté en coureur, `/inscription` n'affiche pas de formulaire de création.
 
-**CA10 — Écran admin « Scanneurs » (RG7) [E2E]**
-- Création de `benevole-{run}` : une seule requête, 201, et le compte apparaît dans la liste.
-- « Désactiver » puis « Annuler » : aucune requête.
-- « Désactiver » puis « Confirmer » : une seule requête, et le compte affiche « inactif ».
-- L'écran ne propose aucune action de suppression.
+**CA13 — Enchaînement avec une course (RG7, RG8) [E2E]**
+Depuis `/inscription/{raceId}` (course `SETUP`), l'anonyme suit « Créer un compte » (retour vers cette page), crée `nouveau-{run}`, revient sur la page de la course connecté, clique « M'inscrire à cette course » : une requête E20 (201), le QR s'affiche et `/compte` le liste.
 
-**CA11 — Compte de configuration conservé (RG5, CL7, CL10) [slice]**
-`scanner-test` / `scanner-secret` → `GET /api/scan/me` 200, y compris quand tous les comptes déclarés sont désactivés. `admin-test` → `POST /api/scan/passages` 200. E28 à E30 n'acceptent aucun identifiant désignant le compte de configuration (il n'a pas d'`id` en base) : un `id` inexistant → 404.
+**CA14 — Liens publics (RG4, RG9) [E2E, évolution de CA2 inc. 6]**
+Anonyme, sur `/`, `/courses/{id}`, `/coureurs/{id}`, `/inscription/{id}`, `/compte/connexion`, `/inscription`, `/scan` : l'en-tête contient « Se connecter » (cible `/connexion`) et « Créer un compte » (cible `/inscription`) ; aucun `a[href]` vers `/admin` ; le texte visible ne contient pas « Administration ». Connecté en coureur : ces deux liens disparaissent, « Se déconnecter » apparaît. L'accueil et le tableau de bord s'ouvrent sans connexion.
 
-**CA12 — Non-régression [IT + E2E]**
-`mvn -B -f backend/pom.xml clean verify` est vert, incréments 1 à 6 compris, et la suite E2E aussi. Les CA du filet réseau de l'inc. 4 (file, FIFO, émetteur effectif, idempotence) et CA18 (inc. 4) passent sans modification. Le seul test existant modifié est l'assertion [config] de CA40 (inc. 5), avec le motif de RG15.
+**CA15 — `/admin` toujours introuvable (RG10) [E2E]**
+Anonyme, coureur, SCANNER : `/admin` et `/admin/comptes` affichent « Page introuvable », sans requête `/api/admin/**` (CA3 et CA4 inc. 6 inchangés).
 
-**CA13 — Expiration glissante des identifiants SCANNER (RG10, CL9, CL10) [front-unit]**
-Avec une horloge simulée et un stockage espionné :
-- connexion SCANNER avec « Rester connecté » à J `08:00:00`, puis une réponse 200 de E6 à J `20:00:00` : identifiants lus à J+1 `19:59:59`, effacés à J+1 `20:00:00` ;
-- sans réponse 2xx après la connexion (erreur réseau à J `20:00:00`) : identifiants lus à J+1 `07:59:59`, effacés à J+1 `08:00:00` ;
-- le résultat est le même pour `benevole-07` et pour `scanner-test` ;
-- connexion ADMIN : aucune écriture dans le stockage persistant.
+**CA16 — Routes conservées (RG3) [E2E]**
+`/compte/connexion` ouvre l'écran unique, entrée « Coureur » sélectionnée ; `/compte` sans connexion renvoie vers l'écran de connexion avec retour vers `/compte` ; après connexion, retour sur `/compte`.
 
-**CA14 — Aucune suppression (RG3) [IT]**
-Au démarrage du contexte complet, aucune correspondance Spring MVC `DELETE` n'existe sous `/api/admin/scanners`. Après désactivation de `benevole-07`, la ligne existe toujours en base avec `active = false`, et E27 la liste.
+**CA17 — Limitation nginx de E26 (RG6) [config + manuel]**
+[config] La configuration nginx versionnée applique `limit_req` (zone d'inscription, `rate=10r/m`, `burst=5 nodelay`, 429) à `POST /api/public/accounts` ; aucun autre `location` n'est limité, hors ceux déjà admis (E3, `/api/account/**`). [manuel] Depuis une même IP après 2 minutes sans requête : 6 requêtes E26 simultanées passent (201 ou 409), la 7e reçoit 429.
 
-**CA15 — Identifiant scanneur et pseudo coureur identiques (RG2, RG4, CL13) [IT]** *(PO9 et PO15 inc. 5 tranchés)*
-Donné le scanneur `benevole-07` / `motdepasse-7`.
-- E3 crée le compte pseudo `benevole-07` / `motdepasse-1` → 201.
-- `benevole-07` / `motdepasse-7` : E19 → 200, `role = "SCANNER"` ; E21 → 401.
-- `benevole-07` / `motdepasse-1` : E21 → 200, `pseudo = "benevole-07"` ; E19 → 401.
-- Donné ensuite le scanneur `benevole-02` / `motdepasse-2`, E3 crée le pseudo `BENEVOLE-02` avec le **même** mot de passe `motdepasse-2` → 201. E19 donne 200 `SCANNER` et E21 donne 200 `RUNNER`, avec les mêmes identifiants.
-- L'ADMIN désactive le scanneur `benevole-07` : E21 avec `benevole-07` / `motdepasse-1` donne toujours 200.
-- Réciproquement, E26 `{"username":"lievre","password":"motdepasse-8"}` → 201 alors que le compte pseudo « Lievre » existe.
+**CA18 — Journaux et minimisation (RG5) [unit, capture des journaux]**
+Création, conflit (409) et échec de validation de E26 : aucune ligne de journal, à aucun niveau, ne contient `nouveau-1`, `motdepasse-9` ni `$2`.
 
-**CA16 — Limitation de débit sur E19 seulement (RG15, CL12) [config + manuel]** *(PO10 et PO11 tranchés)*
-- [config] La configuration nginx versionnée contient :
-  - une `limit_req_zone` propre à E19, indexée par `$binary_remote_addr`, en `rate=30r/m` ;
-  - sur un `location` exact de `/api/scan/me`, `limit_req` sur cette zone avec `burst=10 nodelay` ;
-  - `limit_req_status 429`.
-  Aucun `location` couvrant `/api/scan/passages` n'a de `limit_req`. Les zones de RG23 (inc. 5) sont inchangées.
-- [manuel] Sur le VPS, depuis une même IP, après 2 minutes sans requête :
-  - 12 requêtes E19 avec `benevole-07`, en moins d'une seconde : les 11 premières reçoivent 200, la 12e reçoit 429 ;
-  - immédiatement après, 50 requêtes E6 valides (même corps, idempotentes, RG12) en moins de 5 secondes : aucune ne reçoit 429.
-- Aucun code applicatif ne compte les tentatives (revue).
+**CA19 — Non-régression (RG10, CL12) [IT + E2E]**
+`mvn -B -f backend/pom.xml clean verify` vert ; suite E2E verte à l'exception de CA39 sous Chromium (état de référence R5-3). Aucun test backend existant modifié. Tests E2E à faire évoluer, chacun avec motif et accord de l'agent fonctionnel (règle 2) : `ca2`, `ca10`, `ca11` de l'inc. 6 (lien « Se connecter » et « Créer un compte » dans l'en-tête, pas de lien `/admin`), tests de l'inc. 5 qui pointent `/compte/connexion` si le rendu change. Les assertions de sécurité (aucune requête `/api/admin/**` pour un non-ADMIN, aucun mot de passe stocké) ne sont pas affaiblies.
 
-**CA17 — Affichage d'un 429 à la connexion (RG15) [E2E + front-unit]**
-- [E2E] Sur `/connexion`, la réponse de E19 est interceptée et remplacée par un 429 à corps HTML. Alors « Trop de tentatives. Réessayez dans une minute. » s'affiche, et le journal réseau ne contient qu'une seule requête E19.
-- [front-unit] Ce 429 n'écrit rien dans l'emplacement ADMIN/SCANNER (mémoire et stockage espionnés).
-
-**CA18 — Collision entre la configuration et un scanneur déclaré (RG2, CL11) [IT]**
-Donné en base le scanneur `benevole-07`, désactivé. Quand le contexte démarre avec `BACKYARD_SECURITY_SCANNER_USERNAME=BENEVOLE-07`, le démarrage échoue, et le message d'erreur contient `BACKYARD_SECURITY_SCANNER_USERNAME`. Même résultat avec `BACKYARD_SECURITY_ADMIN_USERNAME=benevole-07`. Avec `BACKYARD_SECURITY_SCANNER_USERNAME=scanner-test`, le contexte démarre.
+**CA20 — Aucun bloc admin sur `/connexion` et `/inscription` (RG10) [E2E, reprise de CA6 inc. 6]**
+Aucun bloc `admin-*.js` n'est chargé ni mis en cache par la visite de ces deux écrans.
 
 ### Couverture
 | RG / CL | CA |
 |---|---|
-| RG1 | CA1, CA8 |
-| RG2 | CA2, CA15, CA18 |
-| RG3 | CA2, CA3, CA14 |
-| RG4 | CA3, CA15 |
-| RG5 | CA11 |
-| RG6 | CA9 |
-| RG7 | CA10 |
-| RG8 | CA12 |
-| RG9 | CA4 |
-| RG10 | CA5, CA13 |
-| RG11 | CA6 |
-| RG12 | CA7 |
-| RG13 | CA8 |
-| RG14 | CA8, CA9 |
-| RG15 | CA16, CA17 |
-| CL1 | CA4 |
-| CL2 | CA7 |
-| CL3 | CA3 (désactivation globale, vérifiée côté API) |
-| CL4 | CA6 |
-| CL5 | CA8 |
-| CL6 | CA8 |
-| CL7 | CA11 |
-| CL8 | CA3 |
-| CL9 | CA5, CA13 |
-| CL10 | CA11, CA13 |
-| CL11 | CA18 |
-| CL12 | CA16 |
-| CL13 | CA15 |
+| RG1 | CA8, CA10 |
+| RG2 | CA9, CA10, CA11 |
+| RG3 | CA16 |
+| RG4 | CA14 |
+| RG5 | CA1 à CA6, CA18 |
+| RG6 | CA12 (d), CA17 |
+| RG7 | CA12, CA13 |
+| RG8 | CA7, CA13 |
+| RG9 | CA14 |
+| RG10 | CA5, CA15, CA19, CA20 |
+| CL1, CL2, CL3 | CA10 |
+| CL4 | CA9 |
+| CL5 | CA3 |
+| CL6 | CA4 |
+| CL7 | CA7 |
+| CL8 | CA12 (e) |
+| CL9, CL10 | CA12 (d), CA17 (CL10 : essai manuel consigné) |
+| CL11, CL12 | CA19 |
 
 ---
 
-## 6. Points ouverts
+## 8. Décisions
 
-### Points tranchés
+### Tranchées par l'utilisateur (2026-10-01)
+- **D1 — option A** : deux entrées visibles, « Coureur » et « Bénévole » ; l'admin passe par « Bénévole » ; aucun choix « Administrateur ». Règles : RG1, RG2.
+- **D2-bis — point d'entrée proposé, pas une barrière** : le suivi public et le lien d'inscription public restent ouverts. Règle : RG9.
+- **D7 — avant les comptes scanneurs** : cet incrément est l'inc. 7 ; les scanneurs deviennent l'inc. 8 (E27 à E31). Section 3.
 
-**PO1 — Compte nominatif ou accès par poste. TRANCHÉ (utilisateur, 2026-09-28) : option A, compte nominatif pseudonyme** par bénévole (identifiant sans nom réel et mot de passe), créé et désactivable par l'admin, en HTTP Basic comme l'inc. 5. Options écartées : B (poste appairé par QR), C (les deux).
+### Retenues par défaut, à confirmer par l'utilisateur
+- **D2** : lever l'interdiction de lier `/connexion` (RG2 inc. 6), conserver l'interdiction de lier `/admin` et d'écrire « Administration » (RG4).
+- **D1-bis** : message d'échec « Identifiants invalides » plus l'aide neutre « Vérifiez le type de compte choisi » (RG2).
+- **D3** : endpoint E26 pour un compte sans course (RG5).
+- **D4** : `/compte/connexion` conservée comme alias de l'écran unique, « Coureur » préselectionnée (RG3).
+- **D5** : E26 dans la zone nginx de E3, 10 par minute, rafale 5 (RG6).
+- **D6** : pas de purge des comptes jamais utilisés (aucune date de création stockée).
+- **D8** : connexion automatique en coureur après création (RG7).
+- **D9** : utilisateur déjà connecté sur `/inscription` : message, sans formulaire (CL8).
+- **D10** : libellé « Bénévole » seul, ni « organisateur » ni « administrateur ».
+- **D11** : pas d'auto-création de comptes bénévoles (inc. 8 : créés par l'admin).
 
-**PO2 — Limitation à certaines courses. TRANCHÉ (utilisateur, 2026-09-28) : non.** Règle : RG13.
-
-**PO3 — Auteur d'un passage. TRANCHÉ (utilisateur, 2026-09-28) : aucun enregistrement** ; le schéma de `passage` ne change pas. Règle : RG14.
-
-**PO4 — Compte SCANNER partagé de configuration. TRANCHÉ (utilisateur, 2026-09-28) : conservé en secours.** Règle : RG5.
-
-**PO5 — Propriétaire de la file de scans. TRANCHÉ (utilisateur, 2026-09-28) : l'appareil.** Les scans en attente partent sous le compte connecté au moment de l'envoi ; les scans capturés après une désactivation sont acceptés (conséquence assumée). Règles : RG9, RG11.
-
-**PO6 — Durée de validité. TRANCHÉ (utilisateur, 2026-09-28) : « Rester connecté » de 24 h glissantes, comme pour les coureurs.** Règle : RG10, qui étend la règle glissante au compte SCANNER de configuration, la PWA ne pouvant pas les distinguer.
-
-**PO7 — Suppression ou désactivation. TRANCHÉ (utilisateur, 2026-09-28) : désactivation seulement.** Règle : RG3.
-
-**PO8 — Mot de passe initial. TRANCHÉ (utilisateur, 2026-09-28) : saisi par l'admin.** Règle : RG3.
-
-**PO9 — Rapport entre comptes scanneurs et comptes pseudo. TRANCHÉ (utilisateur, 2026-09-28) : entité distincte `ScannerAccount`, référentiels indépendants (options 1a et 2i).**
-- `Account` reste sans rôle.
-- Un pseudo coureur et un identifiant scanneur peuvent être homonymes ; PO15 (inc. 5) lève l'ambiguïté par le préfixe d'URL.
-- L'identifiant scanneur est unique parmi les scanneurs et face aux comptes de configuration.
-- L'hypothèse H11 de cet incrément est retirée. Choix confirmé (utilisateur, 2026-09-28) : l'unicité face à la configuration est aussi contrôlée au démarrage, par extension de RG32 (inc. 3) (CL11, CA18).
-Règles : RG2, RG4. Critères : CA2, CA15, CA18.
-
-**PO10 — Limitation des tentatives de connexion des scanneurs. TRANCHÉ (utilisateur, 2026-09-28) : option b, `limit_req` nginx sur E19 seulement.** E6 n'est pas limité. Règle : RG15. Critères : CA16, CA17. Seuils : PO11.
-
-**PO15 (inc. 5) — Référentiel d'authentification. TRANCHÉ (utilisateur, 2026-09-28) : référentiel choisi par le préfixe d'URL.** Décision appliquée ici :
-- à RG1 et RG4 ;
-- à CA1 et CA2, où l'accès à `/api/account/**` et l'accès d'un compte pseudo aux endpoints admin passent en 401 (évolutions motivées) ;
-- à CA15.
-
-**PO11 — Seuils nginx pour E19 `GET /api/scan/me`. TRANCHÉ (utilisateur, 2026-09-28) : option a, mêmes seuils que `/api/account/**`.**
-- 30 requêtes par minute et par IP, rafale de 10, `nodelay`, dans une zone propre à E19.
-- L'hypothèse H12 est confirmée et devient une règle.
-- Options écartées : b (seuils de l'inscription publique) et c (autres valeurs).
-Règle : RG15. Critère : CA16.
-
-Aucun point ouvert ne subsiste pour cet incrément.
+Aucun autre point ouvert. Tant que les décisions « par défaut » ne sont pas confirmées, l'incrément peut démarrer sur la base de ces valeurs ; une contradiction ultérieure de l'utilisateur ferait l'objet d'une révision de cette spec.

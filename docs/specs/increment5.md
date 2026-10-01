@@ -20,7 +20,7 @@
 > - la migration V2 purge les noms réels ; tout coureur sans compte s'affiche « Coureur n°{bib} » (RG6, RG18, PO13, PO14) ;
 > - le référentiel d'authentification est choisi selon le préfixe d'URL ; les accès croisés passent de 403 à 401 (RG9, RG10, PO15). **Évolution motivée** de CA13, CA18, CA22, CA32 et CA33 ;
 > - seuils nginx distincts pour l'inscription publique et pour `/api/account/**` (RG23, PO16) ;
-> - écran admin « Comptes » et nouvel endpoint E25 de liste et de recherche (RG17, RG24, PO17). L'inc. 7 décale ses endpoints de E25–E29 à E26–E30.
+> - écran admin « Comptes » et nouvel endpoint E25 de liste et de recherche (RG17, RG24, PO17). L'inc. 7 (alors comptes scanneurs, aujourd'hui **inc. 8**) décale ses endpoints de E25–E29 à E26–E30. *(Renumérotation du 2026-10-01 : l'inc. 7 devient « Connexion et inscription » avec E26 ; les comptes scanneurs deviennent l'inc. 8, endpoints E27 à E31. Partout ci-dessous, « inc. 7 » à propos des scanneurs se lit « inc. 8 ».)*
 >
 > Nouveaux éléments : RG24, CL22, CA42 à CA44, PO18. Les hypothèses H9 (seuils de l'inscription) et H10 (essai successif) sont retirées ; H11 est créée pour PO18. Aucun élément existant n'est renuméroté.
 >
@@ -54,7 +54,7 @@
 | Scan, calculs dérivés, auto-DNF, réintégration | RG inc. 2 et 3. | **Aucun changement.** Le `qrToken` reste la seule clé du scan. |
 
 ### Endpoints créés par cet incrément
-Numérotation à la suite de l'inc. 4 (E19), reprise par la spec de l'inc. 6. L'inc. 7 poursuit à partir de E26.
+Numérotation à la suite de l'inc. 4 (E19), reprise par la spec de l'inc. 6. L'inc. 7 (connexion et inscription) crée E26 ; l'inc. 8 (scanneurs) poursuit de E27 à E31.
 
 | # | Endpoint | Rôle | Règle |
 |---|---|---|---|
@@ -95,15 +95,15 @@ Numérotation à la suite de l'inc. 4 (E19), reprise par la spec de l'inc. 6. L'
 - Pagination de la liste des comptes (RG24).
 - Suppression de la colonne `runner.name` : elle est vidée par V2, puis n'est plus écrite (RG6).
 - Journaux système du VPS et de l'hébergeur, hors application et reverse proxy (RG22).
-- Séparation admin / public : **incrément 6**. Rôle scanneur : **incrément 7**.
+- Séparation admin / public : **incrément 6**. Connexion unique et inscription autonome : **incrément 7**. Rôle scanneur : **incrément 8**.
 - Toute modification des règles de course (calculs dérivés, auto-DNF, DNF manuel, réintégration, scan).
 
 ### Dépendances avec les incréments 6 et 7
-- **Même mécanisme partout** : HTTP Basic, API sans état, pour les comptes pseudo (cet incrément), ADMIN et SCANNER (inc. 3) et les scanneurs déclarés (inc. 7).
-- **Même durée** : « Rester connecté » de 24 h glissantes pour les comptes pseudo (RG21) et pour les comptes de rôle SCANNER (inc. 7).
-- **Même conservation des journaux** : 7 jours (RG22), reprise par l'inc. 7.
+- **Même mécanisme partout** : HTTP Basic, API sans état, pour les comptes pseudo (cet incrément), ADMIN et SCANNER (inc. 3) et les scanneurs déclarés (inc. 8).
+- **Même durée** : « Rester connecté » de 24 h glissantes pour les comptes pseudo (RG21) et pour les comptes de rôle SCANNER (inc. 8).
+- **Même conservation des journaux** : 7 jours (RG22), reprise par l'inc. 8.
 - **Incrément 6** : les routes `/compte/**` (RG21) sont des routes publiques ; elles ne contiennent aucun lien vers l'espace admin.
-- **Incrément 7** : les comptes scanneurs sont une entité distincte d'`Account`, qui ne porte aucun rôle (RG1). Ils rejoignent le référentiel **staff** de RG10, avec les comptes de configuration. Un pseudo peut donc être homonyme d'un identifiant scanneur : le préfixe d'URL lève l'ambiguïté (PO15). Les endpoints de l'inc. 7 sont numérotés à partir de E26.
+- **Incrément 8** (anciennement 7) : les comptes scanneurs sont une entité distincte d'`Account`, qui ne porte aucun rôle (RG1). Ils rejoignent le référentiel **staff** de RG10, avec les comptes de configuration. Un pseudo peut donc être homonyme d'un identifiant scanneur : le préfixe d'URL lève l'ambiguïté (PO15). Les endpoints de l'inc. 8 sont numérotés E27 à E31 (E26 est créé par l'inc. 7).
 - **CLAUDE.md** : mis à jour par l'orchestrateur après validation des trois specs (PO10).
 
 ---
@@ -126,7 +126,7 @@ Numérotation à la suite de l'inc. 4 (E19), reprise par la spec de l'inc. 6. L'
 - Les comparaisons se font ensuite **à l'identique** sur des valeurs normalisées. « Lievre » et « lievre » sont donc le même pseudo.
 - **Un seul endroit** : la normalisation est une fonction pure du domaine, définie **une seule fois** et appelée par tous les usages ci-dessus. Aucun autre code (controller, repository, requête SQL, front) ne met un pseudo en minuscules ni ne compare des pseudos sans tenir compte de la casse. C'est l'application de la règle « aucune duplication de règle métier » (`CLAUDE.md`).
 - Le front n'applique pas la normalisation : il envoie la saisie telle quelle, et affiche le pseudo renvoyé par l'API.
-- La normalisation ne s'applique qu'aux comptes pseudo. Les noms des comptes staff (inc. 3, inc. 7) suivent leurs propres règles, inchangées.
+- La normalisation ne s'applique qu'aux comptes pseudo. Les noms des comptes staff (inc. 3, inc. 8) suivent leurs propres règles, inchangées.
 - Le pseudo n'est pas modifiable.
 - Échec de format : 400 `VALIDATION_FAILED` sur le champ `pseudo` (RG8 inc. 3). Le format est contrôlé sur la saisie privée de ses espaces de bord, avant la mise en minuscules.
 
@@ -211,7 +211,7 @@ Une personne qui a déjà un compte s'inscrit à une autre course **avec ce comp
 - Un compte pseudo authentifié a **uniquement** le rôle `RUNNER` (autorité `ROLE_RUNNER`). Il n'obtient jamais `ADMIN` ni `SCANNER`, même si son pseudo est égal au nom d'un compte ADMIN ou SCANNER.
 - **Référentiel choisi selon le préfixe d'URL** *(PO15 TRANCHÉ (utilisateur, 2026-09-28))* :
   - sur `/api/account/**`, les identifiants sont vérifiés **uniquement** contre les comptes pseudo ;
-  - sur tout autre chemin (`/api/scan/**`, `/api/admin/**`, mais aussi `/api/public/**` et les URL inconnues), ils sont vérifiés **uniquement** contre les comptes **staff** : comptes de configuration ADMIN et SCANNER (inc. 3), puis scanneurs déclarés (inc. 7).
+  - sur tout autre chemin (`/api/scan/**`, `/api/admin/**`, mais aussi `/api/public/**` et les URL inconnues), ils sont vérifiés **uniquement** contre les comptes **staff** : comptes de configuration ADMIN et SCANNER (inc. 3), puis scanneurs déclarés (inc. 8).
   - Un nom présent dans les deux référentiels ne crée donc aucune ambiguïté : le chemin décide. Un échec d'authentification coûte une seule vérification BCrypt.
   - Des identifiants valides dans un référentiel, présentés sur un chemin de l'autre, sont **inconnus** de ce dernier : 401 `UNAUTHENTICATED`, avec le même `detail` que des identifiants faux, « Identifiants invalides » (voir RG10). Une requête **anonyme** n'est pas concernée : elle garde le `detail` de l'inc. 3, « Authentification requise » (RG10, révision 5).
   - *(Choix confirmé (utilisateur, 2026-09-28).)* Le comportement de `/api/public/**` et des URL inconnues découle de RG30 (inc. 3, PO21), inchangée : des identifiants présentés mais invalides pour le référentiel du chemin donnent 401, y compris sur `/api/public/**`. La PWA n'envoie jamais d'identifiants coureur sur ces chemins (RG21).
@@ -332,7 +332,7 @@ Aucun endpoint public de mot de passe oublié, de question secrète ou d'envoi d
 - **Effet attendu** (sémantique de `limit_req` avec `nodelay`), depuis un état sans requête récente de la même IP :
   - inscription : 6 requêtes simultanées passent (1 + rafale), la 7e reçoit 429 ; ensuite, une requête de plus toutes les 6 s ;
   - compte : 11 requêtes simultanées passent (1 + rafale), la 12e reçoit 429 ; ensuite, une requête de plus toutes les 2 s.
-- Aucun autre chemin n'est limité par cet incrément. L'inc. 7 ajoute E19 (sa RG15).
+- Aucun autre chemin n'est limité par cet incrément. L'inc. 8 ajoute E19 (sa RG15) ; l'inc. 7 ajoute E26 (sa RG6).
 - La configuration nginx du site est versionnée sous `deploy/nginx/`.
 - Côté PWA, une réponse 429 sur ces chemins, quel que soit son corps (le corps nginx n'est pas un `ProblemDetail`), affiche « Trop de tentatives. Réessayez dans une minute. », sans nouvel essai automatique. Cela complète la classification de RG3 (inc. 4) pour le statut 429.
 
@@ -644,7 +644,7 @@ Connecté ADMIN sur `/admin/courses/{R}` avec `Lievre-{run}` inscrit : la confir
   - sur le `location` de l'inscription publique (E3), `limit_req` sur la zone à `10r/m` avec `burst=5 nodelay` ;
   - sur `location /api/account/`, `limit_req` sur la zone à `30r/m` avec `burst=10 nodelay` ;
   - `limit_req_status 429`.
-  Aucun autre `location` n'a de `limit_req` à cet incrément. L'inc. 7 ajoute E19 : évolution prévue de cette assertion (RG15 inc. 7).
+  Aucun autre `location` n'a de `limit_req` à cet incrément. L'inc. 7 ajoute E26 (RG6 inc. 7) et l'inc. 8 ajoute E19 : évolutions prévues de cette assertion (RG15 inc. 8).
 - [manuel] Sur le VPS, depuis une même IP et après 2 minutes sans requête :
   - 7 requêtes E3 avec un corps `{}`, en moins d'une seconde : les 6 premières reçoivent 400 (de l'application), la 7e reçoit 429 ;
   - immédiatement après, 12 requêtes E21, en moins d'une seconde : les 11 premières reçoivent 200 ou 401, la 12e reçoit 429. Les zones sont donc distinctes : l'épuisement de l'inscription n'a pas bloqué E21 ;
@@ -738,7 +738,7 @@ La décision remplace la demande initiale d'un pseudo « unique par course ». C
 
 **PO2 — Mécanisme d'authentification. TRANCHÉ (utilisateur, 2026-09-28) : HTTP Basic**, comme les comptes ADMIN et SCANNER. L'API reste sans état ; le stockage des identifiants dans le navigateur suit RG7 (inc. 4). Règles : RG9, RG21. Options écartées : session serveur, JWT.
 
-**PO3 — Durée de vie. TRANCHÉ (utilisateur, 2026-09-28) : 24 h glissantes, gérées côté client.** Avec HTTP Basic, le serveur n'a pas de session : les identifiants mémorisés expirent après 24 h sans activité, sur le modèle du « Rester connecté » de l'inc. 4. Règle : RG21 ; activité = réponse 2xx. Interprétation de RG21 validée telle quelle par l'utilisateur le 2026-09-28 : « Rester connecté » décoché par défaut, activité = réponse 2xx. Remarque : RG7 (inc. 4) fixe pour le SCANNER une expiration **absolue** (connexion + 24 h) ; l'alignement du SCANNER sur l'expiration glissante est traité par l'inc. 7.
+**PO3 — Durée de vie. TRANCHÉ (utilisateur, 2026-09-28) : 24 h glissantes, gérées côté client.** Avec HTTP Basic, le serveur n'a pas de session : les identifiants mémorisés expirent après 24 h sans activité, sur le modèle du « Rester connecté » de l'inc. 4. Règle : RG21 ; activité = réponse 2xx. Interprétation de RG21 validée telle quelle par l'utilisateur le 2026-09-28 : « Rester connecté » décoché par défaut, activité = réponse 2xx. Remarque : RG7 (inc. 4) fixe pour le SCANNER une expiration **absolue** (connexion + 24 h) ; l'alignement du SCANNER sur l'expiration glissante est traité par l'inc. 8.
 
 **PO4 — Devenir de `Runner.name`. TRANCHÉ (utilisateur, 2026-09-28) : option A, remplacé par le pseudo.** Règles : RG6, RG18, RG13 (corrélation assumée). Sort des noms réels existants : PO13 ; nom des coureurs détachés : PO14 (tous deux tranchés).
 
@@ -772,7 +772,7 @@ La décision remplace la demande initiale d'un pseudo « unique par course ». C
 
 **PO15 — Choix du référentiel quand un même nom existe dans deux référentiels. TRANCHÉ (utilisateur, 2026-09-28) : option a, référentiel choisi par le préfixe d'URL.**
 - `/api/account/**` interroge uniquement les comptes coureurs.
-- `/api/scan/**` et `/api/admin/**` interrogent uniquement les comptes staff (configuration, et scanneurs déclarés de l'inc. 7).
+- `/api/scan/**` et `/api/admin/**` interrogent uniquement les comptes staff (configuration, et scanneurs déclarés de l'inc. 8).
 - Choix confirmé (utilisateur, 2026-09-28) : `/api/public/**` et les URL inconnues restent sur le référentiel staff, pour ne pas modifier RG29 et RG30 (inc. 3). Des identifiants coureur y donnent donc 401 ; la PWA ne les y envoie jamais.
 - Les accès croisés passent de 403 à 401 : **évolution motivée** de RG10, CA13, CA18, CA22, CA32 et CA33.
 - L'hypothèse H10 (essai successif) est retirée.
@@ -786,7 +786,7 @@ Règle : RG23. Critère : CA40. Rafale de `/api/account/**` : PO18.
 
 **PO17 — Accès de l'admin à un compte sans inscription. TRANCHÉ (utilisateur, 2026-09-28) : option b, écran admin « Comptes ».**
 - L'écran permet de lister les comptes, de chercher par pseudo, de réinitialiser un mot de passe et de supprimer un compte.
-- Nouvel endpoint **E25** `GET /api/admin/accounts?pseudo=`, à la suite de E24, sans trou dans la numérotation. Les endpoints de l'inc. 7 sont décalés d'un rang (E26 à E30).
+- Nouvel endpoint **E25** `GET /api/admin/accounts?pseudo=`, à la suite de E24, sans trou dans la numérotation. Les endpoints des scanneurs (inc. 8) sont décalés d'un rang (E26 à E30 à l'époque ; E27 à E31 depuis la renumérotation du 2026-10-01).
 - Choix confirmé (utilisateur, 2026-09-28) : recherche « contient », insensible à la casse et littérale ; aucune pagination.
 Règles : RG17, RG24. Critères : CA42, CA43, CA44.
 
@@ -794,6 +794,6 @@ Règles : RG17, RG24. Critères : CA42, CA43, CA44.
 - L'hypothèse H11 est confirmée et devient une règle : 30 requêtes par minute et par IP, rafale de 10, `nodelay`.
 - 11 requêtes simultanées sont admises, puis une toutes les 2 s.
 - Options écartées : b (rafale de 29) et c (rafale de 5).
-Règle : RG23. Critère : CA40. L'inc. 7 reprend ces seuils pour E19 (PO11 inc. 7).
+Règle : RG23. Critère : CA40. L'inc. 8 reprend ces seuils pour E19 (PO11 inc. 8).
 
 Aucun point ouvert ne subsiste pour cet incrément.

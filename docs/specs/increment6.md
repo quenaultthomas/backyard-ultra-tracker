@@ -89,7 +89,7 @@ Une séparation par le front n'est jamais une mesure de sécurité à elle seule
 - Masquage de l'API admin (404 au lieu de 401/403) (PO3).
 - Origine ou sous-domaine distinct pour l'admin, restriction par adresse IP ou VPN (PO5).
 - Masquage de l'écran de scan (PO6).
-- Comptes scanneurs déclarés : **incrément 7**.
+- Comptes scanneurs déclarés : **incrément 8** (renumérotation du 2026-10-01 ; l'inc. 7 est « Connexion et inscription », qui amende RG2 de cet incrément : lien public vers `/connexion`).
 - Toute modification des règles de course.
 - Autres réserves de l'inc. 5 : R5-1 (journaux et 429 nginx sur le VPS), R5-2 (PostgreSQL réel), R5-3 (CA39 sous Chromium) et R5-6 (doublon du lien « J'ai déjà un compte ») : leurs échéances sont « avant déploiement » ou sans échéance ; elles ne sont pas des critères de cet incrément.
 - Modification du **corps** des réponses d'erreur 500 (le `detail` de `handleInconsistency` reste celui de l'inc. 5) : RG10 ne porte que sur les journaux.
@@ -112,7 +112,7 @@ Une séparation par le front n'est jamais une mesure de sécurité à elle seule
 - Les écrans admin eux-mêmes (visibles seulement par l'ADMIN, RG3) ne sont pas concernés : « Courses (admin) », « Comptes », « Imprimer les QR codes », etc. restent.
 
 **RG3 — `/admin/**` pour un non-admin** *(PO2 tranché)*
-- Anonyme, coureur connecté ou compte SCANNER (de configuration, ou déclaré à l'inc. 7) : `/admin/**` affiche l'écran « Page introuvable », identique à celui d'une route inconnue (RG5 inc. 4), avec un lien vers l'accueil.
+- Anonyme, coureur connecté ou compte SCANNER (de configuration, ou déclaré à l'inc. 8) : `/admin/**` affiche l'écran « Page introuvable », identique à celui d'une route inconnue (RG5 inc. 4), avec un lien vers l'accueil.
   - Aucun formulaire de connexion n'apparaît.
   - Aucune requête `/api/admin/**` n'est émise.
   - L'adresse reste celle demandée : aucune redirection vers `/connexion`.
@@ -127,7 +127,7 @@ Une séparation par le front n'est jamais une mesure de sécurité à elle seule
 **RG5 — Code de l'administration séparé et non préchargé** *(révision 4 : M3 confirmé)*
 - Le code des écrans `/admin/**` forme des blocs chargés à la demande (déjà le cas par `loadComponent`) **et exclus du préchargement du service worker** : ni `installMode` ni `updateMode` `prefetch` ne les couvrent. La configuration `ngsw-config.json` actuelle (`/*.js` en `prefetch`) ne satisfait pas cette règle.
 - Sont « blocs admin » les fichiers du build qui contiennent le code des écrans admin, repérés par le texte propre à ces écrans (« Administration des courses », « Gérer la course et les coureurs », « Imprimer les QR codes »). Le code partagé avec les écrans publics ou de scan (boîte de confirmation, bouton « Se déconnecter », etc.) reste dans les blocs publics ; il n'est pas admin.
-- **Limite assumée (révision 5, COH6-1, décision de l'agent fonctionnel)** : sont exclus du préchargement les **fichiers de route** `admin-*.js` (coquille, liste des courses, course, comptes, planche de QR codes), motif `!/admin-*.js` de `ngsw-config.json`. Deux composants **uniquement importés par des écrans admin**, `race-form` (formulaire de course, « Durée de boucle ») et `account-admin-actions` (« Réinitialiser le mot de passe »), sont placés par le compilateur dans des blocs partagés `chunk-<hash>.js` (importés par plusieurs écrans admin) qui **restent préchargés**. Cela est accepté : ils ne contiennent ni donnée ni route (libellés de formulaire et appel d'API via les constantes `API_PATHS` déjà présentes dans le code principal, limite déjà assumée en section 1) ; la protection reste l'API (RG1) ; l'impossibilité de les exclure par motif de nom sans changer la production justifie de ne pas élargir RG5. CA6 vérifie le périmètre ainsi défini. **Fragilité consignée** : l'exclusion repose sur le préfixe de nom `admin-` ; tout nouvel écran admin (notamment ceux de l'incrément 7, comptes scanneurs) doit être un fichier de route `admin-*` et son rapport de validation doit lister les blocs partagés préchargés qu'il introduit.
+- **Limite assumée (révision 5, COH6-1, décision de l'agent fonctionnel)** : sont exclus du préchargement les **fichiers de route** `admin-*.js` (coquille, liste des courses, course, comptes, planche de QR codes), motif `!/admin-*.js` de `ngsw-config.json`. Deux composants **uniquement importés par des écrans admin**, `race-form` (formulaire de course, « Durée de boucle ») et `account-admin-actions` (« Réinitialiser le mot de passe »), sont placés par le compilateur dans des blocs partagés `chunk-<hash>.js` (importés par plusieurs écrans admin) qui **restent préchargés**. Cela est accepté : ils ne contiennent ni donnée ni route (libellés de formulaire et appel d'API via les constantes `API_PATHS` déjà présentes dans le code principal, limite déjà assumée en section 1) ; la protection reste l'API (RG1) ; l'impossibilité de les exclure par motif de nom sans changer la production justifie de ne pas élargir RG5. CA6 vérifie le périmètre ainsi défini. **Fragilité consignée** : l'exclusion repose sur le préfixe de nom `admin-` ; tout nouvel écran admin (notamment ceux de l'incrément 8, comptes scanneurs) doit être un fichier de route `admin-*` et son rapport de validation doit lister les blocs partagés préchargés qu'il introduit.
 - Un bloc admin n'est téléchargé qu'après une connexion ADMIN et une navigation vers `/admin/**`.
 - `/scan` reste pleinement fonctionnel hors ligne (RG45 inc. 4). L'administration n'a pas besoin de l'être (RG43 inc. 4) : un ADMIN hors ligne qui n'a pas encore chargé les blocs admin n'ouvre pas l'administration, conséquence assumée.
 - Le fichier reste téléchargeable par qui connaît son URL : il n'est pas secret, et la protection reste l'API (RG1).
@@ -152,7 +152,7 @@ Une séparation par le front n'est jamais une mesure de sécurité à elle seule
 **RG9 — Normalisation du pseudo en un seul endroit, figée par un test** *(réserve R5-5, CA2 inc. 5, RG2 inc. 5)*
 - Dans le code de production (`backend/src/main`), la mise en minuscules d'un pseudo n'apparaît qu'à un seul endroit : `fr.backyard.domain.Pseudo` (`toLowerCase`, une occurrence). Aucune requête sur le pseudo n'utilise `lower`, `upper`, `IgnoreCase` ni `ILIKE`.
 - Un test automatisé, exécuté à chaque `mvn verify`, lit les sources et échoue si la règle est violée (CA13). La revue manuelle de l'inc. 5 ne suffit plus.
-- Toute future normalisation de casse ailleurs (par exemple un pseudonyme de scanneur, inc. 7) exige de faire évoluer cette règle et ce test, avec motif écrit et accord de l'agent fonctionnel (règle 2 du workflow) ; elle ne passe pas inaperçue.
+- Toute future normalisation de casse ailleurs (par exemple un pseudonyme de scanneur, inc. 8) exige de faire évoluer cette règle et ce test, avec motif écrit et accord de l'agent fonctionnel (règle 2 du workflow) ; elle ne passe pas inaperçue.
 
 **RG10 — Aucun pseudo dans les journaux d'erreur interne** *(réserve R5-8, RG16 inc. 5)*
 - Les gestionnaires d'`ApiExceptionHandler` qui journalisent l'exception complète, `handleInconsistency` (`IllegalStateException`, `IllegalArgumentException`) et `handleUnexpected` (toute autre exception, même risque, même règle), n'écrivent **ni le message de l'exception, ni celui de ses causes, ni la trace** : un message peut contenir un pseudo, et RG16 (inc. 5) interdit tout pseudo, à tout niveau de journal.
@@ -182,7 +182,7 @@ Les requêtes **anonymes** sur `/api/public/**` restent autorisées. Ces valeurs
 | E3 | POST `/api/public/races/{raceId}/registrations` | ok / 401 / ok / ok (corps de l'inc. 5) | aucun |
 | E4 | GET `/api/public/races/{raceId}/board` | ok / 401 / ok / ok | aucun |
 | E5 | GET `/api/public/runners/{runnerId}` | ok / 401 / ok / ok | aucun |
-| E6 | POST `/api/scan/passages` | 401 / 401 / ok / ok | aucun (l'inc. 7 ajoute des comptes SCANNER) |
+| E6 | POST `/api/scan/passages` | 401 / 401 / ok / ok | aucun (l'inc. 8 ajoute des comptes SCANNER) |
 | E7 | POST `/api/admin/races` | 401 / 401 / 403 / ok | aucun |
 | E8 | GET `/api/admin/races` | 401 / 401 / 403 / ok | aucun |
 | E9 | GET `/api/admin/races/{raceId}` | 401 / 401 / 403 / ok | aucun |
