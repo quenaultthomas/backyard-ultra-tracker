@@ -1,6 +1,0 @@
-chromium /inscription ["Backyard Ultra Tracker Courses Mes inscriptions Scan Se connecter Créer un compte","Backyard Ultra Tracker Courses Mes inscriptions Scan Se connecter"]
-chromium /connexion ["Backyard Ultra Tracker Courses Mes inscriptions Scan Se connecter Créer un compte","Backyard Ultra Tracker Courses Mes inscriptions Scan Créer un compte"]
-chromium /scan ["Backyard Ultra Tracker Courses Mes inscriptions Scan Se connecter Créer un compte","Backyard Ultra Tracker Courses Mes inscriptions Scan Créer un compte"]
-webkit /inscription ["Backyard Ultra Tracker Courses Mes inscriptions Scan Se connecter Créer un compte","Backyard Ultra Tracker Courses Mes inscriptions Scan Se connecter"]
-webkit /connexion ["Backyard Ultra Tracker Courses Mes inscriptions Scan Se connecter Créer un compte","Backyard Ultra Tracker Courses Mes inscriptions Scan Créer un compte"]
-webkit /scan ["Backyard Ultra Tracker Courses Mes inscriptions Scan Se connecter Créer un compte","Backyard Ultra Tracker Courses Mes inscriptions Scan Créer un compte"]
