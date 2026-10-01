@@ -130,6 +130,17 @@ class PwaStaticResourcesIT {
     }
 
     @Test
+    @Tag("INC-7")
+    @Tag("INC7-CA21")
+    @DisplayName("CA21 (inc. 7) - HEAD /inscription, anonyme : 200 (GET /inscription est couvert par ca3_frontRoutesForwardToIndexHtml)")
+    void ca21_headOnInscriptionReturns200() {
+        ResponseEntity<Void> response = restTemplate.exchange(url("/inscription"), HttpMethod.HEAD, HttpEntity.EMPTY,
+            Void.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
     @DisplayName("CA3 - GET /manifest.webmanifest : 200 application/manifest+json")
     void ca3_manifestServedWithCorrectMediaType() {
         ResponseEntity<String> response = get("/manifest.webmanifest");
@@ -171,7 +182,7 @@ class PwaStaticResourcesIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"/courses/1", "/coureurs/1", "/admin/courses/1/qr", "/inscription/1", "/scan", "/connexion"})
+    @ValueSource(strings = {"/courses/1", "/coureurs/1", "/admin/courses/1/qr", "/inscription/1", "/inscription", "/scan", "/connexion"})
     @DisplayName("CA3 - une route du front renvoie le contenu de index.html (200 text/html, Cache-Control no-cache)")
     void ca3_frontRoutesForwardToIndexHtml(String route) throws Exception {
         String indexHtml = readIndexHtml();

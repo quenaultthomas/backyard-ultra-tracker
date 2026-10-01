@@ -61,30 +61,62 @@ export function trackAdminChunks(context: BrowserContext): { readonly urls: () =
 }
 
 export interface PublicPageAuditOptions {
-  /** `/scan` sans connexion staff : le seul lien « Se connecter » vers `/connexion` est admis (RG2, RG7). */
-  readonly scanLoginLinkAllowed: boolean;
+  /**
+   * Textes exacts des liens vers `/connexion` attendus sur la page, en-tête compris (inc. 7, RG4 : « Se connecter » de
+   * la zone « compte » et/ou celui du bandeau de `/scan`). Égalité exacte : aucun lien en trop, aucun doublon.
+   */
+  readonly loginLinks: readonly string[];
+  /** Textes exacts des liens vers `/inscription` (écran d'inscription autonome) attendus sur la page (RG4). */
+  readonly createAccountLinks: readonly string[];
 }
 
+/** Zone « compte » de l'en-tête d'un visiteur sans connexion coureur, selon l'écran (RG4, CA14 inc. 7). */
+export const ANONYMOUS_BOTH_LINKS: PublicPageAuditOptions = {
+  loginLinks: ['Se connecter'], createAccountLinks: ['Créer un compte'],
+};
+/** `/scan` : un seul « Se connecter » (celui du bandeau) et « Créer un compte ». */
+export const ANONYMOUS_SCAN_LINKS: PublicPageAuditOptions = ANONYMOUS_BOTH_LINKS;
+/** `/connexion` et `/compte/connexion` : « Créer un compte » seulement. */
+export const ANONYMOUS_LOGIN_SCREEN_LINKS: PublicPageAuditOptions = {
+  loginLinks: [], createAccountLinks: ['Créer un compte'],
+};
+/** `/inscription` : « Se connecter » seulement. */
+export const ANONYMOUS_CREATE_SCREEN_LINKS: PublicPageAuditOptions = {
+  loginLinks: ['Se connecter'], createAccountLinks: [],
+};
+/** Connecté en coureur : ni « Se connecter » ni « Créer un compte » nulle part (le bandeau de `/scan` aussi). */
+export const RUNNER_CONNECTED_LINKS: PublicPageAuditOptions = { loginLinks: [], createAccountLinks: [] };
+
 /**
- * Audit RG2 / CA2 de la page affichée, en-tête de navigation compris : aucun lien (`a[href]`, `area[href]`) vers
- * `/admin` ou `/admin/...`, aucun lien vers `/connexion` sauf le lien « Se connecter » de `/scan`, aucun texte
- * visible ni nom accessible de lien ou de bouton contenant « Administration ».
+ * Audit RG2 inc. 6 / CA2 inc. 6 amendé par RG4 inc. 7 (CA14) de la page affichée, en-tête de navigation compris :
+ * aucun lien (`a[href]`, `area[href]`) vers `/admin` ou `/admin/...` ; les liens vers `/connexion` et `/inscription`
+ * sont exactement ceux attendus (`options`) ; aucun texte visible ni nom accessible de lien ou de bouton contenant
+ * « Administration ». Les contrôles « aucun lien /admin » et « aucun texte Administration » sont inchangés.
  */
 export async function auditNoAdminLink(page: Page, label: string, options: PublicPageAuditOptions): Promise<void> {
-  const links = await page.evaluate(() => Array.from(document.querySelectorAll('a[href], area[href]')).map((el) => ({
+  const readLinks = () => page.evaluate(() => Array.from(document.querySelectorAll('a[href], area[href]')).map((el) => ({
     path: new URL((el as HTMLAnchorElement).href).pathname,
     text: (el.textContent ?? '').trim(),
     label: el.getAttribute('aria-label') ?? '',
   })));
+  // L'en-tête calcule sa zone « compte » à la fin de la navigation : attente explicite de l'état stable attendu
+  // (le titre de la page peut s'afficher quelques instants avant), puis contrôle exact de cet état stable.
+  await expect.poll(async () => {
+    const current = await readLinks();
+    return {
+      login: current.filter((link) => link.path === '/connexion').map((link) => link.text),
+      create: current.filter((link) => link.path === '/inscription').map((link) => link.text),
+    };
+  }, { message: `${label} : zone « compte » de l'en-tête` })
+    .toEqual({ login: [...options.loginLinks], create: [...options.createAccountLinks] });
+  const links = await readLinks();
   const adminLinks = links.filter((link) => link.path === '/admin' || link.path.startsWith('/admin/'));
   expect(adminLinks, `${label} : lien vers /admin`).toEqual([]);
 
-  const loginLinks = links.filter((link) => link.path === '/connexion');
-  if (options.scanLoginLinkAllowed) {
-    expect(loginLinks.map((link) => link.text), `${label} : liens vers /connexion`).toEqual(['Se connecter']);
-  } else {
-    expect(loginLinks, `${label} : lien vers /connexion`).toEqual([]);
-  }
+  expect(links.filter((link) => link.path === '/connexion').map((link) => link.text),
+    `${label} : liens vers /connexion`).toEqual([...options.loginLinks]);
+  expect(links.filter((link) => link.path === '/inscription').map((link) => link.text),
+    `${label} : liens vers /inscription`).toEqual([...options.createAccountLinks]);
 
   const formActions = await page.evaluate(() => Array.from(document.querySelectorAll('form[action], [formaction]'))
     .map((el) => el.getAttribute('action') ?? el.getAttribute('formaction') ?? ''));
@@ -96,6 +128,14 @@ export async function auditNoAdminLink(page: Page, label: string, options: Publi
   await expect(page.getByRole('link', { name: /administration/i }), `${label} : lien « Administration »`).toHaveCount(0);
   await expect(page.getByRole('button', { name: /administration/i }), `${label} : bouton « Administration »`)
     .toHaveCount(0);
+}
+
+/** Texte de la zone « compte » de l'en-tête (rôle `banner`) hors titre et navigation : « Connecté : {pseudo} » ou liens. */
+export async function headerAccountText(page: Page): Promise<string> {
+  const banner = page.getByRole('banner');
+  const whole = (await banner.innerText()).replace(/\s+/g, ' ').trim();
+  const known = ['Backyard Ultra Tracker', 'Courses', 'Mes inscriptions', 'Scan'];
+  return known.reduce((rest, word) => rest.replace(word, ''), whole).replace(/\s+/g, ' ').trim();
 }
 
 /**

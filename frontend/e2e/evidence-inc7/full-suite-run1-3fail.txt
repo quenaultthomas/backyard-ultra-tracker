@@ -1,0 +1,327 @@
+
+Running 204 tests using 1 worker
+
+  ✓    1 [chromium] › tests\ca21-routes.spec.ts:45:5 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › / s'affiche puis résiste au rechargement (2.2s)
+  ✓    2 [chromium] › tests\ca21-routes.spec.ts:45:5 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /connexion s'affiche puis résiste au rechargement (1.2s)
+  ✓    3 [chromium] › tests\ca21-routes.spec.ts:45:5 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /inscription s'affiche puis résiste au rechargement (1.2s)
+  ✓    4 [chromium] › tests\ca21-routes.spec.ts:45:5 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /compte/connexion s'affiche puis résiste au rechargement (1.1s)
+  ✓    5 [chromium] › tests\ca21-routes.spec.ts:45:5 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /scan s'affiche puis résiste au rechargement (919ms)
+  ✓    6 [chromium] › tests\ca21-routes.spec.ts:58:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /courses/{id} affiche le tableau de bord (992ms)
+  ✓    7 [chromium] › tests\ca21-routes.spec.ts:70:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /coureurs/{id} affiche le détail du coureur (1.0s)
+  ✓    8 [chromium] › tests\ca21-routes.spec.ts:82:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /inscription/{id} affiche le formulaire (1.0s)
+  ✓    9 [chromium] › tests\ca21-routes.spec.ts:98:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /admin sans connexion affiche Page introuvable (inc. 6, RG3) (785ms)
+  ✓   10 [chromium] › tests\ca21-routes.spec.ts:110:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /admin/courses/{id}/qr sans connexion affiche Page introuvable (inc. 6, RG3) (781ms)
+  ✓   11 [chromium] › tests\ca21-routes.spec.ts:122:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › route inconnue sous /courses/{id} affiche Page introuvable (805ms)
+  ✓   12 [chromium] › tests\ca21-routes.spec.ts:142:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › route inconnue sous /admin affiche Page introuvable, même sans connexion (BUG-1) (775ms)
+  ✓   13 [chromium] › tests\ca21-routes.spec.ts:160:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › chemin hors de la liste fermée RG53 (/nimporte-quoi) reste refusé par le serveur (709ms)
+  ✓   14 [chromium] › tests\ca22-registration.spec.ts:34:3 › @INC-4 @smoke @INC4-CA22 Inscription › la page affiche les paramètres de la course et le formulaire (817ms)
+  ✓   15 [chromium] › tests\ca22-registration.spec.ts:52:3 › @INC-4 @smoke @INC4-CA22 Inscription › l'inscription d'Alice puis Bob puis Chloé attribue les dossards 1, 2 et 3 (2.4s)
+  ✓   16 [chromium] › tests\ca22-registration.spec.ts:72:3 › @INC-4 @smoke @INC4-CA22 Inscription › le QR code affiché décode exactement le qrToken du coureur (2.9s)
+  ✓   17 [chromium] › tests\ca23-registration-errors.spec.ts:22:3 › @INC-4 @INC4-CA23 Inscription — erreurs › pseudo blanc : message sous le champ, aucune requête E3 (969ms)
+  ✓   18 [chromium] › tests\ca23-registration-errors.spec.ts:43:3 › @INC-4 @INC4-CA23 Inscription — erreurs › double clic rapide sur "S'inscrire" : une seule requête E3 (1.7s)
+  ✓   19 [chromium] › tests\ca23-registration-errors.spec.ts:72:3 › @INC-4 @INC4-CA23 Inscription — erreurs › inscriptions fermées après démarrage de la course (1.1s)
+  ✓   20 [chromium] › tests\ca23-registration-errors.spec.ts:81:3 › @INC-4 @INC4-CA23 Inscription — erreurs › course inexistante : "Course introuvable" (913ms)
+  ✓   21 [chromium] › tests\ca24-login-roles.spec.ts:15:3 › @INC-4 @smoke @INC4-CA24 Connexion et rôles › /admin sans connexion : Page introuvable (inc. 6), aucune requête /api/admin/** (816ms)
+  ✓   22 [chromium] › tests\ca24-login-roles.spec.ts:30:3 › @INC-4 @smoke @INC4-CA24 Connexion et rôles › identifiants admin invalides : "Identifiants invalides", rien en stockage (1.4s)
+  ✓   23 [chromium] › tests\ca24-login-roles.spec.ts:107:3 › @INC-4 @smoke @INC4-CA24 Connexion et rôles › connexion scanner (mémorisée) puis /admin : Page introuvable (inc. 6) sans donnée admin (1.5s)
+  ✓   24 [chromium] › tests\ca24-login-roles.spec.ts:144:3 › @INC-4 @smoke @INC4-CA24 Connexion et rôles › connexion admin : la liste des courses admin s'affiche (1.4s)
+  ✓   25 [chromium] › tests\ca24-login-roles.spec.ts:158:3 › @INC-4 @smoke @INC4-CA24 Connexion et rôles › un 401 sur E6 suspend la file sans perte, reprise après reconnexion (3.7s)
+  ✓   26 [chromium] › tests\ca25-credentials-storage.spec.ts:66:3 › @INC-4 @INC4-CA25 Stockage des identifiants › connexion ADMIN : ni le mot de passe ni le Basic ne sont stockés ; reconnexion redemandée (1.5s)
+  ✓   27 [chromium] › tests\ca25-credentials-storage.spec.ts:95:3 › @INC-4 @INC4-CA25 Stockage des identifiants › connexion SCANNER sans "Rester connecté" : rien stocké, reconnexion redemandée (1.4s)
+  ✓   28 [chromium] › tests\ca25-credentials-storage.spec.ts:117:3 › @INC-4 @INC4-CA25 Stockage des identifiants › connexion SCANNER avec "Rester connecté" : session conservée après rechargement (1.5s)
+  ✓   29 [chromium] › tests\ca25-credentials-storage.spec.ts:140:3 › @INC-4 @INC4-CA25 Stockage des identifiants › "Se déconnecter" efface tout stockage (1.5s)
+  ✓   30 [chromium] › tests\ca25-credentials-storage.spec.ts:164:3 › @INC-4 @INC4-CA25 Stockage des identifiants › déconnexion avec 2 scans en attente : confirmation, annulation garde la session (2.9s)
+  ✓   31 [chromium] › tests\ca26-no-auth-to-public.spec.ts:6:3 › @INC-4 @INC4-CA26 Authorization jamais envoyé au public › connecté SCANNER, aucune requête /api/public/** ne porte Authorization ni ne reçoit 401 (12.6s)
+  ✓   32 [chromium] › tests\ca27-scan-camera.spec.ts:13:3 › @INC-4 @INC4-CA27 Scan nominal › scan nominal du QR d'Alice, une seule capture malgré la lecture continue (8.4s)
+  ✓   33 [chromium] › tests\ca28-scan-manual.spec.ts:27:3 › @INC-4 @smoke @INC4-CA28 Caméra refusée et saisie manuelle › permission refusée : message de refus, champ visible ; saisie de Bob acceptée ; texte invalide rejeté (3.0s)
+  ✓   34 [chromium] › tests\ca29-offline-fifo.spec.ts:32:3 › @INC-4 @INC4-CA29 Coupure réseau, FIFO et réactivation › reprise FIFO après coupure, sans perte, avec réactivation (42.7s)
+  ✓   35 [chromium] › tests\ca30-backoff.spec.ts:12:3 › @INC-4 @INC4-CA30 Backoff sur erreur serveur › deux 503 puis succès : 3 requêtes, backoff croissant, aucun abandon (6.0s)
+  ✘   36 [chromium] › tests\ca31-rejection.spec.ts:19:3 › @INC-4 @INC4-CA31 Rejet définitif et poursuite de la file › rejet de Chloé, Dan traité ensuite ; marquer vu et renvoyer (1.3m)
+  ✓   37 [chromium] › tests\ca32-dashboard.spec.ts:18:3 › @INC-4 @INC4-CA32 Tableau de bord : bascule, auto-DNF, vainqueur › parcours complet, sans aucun rechargement du tableau de bord (1.1m)
+  ✓   38 [chromium] › tests\ca33-freshness.spec.ts:12:3 › @INC-4 @INC4-CA33 Fraîcheur du tableau de bord › bandeau "non actualisées" après 10 s de blocage, disparaît après reprise (14.3s)
+  ✓   39 [chromium] › tests\ca34-ca35-dnf-reintegration.spec.ts:10:3 › @INC-4 @smoke @INC4-CA34 @INC4-CA35 DNF manuel puis réintégration, avec confirmation › DNF avec confirmation (annulation, Échap, confirmation), puis réintégration (6.6s)
+  ✓   40 [chromium] › tests\ca36-admin-crud.spec.ts:29:3 › @INC-4 @INC4-CA36 Administration des courses et des coureurs › création, erreurs, planche QR, modification, suppression, démarrage, action hors ligne (11.3s)
+  ✓   41 [chromium] › tests\ca37-parallel-races.spec.ts:27:3 › @INC-4 @INC4-CA37 Deux courses en parallèle › scans sur un seul écran, deux onglets de tableau de bord ouverts avant /scan, même appareil (35.1s)
+  ✓   42 [chromium] › tests\ca38-pwa-files-cors.spec.ts:7:3 › @INC-4 @smoke @INC4-CA38 Fichiers de la PWA et absence de CORS › fichiers PWA accessibles sans connexion, service worker actif, CORS refusé depuis une autre origine (1.7s)
+  ✘   43 [chromium] › tests\ca39-installability-offline.spec.ts:37:3 › @INC-4 @INC4-CA39 @INC-6 @INC6-CA7 Installabilité et hors ligne › manifeste correct ; hors ligne réel, prouvé par le service worker (16.9s)
+  ✓   44 [chromium] › tests\ca40-clock-correction.spec.ts:9:3 › @INC-4 @INC4-CA40 Correction d'horloge › avertissement de décalage, scan accepté sans rejet "dans le futur" (4.5s)
+  ✓   45 [chromium] › tests\ca41-accessibility.spec.ts:19:3 › @INC-4 @INC4-CA41 Accessibilité et cibles tactiles › audit axe-core sur les pages clés (10.9s)
+  ✓   46 [chromium] › tests\ca41-accessibility.spec.ts:105:3 › @INC-4 @INC4-CA41 Accessibilité et cibles tactiles › cibles tactiles de /scan en 360×740 (1.7s)
+  ✓   47 [chromium] › tests\ca42-scan-feedback.spec.ts:76:3 › @INC-4 @INC4-CA42 Feedback du scan › capture puis acceptation en ligne : 1 puis 2 bips, vibrations, bandeaux (2.6s)
+  ✓   48 [chromium] › tests\ca42-scan-feedback.spec.ts:140:3 › @INC-4 @INC4-CA42 Feedback du scan › scan capturé hors ligne, accepté plus de 5 s après : aucun son ni vibration à l'acceptation (8.5s)
+  ✓   49 [chromium] › tests\ca42-scan-feedback.spec.ts:197:3 › @INC-4 @INC4-CA42 Feedback du scan › son coupé : aucun bip, réglage conservé après rechargement (2.7s)
+  ✓   50 [chromium] › tests\ca43-runner-detail.spec.ts:16:3 › @INC-4 @INC4-CA43 Détail coureur › yard corrigé sans heure ni temps de boucle ; yard scanné avec heure et temps de boucle (41.9s)
+  ✓   51 [chromium] › tests\ca44-effective-emitter.spec.ts:22:3 › @INC-4 @INC4-CA44 Émetteur effectif avec plusieurs onglets › un seul émetteur, aucun envoi bloqué, quel que soit l'onglet qui capture (7.9s)
+  ✓   52 [chromium] › tests\inc5-accessibility.spec.ts:22:3 › @INC-5 @INC5-A11Y Accessibilité des écrans de comptes › audit axe-core sur inscription, connexion coureur, Mes inscriptions et Comptes (7.3s)
+  ✓   53 [chromium] › tests\inc5-ca25-registration-qr.spec.ts:15:3 › @INC-5 @smoke @INC5-CA25 Inscription avec compte et réaffichage du QR › mots de passe différents, création, connexion, QR décodé, pseudo déjà pris (3.7s)
+  ✓   54 [chromium] › tests\inc5-ca26-admin-reset.spec.ts:11:3 › @INC-5 @smoke @INC5-CA26 Réinitialisation du mot de passe par l'admin › annuler n'envoie rien, confirmer envoie une requête E22, l'ancien mot de passe ne marche plus (4.0s)
+  ✓   55 [chromium] › tests\inc5-ca28-existing-account.spec.ts:12:3 › @INC-5 @smoke @INC5-CA28 Inscription avec un compte existant › « J'ai déjà un compte », connexion, retour, une seule requête E20 et aucune E3 (2.8s)
+  ✓   56 [chromium] › tests\inc5-ca37-password-change.spec.ts:20:3 › @INC-5 @smoke @INC5-CA37 Changement de mot de passe par le coureur › une requête E23, session conservée au rechargement, ancien mot de passe refusé, rien de stocké en clair (3.3s)
+  ✓   57 [chromium] › tests\inc5-ca38-admin-delete-account.spec.ts:11:3 › @INC-5 @smoke @INC5-CA38 Suppression d'un compte par l'admin › confirmation, une requête E24, coureur conservé sans compte, connexion refusée (4.6s)
+  ✓   58 [chromium] › tests\inc5-ca41-too-many-attempts.spec.ts:19:3 › @INC-5 @INC5-CA41 Affichage d'un 429 › inscription : message dédié et une seule requête E3 (1.4s)
+  ✓   59 [chromium] › tests\inc5-ca41-too-many-attempts.spec.ts:49:3 › @INC-5 @INC5-CA41 Affichage d'un 429 › connexion coureur : message dédié et une seule requête E21 (927ms)
+  ✓   60 [chromium] › tests\inc5-ca44-admin-accounts.spec.ts:13:3 › @INC-5 @smoke @INC5-CA44 Écran Comptes de l'administration › recherche, réinitialisation, suppression et recherche insensible à la casse (5.4s)
+  ✓   61 [chromium] › tests\inc6-ca10-ca11-staff-login.spec.ts:18:3 › @INC-6 @smoke @INC6-CA10 Identifiants coureur refusés sur la connexion staff › E19 401, « Identifiants invalides », rien conservé côté staff, /compte intact (3.1s)
+  ✓   62 [chromium] › tests\inc6-ca10-ca11-staff-login.spec.ts:137:3 › @INC-6 @smoke @INC6-CA11 Connexion ADMIN depuis /scan › écran de connexion neutre, retour sur /scan, capture 200, /admin par son URL (3.1s)
+  ✓   63 [chromium] › tests\inc6-ca2-no-admin-link.spec.ts:16:3 › @INC-6 @smoke @INC6-CA2 Aucun lien public vers l'espace admin › anonyme puis coureur connecté : aucun lien, bouton ou texte menant à l'administration (4.8s)
+  ✓   64 [chromium] › tests\inc6-ca2-no-admin-link.spec.ts:140:3 › @INC-6 @smoke @INC6-CA2 Aucun lien public vers l'espace admin › « Scan » cible /scan (en-tête et accueil), « Courses » et « Mes inscriptions » sont présents (1.1s)
+  ✓   65 [chromium] › tests\inc6-ca3-ca4-admin-not-found.spec.ts:16:3 › @INC-6 @smoke @INC6-CA3 /admin/** pour un anonyme › « Page introuvable », adresse inchangée, aucune requête admin (1.2s)
+  ✓   66 [chromium] › tests\inc6-ca3-ca4-admin-not-found.spec.ts:43:3 › @INC-6 @INC6-CA4 /admin/** pour un coureur et pour un SCANNER › coureur connecté, puis SCANNER : « Page introuvable » ; scan et « Mes inscriptions » fonctionnent (3.4s)
+  ✓   67 [chromium] › tests\inc6-ca5-ca8-admin-access.spec.ts:24:3 › @INC-6 @smoke @INC6-CA5 Accès ADMIN › connexion directe, liste des courses et des coureurs, rechargement, nouvelle connexion (3.1s)
+  ✓   68 [chromium] › tests\inc6-ca5-ca8-admin-access.spec.ts:89:3 › @INC-6 @INC6-CA8 Identifiants ADMIN refusés pendant une action › 401 sur E13 : écran de connexion avec « Session expirée » (2.7s)
+  ✓   69 [chromium] › tests\inc6-ca6-admin-chunks-not-cached.spec.ts:20:3 › @INC-6 @INC6-CA6 Code admin non préchargé ni mis en cache par le public › aucun bloc admin dans le réseau ni dans Cache Storage en anonyme ; chargé après connexion ADMIN (2.0s)
+  ✓   70 [chromium] › tests\inc7-ca12-ca13-account-creation.spec.ts:18:3 › @INC-7 @smoke @INC7-CA12 Écran d'inscription autonome › (a) champs et mots de passe différents : aucune requête (1.0s)
+  ✓   71 [chromium] › tests\inc7-ca12-ca13-account-creation.spec.ts:44:3 › @INC-7 @smoke @INC7-CA12 Écran d'inscription autonome › (b) création : une seule E26 (201, sans Authorization) puis une seule E21 (200), arrivée sur /compte (2.2s)
+  ✓   72 [chromium] › tests\inc7-ca12-ca13-account-creation.spec.ts:95:3 › @INC-7 @smoke @INC7-CA12 Écran d'inscription autonome › (c) pseudo pris : 409, detail affiché, lien « J'ai déjà un compte », aucun secret dans l'URL ni les stockages (1.3s)
+  ✓   73 [chromium] › tests\inc7-ca12-ca13-account-creation.spec.ts:137:3 › @INC-7 @smoke @INC7-CA12 Écran d'inscription autonome › (d) 429 à corps HTML : « Trop de tentatives. Réessayez dans une minute. », une seule requête (939ms)
+  ✓   74 [chromium] › tests\inc7-ca12-ca13-account-creation.spec.ts:163:3 › @INC-7 @smoke @INC7-CA12 Écran d'inscription autonome › (e) déjà connecté en coureur : « Vous êtes connecté en tant que », aucun champ de création (1.8s)
+  ✓   75 [chromium] › tests\inc7-ca12-ca13-account-creation.spec.ts:208:3 › @INC-7 @smoke @INC7-CA13 Création de compte puis inscription à une course › « Créer un compte » (retour vers la course), création, « M'inscrire à cette course » : une E20 (201), QR, /compte (2.9s)
+  ✓   76 [chromium] › tests\inc7-ca14-ca15-header-and-admin.spec.ts:16:3 › @INC-7 @smoke @INC7-CA14 Liens publics de l'en-tête › anonyme : zone « compte » par écran, liens conservés, aucun lien /admin (2.6s)
+  ✓   77 [chromium] › tests\inc7-ca14-ca15-header-and-admin.spec.ts:67:3 › @INC-7 @smoke @INC7-CA14 Liens publics de l'en-tête › coureur connecté : « Connecté : {pseudo} » partout, ni « Se connecter » ni « Créer un compte » en en-tête, un seul « Se déconnecter » (sur /compte) (3.0s)
+  ✓   78 [chromium] › tests\inc7-ca14-ca15-header-and-admin.spec.ts:108:3 › @INC-7 @smoke @INC7-CA14 Liens publics de l'en-tête › bénévole puis admin connectés seulement : en-tête identique à celui d'un anonyme (2.4s)
+  ✓   79 [chromium] › tests\inc7-ca14-ca15-header-and-admin.spec.ts:266:3 › @INC-7 @smoke @INC7-CA15 /admin toujours introuvable › anonyme, coureur puis SCANNER : « Page introuvable », aucune requête /api/admin/** (2.6s)
+  ✓   80 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:14:3 › @INC-7 @smoke @INC7-CA16 Routes de connexion conservées › /compte/connexion : écran unique, « Coureur » sélectionnée, y compris avec retour=/scan (822ms)
+  ✓   81 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:31:3 › @INC-7 @smoke @INC7-CA16 Routes de connexion conservées › /compte sans connexion : renvoi vers /compte/connexion?retour=/compte, puis retour sur /compte après connexion (1.9s)
+  ✓   82 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:79:3 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (a) axe-core sur /connexion (Coureur puis Bénévole) et /inscription (5.8s)
+  ✓   83 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /connexion?retour=%2Fscan présélectionne « Bénévole » (784ms)
+  ✓   84 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /connexion?retour=%2Fadmin%2Fcomptes présélectionne « Bénévole » (774ms)
+  ✓   85 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /connexion?profil=benevole présélectionne « Bénévole » (761ms)
+  ✓   86 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /connexion présélectionne « Coureur » (757ms)
+  ✓   87 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /connexion?retour=%2Fcompte présélectionne « Coureur » (763ms)
+  ✓   88 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /connexion?profil=x présélectionne « Coureur » (739ms)
+  ✓   89 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /compte/connexion?retour=%2Fscan présélectionne « Coureur » (777ms)
+  ✓   90 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:172:3 › @INC-7 @INC7-CA23 Messages d'expiration par entrée › 401 de E6 pendant un envoi de scan : « Session expirée », « Bénévole » sélectionnée ; message gardé pour son entrée (2.4s)
+  ✓   91 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:224:3 › @INC-7 @INC7-CA23 Messages d'expiration par entrée › 401 sur /api/account/** : /compte/connexion avec le message coureur et « Coureur » sélectionnée (2.0s)
+  ✓   92 [chromium] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:264:3 › @INC-7 @INC7-CA23 Messages d'expiration par entrée › ADMIN : 401 pendant une action sous /admin : /connexion?retour=/admin/..., « Bénévole » sélectionnée (2.6s)
+  ✓   93 [chromium] › tests\inc7-ca20-no-admin-chunks.spec.ts:24:3 › @INC-7 @INC7-CA20 Aucun bloc admin sur /connexion et /inscription › réseau et Cache Storage sans bloc admin après la visite des deux écrans, service worker actif (1.5s)
+  ✓   94 [chromium] › tests\inc7-ca8-ca11-login-screen.spec.ts:25:3 › @INC-7 @smoke @INC7-CA8 Écran de connexion unique › h1, deux entrées, libellés par entrée, aucun texte ni lien vers l'administration, aucune requête avant soumission (1.4s)
+  ✓   95 [chromium] › tests\inc7-ca8-ca11-login-screen.spec.ts:108:3 › @INC-7 @smoke @INC7-CA9 Orientation par profil › (a) « Coureur » + Lievre : E21 200, arrivée sur /compte (2.0s)
+  ✓   96 [chromium] › tests\inc7-ca8-ca11-login-screen.spec.ts:134:3 › @INC-7 @smoke @INC7-CA9 Orientation par profil › (b) « Bénévole » + scanner-test : E19 200, arrivée sur /scan (1.3s)
+  ✓   97 [chromium] › tests\inc7-ca8-ca11-login-screen.spec.ts:147:3 › @INC-7 @smoke @INC7-CA9 Orientation par profil › (c) « Bénévole » + admin-test : E19 200, arrivée sur /admin qui liste les courses (1.9s)
+  ✓   98 [chromium] › tests\inc7-ca8-ca11-login-screen.spec.ts:170:3 › @INC-7 @smoke @INC7-CA9 Orientation par profil › (d) retour=/scan : l'ADMIN revient sur /scan (1.1s)
+  ✓   99 [chromium] › tests\inc7-ca8-ca11-login-screen.spec.ts:194:3 › @INC-7 @smoke @INC7-CA10 Mauvaise entrée › (a) Lievre sur « Bénévole » : E19 401, message et aide, rien conservé, /scan redemande une connexion (1.9s)
+  ✓  100 [chromium] › tests\inc7-ca8-ca11-login-screen.spec.ts:238:3 › @INC-7 @smoke @INC7-CA10 Mauvaise entrée › (b) scanner-test sur « Coureur » : E21 401, même message, aucun mot de passe ni Basic stocké (1.1s)
+  ✓  101 [chromium] › tests\inc7-ca8-ca11-login-screen.spec.ts:259:3 › @INC-7 @smoke @INC7-CA10 Mauvaise entrée › (c) message et aide identiques pour un identifiant inconnu et pour un identifiant de l'autre référentiel (1.4s)
+  ✓  102 [chromium] › tests\inc7-ca8-ca11-login-screen.spec.ts:294:3 › @INC-7 @smoke @INC7-CA11 Indépendance des emplacements › coureur puis bénévole : /compte intact, scan avec le Basic bénévole, déconnexion coureur sans effet sur le bénévole (3.7s)
+  ✓  103 [webkit] › tests\ca21-routes.spec.ts:45:5 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › / s'affiche puis résiste au rechargement (1.1s)
+  ✓  104 [webkit] › tests\ca21-routes.spec.ts:45:5 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /connexion s'affiche puis résiste au rechargement (902ms)
+  ✓  105 [webkit] › tests\ca21-routes.spec.ts:45:5 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /inscription s'affiche puis résiste au rechargement (582ms)
+  ✓  106 [webkit] › tests\ca21-routes.spec.ts:45:5 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /compte/connexion s'affiche puis résiste au rechargement (599ms)
+  ✓  107 [webkit] › tests\ca21-routes.spec.ts:45:5 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /scan s'affiche puis résiste au rechargement (605ms)
+  ✓  108 [webkit] › tests\ca21-routes.spec.ts:58:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /courses/{id} affiche le tableau de bord (1.1s)
+  ✓  109 [webkit] › tests\ca21-routes.spec.ts:70:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /coureurs/{id} affiche le détail du coureur (676ms)
+  ✓  110 [webkit] › tests\ca21-routes.spec.ts:82:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /inscription/{id} affiche le formulaire (993ms)
+  ✓  111 [webkit] › tests\ca21-routes.spec.ts:98:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /admin sans connexion affiche Page introuvable (inc. 6, RG3) (600ms)
+  ✓  112 [webkit] › tests\ca21-routes.spec.ts:110:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › /admin/courses/{id}/qr sans connexion affiche Page introuvable (inc. 6, RG3) (589ms)
+  ✓  113 [webkit] › tests\ca21-routes.spec.ts:122:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › route inconnue sous /courses/{id} affiche Page introuvable (501ms)
+  ✓  114 [webkit] › tests\ca21-routes.spec.ts:142:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › route inconnue sous /admin affiche Page introuvable, même sans connexion (BUG-1) (597ms)
+  ✓  115 [webkit] › tests\ca21-routes.spec.ts:160:3 › @INC-4 @smoke @INC4-CA21 Routes et liens directs › chemin hors de la liste fermée RG53 (/nimporte-quoi) reste refusé par le serveur (385ms)
+  ✓  116 [webkit] › tests\ca22-registration.spec.ts:34:3 › @INC-4 @smoke @INC4-CA22 Inscription › la page affiche les paramètres de la course et le formulaire (579ms)
+  ✓  117 [webkit] › tests\ca22-registration.spec.ts:52:3 › @INC-4 @smoke @INC4-CA22 Inscription › l'inscription d'Alice puis Bob puis Chloé attribue les dossards 1, 2 et 3 (3.3s)
+  ✓  118 [webkit] › tests\ca22-registration.spec.ts:72:3 › @INC-4 @smoke @INC4-CA22 Inscription › le QR code affiché décode exactement le qrToken du coureur (2.2s)
+  ✓  119 [webkit] › tests\ca23-registration-errors.spec.ts:22:3 › @INC-4 @INC4-CA23 Inscription — erreurs › pseudo blanc : message sous le champ, aucune requête E3 (831ms)
+  ✓  120 [webkit] › tests\ca23-registration-errors.spec.ts:43:3 › @INC-4 @INC4-CA23 Inscription — erreurs › double clic rapide sur "S'inscrire" : une seule requête E3 (2.1s)
+  ✓  121 [webkit] › tests\ca23-registration-errors.spec.ts:72:3 › @INC-4 @INC4-CA23 Inscription — erreurs › inscriptions fermées après démarrage de la course (783ms)
+  ✓  122 [webkit] › tests\ca23-registration-errors.spec.ts:81:3 › @INC-4 @INC4-CA23 Inscription — erreurs › course inexistante : "Course introuvable" (485ms)
+  ✓  123 [webkit] › tests\ca24-login-roles.spec.ts:15:3 › @INC-4 @smoke @INC4-CA24 Connexion et rôles › /admin sans connexion : Page introuvable (inc. 6), aucune requête /api/admin/** (574ms)
+  ✓  124 [webkit] › tests\ca24-login-roles.spec.ts:30:3 › @INC-4 @smoke @INC4-CA24 Connexion et rôles › identifiants admin invalides : "Identifiants invalides", rien en stockage (1.4s)
+  ✓  125 [webkit] › tests\ca24-login-roles.spec.ts:107:3 › @INC-4 @smoke @INC4-CA24 Connexion et rôles › connexion scanner (mémorisée) puis /admin : Page introuvable (inc. 6) sans donnée admin (1.8s)
+  ✓  126 [webkit] › tests\ca24-login-roles.spec.ts:144:3 › @INC-4 @smoke @INC4-CA24 Connexion et rôles › connexion admin : la liste des courses admin s'affiche (1.4s)
+  ✓  127 [webkit] › tests\ca24-login-roles.spec.ts:158:3 › @INC-4 @smoke @INC4-CA24 Connexion et rôles › un 401 sur E6 suspend la file sans perte, reprise après reconnexion (3.6s)
+  ✓  128 [webkit] › tests\ca25-credentials-storage.spec.ts:66:3 › @INC-4 @INC4-CA25 Stockage des identifiants › connexion ADMIN : ni le mot de passe ni le Basic ne sont stockés ; reconnexion redemandée (1.6s)
+  ✓  129 [webkit] › tests\ca25-credentials-storage.spec.ts:95:3 › @INC-4 @INC4-CA25 Stockage des identifiants › connexion SCANNER sans "Rester connecté" : rien stocké, reconnexion redemandée (1.7s)
+  ✓  130 [webkit] › tests\ca25-credentials-storage.spec.ts:117:3 › @INC-4 @INC4-CA25 Stockage des identifiants › connexion SCANNER avec "Rester connecté" : session conservée après rechargement (2.0s)
+  ✓  131 [webkit] › tests\ca25-credentials-storage.spec.ts:140:3 › @INC-4 @INC4-CA25 Stockage des identifiants › "Se déconnecter" efface tout stockage (1.8s)
+  ✓  132 [webkit] › tests\ca25-credentials-storage.spec.ts:164:3 › @INC-4 @INC4-CA25 Stockage des identifiants › déconnexion avec 2 scans en attente : confirmation, annulation garde la session (3.7s)
+  ✓  133 [webkit] › tests\ca26-no-auth-to-public.spec.ts:6:3 › @INC-4 @INC4-CA26 Authorization jamais envoyé au public › connecté SCANNER, aucune requête /api/public/** ne porte Authorization ni ne reçoit 401 (13.1s)
+  ✓  134 [webkit] › tests\ca27-scan-camera.spec.ts:13:3 › @INC-4 @INC4-CA27 Scan nominal › scan nominal du QR d'Alice, une seule capture malgré la lecture continue (3.5s)
+  ✓  135 [webkit] › tests\ca28-scan-manual.spec.ts:27:3 › @INC-4 @smoke @INC4-CA28 Caméra refusée et saisie manuelle › permission refusée : message de refus, champ visible ; saisie de Bob acceptée ; texte invalide rejeté (3.5s)
+  ✓  136 [webkit] › tests\ca29-offline-fifo.spec.ts:32:3 › @INC-4 @INC4-CA29 Coupure réseau, FIFO et réactivation › reprise FIFO après coupure, sans perte, avec réactivation (42.4s)
+  ✓  137 [webkit] › tests\ca30-backoff.spec.ts:12:3 › @INC-4 @INC4-CA30 Backoff sur erreur serveur › deux 503 puis succès : 3 requêtes, backoff croissant, aucun abandon (6.5s)
+  ✓  138 [webkit] › tests\ca31-rejection.spec.ts:19:3 › @INC-4 @INC4-CA31 Rejet définitif et poursuite de la file › rejet de Chloé, Dan traité ensuite ; marquer vu et renvoyer (1.2m)
+  ✓  139 [webkit] › tests\ca32-dashboard.spec.ts:18:3 › @INC-4 @INC4-CA32 Tableau de bord : bascule, auto-DNF, vainqueur › parcours complet, sans aucun rechargement du tableau de bord (1.1m)
+  ✓  140 [webkit] › tests\ca33-freshness.spec.ts:12:3 › @INC-4 @INC4-CA33 Fraîcheur du tableau de bord › bandeau "non actualisées" après 10 s de blocage, disparaît après reprise (14.2s)
+  ✓  141 [webkit] › tests\ca34-ca35-dnf-reintegration.spec.ts:10:3 › @INC-4 @smoke @INC4-CA34 @INC4-CA35 DNF manuel puis réintégration, avec confirmation › DNF avec confirmation (annulation, Échap, confirmation), puis réintégration (7.5s)
+  ✓  142 [webkit] › tests\ca36-admin-crud.spec.ts:29:3 › @INC-4 @INC4-CA36 Administration des courses et des coureurs › création, erreurs, planche QR, modification, suppression, démarrage, action hors ligne (16.9s)
+  ✓  143 [webkit] › tests\ca37-parallel-races.spec.ts:27:3 › @INC-4 @INC4-CA37 Deux courses en parallèle › scans sur un seul écran, deux onglets de tableau de bord ouverts avant /scan, même appareil (35.4s)
+  ✓  144 [webkit] › tests\ca38-pwa-files-cors.spec.ts:7:3 › @INC-4 @smoke @INC4-CA38 Fichiers de la PWA et absence de CORS › fichiers PWA accessibles sans connexion, service worker actif, CORS refusé depuis une autre origine (1.4s)
+  ✓  145 [webkit] › tests\ca39-installability-offline.spec.ts:37:3 › @INC-4 @INC4-CA39 @INC-6 @INC6-CA7 Installabilité et hors ligne › manifeste correct ; hors ligne réel, prouvé par le service worker (13.8s)
+  ✓  146 [webkit] › tests\ca40-clock-correction.spec.ts:9:3 › @INC-4 @INC4-CA40 Correction d'horloge › avertissement de décalage, scan accepté sans rejet "dans le futur" (3.0s)
+  ✓  147 [webkit] › tests\ca41-accessibility.spec.ts:19:3 › @INC-4 @INC4-CA41 Accessibilité et cibles tactiles › audit axe-core sur les pages clés (9.8s)
+  ✓  148 [webkit] › tests\ca41-accessibility.spec.ts:105:3 › @INC-4 @INC4-CA41 Accessibilité et cibles tactiles › cibles tactiles de /scan en 360×740 (1.5s)
+  ✓  149 [webkit] › tests\ca42-scan-feedback.spec.ts:76:3 › @INC-4 @INC4-CA42 Feedback du scan › capture puis acceptation en ligne : 1 puis 2 bips, vibrations, bandeaux (3.0s)
+  ✓  150 [webkit] › tests\ca42-scan-feedback.spec.ts:140:3 › @INC-4 @INC4-CA42 Feedback du scan › scan capturé hors ligne, accepté plus de 5 s après : aucun son ni vibration à l'acceptation (8.9s)
+  ✓  151 [webkit] › tests\ca42-scan-feedback.spec.ts:197:3 › @INC-4 @INC4-CA42 Feedback du scan › son coupé : aucun bip, réglage conservé après rechargement (3.1s)
+  ✓  152 [webkit] › tests\ca43-runner-detail.spec.ts:16:3 › @INC-4 @INC4-CA43 Détail coureur › yard corrigé sans heure ni temps de boucle ; yard scanné avec heure et temps de boucle (40.1s)
+  ✓  153 [webkit] › tests\ca44-effective-emitter.spec.ts:22:3 › @INC-4 @INC4-CA44 Émetteur effectif avec plusieurs onglets › un seul émetteur, aucun envoi bloqué, quel que soit l'onglet qui capture (10.7s)
+  ✓  154 [webkit] › tests\inc5-accessibility.spec.ts:22:3 › @INC-5 @INC5-A11Y Accessibilité des écrans de comptes › audit axe-core sur inscription, connexion coureur, Mes inscriptions et Comptes (7.8s)
+  ✓  155 [webkit] › tests\inc5-ca25-registration-qr.spec.ts:15:3 › @INC-5 @smoke @INC5-CA25 Inscription avec compte et réaffichage du QR › mots de passe différents, création, connexion, QR décodé, pseudo déjà pris (4.4s)
+  ✓  156 [webkit] › tests\inc5-ca26-admin-reset.spec.ts:11:3 › @INC-5 @smoke @INC5-CA26 Réinitialisation du mot de passe par l'admin › annuler n'envoie rien, confirmer envoie une requête E22, l'ancien mot de passe ne marche plus (5.2s)
+  ✓  157 [webkit] › tests\inc5-ca28-existing-account.spec.ts:12:3 › @INC-5 @smoke @INC5-CA28 Inscription avec un compte existant › « J'ai déjà un compte », connexion, retour, une seule requête E20 et aucune E3 (3.5s)
+  ✓  158 [webkit] › tests\inc5-ca37-password-change.spec.ts:20:3 › @INC-5 @smoke @INC5-CA37 Changement de mot de passe par le coureur › une requête E23, session conservée au rechargement, ancien mot de passe refusé, rien de stocké en clair (5.2s)
+  ✓  159 [webkit] › tests\inc5-ca38-admin-delete-account.spec.ts:11:3 › @INC-5 @smoke @INC5-CA38 Suppression d'un compte par l'admin › confirmation, une requête E24, coureur conservé sans compte, connexion refusée (5.9s)
+  ✓  160 [webkit] › tests\inc5-ca41-too-many-attempts.spec.ts:19:3 › @INC-5 @INC5-CA41 Affichage d'un 429 › inscription : message dédié et une seule requête E3 (1.4s)
+  ✓  161 [webkit] › tests\inc5-ca41-too-many-attempts.spec.ts:49:3 › @INC-5 @INC5-CA41 Affichage d'un 429 › connexion coureur : message dédié et une seule requête E21 (1.0s)
+  ✓  162 [webkit] › tests\inc5-ca44-admin-accounts.spec.ts:13:3 › @INC-5 @smoke @INC5-CA44 Écran Comptes de l'administration › recherche, réinitialisation, suppression et recherche insensible à la casse (7.3s)
+  ✓  163 [webkit] › tests\inc6-ca10-ca11-staff-login.spec.ts:18:3 › @INC-6 @smoke @INC6-CA10 Identifiants coureur refusés sur la connexion staff › E19 401, « Identifiants invalides », rien conservé côté staff, /compte intact (4.7s)
+  ✓  164 [webkit] › tests\inc6-ca10-ca11-staff-login.spec.ts:137:3 › @INC-6 @smoke @INC6-CA11 Connexion ADMIN depuis /scan › écran de connexion neutre, retour sur /scan, capture 200, /admin par son URL (3.8s)
+  ✓  165 [webkit] › tests\inc6-ca2-no-admin-link.spec.ts:16:3 › @INC-6 @smoke @INC6-CA2 Aucun lien public vers l'espace admin › anonyme puis coureur connecté : aucun lien, bouton ou texte menant à l'administration (8.5s)
+  ✓  166 [webkit] › tests\inc6-ca2-no-admin-link.spec.ts:140:3 › @INC-6 @smoke @INC6-CA2 Aucun lien public vers l'espace admin › « Scan » cible /scan (en-tête et accueil), « Courses » et « Mes inscriptions » sont présents (1.5s)
+  ✓  167 [webkit] › tests\inc6-ca3-ca4-admin-not-found.spec.ts:16:3 › @INC-6 @smoke @INC6-CA3 /admin/** pour un anonyme › « Page introuvable », adresse inchangée, aucune requête admin (1.8s)
+  ✓  168 [webkit] › tests\inc6-ca3-ca4-admin-not-found.spec.ts:43:3 › @INC-6 @INC6-CA4 /admin/** pour un coureur et pour un SCANNER › coureur connecté, puis SCANNER : « Page introuvable » ; scan et « Mes inscriptions » fonctionnent (5.4s)
+  ✓  169 [webkit] › tests\inc6-ca5-ca8-admin-access.spec.ts:24:3 › @INC-6 @smoke @INC6-CA5 Accès ADMIN › connexion directe, liste des courses et des coureurs, rechargement, nouvelle connexion (4.2s)
+  ✓  170 [webkit] › tests\inc6-ca5-ca8-admin-access.spec.ts:89:3 › @INC-6 @INC6-CA8 Identifiants ADMIN refusés pendant une action › 401 sur E13 : écran de connexion avec « Session expirée » (3.0s)
+  ✓  171 [webkit] › tests\inc6-ca6-admin-chunks-not-cached.spec.ts:20:3 › @INC-6 @INC6-CA6 Code admin non préchargé ni mis en cache par le public › aucun bloc admin dans le réseau ni dans Cache Storage en anonyme ; chargé après connexion ADMIN (3.7s)
+  ✓  172 [webkit] › tests\inc7-ca12-ca13-account-creation.spec.ts:18:3 › @INC-7 @smoke @INC7-CA12 Écran d'inscription autonome › (a) champs et mots de passe différents : aucune requête (984ms)
+  ✓  173 [webkit] › tests\inc7-ca12-ca13-account-creation.spec.ts:44:3 › @INC-7 @smoke @INC7-CA12 Écran d'inscription autonome › (b) création : une seule E26 (201, sans Authorization) puis une seule E21 (200), arrivée sur /compte (2.2s)
+  ✓  174 [webkit] › tests\inc7-ca12-ca13-account-creation.spec.ts:95:3 › @INC-7 @smoke @INC7-CA12 Écran d'inscription autonome › (c) pseudo pris : 409, detail affiché, lien « J'ai déjà un compte », aucun secret dans l'URL ni les stockages (1.4s)
+  ✓  175 [webkit] › tests\inc7-ca12-ca13-account-creation.spec.ts:137:3 › @INC-7 @smoke @INC7-CA12 Écran d'inscription autonome › (d) 429 à corps HTML : « Trop de tentatives. Réessayez dans une minute. », une seule requête (888ms)
+  ✓  176 [webkit] › tests\inc7-ca12-ca13-account-creation.spec.ts:163:3 › @INC-7 @smoke @INC7-CA12 Écran d'inscription autonome › (e) déjà connecté en coureur : « Vous êtes connecté en tant que », aucun champ de création (2.0s)
+  ✓  177 [webkit] › tests\inc7-ca12-ca13-account-creation.spec.ts:208:3 › @INC-7 @smoke @INC7-CA13 Création de compte puis inscription à une course › « Créer un compte » (retour vers la course), création, « M'inscrire à cette course » : une E20 (201), QR, /compte (3.4s)
+  ✓  178 [webkit] › tests\inc7-ca14-ca15-header-and-admin.spec.ts:16:3 › @INC-7 @smoke @INC7-CA14 Liens publics de l'en-tête › anonyme : zone « compte » par écran, liens conservés, aucun lien /admin (3.6s)
+  ✓  179 [webkit] › tests\inc7-ca14-ca15-header-and-admin.spec.ts:67:3 › @INC-7 @smoke @INC7-CA14 Liens publics de l'en-tête › coureur connecté : « Connecté : {pseudo} » partout, ni « Se connecter » ni « Créer un compte » en en-tête, un seul « Se déconnecter » (sur /compte) (5.0s)
+  ✓  180 [webkit] › tests\inc7-ca14-ca15-header-and-admin.spec.ts:108:3 › @INC-7 @smoke @INC7-CA14 Liens publics de l'en-tête › bénévole puis admin connectés seulement : en-tête identique à celui d'un anonyme (4.0s)
+  ✓  181 [webkit] › tests\inc7-ca14-ca15-header-and-admin.spec.ts:266:3 › @INC-7 @smoke @INC7-CA15 /admin toujours introuvable › anonyme, coureur puis SCANNER : « Page introuvable », aucune requête /api/admin/** (4.5s)
+  ✓  182 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:14:3 › @INC-7 @smoke @INC7-CA16 Routes de connexion conservées › /compte/connexion : écran unique, « Coureur » sélectionnée, y compris avec retour=/scan (706ms)
+  ✓  183 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:31:3 › @INC-7 @smoke @INC7-CA16 Routes de connexion conservées › /compte sans connexion : renvoi vers /compte/connexion?retour=/compte, puis retour sur /compte après connexion (2.2s)
+  ✓  184 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:79:3 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (a) axe-core sur /connexion (Coureur puis Bénévole) et /inscription (4.8s)
+  ✓  185 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /connexion?retour=%2Fscan présélectionne « Bénévole » (537ms)
+  ✓  186 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /connexion?retour=%2Fadmin%2Fcomptes présélectionne « Bénévole » (532ms)
+  ✓  187 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /connexion?profil=benevole présélectionne « Bénévole » (535ms)
+  ✓  188 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /connexion présélectionne « Coureur » (527ms)
+  ✓  189 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /connexion?retour=%2Fcompte présélectionne « Coureur » (523ms)
+  ✓  190 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /connexion?profil=x présélectionne « Coureur » (538ms)
+  ✓  191 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:134:5 › @INC-7 @smoke @INC7-CA22 Accessibilité et présélection › (b) /compte/connexion?retour=%2Fscan présélectionne « Coureur » (570ms)
+  ✓  192 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:172:3 › @INC-7 @INC7-CA23 Messages d'expiration par entrée › 401 de E6 pendant un envoi de scan : « Session expirée », « Bénévole » sélectionnée ; message gardé pour son entrée (3.1s)
+  ✓  193 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:224:3 › @INC-7 @INC7-CA23 Messages d'expiration par entrée › 401 sur /api/account/** : /compte/connexion avec le message coureur et « Coureur » sélectionnée (2.3s)
+  ✓  194 [webkit] › tests\inc7-ca16-ca22-ca23-routes-a11y-expiry.spec.ts:264:3 › @INC-7 @INC7-CA23 Messages d'expiration par entrée › ADMIN : 401 pendant une action sous /admin : /connexion?retour=/admin/..., « Bénévole » sélectionnée (3.2s)
+  ✘  195 [webkit] › tests\inc7-ca20-no-admin-chunks.spec.ts:24:3 › @INC-7 @INC7-CA20 Aucun bloc admin sur /connexion et /inscription › réseau et Cache Storage sans bloc admin après la visite des deux écrans, service worker actif (1.0m)
+  ✓  196 [webkit] › tests\inc7-ca8-ca11-login-screen.spec.ts:25:3 › @INC-7 @smoke @INC7-CA8 Écran de connexion unique › h1, deux entrées, libellés par entrée, aucun texte ni lien vers l'administration, aucune requête avant soumission (1.5s)
+  ✓  197 [webkit] › tests\inc7-ca8-ca11-login-screen.spec.ts:108:3 › @INC-7 @smoke @INC7-CA9 Orientation par profil › (a) « Coureur » + Lievre : E21 200, arrivée sur /compte (2.0s)
+  ✓  198 [webkit] › tests\inc7-ca8-ca11-login-screen.spec.ts:134:3 › @INC-7 @smoke @INC7-CA9 Orientation par profil › (b) « Bénévole » + scanner-test : E19 200, arrivée sur /scan (1.3s)
+  ✓  199 [webkit] › tests\inc7-ca8-ca11-login-screen.spec.ts:147:3 › @INC-7 @smoke @INC7-CA9 Orientation par profil › (c) « Bénévole » + admin-test : E19 200, arrivée sur /admin qui liste les courses (1.9s)
+  ✓  200 [webkit] › tests\inc7-ca8-ca11-login-screen.spec.ts:170:3 › @INC-7 @smoke @INC7-CA9 Orientation par profil › (d) retour=/scan : l'ADMIN revient sur /scan (1.1s)
+  ✓  201 [webkit] › tests\inc7-ca8-ca11-login-screen.spec.ts:194:3 › @INC-7 @smoke @INC7-CA10 Mauvaise entrée › (a) Lievre sur « Bénévole » : E19 401, message et aide, rien conservé, /scan redemande une connexion (2.5s)
+  ✓  202 [webkit] › tests\inc7-ca8-ca11-login-screen.spec.ts:238:3 › @INC-7 @smoke @INC7-CA10 Mauvaise entrée › (b) scanner-test sur « Coureur » : E21 401, même message, aucun mot de passe ni Basic stocké (1.5s)
+  ✓  203 [webkit] › tests\inc7-ca8-ca11-login-screen.spec.ts:259:3 › @INC-7 @smoke @INC7-CA10 Mauvaise entrée › (c) message et aide identiques pour un identifiant inconnu et pour un identifiant de l'autre référentiel (1.8s)
+  ✓  204 [webkit] › tests\inc7-ca8-ca11-login-screen.spec.ts:294:3 › @INC-7 @smoke @INC7-CA11 Indépendance des emplacements › coureur puis bénévole : /compte intact, scan avec le Basic bénévole, déconnexion coureur sans effet sur le bénévole (5.1s)
+
+
+  1) [chromium] › tests\ca31-rejection.spec.ts:19:3 › @INC-4 @INC4-CA31 Rejet définitif et poursuite de la file › rejet de Chloé, Dan traité ensuite ; marquer vu et renvoyer 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m failed
+
+    Locator:  getByText('2 en attente')
+    Expected: visible
+    Received: <element(s) not found>
+    Timeout:  10000ms
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByText('2 en attente')[22m
+
+
+       96 |     await page.getByLabel('Code du QR').fill(dan.qrToken);
+       97 |     await page.getByRole('button', { name: 'Valider' }).click();
+    >  98 |     await expect(page.getByText('2 en attente')).toBeVisible();
+          |                                                  ^
+       99 |
+      100 |     await waitUntil(t0 + 68_000);
+      101 |     const onlineAt = Date.now();
+        at C:\Users\tquenault\workspace_perso\backyard-ultra-tracker\frontend\e2e\tests\ca31-rejection.spec.ts:98:50
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\ca31-rejection--INC-4-INC4-bc84e-uite-marquer-vu-et-renvoyer-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\ca31-rejection--INC-4-INC4-bc84e-uite-marquer-vu-et-renvoyer-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\ca31-rejection--INC-4-INC4-bc84e-uite-marquer-vu-et-renvoyer-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\ca31-rejection--INC-4-INC4-bc84e-uite-marquer-vu-et-renvoyer-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\ca31-rejection--INC-4-INC4-bc84e-uite-marquer-vu-et-renvoyer-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › tests\ca39-installability-offline.spec.ts:37:3 › @INC-4 @INC4-CA39 @INC-6 @INC6-CA7 Installabilité et hors ligne › manifeste correct ; hors ligne réel, prouvé par le service worker 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m()[22m failed
+
+    Locator:  getByText('Hors ligne')
+    Expected: visible
+    Received: <element(s) not found>
+    Timeout:  15000ms
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByText('Hors ligne')[22m
+
+
+      91 |       // Échec réel d'E4 (réseau coupé, y compris pour le service worker qui ne met jamais /api/** en cache,
+      92 |       // RG45) : le bandeau « Hors ligne » doit apparaître, sans aucun repli sur une autre issue.
+    > 93 |       await expect(page.getByText('Hors ligne', { exact: false })).toBeVisible({ timeout: 15_000 });
+         |                                                                    ^
+      94 |     } else {
+      95 |       // WebKit (LIM-E2E-2, voir en-tête) : navigation interne uniquement, après une première visite en ligne
+      96 |       // de chaque route, pour que son bloc de route soit déjà chargé dans le document avant la coupure.
+        at C:\Users\tquenault\workspace_perso\backyard-ultra-tracker\frontend\e2e\tests\ca39-installability-offline.spec.ts:93:68
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\ca39-installability-offlin-dc12d-rouvé-par-le-service-worker-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\ca39-installability-offlin-dc12d-rouvé-par-le-service-worker-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\ca39-installability-offlin-dc12d-rouvé-par-le-service-worker-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\ca39-installability-offlin-dc12d-rouvé-par-le-service-worker-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\ca39-installability-offlin-dc12d-rouvé-par-le-service-worker-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [webkit] › tests\inc7-ca20-no-admin-chunks.spec.ts:24:3 › @INC-7 @INC7-CA20 Aucun bloc admin sur /connexion et /inscription › réseau et Cache Storage sans bloc admin après la visite des deux écrans, service worker actif 
+
+    TimeoutError: page.waitForFunction: Timeout 60000ms exceeded.
+
+      65 |       null, { timeout: 60_000 });
+      66 |     await page.reload();
+    > 67 |     await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, { timeout: 60_000 });
+         |                ^
+      68 |     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connexion');
+      69 |     await expect.poll(async () => missingFromCache(await page.evaluate(listCachedUrls), prefetched), {
+      70 |       message: 'fichiers préchargés absents de Cache Storage', timeout: 90_000, intervals: [500, 1_000, 2_000],
+        at C:\Users\tquenault\workspace_perso\backyard-ultra-tracker\frontend\e2e\tests\inc7-ca20-no-admin-chunks.spec.ts:67:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\inc7-ca20-no-admin-chunks--63ba0-écrans-service-worker-actif-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\inc7-ca20-no-admin-chunks--63ba0-écrans-service-worker-actif-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\inc7-ca20-no-admin-chunks--63ba0-écrans-service-worker-actif-webkit\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\inc7-ca20-no-admin-chunks--63ba0-écrans-service-worker-actif-webkit\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\inc7-ca20-no-admin-chunks--63ba0-écrans-service-worker-actif-webkit\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [chromium] › tests\ca31-rejection.spec.ts:19:3 › @INC-4 @INC4-CA31 Rejet définitif et poursuite de la file › rejet de Chloé, Dan traité ensuite ; marquer vu et renvoyer 
+    [chromium] › tests\ca39-installability-offline.spec.ts:37:3 › @INC-4 @INC4-CA39 @INC-6 @INC6-CA7 Installabilité et hors ligne › manifeste correct ; hors ligne réel, prouvé par le service worker 
+    [webkit] › tests\inc7-ca20-no-admin-chunks.spec.ts:24:3 › @INC-7 @INC7-CA20 Aucun bloc admin sur /connexion et /inscription › réseau et Cache Storage sans bloc admin après la visite des deux écrans, service worker actif 
+  201 passed (19.6m)

@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { Api, uniqueRun } from '../fixtures/api';
-import { loginAdmin } from '../fixtures/ui';
+import { chooseStaffEntry, loginAdmin } from '../fixtures/ui';
 
 const E13 = /\/api\/admin\/races\/\d+\/runners$/;
 
 async function loginAdminFromConnexion(page: Page): Promise<void> {
   await page.goto('/connexion');
+  await chooseStaffEntry(page); // inc. 7 (RG1) : catégorie A, entrée « Bénévole » à choisir avant de remplir
   await page.getByLabel("Nom d'utilisateur").fill('admin-test');
   await page.getByLabel('Mot de passe').fill('admin-secret');
   await page.getByRole('button', { name: 'Se connecter' }).click();

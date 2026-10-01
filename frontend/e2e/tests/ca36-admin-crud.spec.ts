@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { Api, uniqueRun } from '../fixtures/api';
 import { decodeQrImage } from '../fixtures/qr-decode';
+import { chooseStaffEntry } from '../fixtures/ui';
 
 /**
  * CA36 — Administration des courses et des coureurs (RG37, RG39, RG40, RG43).
@@ -14,6 +15,10 @@ test.describe('@INC-4 @INC4-CA36 Administration des courses et des coureurs', ()
 
   async function loginAdmin(page: import('@playwright/test').Page, retour?: string): Promise<void> {
     await page.goto(retour ? `/connexion?retour=${encodeURIComponent(retour)}` : '/connexion');
+    if (!retour) {
+      // inc. 7 (RG1) : catégorie A. Sans `retour` sous /admin, « Coureur » est présélectionnée : choisir « Bénévole ».
+      await chooseStaffEntry(page);
+    }
     await page.getByLabel("Nom d'utilisateur").fill('admin-test');
     await page.getByLabel('Mot de passe').fill('admin-secret');
     await page.getByRole('button', { name: 'Se connecter' }).click();

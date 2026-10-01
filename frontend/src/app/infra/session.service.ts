@@ -4,6 +4,7 @@ import { API_PATHS } from '../core/api-paths';
 import { Role, SessionResponse } from '../core/api.types';
 import { basicAuthorization } from '../core/credentials';
 import { ADMIN_TIMEOUT_MS, errorMessage, isServerUnreachable } from '../core/http-classification';
+import { INVALID_CREDENTIALS } from '../core/outcomes';
 import { ApiClient } from './api-client';
 import { AuthState } from './auth-state';
 import { ClockOffsetService } from './clock-offset.service';
@@ -46,7 +47,7 @@ export class SessionService {
       return { ok: true, role: session.role };
     }
     if (result.responseClass === 'AUTH') {
-      return { ok: false, message: 'Identifiants invalides' };
+      return { ok: false, message: INVALID_CREDENTIALS };
     }
     return {
       ok: false,

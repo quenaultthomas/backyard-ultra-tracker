@@ -29,7 +29,7 @@ test.describe('@INC-5 @INC5-A11Y Accessibilité des écrans de comptes', () => {
     await assertNoSeriousViolations(page);
 
     await page.goto('/compte/connexion');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connexion coureur');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connexion'); // inc. 7 (RG3, catégorie B) : « Connexion coureur » devient « Connexion »
     await assertNoSeriousViolations(page);
 
     await loginRunner(page, `Lievre-${run}`, DEFAULT_RUNNER_PASSWORD, { open: false });

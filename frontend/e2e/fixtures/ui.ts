@@ -8,6 +8,29 @@ export async function loginAdmin(page: Page, retour = '/admin'): Promise<void> {
   await page.getByRole('button', { name: 'Se connecter' }).click();
 }
 
+/**
+ * Inc. 7 (RG1) : choisit l'entrée « Bénévole » de l'écran de connexion unique (nécessaire quand `/connexion` est ouvert
+ * sans `retour` sous `/scan` ou `/admin`, où « Coureur » est présélectionnée) et attend le changement de libellé.
+ */
+export async function chooseStaffEntry(page: Page): Promise<void> {
+  await page.getByRole('radio', { name: 'Bénévole' }).check();
+  await expect(page.getByLabel("Nom d'utilisateur")).toBeVisible();
+}
+
+/**
+ * Inc. 7 : remplit l'écran de connexion unique déjà ouvert pour l'entrée donnée (« runner » : champ « Pseudo » ;
+ * « staff » : champ « Nom d'utilisateur ») et valide. L'entrée doit déjà être celle affichée (voir `chooseStaffEntry`).
+ */
+export async function submitLogin(page: Page, entry: 'runner' | 'staff', identifier: string, password: string,
+                                  options: { readonly remember?: boolean } = {}): Promise<void> {
+  await page.getByLabel(entry === 'runner' ? 'Pseudo' : "Nom d'utilisateur").fill(identifier);
+  await page.getByLabel('Mot de passe').fill(password);
+  if (options.remember === true) {
+    await page.getByLabel('Rester connecté 24 h', { exact: false }).check();
+  }
+  await page.getByRole('button', { name: 'Se connecter' }).click();
+}
+
 /** Remplit et valide l'écran `/compte/connexion` (sans navigation préalable si `open` est faux). */
 export async function loginRunner(page: Page, pseudo: string, password: string,
                                   options: { readonly remember?: boolean; readonly open?: boolean } = {}):

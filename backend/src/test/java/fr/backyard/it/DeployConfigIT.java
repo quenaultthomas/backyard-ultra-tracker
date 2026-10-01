@@ -43,7 +43,7 @@ class DeployConfigIT {
 
     @Test
     @Tag("INC5-CA40")
-    @DisplayName("CA40 [config] - nginx : deux zones limit_req par $binary_remote_addr (10r/m, 30r/m), 429, burst 5 sur E3 et burst 10 sur /api/account/, aucun autre limit_req")
+    @DisplayName("CA40 [config] - nginx : deux zones limit_req par $binary_remote_addr (10r/m, 30r/m), 429, burst 5 sur E3 et sur E26 (inc. 7, CA17), burst 10 sur /api/account/, aucun autre limit_req (3 au total)")
     void ca40_nginxRateLimiting() throws IOException {
         String conf = String.join("\n", activeLines(deploy("nginx/backyard-ultra-tracker.conf")));
 
@@ -57,10 +57,15 @@ class DeployConfigIT {
             "location ~ \\^/api/public/races/\\[\\^/\\]\\+/registrations\\$ \\{\\s*limit_req zone=backyard_registration "
                 + "burst=5 nodelay;").matcher(conf);
         assertThat(registration.find()).as("location E3 : zone 10r/m, burst=5 nodelay").isTrue();
+        Matcher accountCreation = Pattern.compile(
+            "location = /api/public/accounts \\{\\s*limit_req zone=backyard_registration burst=5 nodelay;")
+            .matcher(conf);
+        assertThat(accountCreation.find()).as("location exact E26 : zone 10r/m (celle de E3), burst=5 nodelay")
+            .isTrue();
         Matcher account = Pattern.compile(
             "location /api/account/ \\{\\s*limit_req zone=backyard_account burst=10 nodelay;").matcher(conf);
         assertThat(account.find()).as("location /api/account/ : zone 30r/m, burst=10 nodelay").isTrue();
         assertThat(Pattern.compile("\\blimit_req\\s+zone=").matcher(conf).results().count())
-            .as("aucun autre limit_req").isEqualTo(2);
+            .as("aucun autre limit_req (E3, E26, /api/account/)").isEqualTo(3);
     }
 }

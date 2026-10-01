@@ -38,11 +38,16 @@ public final class PwaPaths {
     /** Répertoires de ressources statiques du build. */
     static final List<String> ASSET_DIRECTORIES = List.of("/icons/**", "/assets/**", "/media/**");
 
-    /** Routes du front (RG5 inc. 4, RG21 inc. 5), qui renvoient le contenu de {@link #INDEX_HTML}. */
+    /**
+     * Routes du front (RG5 inc. 4, RG21 inc. 5, RG7 inc. 7), qui renvoient le contenu de {@link #INDEX_HTML}.
+     * {@code /inscription} (création de compte autonome) est listée explicitement, comme {@code /compte} et
+     * {@code /admin}, à côté de son sous-arbre {@code /inscription/**} (inscription à une course).
+     */
     static final List<String> FRONT_ROUTES = List.of(
         "/",
         "/courses/**",
         "/coureurs/**",
+        "/inscription",
         "/inscription/**",
         "/connexion",
         "/compte",

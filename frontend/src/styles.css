@@ -134,6 +134,14 @@ a {
   gap: var(--gap);
 }
 
+.app-header .account-zone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gap);
+}
+
+.app-header .account-zone a,
 .app-header nav a {
   min-height: var(--target-size);
   display: inline-flex;

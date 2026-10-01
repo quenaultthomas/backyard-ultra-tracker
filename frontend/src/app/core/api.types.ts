@@ -86,6 +86,17 @@ export interface RegistrationRequest {
   readonly password: string;
 }
 
+/** E26 (inc. 7) : création d'un compte seul ; le pseudo est envoyé tel que saisi. */
+export interface AccountCreationRequest {
+  readonly pseudo: string;
+  readonly password: string;
+}
+
+/** E26 (inc. 7) : pseudo stocké seulement. */
+export interface AccountCreationResponse {
+  readonly pseudo: string;
+}
+
 /** E13, E14, E15, E17 : `accountId` et `pseudo` valent null sans compte (RG12 inc. 5). */
 export interface AdminRunnerResponse {
   readonly id: number;

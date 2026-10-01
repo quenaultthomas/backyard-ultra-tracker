@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { Api, uniqueRun } from '../fixtures/api';
+import { chooseStaffEntry } from '../fixtures/ui';
 
 /**
  * CA41 — Accessibilité et cibles tactiles (RG48, RG49, RG51). Audit automatisé axe-core (WCAG 2.1 A et AA),
@@ -38,6 +39,13 @@ test.describe('@INC-4 @INC4-CA41 Accessibilité et cibles tactiles', () => {
     await assertNoSeriousViolations(page);
 
     await page.goto('/connexion');
+    await assertNoSeriousViolations(page);
+
+    // Ajout inc. 7 (CA22, additif) : entrée « Bénévole » de l'écran unique et écran d'inscription autonome.
+    await chooseStaffEntry(page);
+    await assertNoSeriousViolations(page);
+    await page.goto('/inscription');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Créer un compte');
     await assertNoSeriousViolations(page);
 
     await page.goto(`/connexion?retour=${encodeURIComponent(`/admin/courses/${race.id}`)}`);

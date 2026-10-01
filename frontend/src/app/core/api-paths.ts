@@ -31,6 +31,7 @@ export const API_PATHS = {
     `/api/public/races/${encodeURIComponent(String(raceId))}/registrations`,
   board: (raceId: number | string) => `/api/public/races/${encodeURIComponent(String(raceId))}/board`,
   runner: (runnerId: number | string) => `/api/public/runners/${encodeURIComponent(String(runnerId))}`,
+  publicAccounts: '/api/public/accounts',
   scan: '/api/scan/passages',
   session: '/api/scan/me',
   adminRaces: '/api/admin/races',

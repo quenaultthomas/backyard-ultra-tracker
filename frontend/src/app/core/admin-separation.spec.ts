@@ -58,6 +58,15 @@ function loginLinks(template: string): string[] {
   return template.match(/(?:routerLink|href)=["']\/connexion[^"']*["']/g) ?? [];
 }
 
+/** Cibles internes des liens d'un gabarit : routerLink="/x", href="/x" et [routerLink]="'/x'" (inc. 7, RG4). */
+function linkTargets(template: string): string[] {
+  const targets: string[] = [];
+  for (const match of template.matchAll(/(?:routerLink|href)=["'](\/[^"']*)["']|\[routerLink\]="\[?'(\/[^']*)'/g)) {
+    targets.push(match[1] ?? match[2]!);
+  }
+  return targets;
+}
+
 function mentionsAdministration(template: string): boolean {
   return /administration|administrateur/i.test(template);
 }
@@ -81,6 +90,15 @@ describe('detecteurs (discriminants sur sources synthetiques)', () => {
     expect(mentionsAdministration('<a>Courses</a>')).toBe(false);
   });
 
+  it('linkTargets liste les cibles internes sous les trois formes de lien', () => {
+    expect(linkTargets(`<a routerLink="/">C</a><a href="/scan">S</a><a [routerLink]="'/inscription'">I</a>`)).toEqual([
+      '/',
+      '/scan',
+      '/inscription',
+    ]);
+    expect(linkTargets('<a href="https://x.example/admin">x</a>')).toEqual([]);
+  });
+
   it('templateOf extrait le gabarit inline et echoue sans gabarit', () => {
     expect(templateOf('@Component({ template: `<h1>Scan</h1>` })')).toBe('<h1>Scan</h1>');
     expect(() => templateOf('class A {}')).toThrow();
@@ -90,15 +108,31 @@ describe('detecteurs (discriminants sur sources synthetiques)', () => {
 // ----- RG2 : aucun lien public vers l'espace admin -----
 
 describe("RG2 - aucun lien public vers l'espace admin (CA2, CL1)", () => {
-  it("l'en-tete de navigation commun n'a ni lien admin, ni « Administration », ni lien /connexion ; Courses, Mes inscriptions et Scan sont conserves", () => {
+  // Inc. 7, RG4 (categorie B, motif : la regle « aucun lien /connexion dans l'en-tete » de l'inc. 6 est amendee par
+  // l'inc. 7 : /connexion et /inscription sont admis, et seulement eux). Aucune assertion retiree : aucun lien admin,
+  // aucune mention « Administration », liens Courses / Mes inscriptions / Scan conserves ; ajouts : liste fermee des
+  // cibles, presence des deux liens d'acces, aucune mention du staff.
+  it("l'en-tete de navigation commun n'a ni lien admin, ni « Administration » ; seuls /connexion et /inscription s'ajoutent ; Courses, Mes inscriptions et Scan sont conserves", () => {
     const template = templateOf(read(new URL('app.ts', APP)));
 
     expect(adminLinks(template)).toEqual([]);
     expect(mentionsAdministration(template)).toBe(false);
-    expect(loginLinks(template)).toEqual([]);
     expect(template).toContain('routerLink="/">Courses</a>');
     expect(template).toContain('routerLink="/compte">Mes inscriptions</a>');
     expect(template).toContain('routerLink="/scan">Scan</a>');
+    const targets = new Set(linkTargets(template));
+    expect([...targets].filter((t) => !['/', '/compte', '/scan', '/connexion', '/inscription'].includes(t))).toEqual([]);
+    expect(targets).toContain('/connexion');
+    expect(targets).toContain('/inscription');
+    expect(template).toContain('Se connecter');
+    expect(template).toContain('Créer un compte');
+  });
+
+  it("l'en-tete ne mentionne jamais le staff : ni « benevole », ni « administrateur », ni lien /admin (RG4, RG7 inc. 6)", () => {
+    const template = templateOf(read(new URL('app.ts', APP)));
+
+    expect(template).not.toMatch(/b[ée]n[ée]vole|administrat|scanner/i);
+    expect(template).not.toContain('/admin');
   });
 
   it("la page d'accueil n'a ni bouton admin, ni « Administration », ni lien /connexion ; le lien Scan est conserve", () => {
@@ -110,15 +144,20 @@ describe("RG2 - aucun lien public vers l'espace admin (CA2, CL1)", () => {
     expect(template).toMatch(/routerLink="\/scan"/);
   });
 
+  // Inc. 7 (categorie B, motif : l'ecran unique /connexion remplace l'ecran coureur ; runner-login-page.ts peut etre
+  // supprime, RG3). Le nom de l'ecran d'inscription n'etant pas fige par la spec, il est identifie par son h1
+  // « Creer un compte ». Aucune assertion affaiblie : le controle « aucun lien /admin, aucune mention » s'applique a
+  // tous les fichiers presents, nouveaux compris.
   it('aucun ecran public (hors pages/admin) ne contient de lien admin ni de mention « Administration » dans son gabarit', () => {
     const pages = publicPageFiles();
     expect(pages.map((page) => page.name)).toEqual(
       expect.arrayContaining([
         'home/home-page.ts', 'board/board-page.ts', 'runner/runner-page.ts', 'registration/registration-page.ts',
-        'account/account-page.ts', 'account/runner-login-page.ts', 'login/login-page.ts', 'scan/scan-page.ts',
-        'not-found/not-found-page.ts',
+        'account/account-page.ts', 'login/login-page.ts', 'scan/scan-page.ts', 'not-found/not-found-page.ts',
       ]),
     );
+    const createAccountScreens = pages.filter((page) => /<h1>\s*Créer un compte\s*<\/h1>/.test(read(page.url)));
+    expect(createAccountScreens, "ecran d'inscription autonome (h1 « Creer un compte ») introuvable").toHaveLength(1);
     for (const page of pages) {
       const template = templateOf(read(page.url));
       expect(adminLinks(template), `${page.name} : lien vers /admin`).toEqual([]);

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { Api, uniqueRun } from '../fixtures/api';
+import { chooseStaffEntry } from '../fixtures/ui';
 
 /** CA24 — Connexion et rôles 401/403 (RG6, RG10, RG36). */
 test.describe('@INC-4 @smoke @INC4-CA24 Connexion et rôles', () => {
@@ -23,6 +24,7 @@ test.describe('@INC-4 @smoke @INC4-CA24 Connexion et rôles', () => {
 
   test('identifiants admin invalides : "Identifiants invalides", rien en stockage', async ({ page }) => {
     await page.goto('/connexion');
+    await chooseStaffEntry(page); // inc. 7 (RG1) : catégorie A, entrée « Bénévole » à choisir avant de remplir
     await page.getByLabel("Nom d'utilisateur").fill('admin-test');
     await page.getByLabel('Mot de passe').fill('mauvais');
     await page.getByRole('button', { name: 'Se connecter' }).click();
@@ -120,6 +122,7 @@ test.describe('@INC-4 @smoke @INC4-CA24 Connexion et rôles', () => {
 
   test('connexion admin : la liste des courses admin s\'affiche', async ({ page }) => {
     await page.goto('/connexion');
+    await chooseStaffEntry(page); // inc. 7 (RG1) : catégorie A
     await page.getByLabel("Nom d'utilisateur").fill('admin-test');
     await page.getByLabel('Mot de passe').fill('admin-secret');
     await page.getByRole('button', { name: 'Se connecter' }).click();

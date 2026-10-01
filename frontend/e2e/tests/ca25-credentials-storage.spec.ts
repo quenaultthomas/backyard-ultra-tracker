@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { Api, uniqueRun } from '../fixtures/api';
+import { chooseStaffEntry } from '../fixtures/ui';
 
 /** CA25 — Stockage des identifiants (RG7, RG9). */
 test.describe('@INC-4 @INC4-CA25 Stockage des identifiants', () => {
@@ -64,6 +65,7 @@ test.describe('@INC-4 @INC4-CA25 Stockage des identifiants', () => {
 
   test('connexion ADMIN : ni le mot de passe ni le Basic ne sont stockés ; reconnexion redemandée', async ({ page }) => {
     await page.goto('/connexion');
+    await chooseStaffEntry(page); // inc. 7 (RG1) : catégorie A, entrée « Bénévole » à choisir avant de remplir
     await page.getByLabel("Nom d'utilisateur").fill('admin-test');
     await page.getByLabel('Mot de passe').fill('admin-secret');
     await page.getByRole('button', { name: 'Se connecter' }).click();

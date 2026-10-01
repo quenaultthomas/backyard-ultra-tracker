@@ -1,6 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { Api, DEFAULT_RUNNER_PASSWORD, uniqueRun } from '../fixtures/api';
-import { auditNoAdminLink } from '../fixtures/admin-separation';
+import {
+  ANONYMOUS_BOTH_LINKS, ANONYMOUS_CREATE_SCREEN_LINKS, ANONYMOUS_LOGIN_SCREEN_LINKS, ANONYMOUS_SCAN_LINKS, auditNoAdminLink,
+  headerAccountText, RUNNER_CONNECTED_LINKS, type PublicPageAuditOptions,
+} from '../fixtures/admin-separation';
 import { expectAccountPage, loginRunner } from '../fixtures/ui';
 
 /**
@@ -22,44 +25,58 @@ test.describe('@INC-6 @smoke @INC6-CA2 Aucun lien public vers l\'espace admin', 
     const raceB = await api.createRace({ name: `E2E-I6B-${run}`, loopDistance: 1000, loopDuration: 3600, loopElevation: 10 });
     const other = await api.register(raceA.id, 'Autre Coureur');
 
+    // Évolution inc. 7 (catégorie B, RG4, CA14) : en anonyme, les liens de la zone « compte » sont exactement ceux
+    // attendus pour l'écran ; connecté en coureur, ni « Se connecter » ni « Créer un compte », mais « Connecté : {pseudo} ».
+    async function audit(label: string, anonymousZone: PublicPageAuditOptions): Promise<void> {
+      if (label.startsWith('coureur')) {
+        await expect(page.getByRole('banner'), `${label} : état connecté`).toContainText(`Connecté : ${pseudo}`);
+        expect(await headerAccountText(page), `${label} : zone compte`).toBe(`Connecté : ${pseudo}`);
+        // `/scan` garde son bandeau « Se connecter » (connexion staff, indépendante de la connexion coureur).
+        await auditNoAdminLink(page, label, label.endsWith('/scan')
+          ? { loginLinks: ['Se connecter'], createAccountLinks: [] } : RUNNER_CONNECTED_LINKS);
+      } else {
+        await auditNoAdminLink(page, label, anonymousZone);
+      }
+    }
+
     async function auditPublicPages(phase: string): Promise<void> {
       await page.goto('/');
       await expect(page.getByText(raceA.name).first()).toBeVisible();
-      await auditNoAdminLink(page, `${phase} /`, { scanLoginLinkAllowed: false });
+      await audit(`${phase} /`, ANONYMOUS_BOTH_LINKS);
       await expectScanAndNavigationLinks(page, phase);
 
       await page.goto(`/courses/${raceA.id}`);
       await expect(page.getByRole('heading', { level: 1 })).toContainText(raceA.name);
       await expect(page.getByRole("link", { name: other.name }).first()).toBeVisible();
-      await auditNoAdminLink(page, `${phase} /courses/{id}`, { scanLoginLinkAllowed: false });
+      await audit(`${phase} /courses/{id}`, ANONYMOUS_BOTH_LINKS);
 
       await page.goto(`/coureurs/${other.runnerId}`);
       await expect(page.getByRole('heading', { level: 1 })).toContainText(other.name);
-      await auditNoAdminLink(page, `${phase} /coureurs/{id}`, { scanLoginLinkAllowed: false });
+      await audit(`${phase} /coureurs/{id}`, ANONYMOUS_BOTH_LINKS);
 
       await page.goto(`/inscription/${raceB.id}`);
       await expect(page.getByRole('heading', { level: 1 })).toContainText('Inscription');
-      await auditNoAdminLink(page, `${phase} /inscription/{id}`, { scanLoginLinkAllowed: false });
+      await audit(`${phase} /inscription/{id}`, ANONYMOUS_BOTH_LINKS);
 
       await page.goto('/compte/connexion');
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-      await auditNoAdminLink(page, `${phase} /compte/connexion`, { scanLoginLinkAllowed: false });
+      await audit(`${phase} /compte/connexion`, ANONYMOUS_LOGIN_SCREEN_LINKS);
 
       await page.goto('/scan');
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Scan');
       await expect(page.getByRole('link', { name: 'Se connecter' })).toBeVisible();
-      await auditNoAdminLink(page, `${phase} /scan`, { scanLoginLinkAllowed: true });
+      await audit(`${phase} /scan`, ANONYMOUS_SCAN_LINKS);
 
       await page.goto('/connexion');
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connexion');
-      await auditNoAdminLink(page, `${phase} /connexion`, { scanLoginLinkAllowed: false });
+      await audit(`${phase} /connexion`, ANONYMOUS_LOGIN_SCREEN_LINKS);
     }
 
     // Phase 1, anonyme.
     await auditPublicPages('anonyme');
     await page.goto('/compte');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-    await auditNoAdminLink(page, 'anonyme /compte (renvoyé vers la connexion coureur)', { scanLoginLinkAllowed: false });
+    await auditNoAdminLink(page, 'anonyme /compte (renvoyé vers la connexion coureur)', ANONYMOUS_LOGIN_SCREEN_LINKS);
 
     // Confirmation d'inscription (création du compte `Lievre-{run}` par l'interface).
     await page.goto(`/inscription/${raceA.id}`);
@@ -68,12 +85,12 @@ test.describe('@INC-6 @smoke @INC6-CA2 Aucun lien public vers l\'espace admin', 
     await page.getByLabel('Confirmer le mot de passe').fill(DEFAULT_RUNNER_PASSWORD);
     await page.getByRole('button', { name: "S'inscrire" }).click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Inscription confirmée');
-    await auditNoAdminLink(page, 'anonyme confirmation d\'inscription', { scanLoginLinkAllowed: false });
+    await auditNoAdminLink(page, 'anonyme confirmation d\'inscription', ANONYMOUS_BOTH_LINKS);
 
     // Phase 2, connecté en coureur (« Rester connecté 24 h » pour survivre aux navigations complètes).
     await loginRunner(page, typed, DEFAULT_RUNNER_PASSWORD, { remember: true });
     await expectAccountPage(page, pseudo);
-    await auditNoAdminLink(page, 'coureur /compte', { scanLoginLinkAllowed: false });
+    await auditNoAdminLink(page, 'coureur /compte', RUNNER_CONNECTED_LINKS);
     await auditPublicPages('coureur');
     await page.goto('/compte');
     await expectAccountPage(page, pseudo);
@@ -82,7 +99,8 @@ test.describe('@INC-6 @smoke @INC6-CA2 Aucun lien public vers l\'espace admin', 
     await page.goto(`/inscription/${raceB.id}`);
     await page.getByRole('button', { name: "M'inscrire à cette course" }).click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Inscription confirmée');
-    await auditNoAdminLink(page, 'coureur confirmation d\'inscription', { scanLoginLinkAllowed: false });
+    await expect(page.getByRole('banner')).toContainText(`Connecté : ${pseudo}`);
+    await auditNoAdminLink(page, 'coureur confirmation d\'inscription', RUNNER_CONNECTED_LINKS);
   });
 
   test('« Scan » cible /scan (en-tête et accueil), « Courses » et « Mes inscriptions » sont présents', async ({ page }) => {

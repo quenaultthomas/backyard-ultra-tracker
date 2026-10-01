@@ -12,3 +12,6 @@ frontend/dist/
 # Preuves E2E volumineuses, régénérables (frontend/e2e/manual/inc6-evidence.mjs)
 frontend/e2e/evidence-inc6/*.png
 frontend/e2e/evidence-inc6/ca39-chromium-failure/
+
+# Preuves E2E inc. 7 (captures volumineuses, régénérables ; les .txt sont gardés)
+frontend/e2e/evidence-inc7/*.png

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { Api, basicAuth, DEFAULT_RUNNER_PASSWORD, uniqueRun } from '../fixtures/api';
-import { auditNoAdminLink, credentialSlots, spaNavigate } from '../fixtures/admin-separation';
+import { ANONYMOUS_LOGIN_SCREEN_LINKS, auditNoAdminLink, credentialSlots, spaNavigate } from '../fixtures/admin-separation';
 import { expectAccountPage, loginRunner } from '../fixtures/ui';
 import { storageDump } from '../fixtures/storage';
 
@@ -106,7 +106,8 @@ test.describe('@INC-6 @smoke @INC6-CA11 Connexion ADMIN depuis /scan', () => {
     expect(new URL(page.url()).searchParams.get('retour')).toBe('/scan');
 
     // Écran de connexion : ni « Administration » ni « administrateur », aucun lien /admin, en-tête compris.
-    await auditNoAdminLink(page, 'connexion depuis /scan', { scanLoginLinkAllowed: false });
+    // Inc. 7 (RG4, catégorie A) : l'en-tête propose « Créer un compte » (seul lien admis en plus), aucun /admin.
+    await auditNoAdminLink(page, 'connexion depuis /scan', ANONYMOUS_LOGIN_SCREEN_LINKS);
     expect(await page.evaluate(() => document.body.innerText)).not.toMatch(/administrateur/i);
 
     await page.getByLabel("Nom d'utilisateur").fill('admin-test');
@@ -117,7 +118,8 @@ test.describe('@INC-6 @smoke @INC6-CA11 Connexion ADMIN depuis /scan', () => {
     await expect(page.getByText('Non connecté : envoi suspendu')).toHaveCount(0);
 
     // /scan connecté en ADMIN : aucun lien ni texte vers l'administration (le lien « Se connecter » a disparu).
-    await auditNoAdminLink(page, '/scan connecté en ADMIN', { scanLoginLinkAllowed: false });
+    // Connexion staff sans effet sur l'en-tête (RG4) : « Créer un compte » seulement, le bandeau « Se connecter » a disparu.
+    await auditNoAdminLink(page, '/scan connecté en ADMIN', ANONYMOUS_LOGIN_SCREEN_LINKS);
     expect(await page.evaluate(() => document.body.innerText)).not.toMatch(/administrateur/i);
 
     const [response] = await Promise.all([

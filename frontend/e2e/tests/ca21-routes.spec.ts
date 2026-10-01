@@ -23,6 +23,9 @@ test.describe('@INC-4 @smoke @INC4-CA21 Routes et liens directs', () => {
   const staticRoutes: readonly { path: string; heading: string }[] = [
     { path: '/', heading: 'Courses' },
     { path: '/connexion', heading: 'Connexion' },
+    // Ajouts inc. 7 (additifs, catégorie A) : écran d'inscription autonome et alias de connexion coureur (RG3, RG7).
+    { path: '/inscription', heading: 'Créer un compte' },
+    { path: '/compte/connexion', heading: 'Connexion' },
     { path: '/scan', heading: 'Scan' },
   ];
 

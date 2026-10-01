@@ -18,7 +18,10 @@ const matchAdminOnly: CanMatchFn = async () => {
   return authState.role() === 'ADMIN';
 };
 
-/** « Mes inscriptions » exige une connexion coureur (RG21 inc. 5) ; sinon, écran de connexion coureur. */
+/**
+ * « Mes inscriptions » exige une connexion coureur (RG21 inc. 5) ; sinon, écran de connexion unique par son alias
+ * /compte/connexion, entrée « Coureur » présélectionnée (RG3 inc. 7).
+ */
 const requireRunnerSignedIn: CanActivateFn = async (_route, state) => {
   const runnerSession = inject(RunnerSessionService);
   const runnerAuth = inject(RunnerAuthState);
@@ -52,6 +55,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/runner/runner-page').then((m) => m.RunnerPage),
   },
   {
+    path: 'inscription',
+    title: 'Inscription — Backyard Ultra Tracker',
+    loadComponent: () => import('./pages/account/account-creation-page').then((m) => m.AccountCreationPage),
+  },
+  {
     path: 'inscription/:raceId',
     title: 'Inscription — Backyard Ultra Tracker',
     loadComponent: () => import('./pages/registration/registration-page').then((m) => m.RegistrationPage),
@@ -69,8 +77,9 @@ export const routes: Routes = [
   },
   {
     path: 'compte/connexion',
-    title: 'Connexion coureur — Backyard Ultra Tracker',
-    loadComponent: () => import('./pages/account/runner-login-page').then((m) => m.RunnerLoginPage),
+    title: 'Connexion — Backyard Ultra Tracker',
+    data: { runnerRoute: true },
+    loadComponent: () => import('./pages/login/login-page').then((m) => m.LoginPage),
   },
   {
     path: 'scan',
