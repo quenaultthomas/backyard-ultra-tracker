@@ -52,7 +52,7 @@ Un seul endpoint, public (aucun rôle, pas de Spring Security).
 
 ### GET /actuator/health
 - Requête : aucun corps, aucun paramètre.
-- Réponse 200 : `{ "status": "UP" }` (type `application/json`, un champ `status` de type chaîne ; aucun autre champ).
+- Réponse 200 : `{ "status": "UP" }` (type `application/vnd.spring-boot.actuator.v3+json` par défaut, `application/json` si la requête envoie `Accept: application/json` ; un champ `status` de type chaîne ; aucun autre champ).
 - Réponse 503 : `{ "status": "DOWN" }` si la base est injoignable.
 - Autres codes 400/401/403/404/409 : non applicables (pas d'authentification ; 404 uniquement pour les endpoints actuator non exposés, corps `ProblemDetail` non exigé en 0.1).
 
