@@ -44,5 +44,22 @@ services:
       retries: 5
       start_period: 60s
 
+  web:
+    build:
+      context: ./frontend
+    depends_on:
+      api:
+        condition: service_healthy
+    # Point d'entree unique : Caddy sert le front et relaie /api vers api:8080.
+    ports:
+      - "80:80"
+    healthcheck:
+      # Porte sur la page d'accueil servie par Caddy, pas sur l'API (RG9).
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 volumes:
   donnees-postgres:
