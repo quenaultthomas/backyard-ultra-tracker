@@ -55,6 +55,7 @@
                 "fonts": false
               },
               "outputHashing": "all",
+              "namedChunks": true,
               "subresourceIntegrity": false
             },
             "development": {

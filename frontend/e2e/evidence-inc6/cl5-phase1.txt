@@ -1,0 +1,6 @@
+phase1 en-tête : ["Courses","Mes inscriptions","Scan","Administration"]
+phase1 fichiers JS en cache : 26
+phase1 liens /admin à l'accueil : 2
+phase1 en-tête : ["Courses","Mes inscriptions","Scan","Administration"]
+phase1 fichiers JS en cache : 0
+phase1 liens /admin à l'accueil : 2

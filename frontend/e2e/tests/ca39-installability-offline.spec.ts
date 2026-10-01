@@ -33,7 +33,7 @@ import { Api, uniqueRun } from '../fixtures/api';
  * intacte et échoue réellement : elle n'est ni affaiblie ni contournée. Voir `INC-4-e2e.md` pour l'écart
  * consigné à l'intention de l'agent fonctionnel.
  */
-test.describe('@INC-4 @INC4-CA39 Installabilité et hors ligne', () => {
+test.describe('@INC-4 @INC4-CA39 @INC-6 @INC6-CA7 Installabilité et hors ligne', () => {
   test('manifeste correct ; hors ligne réel, prouvé par le service worker', async ({ page, context, browserName }, testInfo) => {
     test.setTimeout(90_000);
     const baseUrl = testInfo.project.use.baseURL as string;
@@ -94,11 +94,20 @@ test.describe('@INC-4 @INC4-CA39 Installabilité et hors ligne', () => {
     } else {
       // WebKit (LIM-E2E-2, voir en-tête) : navigation interne uniquement, après une première visite en ligne
       // de chaque route, pour que son bloc de route soit déjà chargé dans le document avant la coupure.
+      //
+      // Évolution inc. 6 (adaptation A, spec inc. 6 section 4, CA7) : l'en-tête n'a plus de lien « Administration »
+      // (RG2 inc. 6). `/admin` est donc ouvert par navigation directe en ligne (`page.goto`, servie par le service
+      // worker ; « Page introuvable » pour un anonyme, un titre h1 reste visible) AVANT les autres écrans : la
+      // navigation complète remplace le document, et chaque bloc de route doit être importé dans le document
+      // courant avant la coupure (LIM-E2E-2). L'ordre des visites passe donc de Scan, Administration, accueil à
+      // Administration, accueil, Scan, accueil ; les assertions sont les mêmes.
       const mainNav = page.getByLabel('Navigation principale');
+      await page.goto('/admin');
+      await expect(page.locator('h1, h2').first()).toBeVisible();
+      await page.getByRole('link', { name: 'Backyard Ultra Tracker' }).click();
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText('Courses');
       await mainNav.getByRole('link', { name: 'Scan' }).click();
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Scan');
-      await mainNav.getByRole('link', { name: 'Administration' }).click();
-      await expect(page.locator('h1, h2').first()).toBeVisible();
       await page.getByRole('link', { name: 'Backyard Ultra Tracker' }).click();
       await expect(page.getByRole('heading', { level: 1 })).toHaveText('Courses');
       await page.locator('li.card').filter({ hasText: raceName }).getByRole('link', { name: 'Tableau de bord' }).click();
@@ -118,9 +127,15 @@ test.describe('@INC-4 @INC4-CA39 Installabilité et hors ligne', () => {
       await page.getByRole('button', { name: 'Valider' }).click();
       await expect(page.getByText('1 en attente')).toBeVisible();
 
-      // /admin (bloc déjà chargé).
-      await mainNav.getByRole('link', { name: 'Administration' }).click();
-      await expect(page.locator('h1, h2').first()).toBeVisible();
+      // /admin (bloc déjà chargé). Évolution inc. 6 (adaptation A) : plus de lien « Administration » à cliquer ;
+      // navigation du routeur sans lien ni rechargement (pushState + popstate), donc sans requête réseau pour la
+      // navigation elle-même, comme le clic d'origine. Même assertion : un titre h1 ou h2 est visible.
+      await page.evaluate(() => {
+        window.history.pushState(null, '', '/admin');
+        window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+      });
+      // R6-3 : le h1 « Scan » étant déjà affiché, seule l'assertion sur « Page introuvable » prouve la navigation.
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText('Page introuvable');
     }
 
     const cachedApiUrls = await page.evaluate(async () => {

@@ -21,7 +21,6 @@ import { SessionService } from './infra/session.service';
         <a routerLink="/">Courses</a>
         <a routerLink="/compte">Mes inscriptions</a>
         <a routerLink="/scan">Scan</a>
-        <a routerLink="/admin">Administration</a>
       </nav>
     </header>
     @if (updateReady()) {

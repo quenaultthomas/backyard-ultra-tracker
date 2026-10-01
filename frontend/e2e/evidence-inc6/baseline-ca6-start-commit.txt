@@ -1,0 +1,140 @@
+
+Running 2 tests using 1 worker
+
+  ✘  1 [chromium] › tests\inc6-ca6-admin-chunks-not-cached.spec.ts:20:3 › @INC-6 @INC6-CA6 Code admin non préchargé ni mis en cache par le public › aucun bloc admin dans le réseau ni dans Cache Storage en anonyme ; chargé après connexion ADMIN (12.9s)
+  ✘  2 [webkit] › tests\inc6-ca6-admin-chunks-not-cached.spec.ts:20:3 › @INC-6 @INC6-CA6 Code admin non préchargé ni mis en cache par le public › aucun bloc admin dans le réseau ni dans Cache Storage en anonyme ; chargé après connexion ADMIN (12.7s)
+
+
+  1) [chromium] › tests\inc6-ca6-admin-chunks-not-cached.spec.ts:20:3 › @INC-6 @INC6-CA6 Code admin non préchargé ni mis en cache par le public › aucun bloc admin dans le réseau ni dans Cache Storage en anonyme ; chargé après connexion ADMIN 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: getByRole('heading', { level: 1 })
+    Expected string: "Page introuvable"
+    Received string: "Connexion"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "soft toHaveText" with timeout 10000ms
+      - waiting for getByRole('heading', { level: 1 })
+        14 × locator resolved to <h1>Connexion</h1>
+           - unexpected value "Connexion"
+
+
+      68 |     // Assertion souple : le contrôle de CA6 (réseau et Cache Storage) doit se poursuivre même si l'écran affiché
+      69 |     // n'est pas « Page introuvable » (CA3 le vérifie à part), pour que les deux écarts éventuels soient visibles.
+    > 70 |     await expect.soft(page.getByRole('heading', { level: 1 })).toHaveText('Page introuvable');
+         |                                                                ^
+      71 |
+      72 |     // 3b. Ni réseau ni Cache Storage ne contiennent de bloc admin.
+      73 |     expect(requested.filter((url) => isAdminBlockUrl(url, adminBlocks)), 'blocs admin dans le journal réseau')
+        at C:\Users\tquenault\workspace_perso\backyard-ultra-tracker\frontend\e2e\tests\inc6-ca6-admin-chunks-not-cached.spec.ts:70:64
+
+    Error: blocs admin dans Cache Storage
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 4
+
+    - Array []
+    + Array [
+    +   "http://localhost:8081/chunk-_3R_h-ZL.js",
+    +   "http://localhost:8081/chunk-oSE9bB_J.js",
+    + ]
+
+      75 |     const cached = await page.evaluate(listCachedUrls);
+      76 |     expect(cached.length, 'Cache Storage non vide').toBeGreaterThan(0);
+    > 77 |     expect(cached.filter((url) => isAdminBlockUrl(url, adminBlocks)), 'blocs admin dans Cache Storage').toEqual([]);
+         |                                                                                                         ^
+      78 |
+      79 |     // 4. Connexion ADMIN et ouverture de /admin : au moins un bloc admin est chargé.
+      80 |     await loginAdmin(page, '/admin');
+        at C:\Users\tquenault\workspace_perso\backyard-ultra-tracker\frontend\e2e\tests\inc6-ca6-admin-chunks-not-cached.spec.ts:77:105
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results-baseline\inc6-ca6-admin-chunks-not--b8ee4-hargé-après-connexion-ADMIN-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results-baseline\inc6-ca6-admin-chunks-not--b8ee4-hargé-après-connexion-ADMIN-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results-baseline\inc6-ca6-admin-chunks-not--b8ee4-hargé-après-connexion-ADMIN-chromium\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-baseline\inc6-ca6-admin-chunks-not--b8ee4-hargé-après-connexion-ADMIN-chromium\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-baseline\inc6-ca6-admin-chunks-not--b8ee4-hargé-après-connexion-ADMIN-chromium\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [webkit] › tests\inc6-ca6-admin-chunks-not-cached.spec.ts:20:3 › @INC-6 @INC6-CA6 Code admin non préchargé ni mis en cache par le public › aucun bloc admin dans le réseau ni dans Cache Storage en anonyme ; chargé après connexion ADMIN 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: getByRole('heading', { level: 1 })
+    Expected string: "Page introuvable"
+    Received string: "Connexion"
+    Timeout: 10000ms
+
+    Call log:
+      - Expect "soft toHaveText" with timeout 10000ms
+      - waiting for getByRole('heading', { level: 1 })
+        11 × locator resolved to <h1>Connexion</h1>
+           - unexpected value "Connexion"
+
+
+      68 |     // Assertion souple : le contrôle de CA6 (réseau et Cache Storage) doit se poursuivre même si l'écran affiché
+      69 |     // n'est pas « Page introuvable » (CA3 le vérifie à part), pour que les deux écarts éventuels soient visibles.
+    > 70 |     await expect.soft(page.getByRole('heading', { level: 1 })).toHaveText('Page introuvable');
+         |                                                                ^
+      71 |
+      72 |     // 3b. Ni réseau ni Cache Storage ne contiennent de bloc admin.
+      73 |     expect(requested.filter((url) => isAdminBlockUrl(url, adminBlocks)), 'blocs admin dans le journal réseau')
+        at C:\Users\tquenault\workspace_perso\backyard-ultra-tracker\frontend\e2e\tests\inc6-ca6-admin-chunks-not-cached.spec.ts:70:64
+
+    Error: blocs admin dans Cache Storage
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 4
+
+    - Array []
+    + Array [
+    +   "http://localhost:8081/chunk-_3R_h-ZL.js",
+    +   "http://localhost:8081/chunk-oSE9bB_J.js",
+    + ]
+
+      75 |     const cached = await page.evaluate(listCachedUrls);
+      76 |     expect(cached.length, 'Cache Storage non vide').toBeGreaterThan(0);
+    > 77 |     expect(cached.filter((url) => isAdminBlockUrl(url, adminBlocks)), 'blocs admin dans Cache Storage').toEqual([]);
+         |                                                                                                         ^
+      78 |
+      79 |     // 4. Connexion ADMIN et ouverture de /admin : au moins un bloc admin est chargé.
+      80 |     await loginAdmin(page, '/admin');
+        at C:\Users\tquenault\workspace_perso\backyard-ultra-tracker\frontend\e2e\tests\inc6-ca6-admin-chunks-not-cached.spec.ts:77:105
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results-baseline\inc6-ca6-admin-chunks-not--b8ee4-hargé-après-connexion-ADMIN-webkit\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results-baseline\inc6-ca6-admin-chunks-not--b8ee4-hargé-après-connexion-ADMIN-webkit\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results-baseline\inc6-ca6-admin-chunks-not--b8ee4-hargé-après-connexion-ADMIN-webkit\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-baseline\inc6-ca6-admin-chunks-not--b8ee4-hargé-après-connexion-ADMIN-webkit\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-baseline\inc6-ca6-admin-chunks-not--b8ee4-hargé-après-connexion-ADMIN-webkit\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [chromium] › tests\inc6-ca6-admin-chunks-not-cached.spec.ts:20:3 › @INC-6 @INC6-CA6 Code admin non préchargé ni mis en cache par le public › aucun bloc admin dans le réseau ni dans Cache Storage en anonyme ; chargé après connexion ADMIN 
+    [webkit] › tests\inc6-ca6-admin-chunks-not-cached.spec.ts:20:3 › @INC-6 @INC6-CA6 Code admin non préchargé ni mis en cache par le public › aucun bloc admin dans le réseau ni dans Cache Storage en anonyme ; chargé après connexion ADMIN 

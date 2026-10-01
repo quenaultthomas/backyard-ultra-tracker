@@ -1,11 +1,12 @@
 import { Component, computed, inject } from '@angular/core';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterOutlet } from '@angular/router';
 import { AuthState } from '../../infra/auth-state';
 import { LogoutButton } from '../../shared/logout-button';
 
 /**
- * Coquille de l'administration (RG36, RG10) : les écrans admin ne sont créés qu'avec un compte ADMIN. Un compte
- * SCANNER voit « Accès réservé à l'administrateur », sans aucune donnée ni requête admin.
+ * Coquille de l'administration. Seul un ADMIN y arrive (garde `canMatch` des routes, RG3 inc. 6) ; si la session
+ * ADMIN disparaît pendant l'affichage (déconnexion, 401 traité par `SessionService.expire`, RG10 inc. 4), aucun
+ * écran admin n'est plus rendu, et aucun message ne signale l'administration en attendant la navigation.
  */
 @Component({
   selector: 'app-admin-shell',
@@ -18,17 +19,10 @@ import { LogoutButton } from '../../shared/logout-button';
         <app-logout-button />
       </div>
       <router-outlet />
-    } @else {
-      <h1>Accès réservé à l'administrateur</h1>
-      <p>Le compte connecté (scanner) ne permet pas d'administrer les courses.</p>
-      <a class="button button-primary" routerLink="/connexion" [queryParams]="{ retour: router.url }">
-        Se connecter en administrateur
-      </a>
     }
   `,
 })
 export class AdminShell {
-  protected readonly router = inject(Router);
   private readonly authState = inject(AuthState);
   protected readonly isAdmin = computed(() => this.authState.role() === 'ADMIN');
 }

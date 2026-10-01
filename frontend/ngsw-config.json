@@ -12,7 +12,18 @@
           "/index.html",
           "/manifest.webmanifest",
           "/*.css",
-          "/*.js"
+          "/*.js",
+          "!/admin-*.js"
+        ]
+      }
+    },
+    {
+      "name": "admin",
+      "installMode": "lazy",
+      "updateMode": "lazy",
+      "resources": {
+        "files": [
+          "/admin-*.js"
         ]
       }
     },

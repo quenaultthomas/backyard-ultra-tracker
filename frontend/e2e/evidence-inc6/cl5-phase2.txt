@@ -1,0 +1,6 @@
+phase2 (avant mise à jour) en-tête : ["Courses","Mes inscriptions","Scan","Administration"]
+phase2 bandeau « Nouvelle version disponible » : visible
+phase2 (après mise à jour) en-tête : ["Courses","Mes inscriptions","Scan"]
+phase2 liens /admin : 0
+phase2 fichiers JS en cache : ["/chunk-8mEoPr5z.js","/chunk-BFCMcErX.js","/chunk-BJ1IrAry.js","/chunk-BPdYw_-1.js","/chunk-Bs54KW0B.js","/chunk-BxtcA89y.js","/chunk-CBQFBPJ5.js","/chunk-CKqlIQ-M.js","/chunk-CVdLiM_L.js","/chunk-CkyvIGHN.js","/chunk-Cv2vK0cz.js","/chunk-CvARAKc8.js","/chunk-CyHturYA.js","/chunk-DEDhkhhL.js","/chunk-DZof1EYb.js","/chunk-D_bE_M-W.js","/chunk-DcQGA484.js","/chunk-Dh4er6hB.js","/chunk-DxtToafP.js","/chunk-FOcSeHLV.js","/chunk-USrfM51Z.js","/chunk-XyDZVXUb.js","/chunk-_3R_h-ZL.js","/chunk-kStRrTjQ.js","/chunk-oSE9bB_J.js","/main-DEW64VZT.js","/account-page-BIUwSZkB.js","/board-page-B2RLSlyX.js","/chunk-BJ1IrAry.js","/chunk-Bs54KW0B.js","/chunk-BwvdSOe8.js","/chunk-C7U9X0He.js","/chunk-CVdLiM_L.js","/chunk-CeQ4ybSt.js","/chunk-DZof1EYb.js","/chunk-D_bE_M-W.js","/chunk-DcQGA484.js","/chunk-DxtToafP.js","/chunk-kStRrTjQ.js","/home-page-5vhzba-B.js","/login-page-DZpPc_pY.js","/main-K2VIGWRX.js","/not-found-page-BNFjUTuU.js","/registration-page-Dat0IY-w.js","/runner-login-page-B0D39i1V.js","/runner-page-CwuQClhj.js","/scan-page-CLW4mDep.js"]
+phase2 texte « Administration » visible : false

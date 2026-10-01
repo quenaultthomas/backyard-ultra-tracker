@@ -1,23 +1,21 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router, Routes } from '@angular/router';
+import { CanActivateFn, CanMatchFn, Router, Routes } from '@angular/router';
 import { SessionService } from './infra/session.service';
 import { AuthState } from './infra/auth-state';
 import { RunnerAuthState } from './infra/runner-auth-state';
 import { RUNNER_LOGIN_ROUTE, RunnerSessionService } from './infra/runner-session.service';
 
 /**
- * Sans connexion, l'administration affiche l'écran de connexion et n'émet aucune requête /api/admin/** (RG36).
- * Un compte SCANNER accède à la coquille, qui affiche « Accès réservé à l'administrateur » (RG10).
+ * L'administration n'existe que pour le rôle ADMIN de la session staff (RG3, RG4 inc. 6). Pour tout autre visiteur
+ * (anonyme, SCANNER, coureur, dont les identifiants ne sont pas lus ici), la route `admin` ne correspond pas : le
+ * routeur passe à la route `**` (« Page introuvable »), l'adresse reste celle demandée, aucun bloc admin n'est
+ * chargé et aucune requête /api/admin/** n'est émise.
  */
-const requireSignedIn: CanActivateFn = async (_route, state) => {
+const matchAdminOnly: CanMatchFn = async () => {
   const sessionService = inject(SessionService);
   const authState = inject(AuthState);
-  const router = inject(Router);
   await sessionService.ready;
-  if (authState.session() !== null) {
-    return true;
-  }
-  return router.createUrlTree(['/connexion'], { queryParams: { retour: state.url } });
+  return authState.role() === 'ADMIN';
 };
 
 /** « Mes inscriptions » exige une connexion coureur (RG21 inc. 5) ; sinon, écran de connexion coureur. */
@@ -33,9 +31,9 @@ const requireRunnerSignedIn: CanActivateFn = async (_route, state) => {
 };
 
 /**
- * Routes de la PWA (RG5), liste fermée. Aucune ne commence par /api. Le garde de connexion ne porte que sur les
- * routes admin réelles : une URL inconnue sous /admin ne correspond à aucun enfant de `admin`, le routeur passe
- * donc à la route `**` finale et affiche « Page introuvable », connecté ou non (CA21).
+ * Routes de la PWA (RG5), liste fermée. Aucune ne commence par /api. Une URL inconnue sous /admin ne correspond à
+ * aucun enfant de `admin`, et un non-ADMIN ne correspond pas à `admin` : dans les deux cas, le routeur passe à la
+ * route `**` finale et affiche « Page introuvable » (CA21 inc. 4, RG3 inc. 6).
  */
 export const routes: Routes = [
   {
@@ -81,7 +79,7 @@ export const routes: Routes = [
   },
   {
     path: 'admin',
-    canActivate: [requireSignedIn],
+    canMatch: [matchAdminOnly],
     loadComponent: () => import('./pages/admin/admin-shell').then((m) => m.AdminShell),
     children: [
       {
