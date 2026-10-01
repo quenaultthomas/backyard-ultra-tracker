@@ -73,8 +73,12 @@ test.describe('@INC-4 @INC4-CA25 Stockage des identifiants', () => {
     expect(dump).not.toContain('admin-secret');
     expect(dump).not.toContain('YWRtaW4tdGVzdDphZG1pbi1zZWNyZXQ=');
 
+    // Évolution inc. 6 (adaptation B, RG3 et CA5 inc. 6) : après le rechargement les identifiants ADMIN ont disparu,
+    // et `/admin` affiche « Page introuvable » (et non plus l'écran de connexion). Le principe vérifié est le
+    // même : l'accès admin n'est pas rendu sans nouvelle connexion. On ajoute que l'écran admin n'est plus affiché.
     await page.reload();
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connexion');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Page introuvable');
+    await expect(page.getByRole('heading', { level: 1, name: 'Administration des courses' })).toHaveCount(0);
   });
 
   test('connexion SCANNER sans "Rester connecté" : rien stocké, reconnexion redemandée', async ({ page }) => {

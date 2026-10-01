@@ -56,14 +56,21 @@ test.describe('@INC-4 @smoke @INC4-CA21 Routes et liens directs', () => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Inscription');
   });
 
-  test('/admin sans connexion affiche l\'écran de connexion', async ({ page }) => {
+  // Évolution inc. 6 (adaptation B, RG3 inc. 6, spec inc. 6 section 4) : sans connexion, `/admin` et
+  // `/admin/courses/{id}/qr` affichent « Page introuvable » (avec le lien vers l'accueil) au lieu de l'écran de
+  // connexion. Assertion aussi stricte que l'originale (titre exact), plus l'adresse inchangée.
+  test('/admin sans connexion affiche Page introuvable (inc. 6, RG3)', async ({ page }) => {
     await page.goto('/admin');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connexion');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Page introuvable');
+    await expect(page.getByRole('link', { name: "Retour à l'accueil" })).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe('/admin');
   });
 
-  test('/admin/courses/{id}/qr sans connexion affiche l\'écran de connexion', async ({ page }) => {
+  test('/admin/courses/{id}/qr sans connexion affiche Page introuvable (inc. 6, RG3)', async ({ page }) => {
     await page.goto(`/admin/courses/${raceId}/qr`);
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connexion');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Page introuvable');
+    await expect(page.getByRole('link', { name: "Retour à l'accueil" })).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(`/admin/courses/${raceId}/qr`);
   });
 
   test('route inconnue sous /courses/{id} affiche Page introuvable', async ({ page }) => {

@@ -7,7 +7,9 @@ test.describe('@INC-4 @smoke @INC4-CA24 Connexion et rôles', () => {
   // le service worker de l'application, qui la relaierait avant que Playwright ne puisse la remplacer.
   test.use({ serviceWorkers: 'block' });
 
-  test('/admin sans connexion : écran de connexion, aucune requête /api/admin/**', async ({ page }) => {
+  // Évolution inc. 6 (adaptation B, RG3 inc. 6) : « Page introuvable » au lieu de l'écran de connexion ; l'absence de
+  // requête /api/admin/** est conservée.
+  test('/admin sans connexion : Page introuvable (inc. 6), aucune requête /api/admin/**', async ({ page }) => {
     let adminRequests = 0;
     page.on('request', (request) => {
       if (request.url().includes('/api/admin/')) {
@@ -15,7 +17,7 @@ test.describe('@INC-4 @smoke @INC4-CA24 Connexion et rôles', () => {
       }
     });
     await page.goto('/admin');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connexion');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Page introuvable');
     expect(adminRequests).toBe(0);
   });
 
@@ -89,7 +91,9 @@ test.describe('@INC-4 @smoke @INC4-CA24 Connexion et rôles', () => {
    * utilise « Rester connecté 24 h » (RG7), qui persiste le rôle SCANNER dans le stockage local et le restaure
    * avant que le garde de route ne s'exécute.
    */
-  test('connexion scanner (mémorisée) puis accès admin refusé sans donnée admin', async ({ page }) => {
+  // Évolution inc. 6 (adaptation B, RG3 inc. 6) : « Page introuvable » au lieu de « Accès réservé à l'administrateur » ;
+  // « Gérer les courses » absent et statuts /api/admin/** éventuels à 403 conservés (aucune requête n'est même émise).
+  test('connexion scanner (mémorisée) puis /admin : Page introuvable (inc. 6) sans donnée admin', async ({ page }) => {
     const adminRequests: number[] = [];
     page.on('response', (response) => {
       if (response.url().includes('/api/admin/')) {
@@ -105,8 +109,10 @@ test.describe('@INC-4 @smoke @INC4-CA24 Connexion et rôles', () => {
     await expect(page.getByText('scanner', { exact: true })).toBeVisible();
 
     await page.goto('/admin');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Accès réservé à l\'administrateur');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Page introuvable');
     await expect(page.getByText('Gérer les courses', { exact: false })).toHaveCount(0);
+    // R6-2 : aucune requête /api/admin/** n'est émise pour un non-admin (la boucle ci-dessous serait vide sinon).
+    expect(adminRequests).toEqual([]);
     for (const status of adminRequests) {
       expect(status).toBe(403);
     }

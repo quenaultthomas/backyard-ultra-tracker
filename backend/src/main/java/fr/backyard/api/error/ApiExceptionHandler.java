@@ -34,7 +34,8 @@ import java.util.stream.Collectors;
 
 /**
  * Traduction unique des exceptions en ProblemDetail (RG5 à RG7 inc. 3). Les 4xx sont journalisées en
- * WARN sans trace, les 5xx en ERROR avec la trace. Aucune exception n'est avalée.
+ * WARN sans trace, les 5xx en ERROR avec le seul nom de la classe de l'exception (RG10 inc. 6). Aucune
+ * exception n'est avalée.
  */
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -115,7 +116,7 @@ public class ApiExceptionHandler {
      */
     @ExceptionHandler({IllegalStateException.class, IllegalArgumentException.class})
     public ResponseEntity<ProblemDetail> handleInconsistency(RuntimeException ex, HttpServletRequest request) {
-        LOG.error("Incohérence interne sur {} {}", request.getMethod(), request.getRequestURI(), ex);
+        logInternalError("Incohérence interne", ex, request);
         ProblemDetail problem = ProblemDetailFactory.create(ApiErrorCode.INTERNAL_INCONSISTENCY, ex.getMessage(),
             request.getRequestURI());
         return respond(problem, request, null);
@@ -131,10 +132,19 @@ public class ApiExceptionHandler {
         if (ex instanceof ErrorResponse frameworkError && frameworkError.getStatusCode().is4xxClientError()) {
             return clientError(ApiErrorCode.MALFORMED_REQUEST, frameworkError.getBody().getDetail(), request);
         }
-        LOG.error("Erreur inattendue sur {} {}", request.getMethod(), request.getRequestURI(), ex);
+        logInternalError("Erreur inattendue", ex, request);
         ProblemDetail problem = ProblemDetailFactory.create(ApiErrorCode.INTERNAL_ERROR,
             "Erreur interne inattendue, réessayer plus tard", request.getRequestURI());
         return respond(problem, request, null);
+    }
+
+    /**
+     * RG10 inc. 6 : ni message, ni cause, ni trace (un message peut citer un pseudo, RG16 inc. 5) ;
+     * seuls la méthode, le chemin et le nom de la classe de l'exception sont journalisés.
+     */
+    private static void logInternalError(String label, Exception ex, HttpServletRequest request) {
+        LOG.error("{} sur {} {} : {}", label, request.getMethod(), request.getRequestURI(),
+            ex.getClass().getSimpleName());
     }
 
     private static ResponseEntity<ProblemDetail> clientError(ApiErrorCode code, String detail,

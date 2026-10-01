@@ -7,7 +7,7 @@ import { BOARD_TIMEOUT_MS } from '../../core/http-classification';
 import { loadFailureMessage } from '../../core/outcomes';
 import { ApiClient } from '../../infra/api-client';
 
-/** Accueil : liste des courses dans l'ordre de l'API (RG28, RG35). */
+/** Accueil : liste des courses dans l'ordre de l'API (RG28, RG35) ; aucun lien vers l'administration (RG2 inc. 6). */
 @Component({
   selector: 'app-home-page',
   imports: [RouterLink],
@@ -16,7 +16,6 @@ import { ApiClient } from '../../infra/api-client';
     <div class="toolbar">
       <button type="button" class="button" (click)="load()" [disabled]="loading()">Actualiser</button>
       <a class="button" routerLink="/scan">Scan</a>
-      <a class="button" routerLink="/admin">Administration</a>
     </div>
     @if (error(); as message) {
       <p class="banner banner-error" role="alert">{{ message }}</p>
