@@ -26,7 +26,7 @@ services:
     depends_on:
       base:
         condition: service_healthy
-    # Publie en local pour le test manuel ; ferme en production (increment 0.4).
+    # Publie en dev pour le test manuel ; retire en production par docker-compose.prod.yml.
     ports:
       - "8080:8080"
     healthcheck:
@@ -51,10 +51,12 @@ services:
       api:
         condition: service_healthy
     # Point d'entree unique : Caddy sert le front et relaie /api vers api:8080.
+    # En production, docker-compose.prod.yml ajoute 443 (HTTPS) et le redemarrage automatique.
     ports:
       - "80:80"
     healthcheck:
-      # Porte sur la page d'accueil servie par Caddy, pas sur l'API (RG9).
+      # Porte sur la page d'accueil servie par Caddy, pas sur l'API.
+      # Remplace en production (le port 80 y redirige vers HTTPS).
       test: ["CMD", "wget", "--spider", "-q", "http://localhost/"]
       interval: 10s
       timeout: 5s

@@ -165,7 +165,8 @@ Règles :
 ## Sécurité
 
 Rien de critique, mais rien de ridicule :
-- Spring Security, mots de passe hachés en Argon2id (ou BCrypt), jamais stockés ni journalisés en clair.
+- Spring Security, mots de passe hachés en Argon2id (ou BCrypt), paramètres documentés, jamais stockés ni journalisés en clair.
+- Un mot de passe en clair n'apparaît jamais dans les logs, les exceptions, les `ProblemDetail`, les traces ni les messages d'erreur. Tout objet qui le transporte (value object `MotDePasse`, DTO) masque sa valeur dans `toString()`.
 - Mot de passe : 12 caractères minimum.
 - Limitation des tentatives de connexion (blocage temporaire après échecs répétés).
 - Message d'erreur de connexion générique : pas d'énumération des pseudos.
@@ -227,7 +228,7 @@ La spec de chaque incrément contient :
 - le contrat d'API (endpoints, DTO, codes d'erreur), pour que back et front avancent en parallèle ;
 - une section « Tester à la main » : les étapes pour vérifier l'incrément dans l'application lancée.
 
-Pour chaque incrément, dans cet ordre :
+Un incrément se lance avec la skill `/demarrer-increment X.Y`, qui porte le déroulé détaillé (préconditions, gates, commits, gestion des KO, restitution). En résumé, dans cet ordre :
 
 1. `fonctionnel` : rédige la spec à partir de la ligne correspondante de `docs/roadmap.md`.
 2. `testeur-unitaire` : écrit les tests unitaires à partir de la spec, pas à partir du code.
@@ -237,4 +238,6 @@ Pour chaque incrément, dans cet ordre :
 6. L'orchestrateur vérifie la définition de « fini », puis présente l'incrément à l'utilisateur : résumé des changements, commande de lancement, étapes « Tester à la main ».
 7. L'utilisateur relit, lance l'application et valide. Pas d'incrément suivant sans sa validation.
 
-Chaque test référence le numéro du critère d'acceptation qu'il couvre. En cas de `KO`, retour au développeur concerné (back ou front) avec la liste des écarts (3 allers-retours maximum, puis remonter la question à l'utilisateur).
+Chaque test référence le numéro du critère d'acceptation qu'il couvre. En cas de `KO`, retour au développeur concerné (back ou front) avec la liste des écarts : 3 allers-retours maximum par testeur, puis remonter le problème à l'utilisateur. Un test n'est jamais supprimé ni affaibli pour obtenir un verdict vert.
+
+Si un développeur constate que le contrat d'API de la spec est incomplet ou faux, il le signale ; l'orchestrateur rappelle le `fonctionnel`, qui met à jour la spec, puis le développement reprend. Personne d'autre ne modifie la spec.

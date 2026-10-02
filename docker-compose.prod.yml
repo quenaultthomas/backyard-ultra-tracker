@@ -1,0 +1,37 @@
+# Surcharges de production : ne s'utilise qu'en complément de docker-compose.yml.
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Requiert Docker Compose >= 2.24 (balise !reset). Variables : voir .env.example.
+
+services:
+  base:
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${BASE_MOT_DE_PASSE:?BASE_MOT_DE_PASSE est obligatoire en production (générer avec openssl rand -hex 24)}
+
+  api:
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_PASSWORD: ${BASE_MOT_DE_PASSE:?BASE_MOT_DE_PASSE est obligatoire en production (générer avec openssl rand -hex 24)}
+    # Non exposé : joignable uniquement par web via le réseau interne Compose.
+    ports: !reset []
+
+  web:
+    restart: unless-stopped
+    environment:
+      # Nom d'hôte du site Caddy : active HTTPS et la redirection HTTP vers HTTPS.
+      ADRESSE_SITE: ${DOMAINE:?DOMAINE est obligatoire en production (nom de domaine servi en HTTPS, localhost pour un essai local)}
+    # Seul point d'entrée publié. Retirer la ligne UDP pour désactiver HTTP/3.
+    ports:
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      # Certificats et état de Caddy : conservés entre deux déploiements.
+      - donnees-caddy:/data
+      - config-caddy:/config
+    healthcheck:
+      # Le port 80 redirige vers HTTPS : la santé passe par le site interne non publié.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8081/"]
+
+volumes:
+  donnees-caddy:
+  config-caddy:
