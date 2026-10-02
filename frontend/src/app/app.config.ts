@@ -1,8 +1,14 @@
 import { provideHttpClient, withFetch, withXsrfConfiguration } from '@angular/common/http';
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
+import { SessionService } from './comptes/session.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -13,5 +19,10 @@ export const appConfig: ApplicationConfig = {
       withFetch(),
       withXsrfConfiguration({ cookieName: 'XSRF-TOKEN', headerName: 'X-XSRF-TOKEN' }),
     ),
+    // Restauration de l'état connecté à chaque chargement, sans bloquer l'affichage :
+    // l'en-tête et les gardes attendent la réponse de GET /api/comptes/moi.
+    provideAppInitializer(() => {
+      inject(SessionService).restaurer().subscribe();
+    }),
   ],
 };

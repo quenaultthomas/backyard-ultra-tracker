@@ -4,9 +4,11 @@
 
     @if (etat() === 'SUCCES') {
       <p class="message-succes" role="status" data-testid="message-succes">
-        Compte créé pour {{ pseudoCree() }}. Vous pourrez vous connecter dès que la connexion sera
-        disponible.
+        Compte créé pour {{ pseudoCree() }}. Vous pouvez maintenant vous connecter.
       </p>
+      <a class="lien" routerLink="/connexion" data-testid="lien-se-connecter-succes"
+        >Se connecter</a
+      >
     } @else {
       <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
         @if (erreursServeur().generale; as erreurGenerale) {

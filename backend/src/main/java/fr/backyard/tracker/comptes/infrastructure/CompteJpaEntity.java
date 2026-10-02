@@ -47,4 +47,24 @@ public class CompteJpaEntity {
         this.role = role;
         this.creeLe = creeLe;
     }
+
+    UUID id() {
+        return id;
+    }
+
+    String pseudo() {
+        return pseudo;
+    }
+
+    String empreinteMotDePasse() {
+        return empreinteMotDePasse;
+    }
+
+    Role role() {
+        return role;
+    }
+
+    Instant creeLe() {
+        return creeLe;
+    }
 }

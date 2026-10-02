@@ -17,10 +17,27 @@ spring:
       ddl-auto: validate
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+  web:
+    resources:
+      # L'API ne sert aucun fichier statique (le front est servi par Caddy) : un chemin inconnu
+      # donne un 404 RESSOURCE_INTROUVABLE, quelle que soit la methode HTTP.
+      add-mappings: false
 
 server:
-  # Derriere Caddy : X-Forwarded-Proto rend la requete HTTPS, et le cookie XSRF-TOKEN Secure.
+  # Derriere Caddy : X-Forwarded-Proto rend la requete HTTPS, et les cookies XSRF-TOKEN et JSESSIONID Secure.
   forward-headers-strategy: native
+  servlet:
+    session:
+      # Sessions en memoire : un redemarrage de l'api deconnecte tout le monde.
+      timeout: 12h
+      # Identifiant de session uniquement par cookie, jamais dans l'URL.
+      tracking-modes: cookie
+      cookie:
+        name: JSESSIONID
+        path: /
+        http-only: true
+        same-site: lax
+        # Pas de Secure force : pose par Tomcat des que la requete est HTTPS (en-tete X-Forwarded-Proto).
 
 management:
   endpoints:

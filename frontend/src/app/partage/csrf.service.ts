@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
 
 const URL_CSRF = '/api/csrf';
 
@@ -12,7 +12,14 @@ const URL_CSRF = '/api/csrf';
 export class CsrfService {
   private readonly http = inject(HttpClient);
 
-  obtenirJeton(): Observable<void> {
-    return this.http.get<void>(URL_CSRF);
+  /**
+   * Demande un nouveau jeton. Un échec n'est pas signalé : l'envoi suivant sans jeton valide
+   * reçoit un 403 `CSRF_INVALIDE`, qui affiche « La page a expiré » et redemande un jeton.
+   */
+  renouvelerJeton(): Observable<void> {
+    return this.http.get<void>(URL_CSRF).pipe(
+      map(() => undefined),
+      catchError(() => of(undefined)),
+    );
   }
 }

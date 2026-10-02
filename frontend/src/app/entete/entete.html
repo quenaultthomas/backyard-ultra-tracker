@@ -1,0 +1,31 @@
+<header class="entete">
+  <a class="entete__titre" routerLink="/" data-testid="entete-titre">Backyard Ultra Tracker</a>
+
+  <div class="entete__compte">
+    @switch (session.etat()) {
+      @case ('ANONYME') {
+        <a class="entete__lien" routerLink="/connexion" data-testid="lien-se-connecter">
+          Se connecter
+        </a>
+      }
+      @case ('CONNECTE') {
+        <span class="entete__pseudo" data-testid="entete-pseudo">{{
+          session.compte()?.pseudo
+        }}</span>
+        <button
+          type="button"
+          class="entete__bouton"
+          [disabled]="envoiEnCours()"
+          (click)="seDeconnecter()"
+          data-testid="bouton-deconnexion"
+        >
+          Se déconnecter
+        </button>
+      }
+    }
+  </div>
+
+  @if (erreur(); as message) {
+    <p class="entete__erreur" role="alert" data-testid="entete-erreur">{{ message }}</p>
+  }
+</header>

@@ -6,7 +6,7 @@ import java.util.UUID;
 
 /**
  * Identité d'une personne qui se connecte (racine d'agrégat du contexte comptes).
- * Ne contient jamais le mot de passe en clair, seulement son empreinte.
+ * Ne contient jamais le mot de passe en clair, seulement son empreinte, absente pour un compte anonymisé.
  */
 public final class Compte {
 
@@ -19,14 +19,25 @@ public final class Compte {
     private Compte(UUID id, Pseudo pseudo, String empreinteMotDePasse, Role role, Instant creeLe) {
         this.id = Objects.requireNonNull(id);
         this.pseudo = Objects.requireNonNull(pseudo);
-        this.empreinteMotDePasse = Objects.requireNonNull(empreinteMotDePasse);
+        this.empreinteMotDePasse = empreinteMotDePasse;
         this.role = Objects.requireNonNull(role);
         this.creeLe = Objects.requireNonNull(creeLe);
     }
 
     /** Les comptes créés librement sont toujours des comptes coureurs. */
     public static Compte creerCoureur(Pseudo pseudo, String empreinteMotDePasse, Instant creeLe) {
-        return new Compte(UUID.randomUUID(), pseudo, empreinteMotDePasse, Role.COUREUR, creeLe);
+        return new Compte(UUID.randomUUID(), pseudo, Objects.requireNonNull(empreinteMotDePasse), Role.COUREUR,
+                creeLe);
+    }
+
+    /** Recharge un compte existant ; l'empreinte est nulle pour un compte anonymisé. */
+    public static Compte reconstituer(UUID id, Pseudo pseudo, String empreinteMotDePasse, Role role, Instant creeLe) {
+        return new Compte(id, pseudo, empreinteMotDePasse, role, creeLe);
+    }
+
+    /** Un compte sans empreinte (anonymisé) ne peut jamais se connecter, quel que soit le mot de passe. */
+    public boolean peutSeConnecter() {
+        return empreinteMotDePasse != null;
     }
 
     public UUID id() {
@@ -41,6 +52,7 @@ public final class Compte {
         return pseudo.normalise();
     }
 
+    /** Nulle si le compte ne peut pas se connecter ({@link #peutSeConnecter()}). */
     public String empreinteMotDePasse() {
         return empreinteMotDePasse;
     }

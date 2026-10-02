@@ -32,17 +32,27 @@ public record MotDePasse(String valeur) {
 
     /** Contrôle une saisie sans construire le mot de passe, pour cumuler les violations de plusieurs champs. */
     public static Optional<ViolationValidation> verifier(String saisie) {
-        if (saisie == null || saisie.isEmpty()) {
-            return Optional.of(REQUIS);
+        Optional<ViolationValidation> absence = verifierPresence(saisie);
+        if (absence.isPresent()) {
+            return absence;
         }
-        int longueur = saisie.codePointCount(0, saisie.length());
-        if (longueur < LONGUEUR_MIN) {
+        if (saisie.codePointCount(0, saisie.length()) < LONGUEUR_MIN) {
             return Optional.of(TROP_COURT);
         }
-        if (longueur > LONGUEUR_MAX) {
+        if (excedeLongueurMax(saisie)) {
             return Optional.of(TROP_LONG);
         }
         return Optional.empty();
+    }
+
+    /** Seul contrôle de saisie appliqué à la connexion : une chaîne d'espaces est une valeur. */
+    public static Optional<ViolationValidation> verifierPresence(String saisie) {
+        return saisie == null || saisie.isEmpty() ? Optional.of(REQUIS) : Optional.empty();
+    }
+
+    /** Plus de {@value #LONGUEUR_MAX} caractères, comptés en points de code. */
+    public static boolean excedeLongueurMax(String saisie) {
+        return saisie.codePointCount(0, saisie.length()) > LONGUEUR_MAX;
     }
 
     @Override

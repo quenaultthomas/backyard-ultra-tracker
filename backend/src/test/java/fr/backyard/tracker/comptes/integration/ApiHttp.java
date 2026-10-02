@@ -6,6 +6,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Map;
 
 /** Client HTTP minimal de test : aucun cookie géré automatiquement, tout est explicite. */
 final class ApiHttp {
@@ -44,6 +45,31 @@ final class ApiHttp {
 
     HttpResponse<String> postJson(String chemin, String corps, Jeton jeton) throws IOException, InterruptedException {
         return post(chemin, "application/json", corps, jeton);
+    }
+
+    /**
+     * Requête avec en-têtes explicites (Cookie, X-XSRF-TOKEN, X-Forwarded-Proto...). {@code contentType}
+     * et {@code corps} peuvent être nuls pour une requête sans corps.
+     */
+    HttpResponse<String> requete(String methode, String chemin, Map<String, String> entetes, String contentType,
+                                 String corps) throws IOException, InterruptedException {
+        HttpRequest.Builder requete = HttpRequest.newBuilder(uri(chemin)).header("Accept", "application/json")
+                .method(methode, corps == null
+                        ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(corps));
+        if (contentType != null) {
+            requete.header("Content-Type", contentType);
+        }
+        entetes.forEach(requete::header);
+        return envoyer(requete.build());
+    }
+
+    /** Valeur d'un cookie posé par la réponse, ou null s'il n'y est pas. */
+    static String valeurCookie(HttpResponse<?> reponse, String nom) {
+        return reponse.headers().allValues("set-cookie").stream()
+                .filter(c -> c.startsWith(nom + "="))
+                .map(c -> c.substring(nom.length() + 1, c.indexOf(';') < 0 ? c.length() : c.indexOf(';')))
+                .findFirst()
+                .orElse(null);
     }
 
     /** Obtient un jeton CSRF valide via GET /api/csrf. */

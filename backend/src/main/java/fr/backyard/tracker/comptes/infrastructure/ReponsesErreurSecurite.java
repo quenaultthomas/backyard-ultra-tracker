@@ -17,7 +17,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Réponses ProblemDetail des refus prononcés par Spring Security, avant tout contrôleur :
- * 401 sans authentification (sans en-tête WWW-Authenticate), 403 sur jeton CSRF absent ou invalide.
+ * 401 sans authentification (sans en-tête WWW-Authenticate), 403 sur jeton CSRF absent ou invalide
+ * ou rôle insuffisant, 409 pour un utilisateur déjà connecté sur une requête réservée aux anonymes.
  */
 @Component
 public class ReponsesErreurSecurite implements AuthenticationEntryPoint, AccessDeniedHandler {
@@ -42,9 +43,13 @@ public class ReponsesErreurSecurite implements AuthenticationEntryPoint, AccessD
             ecrire(requete, reponse, HttpStatus.FORBIDDEN, "Accès refusé", "Jeton CSRF absent ou invalide.",
                     "CSRF_INVALIDE");
         } else {
-            ecrire(requete, reponse, HttpStatus.FORBIDDEN, "Accès refusé", "Vous n'avez pas accès à cette ressource.",
+            ecrire(requete, reponse, HttpStatus.FORBIDDEN, "Accès refusé", "Vous n'avez pas les droits nécessaires.",
                     "ACCES_REFUSE");
         }
+    }
+
+    void dejaConnecte(HttpServletRequest requete, HttpServletResponse reponse) throws IOException {
+        ecrire(requete, reponse, HttpStatus.CONFLICT, "Conflit", "Vous êtes déjà connecté.", "DEJA_CONNECTE");
     }
 
     private void ecrire(HttpServletRequest requete, HttpServletResponse reponse, HttpStatus statut, String titre,

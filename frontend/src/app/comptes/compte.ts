@@ -4,7 +4,13 @@ export interface CreerCompteRequete {
   motDePasse: string;
 }
 
-/** Réponse 201 de `POST /api/comptes`. */
+/** Corps de `POST /api/connexion`. */
+export interface ConnexionRequete {
+  pseudo: string;
+  motDePasse: string;
+}
+
+/** Compte renvoyé par `POST /api/comptes` (201), `POST /api/connexion` et `GET /api/comptes/moi`. */
 export interface CompteReponse {
   id: string;
   pseudo: string;

@@ -1,0 +1,71 @@
+<main class="page">
+  <section class="carte" aria-labelledby="titre-connexion">
+    <h1 id="titre-connexion" class="titre" data-testid="titre-connexion">Se connecter</h1>
+
+    @if (deconnexionRecente()) {
+      <p class="message-info" role="status" data-testid="message-deconnexion">
+        Vous êtes déconnecté.
+      </p>
+    }
+
+    <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
+      @if (erreursServeur().generale; as erreurGenerale) {
+        <p class="erreur erreur--generale" role="alert" data-testid="erreur-generale">
+          {{ erreurGenerale }}
+        </p>
+      }
+
+      <div class="champ">
+        <label for="pseudo">Pseudo</label>
+        <input
+          id="pseudo"
+          type="text"
+          formControlName="pseudo"
+          autocomplete="username"
+          autocapitalize="none"
+          spellcheck="false"
+          aria-describedby="erreur-pseudo"
+          [attr.aria-invalid]="erreurPseudo() ? true : null"
+          data-testid="champ-pseudo"
+        />
+        @if (erreurPseudo(); as message) {
+          <p id="erreur-pseudo" class="erreur" role="alert" data-testid="erreur-pseudo">
+            {{ message }}
+          </p>
+        }
+      </div>
+
+      <div class="champ">
+        <label for="mot-de-passe">Mot de passe</label>
+        <input
+          id="mot-de-passe"
+          type="password"
+          formControlName="motDePasse"
+          autocomplete="current-password"
+          aria-describedby="erreur-mot-de-passe"
+          [attr.aria-invalid]="erreurMotDePasse() ? true : null"
+          data-testid="champ-mot-de-passe"
+        />
+        @if (erreurMotDePasse(); as message) {
+          <p id="erreur-mot-de-passe" class="erreur" role="alert" data-testid="erreur-mot-de-passe">
+            {{ message }}
+          </p>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="bouton"
+        [disabled]="envoiEnCours()"
+        data-testid="bouton-connexion"
+      >
+        Se connecter
+      </button>
+    </form>
+
+    <a class="lien" routerLink="/creer-compte" data-testid="lien-creer-compte-connexion">
+      Créer un compte
+    </a>
+    <a class="lien" routerLink="/" data-testid="lien-accueil">Retour à l'accueil</a>
+  </section>
+</main>
