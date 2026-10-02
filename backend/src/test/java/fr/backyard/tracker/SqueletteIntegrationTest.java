@@ -46,16 +46,16 @@ class SqueletteIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA2 : Liquibase est appliqué, aucun changeset applicatif et aucune table métier")
-    void ca2_liquibase_applique_sans_table_metier() {
+    @DisplayName("CA2 (évolué par 1.1 CA21) : Liquibase est appliqué, seul le changeset 0002-compte et la seule table métier compte")
+    void ca2_liquibase_applique_avec_uniquement_la_table_compte() {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
 
-        Integer changesets = jdbc.queryForObject("select count(*) from databasechangelog", Integer.class);
-        assertThat(changesets).isZero();
+        List<String> changesets = jdbc.queryForList("select id from databasechangelog", String.class);
+        assertThat(changesets).containsExactly("0002-compte");
 
         List<String> tables = jdbc.queryForList(
                 "select table_name from information_schema.tables where table_schema = 'public'", String.class);
-        assertThat(tables).containsExactlyInAnyOrder("databasechangelog", "databasechangeloglock");
+        assertThat(tables).containsExactlyInAnyOrder("databasechangelog", "databasechangeloglock", "compte");
     }
 
     @Test

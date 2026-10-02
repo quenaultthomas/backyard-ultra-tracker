@@ -1,0 +1,99 @@
+<main class="page">
+  <section class="carte" aria-labelledby="titre-creer-compte">
+    <h1 id="titre-creer-compte" class="titre" data-testid="titre-creer-compte">Créer un compte</h1>
+
+    @if (etat() === 'SUCCES') {
+      <p class="message-succes" role="status" data-testid="message-succes">
+        Compte créé pour {{ pseudoCree() }}. Vous pourrez vous connecter dès que la connexion sera
+        disponible.
+      </p>
+    } @else {
+      <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
+        @if (erreursServeur().generale; as erreurGenerale) {
+          <p class="erreur erreur--generale" role="alert" data-testid="erreur-generale">
+            {{ erreurGenerale }}
+          </p>
+        }
+
+        <div class="champ">
+          <label for="pseudo">Pseudo</label>
+          <input
+            id="pseudo"
+            type="text"
+            formControlName="pseudo"
+            autocomplete="username"
+            autocapitalize="none"
+            spellcheck="false"
+            aria-describedby="aide-pseudo erreur-pseudo"
+            [attr.aria-invalid]="erreurPseudo() ? true : null"
+            data-testid="champ-pseudo"
+          />
+          <p id="aide-pseudo" class="aide">Pseudo : 3 à 30 caractères, lettres, chiffres, . _ -</p>
+          @if (erreurPseudo(); as message) {
+            <p id="erreur-pseudo" class="erreur" role="alert" data-testid="erreur-pseudo">
+              {{ message }}
+            </p>
+          }
+        </div>
+
+        <div class="champ">
+          <label for="mot-de-passe">Mot de passe</label>
+          <input
+            id="mot-de-passe"
+            type="password"
+            formControlName="motDePasse"
+            autocomplete="new-password"
+            aria-describedby="aide-mot-de-passe erreur-mot-de-passe"
+            [attr.aria-invalid]="erreurMotDePasse() ? true : null"
+            data-testid="champ-mot-de-passe"
+          />
+          <p id="aide-mot-de-passe" class="aide">Mot de passe : 12 caractères minimum</p>
+          @if (erreurMotDePasse(); as message) {
+            <p
+              id="erreur-mot-de-passe"
+              class="erreur"
+              role="alert"
+              data-testid="erreur-mot-de-passe"
+            >
+              {{ message }}
+            </p>
+          }
+        </div>
+
+        <div class="champ">
+          <label for="confirmation">Confirmer le mot de passe</label>
+          <input
+            id="confirmation"
+            type="password"
+            formControlName="confirmation"
+            autocomplete="new-password"
+            aria-describedby="erreur-confirmation"
+            [attr.aria-invalid]="erreurConfirmation() ? true : null"
+            data-testid="champ-confirmation"
+          />
+          @if (erreurConfirmation(); as message) {
+            <p
+              id="erreur-confirmation"
+              class="erreur"
+              role="alert"
+              data-testid="erreur-confirmation"
+            >
+              {{ message }}
+            </p>
+          }
+        </div>
+
+        <button
+          type="submit"
+          class="bouton"
+          [disabled]="etat() === 'ENVOI'"
+          data-testid="bouton-creer-compte"
+        >
+          Créer le compte
+        </button>
+      </form>
+    }
+
+    <a class="lien" routerLink="/" data-testid="lien-accueil">Retour à l'accueil</a>
+  </section>
+</main>

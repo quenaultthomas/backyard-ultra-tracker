@@ -4,6 +4,9 @@
 spring:
   application:
     name: backyard-ultra-tracker
+  autoconfigure:
+    # Les comptes sont en base : pas d'utilisateur en memoire ni de mot de passe genere dans les logs.
+    exclude: org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
   datasource:
     hikari:
       # Base injoignable : echec rapide (health DOWN en ~5 s au lieu de 30 s).
@@ -14,6 +17,10 @@ spring:
       ddl-auto: validate
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+
+server:
+  # Derriere Caddy : X-Forwarded-Proto rend la requete HTTPS, et le cookie XSRF-TOKEN Secure.
+  forward-headers-strategy: native
 
 management:
   endpoints:
