@@ -14,15 +14,20 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { EMPTY, catchError, finalize } from 'rxjs';
+import { Router, RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 
 import { CsrfService } from '../../partage/csrf.service';
 import { ComptesApiService } from '../comptes-api.service';
-import { ErreursCreerCompte, interpreterErreurCreation } from './erreurs-creer-compte';
+import { ErreursFormulaireCompte, interpreterErreurCompte } from '../erreurs-compte';
+import { SessionService } from '../session.service';
 
 /** Longueur minimale contrôlée par confort : la règle de référence est celle de l'API. */
 const LONGUEUR_MIN_MOT_DE_PASSE = 12;
+
+const ERREURS_SPECIFIQUES: Record<string, ErreursFormulaireCompte> = {
+  PSEUDO_DEJA_UTILISE: { pseudo: 'Ce pseudo est déjà utilisé.' },
+};
 
 type EtatEcran = 'SAISIE' | 'ENVOI' | 'SUCCES';
 
@@ -35,12 +40,14 @@ function confirmationIdentique(groupe: AbstractControl): ValidationErrors | null
   selector: 'app-creer-compte',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './creer-compte.html',
-  styleUrl: './creer-compte.css',
+  styleUrl: '../formulaire-compte.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreerCompte implements OnInit {
   private readonly comptesApi = inject(ComptesApiService);
   private readonly csrf = inject(CsrfService);
+  private readonly session = inject(SessionService);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly formulaire = inject(NonNullableFormBuilder).group(
@@ -54,7 +61,7 @@ export class CreerCompte implements OnInit {
 
   protected readonly etat = signal<EtatEcran>('SAISIE');
   protected readonly soumis = signal(false);
-  protected readonly erreursServeur = signal<ErreursCreerCompte>({});
+  protected readonly erreursServeur = signal<ErreursFormulaireCompte>({});
   protected readonly pseudoCree = signal('');
 
   ngOnInit(): void {
@@ -83,7 +90,8 @@ export class CreerCompte implements OnInit {
           this.pseudoCree.set(compte.pseudo);
           this.etat.set('SUCCES');
         },
-        error: (erreur: unknown) => this.afficherErreur(interpreterErreurCreation(erreur)),
+        error: (erreur: unknown) =>
+          this.afficherErreur(interpreterErreurCompte(erreur, ERREURS_SPECIFIQUES)),
       });
   }
 
@@ -112,12 +120,24 @@ export class CreerCompte implements OnInit {
       : undefined;
   }
 
-  private afficherErreur(erreurs: ErreursCreerCompte): void {
+  private afficherErreur(erreurs: ErreursFormulaireCompte): void {
+    if (erreurs.dejaConnecte) {
+      this.rejoindreAccueilConnecte();
+      return;
+    }
     this.erreursServeur.set(erreurs);
     this.etat.set('SAISIE');
     if (erreurs.jetonExpire) {
       this.demanderJeton();
     }
+  }
+
+  /** Session ouverte dans un autre onglet : l'état est resynchronisé, l'écran est réservé aux anonymes. */
+  private rejoindreAccueilConnecte(): void {
+    this.session
+      .restaurer()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => void this.router.navigateByUrl('/'));
   }
 
   /** Les mots de passe ne sont jamais conservés après un envoi, quel qu'en soit le résultat. */
@@ -128,17 +148,7 @@ export class CreerCompte implements OnInit {
     this.soumis.set(false);
   }
 
-  /**
-   * Un échec ici n'est pas affiché : l'envoi suivant sans jeton valide reçoit un 403
-   * `CSRF_INVALIDE`, qui affiche « La page a expiré » et redemande un jeton.
-   */
   private demanderJeton(): void {
-    this.csrf
-      .obtenirJeton()
-      .pipe(
-        catchError(() => EMPTY),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
+    this.csrf.renouvelerJeton().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 }

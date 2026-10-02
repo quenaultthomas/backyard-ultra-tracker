@@ -98,6 +98,8 @@ Le certificat Let's Encrypt est obtenu au premier démarrage puis renouvelé aut
 
 Ne jamais utiliser `down -v` en production : cette option supprime les volumes, donc la base et les certificats.
 
+Les sessions de connexion sont conservées en mémoire par `api` (expiration après 12 h d'inactivité) : toute mise à jour ou tout redémarrage de `api` déconnecte tous les utilisateurs, qui doivent se reconnecter. Éviter de mettre à jour pendant une course.
+
 ## Sauvegarde
 
 Sauvegarde de la base au format personnalisé de `pg_dump`, lancée dans le conteneur `base` (l'utilisateur et la base sont lus depuis le conteneur, pas depuis l'hôte) :

@@ -9,7 +9,9 @@
     <span class="pastille" aria-hidden="true"></span>
     <span data-testid="etat-api">{{ libelleEtatApi() }}</span>
   </p>
-  <nav aria-label="Compte">
-    <a class="lien" routerLink="/creer-compte" data-testid="lien-creer-compte">Créer un compte</a>
-  </nav>
+  @if (anonyme()) {
+    <nav aria-label="Compte">
+      <a class="lien" routerLink="/creer-compte" data-testid="lien-creer-compte">Créer un compte</a>
+    </nav>
+  }
 </main>

@@ -17,6 +17,9 @@ export interface ProblemDetail {
   erreurs?: ErreurChamp[];
 }
 
+export const MESSAGE_PAGE_EXPIREE = 'La page a expiré, veuillez réessayer.';
+export const MESSAGE_SERVICE_INDISPONIBLE = 'Service indisponible, veuillez réessayer plus tard.';
+
 /** Extrait le `ProblemDetail` d'une erreur HTTP, ou `null` si le corps n'en est pas un. */
 export function lireProbleme(erreur: unknown): ProblemDetail | null {
   if (!(erreur instanceof HttpErrorResponse)) {
@@ -26,4 +29,9 @@ export function lireProbleme(erreur: unknown): ProblemDetail | null {
   return typeof corps === 'object' && corps !== null && 'status' in corps
     ? (corps as ProblemDetail)
     : null;
+}
+
+/** Message de l'erreur de validation portant sur `champ`, s'il y en a une. */
+export function messageDuChamp(probleme: ProblemDetail, champ: string): string | undefined {
+  return probleme.erreurs?.find((erreurChamp) => erreurChamp.champ === champ)?.message;
 }

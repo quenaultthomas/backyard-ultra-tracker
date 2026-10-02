@@ -2,9 +2,11 @@ package fr.backyard.tracker.comptes.infrastructure;
 
 import fr.backyard.tracker.comptes.domaine.Compte;
 import fr.backyard.tracker.comptes.domaine.DepotComptes;
+import fr.backyard.tracker.comptes.domaine.Pseudo;
 import fr.backyard.tracker.comptes.domaine.PseudoDejaUtiliseException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import java.util.Optional;
 import java.util.UUID;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Repository;
@@ -29,6 +31,22 @@ public class CompteJpaAdapter implements DepotComptes {
                 .isEmpty();
     }
 
+    @Override
+    public Optional<Compte> trouverParPseudoNormalise(String pseudoNormalise) {
+        return entityManager
+                .createQuery("select c from CompteJpaEntity c where c.pseudoNormalise = :pseudoNormalise",
+                        CompteJpaEntity.class)
+                .setParameter("pseudoNormalise", pseudoNormalise)
+                .getResultStream()
+                .findFirst()
+                .map(CompteJpaAdapter::versDomaine);
+    }
+
+    @Override
+    public Optional<Compte> trouverParId(UUID id) {
+        return Optional.ofNullable(entityManager.find(CompteJpaEntity.class, id)).map(CompteJpaAdapter::versDomaine);
+    }
+
     /** Flush immédiat : un doublon concurrent est détecté ici par la contrainte d'unicité et traduit en 409. */
     @Override
     public void enregistrer(Compte compte) {
@@ -46,5 +64,10 @@ public class CompteJpaAdapter implements DepotComptes {
     private static CompteJpaEntity versEntite(Compte compte) {
         return new CompteJpaEntity(compte.id(), compte.pseudo().valeur(), compte.pseudoNormalise(),
                 compte.empreinteMotDePasse(), compte.role(), compte.creeLe());
+    }
+
+    private static Compte versDomaine(CompteJpaEntity entite) {
+        return Compte.reconstituer(entite.id(), new Pseudo(entite.pseudo()), entite.empreinteMotDePasse(),
+                entite.role(), entite.creeLe());
     }
 }

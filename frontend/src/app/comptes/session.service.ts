@@ -1,0 +1,84 @@
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { Observable, catchError, concatMap, filter, map, of, take, tap, timeout } from 'rxjs';
+
+import { CsrfService } from '../partage/csrf.service';
+import { CompteReponse, ConnexionRequete } from './compte';
+import { ComptesApiService } from './comptes-api.service';
+
+/** `INCONNU` tant que `GET /api/comptes/moi` n'a pas répondu. */
+export type EtatSession = 'INCONNU' | 'ANONYME' | 'CONNECTE';
+
+const DELAI_MAX_RESTAURATION_MS = 5000;
+
+/**
+ * État connecté de l'application, gardé en mémoire uniquement : la seule source de vérité est
+ * la session serveur, relue par `GET /api/comptes/moi` à chaque chargement.
+ */
+@Injectable({ providedIn: 'root' })
+export class SessionService {
+  private readonly comptesApi = inject(ComptesApiService);
+  private readonly csrf = inject(CsrfService);
+
+  /** `undefined` : état inconnu ; `null` : anonyme. */
+  private readonly compteCourant = signal<CompteReponse | null | undefined>(undefined);
+  private readonly deconnexionRecente = signal(false);
+
+  readonly compte = this.compteCourant.asReadonly();
+  readonly etat = computed<EtatSession>(() => {
+    const compte = this.compteCourant();
+    if (compte === undefined) {
+      return 'INCONNU';
+    }
+    return compte === null ? 'ANONYME' : 'CONNECTE';
+  });
+  private readonly etat$ = toObservable(this.etat);
+
+  /** Relit le Compte courant ; toute erreur (401, réseau, 5xx, délai) vaut état anonyme. */
+  restaurer(): Observable<void> {
+    return this.comptesApi.lireCompteCourant().pipe(
+      timeout(DELAI_MAX_RESTAURATION_MS),
+      catchError(() => of(null)),
+      map((compte) => this.compteCourant.set(compte)),
+    );
+  }
+
+  /** Émet une fois l'état connu : `true` si connecté. */
+  estConnecteUneFoisConnu(): Observable<boolean> {
+    // Lecture synchrone du signal : `toObservable` émet via un effet, donc en retard d'une mise à jour.
+    const etat = this.etat();
+    if (etat !== 'INCONNU') {
+      return of(etat === 'CONNECTE');
+    }
+    return this.etat$.pipe(
+      filter((etat) => etat !== 'INCONNU'),
+      take(1),
+      map((etat) => etat === 'CONNECTE'),
+    );
+  }
+
+  /** Le jeton CSRF n'est pas garanti après connexion ou déconnexion : on en redemande un. */
+  connecter(requete: ConnexionRequete): Observable<CompteReponse> {
+    return this.comptesApi.connecter(requete).pipe(
+      concatMap((compte) => this.csrf.renouvelerJeton().pipe(map(() => compte))),
+      tap((compte) => this.compteCourant.set(compte)),
+    );
+  }
+
+  deconnecter(): Observable<void> {
+    return this.comptesApi.deconnecter().pipe(
+      concatMap(() => this.csrf.renouvelerJeton()),
+      tap(() => {
+        this.compteCourant.set(null);
+        this.deconnexionRecente.set(true);
+      }),
+    );
+  }
+
+  /** Indique, une seule fois, qu'une déconnexion vient d'avoir lieu (message de l'écran de connexion). */
+  consommerDeconnexionRecente(): boolean {
+    const recente = this.deconnexionRecente();
+    this.deconnexionRecente.set(false);
+    return recente;
+  }
+}
