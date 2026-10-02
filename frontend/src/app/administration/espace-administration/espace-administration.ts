@@ -1,4 +1,3 @@
-import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,11 +8,12 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
 
-import { RoleAdministrateur, estAdministrateur } from '../../comptes/roles';
+import { RoleAdministrateur, estAdminMaster, estAdministrateur } from '../../comptes/roles';
 import { SessionService } from '../../comptes/session.service';
 import { AdministrationApiService } from '../administration-api.service';
+import { RefusAccesService } from '../refus-acces.service';
 
 const LIBELLES_ROLE: Record<RoleAdministrateur, string> = {
   ADMIN_MASTER: 'Administrateur master',
@@ -23,9 +23,10 @@ const LIBELLES_ROLE: Record<RoleAdministrateur, string> = {
 const MESSAGE_VERIFICATION_IMPOSSIBLE =
   "Impossible de vérifier vos droits d'accès. Réessayez plus tard.";
 
-/** Espace d'administration, vide pour l'instant ; ses droits sont vérifiés par le serveur à l'ouverture. */
+/** Espace d'administration ; ses droits sont vérifiés par le serveur à l'ouverture. */
 @Component({
   selector: 'app-espace-administration',
+  imports: [RouterLink],
   templateUrl: './espace-administration.html',
   styleUrl: '../../partage/page-carte.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,12 +34,17 @@ const MESSAGE_VERIFICATION_IMPOSSIBLE =
 export class EspaceAdministration implements OnInit {
   private readonly administrationApi = inject(AdministrationApiService);
   private readonly session = inject(SessionService);
-  private readonly router = inject(Router);
+  private readonly refusAcces = inject(RefusAccesService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly libelleRole = computed(() => {
     const role = this.session.compte()?.role;
     return role !== undefined && estAdministrateur(role) ? LIBELLES_ROLE[role] : null;
+  });
+  /** Aide d'affichage : l'API réserve la gestion des admins à l'admin master. */
+  protected readonly peutGererAdmins = computed(() => {
+    const role = this.session.compte()?.role;
+    return role !== undefined && estAdminMaster(role);
   });
   protected readonly erreur = signal<string | null>(null);
 
@@ -50,13 +56,7 @@ export class EspaceAdministration implements OnInit {
   }
 
   private traiterRefus(erreur: unknown): void {
-    const statut = erreur instanceof HttpErrorResponse ? erreur.status : null;
-    if (statut === HttpStatusCode.Unauthorized) {
-      this.session.oublierSessionExpiree();
-      void this.router.navigate(['/connexion'], { queryParams: { retour: '/administration' } });
-    } else if (statut === HttpStatusCode.Forbidden) {
-      void this.router.navigateByUrl('/acces-refuse');
-    } else {
+    if (!this.refusAcces.rediriger(erreur, '/administration')) {
       this.erreur.set(MESSAGE_VERIFICATION_IMPOSSIBLE);
     }
   }

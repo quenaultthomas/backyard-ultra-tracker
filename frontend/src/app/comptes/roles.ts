@@ -6,3 +6,8 @@ export type RoleAdministrateur = Extract<Role, 'ADMIN_MASTER' | 'ADMIN'>;
 export function estAdministrateur(role: Role): role is RoleAdministrateur {
   return role === 'ADMIN_MASTER' || role === 'ADMIN';
 }
+
+/** Seul rôle autorisé à gérer les admins (contrôle serveur : `/api/administration/admins/**`). */
+export function estAdminMaster(role: Role): boolean {
+  return role === 'ADMIN_MASTER';
+}

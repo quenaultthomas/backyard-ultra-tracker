@@ -1,7 +1,10 @@
 import { Routes } from '@angular/router';
 
 import { Accueil } from './accueil/accueil';
-import { reserveAuxAdministrateurs } from './administration/reserve-aux-administrateurs.guard';
+import {
+  reserveAAdminMaster,
+  reserveAuxAdministrateurs,
+} from './administration/reserve-aux-administrateurs.guard';
 import { reserveAuxAnonymes } from './comptes/reserve-aux-anonymes.guard';
 
 export const routes: Routes = [
@@ -26,6 +29,13 @@ export const routes: Routes = [
         (m) => m.EspaceAdministration,
       ),
     title: 'Administration - Backyard Ultra Tracker',
+  },
+  {
+    path: 'administration/admins',
+    canActivate: [reserveAAdminMaster],
+    loadComponent: () =>
+      import('./administration/gestion-admins/gestion-admins').then((m) => m.GestionAdmins),
+    title: 'Gestion des administrateurs - Backyard Ultra Tracker',
   },
   {
     path: 'acces-refuse',

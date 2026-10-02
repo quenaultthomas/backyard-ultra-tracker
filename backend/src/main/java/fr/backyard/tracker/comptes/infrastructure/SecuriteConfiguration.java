@@ -24,7 +24,8 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
  * Politique de sécurité HTTP : tout /api/** exige une authentification sauf les endpoints publics,
- * /api/administration/** est réservé aux rôles ADMIN_MASTER et ADMIN (refus avant toute résolution du chemin),
+ * /api/administration/admins/** est réservé à ADMIN_MASTER, le reste de /api/administration/** aux rôles
+ * ADMIN_MASTER et ADMIN (refus avant toute résolution du chemin),
  * CSRF actif en mode cookie pour l'application Angular, session serveur ouverte uniquement par une
  * connexion réussie (cookie JSESSIONID, paramètres dans application.yml).
  */
@@ -46,6 +47,8 @@ public class SecuriteConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/sante", "/api/csrf").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/comptes", "/api/connexion", "/api/deconnexion")
                         .permitAll()
+                        .requestMatchers("/api/administration/admins", "/api/administration/admins/**")
+                        .hasRole(Role.ADMIN_MASTER.name())
                         .requestMatchers("/api/administration/**")
                         .hasAnyRole(Role.ADMIN_MASTER.name(), Role.ADMIN.name())
                         .requestMatchers("/api/**").authenticated()
