@@ -260,4 +260,68 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     await page.getByTestId('lien-se-connecter').click();
     await expect(page.getByTestId('titre-connexion')).toBeVisible();
   });
+
+  test('1.2 CA30 - échec de déconnexion en 403 CSRF_INVALIDE : message dans l\'en-tête, jeton redemandé, utilisateur toujours connecté', async ({ page, request }) => {
+    const pseudo = pseudoUnique();
+    await creerCompteParApi(request, pseudo);
+    await seConnecter(page, pseudo);
+    await page.route('**/api/deconnexion', async (route) => {
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/problem+json',
+        body: JSON.stringify({
+          type: 'about:blank',
+          title: 'Accès refusé',
+          status: 403,
+          detail: 'Jeton CSRF absent ou invalide.',
+          code: 'CSRF_INVALIDE',
+        }),
+      });
+    });
+
+    const nouveauJeton = page.waitForRequest((r) => r.url().includes('/api/csrf'));
+    await page.getByTestId('bouton-deconnexion').click();
+    await nouveauJeton;
+
+    await expect(page.getByTestId('entete-erreur')).toHaveText('La page a expiré, veuillez réessayer.');
+    await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
+    await expect(page.getByTestId('bouton-deconnexion')).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
+  });
+
+  test('1.2 CA30 - échec de déconnexion en 503 : message dans l\'en-tête, utilisateur toujours connecté', async ({ page, request }) => {
+    const pseudo = pseudoUnique();
+    await creerCompteParApi(request, pseudo);
+    await seConnecter(page, pseudo);
+    await page.route('**/api/deconnexion', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'text/plain', body: 'Service Unavailable' });
+    });
+
+    await page.getByTestId('bouton-deconnexion').click();
+
+    const erreur = page.getByTestId('entete-erreur');
+    await expect(erreur).toHaveText('Service indisponible, veuillez réessayer plus tard.');
+    await expect(erreur).not.toContainText('503');
+    await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
+    await expect(page.getByTestId('bouton-deconnexion')).toBeVisible();
+  });
+
+  test('1.2 CA36 - GET /api/comptes/moi sans réponse : en-tête vide pendant la restauration puis anonyme après 5 s', async ({ page }) => {
+    await page.route('**/api/comptes/moi', async () => {
+      // requête volontairement retenue : jamais fulfillée ni poursuivie
+    });
+    await page.goto('/');
+
+    await expect(page.getByTestId('entete-titre')).toBeVisible();
+    await expect(page.getByTestId('lien-se-connecter')).toHaveCount(0);
+    await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
+
+    await expect(page.getByTestId('lien-se-connecter')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
+    await expect(page.getByTestId('titre')).toHaveText('Backyard Ultra Tracker');
+
+    await page.getByTestId('lien-se-connecter').click();
+    await expect(page).toHaveURL(/\/connexion$/);
+    await expect(page.getByTestId('titre-connexion')).toBeVisible();
+  });
 });
