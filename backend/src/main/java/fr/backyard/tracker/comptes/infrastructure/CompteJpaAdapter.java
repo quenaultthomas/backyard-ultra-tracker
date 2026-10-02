@@ -8,6 +8,7 @@ import fr.backyard.tracker.comptes.domaine.PseudoDejaUtiliseException;
 import fr.backyard.tracker.comptes.domaine.Role;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.hibernate.exception.ConstraintViolationException;
@@ -59,6 +60,16 @@ public class CompteJpaAdapter implements DepotComptes {
     @Override
     public Optional<Compte> trouverParId(UUID id) {
         return Optional.ofNullable(entityManager.find(CompteJpaEntity.class, id)).map(CompteJpaAdapter::versDomaine);
+    }
+
+    @Override
+    public List<Compte> listerParRole(Role role) {
+        return entityManager
+                .createQuery("select c from CompteJpaEntity c where c.role = :role", CompteJpaEntity.class)
+                .setParameter("role", role)
+                .getResultStream()
+                .map(CompteJpaAdapter::versDomaine)
+                .toList();
     }
 
     /**

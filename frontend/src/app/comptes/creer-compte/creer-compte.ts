@@ -7,34 +7,26 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  AbstractControl,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { CsrfService } from '../../partage/csrf.service';
 import { ComptesApiService } from '../comptes-api.service';
+import {
+  LONGUEUR_MIN_MOT_DE_PASSE,
+  confirmationIdentique,
+  erreurClientMotDePasse,
+  erreurClientPseudo,
+} from '../controles-formulaire-compte';
 import { ErreursFormulaireCompte, interpreterErreurCompte } from '../erreurs-compte';
 import { SessionService } from '../session.service';
-
-/** Longueur minimale contrôlée par confort : la règle de référence est celle de l'API. */
-const LONGUEUR_MIN_MOT_DE_PASSE = 12;
 
 const ERREURS_SPECIFIQUES: Record<string, ErreursFormulaireCompte> = {
   PSEUDO_DEJA_UTILISE: { pseudo: 'Ce pseudo est déjà utilisé.' },
 };
 
 type EtatEcran = 'SAISIE' | 'ENVOI' | 'SUCCES';
-
-function confirmationIdentique(groupe: AbstractControl): ValidationErrors | null {
-  const { motDePasse, confirmation } = groupe.value as { motDePasse: string; confirmation: string };
-  return motDePasse === confirmation ? null : { confirmationDifferente: true };
-}
 
 @Component({
   selector: 'app-creer-compte',
@@ -96,22 +88,17 @@ export class CreerCompte implements OnInit {
   }
 
   protected erreurPseudo(): string | undefined {
-    const pseudo = this.formulaire.controls.pseudo;
-    if (this.soumis() && pseudo.hasError('required')) {
-      return 'Le pseudo est obligatoire.';
-    }
-    return this.erreursServeur().pseudo;
+    const erreurClient = this.soumis()
+      ? erreurClientPseudo(this.formulaire.controls.pseudo)
+      : undefined;
+    return erreurClient ?? this.erreursServeur().pseudo;
   }
 
   protected erreurMotDePasse(): string | undefined {
-    const motDePasse = this.formulaire.controls.motDePasse;
-    if (this.soumis() && motDePasse.hasError('required')) {
-      return 'Le mot de passe est obligatoire.';
-    }
-    if (this.soumis() && motDePasse.hasError('minlength')) {
-      return `Le mot de passe doit faire au moins ${LONGUEUR_MIN_MOT_DE_PASSE} caractères.`;
-    }
-    return this.erreursServeur().motDePasse;
+    const erreurClient = this.soumis()
+      ? erreurClientMotDePasse(this.formulaire.controls.motDePasse)
+      : undefined;
+    return erreurClient ?? this.erreursServeur().motDePasse;
   }
 
   protected erreurConfirmation(): string | undefined {

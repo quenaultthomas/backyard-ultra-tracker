@@ -1,5 +1,6 @@
 package fr.backyard.tracker.comptes.domaine;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,5 +39,14 @@ public interface DepotComptes {
     /** @throws UnsupportedOperationException si le dépôt ne sait pas rechercher */
     default Optional<Compte> trouverParId(UUID id) {
         throw new UnsupportedOperationException("Ce dépôt ne sait pas rechercher par identifiant.");
+    }
+
+    /**
+     * Comptes du rôle donné, dans un ordre quelconque (l'ordre d'affichage est une règle des cas d'usage).
+     *
+     * @throws UnsupportedOperationException si le dépôt ne sait pas rechercher
+     */
+    default List<Compte> listerParRole(Role role) {
+        throw new UnsupportedOperationException("Ce dépôt ne sait pas lister par rôle.");
     }
 }
