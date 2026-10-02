@@ -16,9 +16,19 @@ public interface DepotComptes {
     /**
      * Enregistre un nouveau compte.
      *
-     * @throws PseudoDejaUtiliseException si le pseudo normalisé a été pris entre-temps
+     * @throws PseudoDejaUtiliseException      si le pseudo normalisé a été pris entre-temps
+     * @throws AdminMasterDejaPresentException si un autre admin master a été enregistré entre-temps
      */
     void enregistrer(Compte compte);
+
+    /**
+     * Vrai si un compte de rôle {@link Role#ADMIN_MASTER} existe, quel que soit son pseudo.
+     *
+     * @throws UnsupportedOperationException si le dépôt ne sait pas rechercher
+     */
+    default boolean existeAdminMaster() {
+        throw new UnsupportedOperationException("Ce dépôt ne sait pas rechercher l'admin master.");
+    }
 
     /** @throws UnsupportedOperationException si le dépôt ne sait pas rechercher */
     default Optional<Compte> trouverParPseudoNormalise(String pseudoNormalise) {

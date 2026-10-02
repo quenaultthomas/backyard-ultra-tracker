@@ -11,7 +11,7 @@ Toute l'application tourne dans Docker : aucune installation de Java, Node ou Po
 - Dev / E2E : `docker compose up -d --build` (HTTP sur http://localhost, API aussi publiée sur le port 8080).
 - Production : `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`.
 
-`docker-compose.prod.yml` ne contient que des surcharges : seul `web` publie des ports, `restart: unless-stopped` sur les trois services, HTTPS par Caddy, volumes des certificats `donnees-caddy` et `config-caddy`, variables `BASE_MOT_DE_PASSE` et `DOMAINE` obligatoires.
+`docker-compose.prod.yml` ne contient que des surcharges : seul `web` publie des ports, `restart: unless-stopped` sur les trois services, HTTPS par Caddy, volumes des certificats `donnees-caddy` et `config-caddy`, variables `BASE_MOT_DE_PASSE`, `DOMAINE`, `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE` obligatoires.
 
 Dans la suite, sur le VPS :
 
@@ -40,12 +40,31 @@ Toutes les variables sont décrites dans `.env.example`. Le fichier `.env` n'est
 | `DOMAINE` | **obligatoire** | nom de domaine servi en HTTPS |
 | `CONNEXION_ECHECS_MAX` | facultative (défaut `5`, entier ≥ 1) | échecs de connexion consécutifs sur un même pseudo avant blocage temporaire |
 | `CONNEXION_BLOCAGE_SECONDES` | facultative (défaut `900`, entier ≥ 1) | durée du blocage, et délai au-delà duquel des échecs partiels sont oubliés |
+| `ADMIN_MASTER_PSEUDO` | **obligatoire** (facultative en dev) | pseudo de l'admin master, créé au démarrage s'il n'existe pas (3 à 30 caractères) |
+| `ADMIN_MASTER_MOT_DE_PASSE` | **obligatoire** (facultative en dev) | mot de passe initial de l'admin master (12 à 128 caractères) |
 
-Si `BASE_MOT_DE_PASSE` ou `DOMAINE` est absente ou vide, Compose échoue avant tout démarrage avec un message citant la variable. Compose ne peut pas refuser une valeur faible : utiliser impérativement un mot de passe généré (`openssl rand -hex 24`), jamais `backyard`.
+Si `BASE_MOT_DE_PASSE`, `DOMAINE`, `ADMIN_MASTER_PSEUDO` ou `ADMIN_MASTER_MOT_DE_PASSE` est absente ou vide, Compose échoue avant tout démarrage avec un message citant la variable. Compose ne peut pas refuser une valeur faible : utiliser impérativement un mot de passe généré (`openssl rand -hex 24`), jamais `backyard`.
 
 Une valeur de `CONNEXION_ECHECS_MAX` ou `CONNEXION_BLOCAGE_SECONDES` non entière ou inférieure à 1 empêche `api` de démarrer (jamais `healthy`) ; `$PROD logs api` cite la propriété (`backyard.connexion.echecs-max` ou `backyard.connexion.blocage-secondes`) et la borne. Pour un test à la main, `CONNEXION_BLOCAGE_SECONDES=30` évite d'attendre 15 minutes ; ne pas garder une valeur aussi basse en production.
 
-Identifiants de l'admin master : à venir en 1.4.
+### Admin master
+
+L'admin master est l'unique compte de rôle `ADMIN_MASTER`. Il n'est jamais créable depuis l'interface : `api` le crée à son démarrage, après les migrations, à partir de `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE`.
+
+- **Création** : uniquement s'il n'existe pas encore. `$PROD logs api` contient alors « Admin master créé (compte <identifiant>) ». Il se connecte ensuite comme tout compte (pseudo insensible à la casse).
+- **Variables ignorées ensuite** : dès qu'un admin master existe (« Admin master déjà présent » dans les logs), les deux variables ne sont plus lues ; les modifier ne change ni son pseudo ni son mot de passe. Elles restent néanmoins exigées par `docker-compose.prod.yml` à chaque démarrage.
+- **Échec du démarrage** (`api` jamais `healthy`, cause dans `$PROD logs api`, sans aucune valeur) : une seule des deux variables renseignée ; pseudo invalide (3 à 30 caractères, lettres, chiffres, `.`, `_`, `-`) ; mot de passe de moins de 12 ou de plus de 128 caractères ; pseudo déjà utilisé par un autre compte (ce compte n'est jamais promu : choisir un autre pseudo).
+- **Dev** : les deux variables vides, `api` démarre sans admin master avec l'avertissement « Aucun admin master n'existe et ADMIN_MASTER_PSEUDO / ADMIN_MASTER_MOT_DE_PASSE ne sont pas renseignées ».
+- **Mot de passe** : générer avec `openssl rand -base64 18`. Compose interprète `$` dans `.env` : éviter ce caractère ou le doubler (`$$`). Le mot de passe n'apparaît jamais dans les logs, mais reste visible par `docker inspect` et `printenv` sur le VPS : protéger l'accès au VPS et au fichier `.env` (`chmod 600`).
+
+**Mot de passe de l'admin master perdu** (en attendant le changement de mot de passe par l'interface) : supprimer le compte puis redémarrer `api` avec de nouvelles valeurs dans `.env` ; il est recréé.
+
+```sh
+# Remplacer backyard par BASE_UTILISATEUR et BASE_NOM s'ils ont été changés.
+$PROD exec base psql -U backyard -d backyard -c "delete from compte where role = 'ADMIN_MASTER'"
+$PROD up -d
+$PROD logs api | grep "Admin master"
+```
 
 ## Premier déploiement
 
@@ -61,7 +80,9 @@ Identifiants de l'admin master : à venir en 1.4.
    ```
 3. Renseigner dans `.env` :
    - `DOMAINE=` le nom de domaine (ex. `backyard.example.org`) ;
-   - `BASE_MOT_DE_PASSE=` la sortie de `openssl rand -hex 24`.
+   - `BASE_MOT_DE_PASSE=` la sortie de `openssl rand -hex 24` ;
+   - `ADMIN_MASTER_PSEUDO=` le pseudo de l'admin master (ex. `Patron`) ;
+   - `ADMIN_MASTER_MOT_DE_PASSE=` la sortie de `openssl rand -base64 18` (à conserver dans un gestionnaire de mots de passe).
 4. Vérifier la configuration (échoue si une variable obligatoire manque) :
    ```sh
    $PROD config --quiet
@@ -75,6 +96,7 @@ Identifiants de l'admin master : à venir en 1.4.
    $PROD ps
    ```
 7. Vérifier le site : `curl https://<domaine>/api/sante` répond `{"status":"UP"}`, et `http://<domaine>/` redirige (308) vers HTTPS.
+8. Vérifier l'admin master : `$PROD logs api | grep "Admin master"` affiche « Admin master créé (compte <identifiant>) », puis se connecter sur `https://<domaine>/connexion` avec ses identifiants : arrivée sur l'espace d'administration.
 
 Le certificat Let's Encrypt est obtenu au premier démarrage puis renouvelé automatiquement par Caddy. En cas d'échec (DNS non propagé, port 80 ou 443 fermé), la cause figure dans `$PROD logs web` ; le site reste inaccessible en HTTPS mais `web` reste `healthy` (sa santé ne dépend pas du certificat). Les certificats sont conservés dans le volume `donnees-caddy` : ne pas le supprimer sans raison, Let's Encrypt limite le nombre d'émissions.
 
@@ -92,7 +114,7 @@ Le certificat Let's Encrypt est obtenu au premier démarrage puis renouvelé aut
    ```sh
    git pull
    ```
-3. Comparer `.env.example` avec `.env` et ajouter les nouvelles variables éventuelles.
+3. Comparer `.env.example` avec `.env` et ajouter les nouvelles variables éventuelles (depuis 1.4 : `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE`, obligatoires ; ignorées si l'admin master existe déjà).
 4. Reconstruire et relancer (les migrations Liquibase s'appliquent au démarrage de `api`) :
    ```sh
    $PROD up -d --build
@@ -156,7 +178,8 @@ Pour ne toucher ni aux données ni au `.env` de la stack de dev, la production s
 ```sh
 docker compose down            # libère les ports 80 et 8080, sans -v : données de dev conservées
 cp .env.example .env.prod
-# dans .env.prod : DOMAINE=localhost et BASE_MOT_DE_PASSE=<sortie de openssl rand -hex 24>
+# dans .env.prod : DOMAINE=localhost, BASE_MOT_DE_PASSE=<sortie de openssl rand -hex 24>,
+#                  ADMIN_MASTER_PSEUDO=Patron et ADMIN_MASTER_MOT_DE_PASSE=<sortie de openssl rand -base64 18>
 P="docker compose -p backyard-prod --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml"
 $P up -d --build
 $P ps                           # 3 services healthy, ports publiés uniquement sur web
@@ -181,4 +204,4 @@ Pour finir : `$P down -v` (supprime uniquement les volumes du projet `backyard-p
   sudo npx playwright install-deps chromium
   ```
   Sous nvm, `sudo` ne voit pas `npx` : `sudo env "PATH=$PATH" npx playwright install-deps chromium`.
-- Les tests E2E tournent sur la stack de dev (`docker compose up -d --build`, `BASE_URL=http://localhost`).
+- Les tests E2E tournent sur la stack de dev (`docker compose up -d --build`, `BASE_URL=http://localhost`). Depuis 1.4, ils supposent un admin master : renseigner `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE` dans `.env` avant le démarrage, et les mêmes valeurs dans `E2E_ADMIN_MASTER_PSEUDO` et `E2E_ADMIN_MASTER_MOT_DE_PASSE` pour Playwright.

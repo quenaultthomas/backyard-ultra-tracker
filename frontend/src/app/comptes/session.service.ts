@@ -5,6 +5,7 @@ import { Observable, catchError, concatMap, filter, map, of, take, tap, timeout 
 import { CsrfService } from '../partage/csrf.service';
 import { CompteReponse, ConnexionRequete } from './compte';
 import { ComptesApiService } from './comptes-api.service';
+import { estAdministrateur } from './roles';
 
 /** `INCONNU` tant que `GET /api/comptes/moi` n'a pas répondu. */
 export type EtatSession = 'INCONNU' | 'ANONYME' | 'CONNECTE';
@@ -32,7 +33,11 @@ export class SessionService {
     }
     return compte === null ? 'ANONYME' : 'CONNECTE';
   });
-  private readonly etat$ = toObservable(this.etat);
+  readonly estAdministrateur = computed(() => {
+    const compte = this.compteCourant();
+    return compte != null && estAdministrateur(compte.role);
+  });
+  private readonly compte$ = toObservable(this.compteCourant);
 
   /** Relit le Compte courant ; toute erreur (401, réseau, 5xx, délai) vaut état anonyme. */
   restaurer(): Observable<void> {
@@ -43,18 +48,27 @@ export class SessionService {
     );
   }
 
+  /** Émet une fois l'état connu : le Compte connecté, ou `null` si anonyme. */
+  compteUneFoisConnu(): Observable<CompteReponse | null> {
+    // Lecture synchrone du signal : `toObservable` émet via un effet, donc en retard d'une mise à jour.
+    const compte = this.compteCourant();
+    if (compte !== undefined) {
+      return of(compte);
+    }
+    return this.compte$.pipe(
+      filter((compte): compte is CompteReponse | null => compte !== undefined),
+      take(1),
+    );
+  }
+
   /** Émet une fois l'état connu : `true` si connecté. */
   estConnecteUneFoisConnu(): Observable<boolean> {
-    // Lecture synchrone du signal : `toObservable` émet via un effet, donc en retard d'une mise à jour.
-    const etat = this.etat();
-    if (etat !== 'INCONNU') {
-      return of(etat === 'CONNECTE');
-    }
-    return this.etat$.pipe(
-      filter((etat) => etat !== 'INCONNU'),
-      take(1),
-      map((etat) => etat === 'CONNECTE'),
-    );
+    return this.compteUneFoisConnu().pipe(map((compte) => compte !== null));
+  }
+
+  /** La session serveur n'existe plus (401) : l'état local devient anonyme. */
+  oublierSessionExpiree(): void {
+    this.compteCourant.set(null);
   }
 
   /** Le jeton CSRF n'est pas garanti après connexion ou déconnexion : on en redemande un. */

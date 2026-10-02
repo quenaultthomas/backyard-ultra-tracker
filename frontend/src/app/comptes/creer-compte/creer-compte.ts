@@ -40,7 +40,7 @@ function confirmationIdentique(groupe: AbstractControl): ValidationErrors | null
   selector: 'app-creer-compte',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './creer-compte.html',
-  styleUrl: '../formulaire-compte.css',
+  styleUrls: ['../../partage/page-carte.css', '../formulaire-compte.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreerCompte implements OnInit {

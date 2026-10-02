@@ -46,12 +46,12 @@ class SqueletteIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA2 (évolué par 1.1 CA21) : Liquibase est appliqué, seul le changeset 0002-compte et la seule table métier compte")
+    @DisplayName("CA2 (évolué par 1.1 CA21) : Liquibase est appliqué, changesets 0002-compte puis 0003-admin-master-unique (1.4 CA22) et la seule table métier compte")
     void ca2_liquibase_applique_avec_uniquement_la_table_compte() {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
 
-        List<String> changesets = jdbc.queryForList("select id from databasechangelog", String.class);
-        assertThat(changesets).containsExactly("0002-compte");
+        List<String> changesets = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
+        assertThat(changesets).containsExactly("0002-compte", "0003-admin-master-unique");
 
         List<String> tables = jdbc.queryForList(
                 "select table_name from information_schema.tables where table_schema = 'public'", String.class);

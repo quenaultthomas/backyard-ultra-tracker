@@ -53,7 +53,7 @@ const NON_BLANC = /\S/;
   selector: 'app-connexion',
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './connexion.html',
-  styleUrl: '../formulaire-compte.css',
+  styleUrls: ['../../partage/page-carte.css', '../formulaire-compte.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Connexion implements OnInit {
@@ -61,9 +61,7 @@ export class Connexion implements OnInit {
   private readonly csrf = inject(CsrfService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly destination = destinationApresConnexion(
-    inject(ActivatedRoute).snapshot.queryParamMap.get('retour'),
-  );
+  private readonly retour = inject(ActivatedRoute).snapshot.queryParamMap.get('retour');
 
   protected readonly formulaire = inject(NonNullableFormBuilder).group({
     pseudo: ['', [Validators.required, Validators.pattern(NON_BLANC)]],
@@ -133,8 +131,10 @@ export class Connexion implements OnInit {
     }
   }
 
+  /** La destination dépend du rôle du Compte connecté, connu seulement après la connexion. */
   private rejoindreDestination(): void {
-    void this.router.navigateByUrl(this.destination);
+    const role = this.session.compte()?.role;
+    void this.router.navigateByUrl(destinationApresConnexion(this.retour, role));
   }
 
   /** Le mot de passe n'est jamais conservé après un envoi ; le pseudo saisi l'est. */
