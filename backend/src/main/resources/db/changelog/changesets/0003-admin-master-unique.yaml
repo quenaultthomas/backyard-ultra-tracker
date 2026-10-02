@@ -1,0 +1,13 @@
+# Increment 1.4 : au plus un compte ADMIN_MASTER (index unique partiel PostgreSQL).
+databaseChangeLog:
+  - changeSet:
+      id: 0003-admin-master-unique
+      author: backyard-ultra-tracker
+      changes:
+        - sql:
+            sql: >-
+              create unique index uk_compte_admin_master on compte (role)
+              where role = 'ADMIN_MASTER'
+      rollback:
+        - sql:
+            sql: drop index uk_compte_admin_master

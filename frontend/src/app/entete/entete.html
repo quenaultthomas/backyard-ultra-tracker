@@ -12,6 +12,11 @@
         <span class="entete__pseudo" data-testid="entete-pseudo">{{
           session.compte()?.pseudo
         }}</span>
+        @if (session.estAdministrateur()) {
+          <a class="entete__lien" routerLink="/administration" data-testid="lien-administration">
+            Administration
+          </a>
+        }
         <button
           type="button"
           class="entete__bouton"

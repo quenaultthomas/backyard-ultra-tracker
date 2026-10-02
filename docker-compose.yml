@@ -26,6 +26,9 @@ services:
       # Limitation des tentatives de connexion (entiers >= 1, sinon api ne demarre pas).
       CONNEXION_ECHECS_MAX: ${CONNEXION_ECHECS_MAX:-5}
       CONNEXION_BLOCAGE_SECONDES: ${CONNEXION_BLOCAGE_SECONDES:-900}
+      # Admin master cree au premier demarrage (facultatives en dev, obligatoires en production).
+      ADMIN_MASTER_PSEUDO: ${ADMIN_MASTER_PSEUDO:-}
+      ADMIN_MASTER_MOT_DE_PASSE: ${ADMIN_MASTER_MOT_DE_PASSE:-}
     depends_on:
       base:
         condition: service_healthy

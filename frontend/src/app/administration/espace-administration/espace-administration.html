@@ -1,0 +1,20 @@
+<main class="page">
+  <section class="carte" aria-labelledby="titre-administration">
+    <h1 id="titre-administration" class="titre" data-testid="titre-administration">
+      Administration
+    </h1>
+
+    @if (erreur(); as message) {
+      <p class="erreur erreur--generale" role="alert" data-testid="administration-erreur">
+        {{ message }}
+      </p>
+    } @else {
+      @if (libelleRole(); as libelle) {
+        <p class="message" data-testid="administration-role">{{ libelle }}</p>
+      }
+      <p class="message" data-testid="administration-vide">
+        Aucune fonctionnalité d'administration pour le moment.
+      </p>
+    }
+  </section>
+</main>

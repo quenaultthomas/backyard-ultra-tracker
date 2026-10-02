@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { Accueil } from './accueil/accueil';
+import { reserveAuxAdministrateurs } from './administration/reserve-aux-administrateurs.guard';
 import { reserveAuxAnonymes } from './comptes/reserve-aux-anonymes.guard';
 
 export const routes: Routes = [
@@ -16,6 +17,20 @@ export const routes: Routes = [
     canActivate: [reserveAuxAnonymes],
     loadComponent: () => import('./comptes/creer-compte/creer-compte').then((m) => m.CreerCompte),
     title: 'Créer un compte - Backyard Ultra Tracker',
+  },
+  {
+    path: 'administration',
+    canActivate: [reserveAuxAdministrateurs],
+    loadComponent: () =>
+      import('./administration/espace-administration/espace-administration').then(
+        (m) => m.EspaceAdministration,
+      ),
+    title: 'Administration - Backyard Ultra Tracker',
+  },
+  {
+    path: 'acces-refuse',
+    loadComponent: () => import('./comptes/acces-refuse/acces-refuse').then((m) => m.AccesRefuse),
+    title: 'Accès refusé - Backyard Ultra Tracker',
   },
   { path: '**', redirectTo: '' },
 ];

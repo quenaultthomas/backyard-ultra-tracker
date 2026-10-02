@@ -45,6 +45,11 @@ backyard:
     # echecs consecutifs avant blocage, puis duree du blocage et de l'oubli des echecs partiels.
     echecs-max: ${CONNEXION_ECHECS_MAX:5}
     blocage-secondes: ${CONNEXION_BLOCAGE_SECONDES:900}
+  admin-master:
+    # Admin master cree au demarrage s'il n'existe pas (ignorees ensuite). Defaut vide : aucun admin cree.
+    # Valeurs validees par le domaine (pseudo 3 a 30 caracteres, mot de passe 12 a 128), jamais journalisees.
+    pseudo: ${ADMIN_MASTER_PSEUDO:}
+    mot-de-passe: ${ADMIN_MASTER_MOT_DE_PASSE:}
 
 management:
   endpoints:

@@ -12,6 +12,8 @@ services:
     restart: unless-stopped
     environment:
       SPRING_DATASOURCE_PASSWORD: ${BASE_MOT_DE_PASSE:?BASE_MOT_DE_PASSE est obligatoire en production (générer avec openssl rand -hex 24)}
+      ADMIN_MASTER_PSEUDO: ${ADMIN_MASTER_PSEUDO:?ADMIN_MASTER_PSEUDO est obligatoire en production (pseudo de l'admin master, 3 à 30 caractères)}
+      ADMIN_MASTER_MOT_DE_PASSE: ${ADMIN_MASTER_MOT_DE_PASSE:?ADMIN_MASTER_MOT_DE_PASSE est obligatoire en production (12 caractères minimum, générer avec openssl rand -base64 18)}
     # Non exposé : joignable uniquement par web via le réseau interne Compose.
     ports: !reset []
 

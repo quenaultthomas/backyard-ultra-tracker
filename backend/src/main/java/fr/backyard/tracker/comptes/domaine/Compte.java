@@ -30,6 +30,12 @@ public final class Compte {
                 creeLe);
     }
 
+    /** L'unique admin master, créé au premier démarrage à partir de la configuration, jamais depuis l'interface. */
+    public static Compte creerAdminMaster(Pseudo pseudo, String empreinteMotDePasse, Instant creeLe) {
+        return new Compte(UUID.randomUUID(), pseudo, Objects.requireNonNull(empreinteMotDePasse), Role.ADMIN_MASTER,
+                creeLe);
+    }
+
     /** Recharge un compte existant ; l'empreinte est nulle pour un compte anonymisé. */
     public static Compte reconstituer(UUID id, Pseudo pseudo, String empreinteMotDePasse, Role role, Instant creeLe) {
         return new Compte(id, pseudo, empreinteMotDePasse, role, creeLe);
