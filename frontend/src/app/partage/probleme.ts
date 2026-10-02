@@ -15,6 +15,8 @@ export interface ProblemDetail {
   detail: string;
   code?: string;
   erreurs?: ErreurChamp[];
+  /** Temps restant avant une nouvelle tentative, en secondes (429 `TENTATIVES_EXCESSIVES`). */
+  reessayerDansSecondes?: number;
 }
 
 export const MESSAGE_PAGE_EXPIREE = 'La page a expiré, veuillez réessayer.';

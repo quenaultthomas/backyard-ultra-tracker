@@ -38,8 +38,12 @@ Toutes les variables sont décrites dans `.env.example`. Le fichier `.env` n'est
 | `BASE_UTILISATEUR` | facultative (défaut `backyard`) | utilisateur de la base |
 | `BASE_MOT_DE_PASSE` | **obligatoire**, non vide | mot de passe de la base |
 | `DOMAINE` | **obligatoire** | nom de domaine servi en HTTPS |
+| `CONNEXION_ECHECS_MAX` | facultative (défaut `5`, entier ≥ 1) | échecs de connexion consécutifs sur un même pseudo avant blocage temporaire |
+| `CONNEXION_BLOCAGE_SECONDES` | facultative (défaut `900`, entier ≥ 1) | durée du blocage, et délai au-delà duquel des échecs partiels sont oubliés |
 
 Si `BASE_MOT_DE_PASSE` ou `DOMAINE` est absente ou vide, Compose échoue avant tout démarrage avec un message citant la variable. Compose ne peut pas refuser une valeur faible : utiliser impérativement un mot de passe généré (`openssl rand -hex 24`), jamais `backyard`.
+
+Une valeur de `CONNEXION_ECHECS_MAX` ou `CONNEXION_BLOCAGE_SECONDES` non entière ou inférieure à 1 empêche `api` de démarrer (jamais `healthy`) ; `$PROD logs api` cite la propriété (`backyard.connexion.echecs-max` ou `backyard.connexion.blocage-secondes`) et la borne. Pour un test à la main, `CONNEXION_BLOCAGE_SECONDES=30` évite d'attendre 15 minutes ; ne pas garder une valeur aussi basse en production.
 
 Identifiants de l'admin master : à venir en 1.4.
 
@@ -99,6 +103,8 @@ Le certificat Let's Encrypt est obtenu au premier démarrage puis renouvelé aut
 Ne jamais utiliser `down -v` en production : cette option supprime les volumes, donc la base et les certificats.
 
 Les sessions de connexion sont conservées en mémoire par `api` (expiration après 12 h d'inactivité) : toute mise à jour ou tout redémarrage de `api` déconnecte tous les utilisateurs, qui doivent se reconnecter. Éviter de mettre à jour pendant une course.
+
+Les compteurs d'échecs de connexion et les blocages temporaires sont aussi en mémoire : un redémarrage de `api` les remet à zéro (c'est aussi le moyen de débloquer un pseudo avant la fin du délai). L'application est prévue pour une seule instance de `api`.
 
 ## Sauvegarde
 

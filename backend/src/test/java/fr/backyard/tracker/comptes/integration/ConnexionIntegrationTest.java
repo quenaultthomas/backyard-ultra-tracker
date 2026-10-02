@@ -14,6 +14,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxyUtil;
 import ch.qos.logback.core.read.ListAppender;
 import fr.backyard.tracker.comptes.infrastructure.EncodeurMotDePasseArgon2;
+import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.comptes.integration.ApiHttp.Jeton;
 import java.net.http.HttpResponse;
 import java.time.Instant;
@@ -76,6 +77,10 @@ class ConnexionIntegrationTest {
     @MockitoSpyBean
     EncodeurMotDePasseArgon2 encodeurEspionne;
 
+    /** Registre en mémoire partagé par le contexte : vidé avant chaque test (isolation, 1.3). */
+    @Autowired
+    RegistreTentativesConnexionEnMemoire registre;
+
     JdbcTemplate jdbc;
     ApiHttp api;
     final JsonMapper json = JsonMapper.builder().build();
@@ -93,6 +98,7 @@ class ConnexionIntegrationTest {
     void preparer() {
         jdbc = new JdbcTemplate(dataSource);
         jdbc.update("delete from compte");
+        registre.vider();
         api = new ApiHttp(port);
         if (empreinteDeReference == null) {
             empreinteDeReference = encodeur.encode(MOT_DE_PASSE);
@@ -603,18 +609,32 @@ class ConnexionIntegrationTest {
         assertThat(jdbc.queryForObject("select count(*) from compte where pseudo = 'Nouveau'", Integer.class)).isZero();
     }
 
-    // ---------------------------------------------------------------- CA27
+    // ---------------------------------------------------------------- CA13 (1.3), remplace CA27 de 1.2
 
     @Test
-    @DisplayName("CA27 : 10 échecs d'affilée puis une connexion correcte, 200 (aucune limitation en 1.2)")
-    void ca27_aucune_limitation_des_essais() throws Exception {
+    @DisplayName("CA13 (1.3) : 5 échecs en 401, le 6e appel (bon mot de passe) en 429 TENTATIVES_EXCESSIVES, sans Argon2id ni cookie")
+    void ca13_blocage_apres_cinq_echecs() throws Exception {
         creerCompte("Alice", MOT_DE_PASSE);
 
-        for (int i = 0; i < 10; i++) {
-            assertThat(connecter("Alice", MOT_DE_PASSE_FAUX).statusCode()).as("essai " + i).isEqualTo(401);
+        for (int i = 1; i <= 5; i++) {
+            assertErreurGenerique(connecter("Alice", MOT_DE_PASSE_FAUX));
         }
+        clearInvocations(encodeurEspionne);
+        HttpResponse<String> reponse = connecter("Alice", MOT_DE_PASSE);
 
-        assertThat(connecter("Alice", MOT_DE_PASSE).statusCode()).isEqualTo(200);
+        assertThat(reponse.statusCode()).isEqualTo(429);
+        assertThat(reponse.headers().firstValue("content-type")).hasValueSatisfying(c -> assertThat(c).contains("problem+json"));
+        assertThat(reponse.headers().firstValue("retry-after")).hasValue("900");
+        assertThat(reponse.headers().allValues("set-cookie")).isEmpty();
+        JsonNode corps = json.readTree(reponse.body());
+        assertThat(corps.get("type").asString()).isEqualTo("about:blank");
+        assertThat(corps.get("title").asString()).isEqualTo("Trop de tentatives");
+        assertThat(corps.get("status").asInt()).isEqualTo(429);
+        assertThat(corps.get("detail").asString()).isEqualTo("Trop de tentatives de connexion. Réessayez plus tard.");
+        assertThat(corps.get("code").asString()).isEqualTo("TENTATIVES_EXCESSIVES");
+        assertThat(corps.get("reessayerDansSecondes").asInt()).isEqualTo(900);
+        assertThat(reponse.body()).doesNotContain("Alice").doesNotContain(MOT_DE_PASSE).doesNotContain(MOT_DE_PASSE_FAUX);
+        verify(encodeurEspionne, never()).verifier(anyString(), anyString());
     }
 
     // ---------------------------------------------------------------- utilitaires

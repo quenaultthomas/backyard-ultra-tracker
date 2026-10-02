@@ -12,13 +12,38 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { CsrfService } from '../../partage/csrf.service';
-import { ErreursFormulaireCompte, interpreterErreurCompte } from '../erreurs-compte';
+import { ProblemDetail } from '../../partage/probleme';
+import {
+  ErreursFormulaireCompte,
+  ErreursSpecifiques,
+  interpreterErreurCompte,
+} from '../erreurs-compte';
 import { destinationApresConnexion } from '../retour';
 import { SessionService } from '../session.service';
 
-/** Tout échec d'authentification affiche ce même message, quelle qu'en soit la cause. */
-const ERREURS_SPECIFIQUES: Record<string, ErreursFormulaireCompte> = {
+/**
+ * Message de blocage temporaire : délai en minutes arrondi au supérieur, ou message
+ * de repli si l'API ne fournit pas de délai exploitable.
+ */
+function erreurTentativesExcessives({
+  reessayerDansSecondes,
+}: ProblemDetail): ErreursFormulaireCompte {
+  const prefixe = 'Trop de tentatives de connexion. Réessayez';
+  if (
+    typeof reessayerDansSecondes !== 'number' ||
+    !Number.isFinite(reessayerDansSecondes) ||
+    reessayerDansSecondes <= 0
+  ) {
+    return { generale: `${prefixe} plus tard.` };
+  }
+  const minutes = Math.ceil(reessayerDansSecondes / 60);
+  return { generale: `${prefixe} dans ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}.` };
+}
+
+const ERREURS_SPECIFIQUES: ErreursSpecifiques = {
+  /** Tout échec d'authentification affiche ce même message, quelle qu'en soit la cause. */
   IDENTIFIANTS_INVALIDES: { generale: 'Pseudo ou mot de passe incorrect.' },
+  TENTATIVES_EXCESSIVES: erreurTentativesExcessives,
 };
 
 /** Au moins un caractère autre qu'un espace : un pseudo fait d'espaces est vide pour l'API. */

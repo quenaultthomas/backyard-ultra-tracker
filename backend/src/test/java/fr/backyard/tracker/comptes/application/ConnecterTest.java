@@ -11,13 +11,18 @@ import fr.backyard.tracker.comptes.domaine.DonneesCompteInvalidesException;
 import fr.backyard.tracker.comptes.domaine.EncodeurMotDePasse;
 import fr.backyard.tracker.comptes.domaine.IdentifiantsInvalidesException;
 import fr.backyard.tracker.comptes.domaine.MotDePasse;
+import fr.backyard.tracker.comptes.domaine.PolitiqueBlocage;
 import fr.backyard.tracker.comptes.domaine.Pseudo;
+import fr.backyard.tracker.comptes.domaine.RegistreTentativesConnexion;
 import fr.backyard.tracker.comptes.domaine.Role;
+import fr.backyard.tracker.comptes.domaine.TentativesConnexion;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -32,7 +37,13 @@ class ConnecterTest {
     private final Clock horlogeFixe = Clock.fixed(MAINTENANT, ZoneOffset.UTC);
     private final DepotComptesEnMemoire depot = new DepotComptesEnMemoire();
     private final EncodeurEspion encodeur = new EncodeurEspion();
-    private final Connecter connecter = new Connecter(depot, encodeur);
+    private final Connecter connecter = connecter(depot);
+
+    /** Constructeur de 1.3 : registre vierge à chaque test et politique par défaut (seuil jamais atteint ici). */
+    private Connecter connecter(DepotComptes depotComptes) {
+        return new Connecter(depotComptes, encodeur, new RegistreEnMemoire(), PolitiqueBlocage.parDefaut(),
+                horlogeFixe);
+    }
 
     private Compte alice() {
         Compte alice = Compte.creerCoureur(
@@ -227,7 +238,7 @@ class ConnecterTest {
     @DisplayName("CA6 - pseudo null et mot de passe null : deux violations requises ensemble, dépôt non interrogé")
     void doit_signaler_les_deux_champs_requis_quand_ils_sont_null() {
         DepotComptes depotEspion = mock(DepotComptes.class);
-        Connecter casUsage = new Connecter(depotEspion, encodeur);
+        Connecter casUsage = connecter(depotEspion);
 
         assertThatThrownBy(() -> casUsage.executer(null, null))
                 .isInstanceOfSatisfying(DonneesCompteInvalidesException.class, e ->
@@ -241,7 +252,7 @@ class ConnecterTest {
     @DisplayName("CA6 - pseudo d'espaces et mot de passe vide : deux violations requises ensemble")
     void doit_signaler_les_deux_champs_requis_quand_pseudo_blanc_et_mot_de_passe_vide() {
         DepotComptes depotEspion = mock(DepotComptes.class);
-        Connecter casUsage = new Connecter(depotEspion, encodeur);
+        Connecter casUsage = connecter(depotEspion);
 
         assertThatThrownBy(() -> casUsage.executer("   ", ""))
                 .isInstanceOfSatisfying(DonneesCompteInvalidesException.class, e -> {
@@ -257,7 +268,7 @@ class ConnecterTest {
     @DisplayName("CA6 - pseudo absent seul : une seule violation PSEUDO_REQUIS")
     void doit_signaler_seulement_le_pseudo_requis() {
         DepotComptes depotEspion = mock(DepotComptes.class);
-        Connecter casUsage = new Connecter(depotEspion, encodeur);
+        Connecter casUsage = connecter(depotEspion);
 
         assertThatThrownBy(() -> casUsage.executer("   ", "x"))
                 .isInstanceOfSatisfying(DonneesCompteInvalidesException.class, e ->
@@ -269,7 +280,7 @@ class ConnecterTest {
     @DisplayName("CA6 - mot de passe absent seul : une seule violation MOT_DE_PASSE_REQUIS")
     void doit_signaler_seulement_le_mot_de_passe_requis() {
         DepotComptes depotEspion = mock(DepotComptes.class);
-        Connecter casUsage = new Connecter(depotEspion, encodeur);
+        Connecter casUsage = connecter(depotEspion);
 
         assertThatThrownBy(() -> casUsage.executer("Alice", null))
                 .isInstanceOfSatisfying(DonneesCompteInvalidesException.class, e ->
@@ -361,6 +372,27 @@ class ConnecterTest {
         public void enregistrer(Compte compte) {
             nombreEnregistrements++;
             comptes.add(compte);
+        }
+    }
+
+    /** Registre en mémoire minimal : les règles de blocage viennent du domaine. */
+    private static final class RegistreEnMemoire implements RegistreTentativesConnexion {
+        private final Map<String, TentativesConnexion> entrees = new HashMap<>();
+
+        @Override
+        public TentativesConnexion constater(String cle, Instant maintenant) {
+            return entrees.getOrDefault(cle, TentativesConnexion.aucune());
+        }
+
+        @Override
+        public TentativesConnexion enregistrerEchec(String cle, Instant maintenant, PolitiqueBlocage politique) {
+            return entrees.compute(cle, (k, actuelle) ->
+                    (actuelle == null ? TentativesConnexion.aucune() : actuelle).apresEchec(maintenant, politique));
+        }
+
+        @Override
+        public void effacer(String cle) {
+            entrees.remove(cle);
         }
     }
 

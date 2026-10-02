@@ -23,6 +23,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://base:5432/${BASE_NOM:-backyard}
       SPRING_DATASOURCE_USERNAME: ${BASE_UTILISATEUR:-backyard}
       SPRING_DATASOURCE_PASSWORD: ${BASE_MOT_DE_PASSE:-backyard}
+      # Limitation des tentatives de connexion (entiers >= 1, sinon api ne demarre pas).
+      CONNEXION_ECHECS_MAX: ${CONNEXION_ECHECS_MAX:-5}
+      CONNEXION_BLOCAGE_SECONDES: ${CONNEXION_BLOCAGE_SECONDES:-900}
     depends_on:
       base:
         condition: service_healthy
