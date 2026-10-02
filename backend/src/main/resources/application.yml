@@ -39,6 +39,13 @@ server:
         same-site: lax
         # Pas de Secure force : pose par Tomcat des que la requete est HTTPS (en-tete X-Forwarded-Proto).
 
+backyard:
+  connexion:
+    # Limitation des tentatives de connexion par pseudo (entiers >= 1, sinon l'api ne demarre pas) :
+    # echecs consecutifs avant blocage, puis duree du blocage et de l'oubli des echecs partiels.
+    echecs-max: ${CONNEXION_ECHECS_MAX:5}
+    blocage-secondes: ${CONNEXION_BLOCAGE_SECONDES:900}
+
 management:
   endpoints:
     web:

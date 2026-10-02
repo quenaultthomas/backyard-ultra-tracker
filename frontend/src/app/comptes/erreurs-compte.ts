@@ -1,6 +1,7 @@
 import {
   MESSAGE_PAGE_EXPIREE,
   MESSAGE_SERVICE_INDISPONIBLE,
+  ProblemDetail,
   lireProbleme,
   messageDuChamp,
 } from '../partage/probleme';
@@ -16,20 +17,26 @@ export interface ErreursFormulaireCompte {
   dejaConnecte?: boolean;
 }
 
+/** Messages associés à un code propre à un écran, fixes ou calculés à partir du problème. */
+export type ErreursSpecifiques = Readonly<
+  Record<string, ErreursFormulaireCompte | ((probleme: ProblemDetail) => ErreursFormulaireCompte)>
+>;
+
 /**
  * Traduit une erreur de l'API en messages à afficher, sans détail technique. `specifiques`
  * associe aux codes propres à un écran les messages à afficher.
  */
 export function interpreterErreurCompte(
   erreur: unknown,
-  specifiques: Readonly<Record<string, ErreursFormulaireCompte>>,
+  specifiques: ErreursSpecifiques,
 ): ErreursFormulaireCompte {
   const probleme = lireProbleme(erreur);
   if (probleme?.code === undefined) {
     return { generale: MESSAGE_SERVICE_INDISPONIBLE };
   }
   if (Object.hasOwn(specifiques, probleme.code)) {
-    return specifiques[probleme.code];
+    const specifique = specifiques[probleme.code];
+    return typeof specifique === 'function' ? specifique(probleme) : specifique;
   }
   switch (probleme.code) {
     case 'VALIDATION_ECHOUEE': {

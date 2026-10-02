@@ -1,6 +1,7 @@
 package fr.backyard.tracker.comptes.exposition;
 
 import fr.backyard.tracker.comptes.domaine.CompteNonConnectableException;
+import fr.backyard.tracker.comptes.domaine.ConnexionBloqueeException;
 import fr.backyard.tracker.comptes.domaine.DonneesCompteInvalidesException;
 import fr.backyard.tracker.comptes.domaine.IdentifiantsInvalidesException;
 import fr.backyard.tracker.comptes.domaine.PseudoDejaUtiliseException;
@@ -61,6 +62,18 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
         JOURNAL.info("Échec de connexion");
         return probleme(HttpStatus.UNAUTHORIZED, "Authentification échouée", "Pseudo ou mot de passe incorrect.",
                 "IDENTIFIANTS_INVALIDES");
+    }
+
+    /** Blocage temporaire : réponse identique pour tout pseudo, aucune session créée. */
+    @ExceptionHandler(ConnexionBloqueeException.class)
+    ResponseEntity<ProblemDetail> connexionBloquee(ConnexionBloqueeException exception) {
+        long secondes = exception.tempsRestant().toSeconds();
+        ProblemDetail probleme = probleme(HttpStatus.TOO_MANY_REQUESTS, "Trop de tentatives",
+                "Trop de tentatives de connexion. Réessayez plus tard.", "TENTATIVES_EXCESSIVES");
+        probleme.setProperty("reessayerDansSecondes", secondes);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(secondes))
+                .body(probleme);
     }
 
     /** Session d'un compte disparu ou anonymisé : la session est fermée, comme pour une session absente. */
