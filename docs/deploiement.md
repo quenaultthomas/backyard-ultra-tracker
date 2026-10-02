@@ -115,6 +115,8 @@ docker run --rm -v backyard-ultra-tracker_donnees-caddy:/data -v "$PWD":/sauvega
   tar czf /sauvegarde/donnees-caddy.tar.gz -C /data .
 ```
 
+Le nom du volume est préfixé par le nom du projet Compose (`backyard-ultra-tracker_` sur le VPS, `backyard-prod_` pour le test local décrit plus bas) : vérifier avec `docker volume ls`.
+
 Volume des logos de course : à venir (2.3), sa sauvegarde sera documentée à ce moment-là.
 
 ## Restauration
@@ -155,7 +157,9 @@ curl -sI http://localhost/            # 308, Location: https://localhost/
 curl --max-time 5 http://localhost:8080/actuator/health   # échec attendu (connexion refusée)
 ```
 
-Redémarrage automatique : `docker compose kill` et `docker compose stop` sont des arrêts manuels, que `restart: unless-stopped` ne relance volontairement pas. Pour simuler un plantage : `$P exec api kill 1` (arrêt du processus Java), puis `$P ps` : `api` redémarre seul et redevient `healthy` (`docker inspect -f '{{.RestartCount}}' backyard-prod-api-1` vaut 1).
+Redémarrage automatique : `docker compose kill` et `docker compose stop` sont des arrêts manuels, que `restart: unless-stopped` ne relance volontairement pas. Pour simuler un plantage : `$P exec api kill 1` (arrêt du processus Java), puis `$P ps` : `api` redémarre seul et redevient `healthy` (`docker inspect -f '{{.RestartCount}}' backyard-prod-api-1` vaut 1 juste après ; le compteur repart à 0 si le conteneur est recréé par `down` puis `up`).
+
+**Navigateur : utiliser une fenêtre de navigation privée.** En production, `http://localhost` répond par une redirection 308 permanente vers `https://localhost`, que le navigateur garde en cache. De retour sur la stack de dev (HTTP seul, rien sur le port 443), http://localhost devient alors inaccessible dans ce navigateur. Si c'est déjà arrivé : vider le cache du navigateur pour localhost (F12, clic droit sur le bouton recharger, « Vider le cache et effectuer une actualisation forcée »).
 
 Avec `DOMAINE=localhost`, Caddy émet un certificat de son autorité interne : le navigateur affiche un avertissement (attendu). Pour l'éviter avec curl : `$P cp web:/data/caddy/pki/authorities/local/root.crt ./caddy-root.crt` puis `curl --cacert ./caddy-root.crt https://localhost/api/sante` (ne pas commiter ce fichier).
 
