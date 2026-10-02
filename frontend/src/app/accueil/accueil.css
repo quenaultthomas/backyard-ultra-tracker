@@ -36,3 +36,13 @@
 .etat-api--indisponible .pastille {
   background: #b91c1c;
 }
+
+.lien {
+  font-size: 1.125rem;
+  color: #1d4ed8;
+}
+
+.lien:focus-visible {
+  outline: 3px solid #f59e0b;
+  outline-offset: 2px;
+}

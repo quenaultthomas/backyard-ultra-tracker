@@ -2,3 +2,6 @@ databaseChangeLog:
   - include:
       file: changesets/0001-initial.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changesets/0002-compte.yaml
+      relativeToChangelogFile: true

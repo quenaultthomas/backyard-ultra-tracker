@@ -1,0 +1,46 @@
+# Increment 1.1 : comptes (contexte comptes).
+# empreinte_mot_de_passe est nullable : elle sera effacee a l'anonymisation d'un compte.
+# L'unicite du pseudo, insensible a la casse, porte sur pseudo_normalise.
+databaseChangeLog:
+  - changeSet:
+      id: 0002-compte
+      author: backyard-ultra-tracker
+      changes:
+        - createTable:
+            tableName: compte
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_compte
+              - column:
+                  name: pseudo
+                  type: varchar(30)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: pseudo_normalise
+                  type: varchar(30)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_compte_pseudo_normalise
+              - column:
+                  name: empreinte_mot_de_passe
+                  type: varchar(255)
+              - column:
+                  name: role
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cree_le
+                  type: timestamptz
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: >-
+              alter table compte add constraint ck_compte_role
+              check (role in ('ADMIN_MASTER', 'ADMIN', 'BENEVOLE', 'COUREUR'))
