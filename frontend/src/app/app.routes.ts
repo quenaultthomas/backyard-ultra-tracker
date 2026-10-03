@@ -8,6 +8,7 @@ import {
 import { ADMINS, BENEVOLES } from './administration/gestion-comptes/comptes-geres';
 import { reserveAuxAnonymes } from './comptes/reserve-aux-anonymes.guard';
 import { reserveAuxComptesConnectes } from './comptes/reserve-aux-roles.guard';
+import { reserveAuxCoureurs } from './inscriptions/reserve-aux-coureurs.guard';
 import { reserveAuxBenevoles } from './scan/reserve-aux-benevoles.guard';
 
 const chargerGestionComptes = () =>
@@ -78,6 +79,13 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./scan/accueil-benevole/accueil-benevole').then((m) => m.AccueilBenevole),
     title: 'Espace bénévole - Backyard Ultra Tracker',
+  },
+  {
+    path: 'coureur',
+    canActivate: [reserveAuxCoureurs],
+    loadComponent: () =>
+      import('./inscriptions/accueil-coureur/accueil-coureur').then((m) => m.AccueilCoureur),
+    title: 'Courses ouvertes - Backyard Ultra Tracker',
   },
   {
     path: 'acces-refuse',

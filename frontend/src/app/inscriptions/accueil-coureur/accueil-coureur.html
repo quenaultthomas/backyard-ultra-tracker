@@ -1,0 +1,83 @@
+<main class="page">
+  <section class="carte" aria-labelledby="coureur-titre">
+    <h1 id="coureur-titre" class="titre" data-testid="coureur-titre">Courses ouvertes</h1>
+    @if (messageInscription(); as message) {
+      <p class="succes" role="status" data-testid="coureur-message-inscription">{{ message }}</p>
+    }
+    @if (erreurHorsListe(); as message) {
+      <p class="erreur erreur--generale" role="alert" data-testid="coureur-erreur">
+        {{ message }}
+      </p>
+    }
+    @if (erreurChargement()) {
+      <p class="erreur erreur--generale" role="alert" data-testid="coureur-erreur-chargement">
+        Impossible de charger les courses. Réessayez plus tard.
+      </p>
+    } @else if (courses(); as liste) {
+      @if (liste.length === 0) {
+        <p class="message" data-testid="coureur-vide">
+          Aucune course ouverte aux inscriptions pour le moment.
+        </p>
+      } @else {
+        <ul class="liste" aria-label="Courses ouvertes" data-testid="coureur-liste-courses">
+          @for (course of liste; track course.id) {
+            <li class="ligne" data-testid="coureur-ligne-course">
+              @if (course.logoUrl; as url) {
+                <img
+                  class="logo"
+                  [src]="url"
+                  [alt]="'Logo de ' + course.nom"
+                  data-testid="coureur-course-logo"
+                />
+              }
+              <div class="infos">
+                <span
+                  class="nom"
+                  [id]="'coureur-nom-' + course.id"
+                  data-testid="coureur-course-nom"
+                  >{{ course.nom }}</span
+                >
+                <time [attr.datetime]="course.date" data-testid="coureur-course-date">{{
+                  formaterDate(course.date)
+                }}</time>
+                <span data-testid="coureur-course-parametres">{{ parametres(course) }}</span>
+                <span data-testid="coureur-course-limites">{{ limites(course) }}</span>
+              </div>
+              <div class="inscription">
+                @if (course.monInscription; as inscription) {
+                  <span class="dossard" data-testid="coureur-dossard"
+                    >Dossard {{ inscription.dossard }}</span
+                  >
+                  <span class="statut" data-testid="coureur-statut-inscription">Inscrit</span>
+                } @else {
+                  <button
+                    type="button"
+                    class="ligne__action"
+                    [disabled]="envoiEnCours() !== null"
+                    [attr.aria-busy]="envoiEnCours() === course.id"
+                    [attr.aria-describedby]="'coureur-nom-' + course.id"
+                    (click)="sinscrire(course)"
+                    data-testid="coureur-bouton-sinscrire"
+                  >
+                    S'inscrire
+                  </button>
+                }
+              </div>
+              @if (erreurDeLaLigne(course.id); as message) {
+                <p
+                  class="erreur erreur--generale ligne__erreur"
+                  role="alert"
+                  data-testid="coureur-erreur"
+                >
+                  {{ message }}
+                </p>
+              }
+            </li>
+          }
+        </ul>
+      }
+    } @else {
+      <p class="message" role="status">Chargement…</p>
+    }
+  </section>
+</main>
