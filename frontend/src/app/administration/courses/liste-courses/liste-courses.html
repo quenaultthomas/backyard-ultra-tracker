@@ -51,6 +51,16 @@
           </button>
         }
       </div>
+      @if (peutSupprimer()) {
+        <app-suppression-course
+          [course]="course"
+          [ouverte]="suppressionOuverte() === course.id"
+          (ouvrir)="suppressionOuverte.set(course.id)"
+          (fermer)="suppressionOuverte.set(null)"
+          (retiree)="suppressionOuverte.set(null); retirer.emit($event)"
+          (actualiser)="actualiser.emit(null)"
+        />
+      }
     </li>
   }
 </ul>

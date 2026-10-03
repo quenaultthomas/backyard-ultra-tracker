@@ -3,13 +3,16 @@ package fr.backyard.tracker.courses.exposition;
 import fr.backyard.tracker.courses.application.DeclarerCourse;
 import fr.backyard.tracker.courses.application.ListerCourses;
 import fr.backyard.tracker.courses.application.ModifierCourse;
+import fr.backyard.tracker.courses.application.SupprimerCourse;
 import fr.backyard.tracker.courses.domaine.Course;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Gestion des Courses. Réservé à ADMIN et ADMIN_MASTER par la politique de sécurité (/api/administration/**),
- * avant ce contrôleur. Le journal ne contient que des identifiants, jamais le corps de la requête.
+ * avant ce contrôleur ; la suppression est réservée à ADMIN_MASTER. Le journal ne contient que des identifiants, jamais le corps de la requête.
  */
 @RestController
 @RequestMapping("/api/administration/courses")
@@ -32,12 +35,14 @@ public class CourseController {
     private final DeclarerCourse declarerCourse;
     private final ListerCourses listerCourses;
     private final ModifierCourse modifierCourse;
+    private final SupprimerCourse supprimerCourse;
 
     public CourseController(DeclarerCourse declarerCourse, ListerCourses listerCourses,
-                            ModifierCourse modifierCourse) {
+                            ModifierCourse modifierCourse, SupprimerCourse supprimerCourse) {
         this.declarerCourse = declarerCourse;
         this.listerCourses = listerCourses;
         this.modifierCourse = modifierCourse;
+        this.supprimerCourse = supprimerCourse;
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -59,5 +64,14 @@ public class CourseController {
         Course course = modifierCourse.executer(requete.versCommandeDeModification(IdentifiantCourse.deCourse(id)));
         JOURNAL.info("Course modifiée (course {})", course.id());
         return CourseReponse.depuis(listerCourses.avecEmpreinteLogo(course));
+    }
+
+    /** Un corps éventuel est ignoré ; un identifiant qui n'est pas un UUID donne 404 comme un UUID inconnu. */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void supprimerCourse(@PathVariable("id") String id) {
+        UUID idCourse = IdentifiantCourse.deCourse(id);
+        supprimerCourse.executer(idCourse);
+        JOURNAL.info("Course supprimée (course {})", idCourse);
     }
 }

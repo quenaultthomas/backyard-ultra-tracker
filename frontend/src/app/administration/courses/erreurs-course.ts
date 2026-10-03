@@ -7,6 +7,9 @@ export const ECRAN_GESTION_COURSES = '/administration/courses';
 
 export const MESSAGE_COURSE_INTROUVABLE = "Cette course n'existe plus.";
 
+/** Code renvoyé par l'API pour une Course inconnue ou déjà supprimée (404). */
+export const CODE_COURSE_INTROUVABLE = 'COURSE_INTROUVABLE';
+
 /** Clé de l'état de navigation portant un message d'erreur à afficher sur la gestion des Courses. */
 export const ETAT_MESSAGE_ERREUR = 'messageErreur';
 
@@ -16,7 +19,7 @@ export const ETAT_MESSAGE_ERREUR = 'messageErreur';
  */
 export const ERREURS_COURSE_NON_EDITABLE: ErreursSpecifiques<ChampCourse> = {
   COURSE_NON_MODIFIABLE: ({ detail }) => ({ generale: detail }),
-  COURSE_INTROUVABLE: { generale: MESSAGE_COURSE_INTROUVABLE },
+  [CODE_COURSE_INTROUVABLE]: { generale: MESSAGE_COURSE_INTROUVABLE },
 };
 
 /** `true` si l'API refuse l'action parce que la Course n'est plus modifiable ou n'existe plus. */

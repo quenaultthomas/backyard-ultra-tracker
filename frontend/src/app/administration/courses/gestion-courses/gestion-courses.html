@@ -11,6 +11,15 @@
           {{ message }}
         </p>
       }
+      @if (messageSuppression(); as suppression) {
+        <p
+          [class]="suppression.succes ? 'message-succes' : 'message-info'"
+          role="status"
+          data-testid="course-message-suppression"
+        >
+          {{ suppression.message }}
+        </p>
+      }
       @if (erreurChargement()) {
         <p class="erreur erreur--generale" role="alert" data-testid="courses-erreur">
           Impossible de charger la liste des courses. Réessayez plus tard.
@@ -23,6 +32,7 @@
             [courses]="liste"
             (modifier)="editer($event)"
             (actualiser)="actualiserApresLogo($event)"
+            (retirer)="retirerCourse($event)"
           />
         }
       } @else {

@@ -1,0 +1,56 @@
+@let c = course();
+@if (supprimable()) {
+  <button
+    #boutonSupprimer
+    type="button"
+    class="ligne__action ligne__action--danger"
+    [disabled]="envoiEnCours()"
+    [attr.aria-label]="'Supprimer la course ' + c.nom"
+    [attr.aria-expanded]="confirmationAffichee()"
+    (click)="demanderConfirmation()"
+    data-testid="course-bouton-supprimer"
+  >
+    Supprimer la course
+  </button>
+}
+
+@if (confirmationAffichee()) {
+  <div
+    class="confirmation"
+    role="group"
+    [attr.aria-labelledby]="'confirmation-suppression-' + c.id"
+    data-testid="course-confirmation-suppression"
+  >
+    <p [id]="'confirmation-suppression-' + c.id" class="confirmation__texte">
+      Supprimer définitivement la course {{ c.nom }} ? Son logo et les affectations de ses bénévoles
+      seront supprimés. Cette action est irréversible.
+    </p>
+    <div class="confirmation__actions">
+      <button
+        type="button"
+        class="ligne__action ligne__action--danger-plein"
+        [disabled]="envoiEnCours()"
+        (click)="confirmer()"
+        data-testid="course-bouton-confirmer-suppression"
+      >
+        Supprimer définitivement
+      </button>
+      <button
+        #boutonAnnuler
+        type="button"
+        class="ligne__action"
+        [disabled]="envoiEnCours()"
+        (click)="annuler()"
+        data-testid="course-bouton-annuler-suppression"
+      >
+        Annuler
+      </button>
+    </div>
+  </div>
+}
+
+@if (erreurAffichee(); as message) {
+  <p class="suppression__erreur" role="alert" data-testid="course-suppression-erreur">
+    {{ message }}
+  </p>
+}

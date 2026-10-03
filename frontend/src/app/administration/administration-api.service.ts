@@ -71,6 +71,11 @@ export class AdministrationApiService {
     return this.http.put<CourseReponse>(urlCourse(id), requete);
   }
 
+  /** Supprime une Course `EN_PREPARATION`, avec son logo et ses affectations (admin master, 204). */
+  supprimerCourse(id: string): Observable<void> {
+    return this.http.delete<void>(urlCourse(id));
+  }
+
   /** Envoie (ou remplace) le logo d'une Course `EN_PREPARATION`, en partie multipart `fichier`. */
   envoyerLogo(id: string, fichier: Blob): Observable<CourseReponse> {
     const corps = new FormData();

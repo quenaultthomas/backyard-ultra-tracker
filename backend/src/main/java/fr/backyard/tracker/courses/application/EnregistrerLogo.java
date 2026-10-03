@@ -37,7 +37,7 @@ public class EnregistrerLogo {
      */
     @Transactional
     public Resultat executer(UUID idCourse, byte[] octets) {
-        Course course = depotCourses.parId(idCourse).orElseThrow(CourseIntrouvableException::new);
+        Course course = depotCourses.parIdPourModification(idCourse).orElseThrow(CourseIntrouvableException::new);
         course.autoriserModification();
         Logo logo = Logo.depuis(octets);
         depotLogos.enregistrer(idCourse, logo);

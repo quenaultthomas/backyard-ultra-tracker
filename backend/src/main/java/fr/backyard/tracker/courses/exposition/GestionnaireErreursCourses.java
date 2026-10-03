@@ -3,6 +3,7 @@ package fr.backyard.tracker.courses.exposition;
 import fr.backyard.tracker.courses.domaine.BenevoleInconnuException;
 import fr.backyard.tracker.courses.domaine.CourseIntrouvableException;
 import fr.backyard.tracker.courses.domaine.CourseNonModifiableException;
+import fr.backyard.tracker.courses.domaine.CourseNonSupprimableException;
 import fr.backyard.tracker.courses.domaine.CourseTermineeException;
 import fr.backyard.tracker.courses.domaine.DonneesCourseInvalidesException;
 import fr.backyard.tracker.courses.domaine.ViolationValidation;
@@ -57,6 +58,12 @@ public class GestionnaireErreursCourses {
     ProblemDetail courseNonModifiable() {
         return probleme(HttpStatus.CONFLICT, "Conflit",
                 "La course n'est plus en préparation : elle ne peut plus être modifiée.", "COURSE_NON_MODIFIABLE");
+    }
+
+    @ExceptionHandler(CourseNonSupprimableException.class)
+    ProblemDetail courseNonSupprimable() {
+        return probleme(HttpStatus.CONFLICT, "Conflit",
+                "La course n'est plus en préparation : elle ne peut plus être supprimée.", "COURSE_NON_SUPPRIMABLE");
     }
 
     /** ProblemDetail au format de l'API : type about:blank, titre, détail et code stable. */

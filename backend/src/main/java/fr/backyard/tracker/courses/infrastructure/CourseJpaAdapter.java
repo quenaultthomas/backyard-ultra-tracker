@@ -60,6 +60,20 @@ public class CourseJpaAdapter implements DepotCourses {
                 .map(CourseJpaAdapter::versDomaine);
     }
 
+    /**
+     * Supprime la ligne course ; la base supprime son logo et ses affectations (on delete cascade). Une Course déjà
+     * absente ne supprime rien.
+     */
+    @Override
+    @Transactional
+    public void supprimer(UUID id) {
+        CourseJpaEntity entite = entityManager.find(CourseJpaEntity.class, id);
+        if (entite != null) {
+            entityManager.remove(entite);
+            entityManager.flush();
+        }
+    }
+
     @Override
     @Transactional(readOnly = true)
     public List<Course> toutes() {

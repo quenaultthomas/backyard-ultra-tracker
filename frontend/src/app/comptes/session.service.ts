@@ -5,7 +5,7 @@ import { Observable, catchError, concatMap, filter, map, of, take, tap, timeout 
 import { CsrfService } from '../partage/csrf.service';
 import { ChangerMotDePasseRequete, CompteReponse, ConnexionRequete } from './compte';
 import { ComptesApiService } from './comptes-api.service';
-import { estAdministrateur, estBenevole } from './roles';
+import { estAdminMaster, estAdministrateur, estBenevole } from './roles';
 
 /** `INCONNU` tant que `GET /api/comptes/moi` n'a pas répondu. */
 export type EtatSession = 'INCONNU' | 'ANONYME' | 'CONNECTE';
@@ -36,6 +36,11 @@ export class SessionService {
   readonly estAdministrateur = computed(() => {
     const compte = this.compteCourant();
     return compte != null && estAdministrateur(compte.role);
+  });
+  /** Aide d'affichage : les actions réservées à l'admin master restent contrôlées par l'API. */
+  readonly estAdminMaster = computed(() => {
+    const compte = this.compteCourant();
+    return compte != null && estAdminMaster(compte.role);
   });
   readonly estBenevole = computed(() => {
     const compte = this.compteCourant();

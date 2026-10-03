@@ -564,7 +564,7 @@ class ModificationCourseIntegrationTest {
     // ---------------------------------------------------------------- CA15
 
     @Test
-    @DisplayName("CA15 (mis à jour par 2.4 RG6 : GET /{id} renvoie 200) : PATCH, DELETE /{id} et PUT sans id : 404 ou 405 pour Patron et Nadia, 403 pour Alice, 401 pour un anonyme ; PUT /{id} valide ne répond plus 404")
+    @DisplayName("CA15 (mis à jour par 2.4 RG6 : GET /{id} renvoie 200) : PATCH /{id} et PUT sans id : 404 ou 405 pour Patron et Nadia (2.5 RG10 : DELETE /{id} est un endpoint, 403 pour Nadia), 403 pour Alice, 401 pour un anonyme ; PUT /{id} valide ne répond plus 404")
     void ca15_autres_chemins_et_methodes() throws Exception {
         String x = creerCourse(patron, "Backyard des Crêtes", "2026-11-14");
         Map<String, Object> avant = ligne(x);
@@ -580,6 +580,14 @@ class ModificationCourseIntegrationTest {
             String contenu = avecCorps ? corps : null;
             String type = avecCorps ? "application/json" : null;
             for (Session admin : List.of(patron, nadia)) {
+                if ("DELETE".equals(appel[0]) && appel[1].equals(CHEMIN + "/" + x)) {
+                    // 2.5 RG5/RG10 : DELETE /{id} est un endpoint ; Patron la supprimerait (204, couvert par la 2.5).
+                    if (admin == nadia) {
+                        assertErreur(api.requete("DELETE", appel[1], admin.entetes(), null, null), 403, "ACCES_REFUSE",
+                                "Accès refusé", ACCES_REFUSE_DETAIL);
+                    }
+                    continue;
+                }
                 HttpResponse<String> reponse = api.requete(appel[0], appel[1], admin.entetes(), type, contenu);
                 if ("GET".equals(appel[0]) && appel[1].equals(CHEMIN + "/" + x)) {
                     // 2.4 RG6 : GET /{id} est la fiche de la Course, désormais 200.
