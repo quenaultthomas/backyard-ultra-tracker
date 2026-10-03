@@ -197,6 +197,28 @@ Avec `DOMAINE=localhost`, Caddy émet un certificat de son autorité interne : l
 
 Pour finir : `$P down -v` (supprime uniquement les volumes du projet `backyard-prod`), puis supprimer `.env.prod` et les éventuels fichiers de sauvegarde. Les étapes détaillées sont dans la section « Tester à la main » de `docs/specs/increment-0.4.md`.
 
+## Données de démonstration
+
+**À ne pas utiliser en production.** `scripts/donnees-demo.sh` crée, par l'API de la stack lancée, les données utiles au test manuel, avec des mots de passe connus :
+
+| Élément | Valeurs |
+|---|---|
+| Admin | `Nadia` / `mot-de-passe-admin-1` |
+| Bénévoles | `Léo` et `Marc` / `mot-de-passe-benevole-1` |
+| Coureur | `Alice` / `un-mot-de-passe-12` |
+| Courses (`EN_PREPARATION`) | « Backyard de démo » (J+30, 6706 m, 60 min, 120 m, 50 participants, 24 boucles), « Backyard express » (J+7, 400 m, 1 min, 5 m, 10, 5), « Backyard mini » (J+14, 1000 m, 2 min, 10 m, 2, 2) |
+
+```sh
+docker compose up -d --build     # stack de dev, .env avec ADMIN_MASTER_PSEUDO et ADMIN_MASTER_MOT_DE_PASSE
+./scripts/donnees-demo.sh        # à la racine du dépôt ; une ligne « créé » ou « déjà présent » par élément
+```
+
+- Prérequis sur l'hôte : `bash` et `curl`. Les identifiants de l'admin master sont lus dans l'environnement, à défaut dans le `.env` du répertoire courant (tels quels, sans interprétation du `$` ni des guillemets) ; ils ne sont jamais affichés.
+- Relançable : un Compte ou une Course (même nom) déjà présent n'est ni recréé ni modifié. Un pseudo pris par un Compte d'un autre rôle n'est pas détecté.
+- `BASE_URL` (défaut `http://localhost`) : adresse visée. Garde-fou : tout hôte autre que `localhost` ou `127.0.0.1` est refusé (code 2, aucune requête) sauf `DEMO_FORCER=oui`, à ne jamais utiliser contre la production : les Comptes `Nadia`, `Léo`, `Marc` et `Alice` ne doivent jamais exister en production.
+- Codes de sortie : 0 succès, 1 variable manquante ou réponse inattendue de l'API (statut HTTP affiché, `000` si l'API est injoignable), 2 cible refusée.
+- Pour repartir d'une base neuve : `docker compose down -v` puis `docker compose up -d --build`.
+
 ## Notes développeur
 
 - `./mvnw verify` (dans `backend/`) nécessite un **démon Docker accessible** : les tests d'intégration lancent PostgreSQL par Testcontainers. Sous WSL, activer l'intégration WSL de Docker Desktop (Settings > Resources > WSL integration) ou lancer le démon Docker dans la distribution.
