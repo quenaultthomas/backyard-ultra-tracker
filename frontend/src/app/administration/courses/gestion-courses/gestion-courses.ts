@@ -36,6 +36,7 @@ import {
   estCourseNonEditable,
 } from '../erreurs-course';
 import { ListeCourses } from '../liste-courses/liste-courses';
+import { CourseRetiree } from '../suppression-course/suppression-course';
 
 /** Liste, déclaration et modification des Courses (admins et admin master). */
 @Component({
@@ -78,6 +79,8 @@ export class GestionCourses implements OnInit {
   /** Course en cours de modification ; `null` en mode déclaration. */
   protected readonly courseEditee = signal<CourseReponse | null>(null);
   protected readonly messageSucces = signal<string | null>(null);
+  /** Résultat de la dernière suppression, affiché au-dessus de la liste (la ligne a disparu). */
+  protected readonly messageSuppression = signal<Omit<CourseRetiree, 'id'> | null>(null);
   private readonly soumis = signal(false);
   private readonly erreursServeur = signal<ErreursFormulaire<ChampCourse>>({});
   private readonly saisie = toSignal(
@@ -144,11 +147,23 @@ export class GestionCourses implements OnInit {
   }
 
   /**
-   * Après une action sur un logo : message de succès (ou effacement de l'ancien) et liste
-   * rechargée. Le formulaire, en déclaration comme en édition, n'est pas touché.
+   * Après une action sur un logo ou un refus de suppression : message de succès (ou effacement
+   * de l'ancien) et liste rechargée. Le formulaire, en déclaration comme en édition, n'est pas touché.
    */
   protected actualiserApresLogo(messageSucces: string | null): void {
     this.messageSucces.set(messageSucces);
+    this.messageSuppression.set(null);
+    this.chargerCourses();
+  }
+
+  /** Ligne retirée sans attendre la relecture de la liste ; la Course éditée est abandonnée. */
+  protected retirerCourse({ id, message, succes }: CourseRetiree): void {
+    this.courses.update((courses) => courses?.filter((course) => course.id !== id) ?? null);
+    this.messageSuppression.set({ message, succes });
+    this.messageSucces.set(null);
+    if (this.courseEditee()?.id === id) {
+      this.revenirEnDeclaration();
+    }
     this.chargerCourses();
   }
 
@@ -172,6 +187,7 @@ export class GestionCourses implements OnInit {
   private confirmer(message: string): void {
     this.revenirEnDeclaration();
     this.messageSucces.set(message);
+    this.messageSuppression.set(null);
     this.chargerCourses();
   }
 

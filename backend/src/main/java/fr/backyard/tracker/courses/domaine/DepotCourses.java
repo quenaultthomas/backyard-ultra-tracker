@@ -25,6 +25,14 @@ public interface DepotCourses {
         return parId(id);
     }
 
+    /**
+     * Supprime définitivement la Course, son logo et ses affectations de bénévoles. Par défaut, non prise en charge
+     * (dépôts qui ne suppriment rien).
+     */
+    default void supprimer(UUID id) {
+        throw new UnsupportedOperationException("Suppression de Course non prise en charge par ce dépôt");
+    }
+
     /** Courses auxquelles ce bénévole est affecté, dans un ordre quelconque. */
     default List<Course> parBenevole(UUID idBenevole) {
         return toutes().stream().filter(course -> course.benevolesAffectes().contains(idBenevole)).toList();

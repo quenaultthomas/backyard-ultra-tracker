@@ -573,7 +573,7 @@ class CoursesIntegrationTest {
     // ---------------------------------------------------------------- CA17
 
     @Test
-    @DisplayName("CA17 (mis à jour par 2.2 RG15 : PUT /{id} couvert par la 2.2, et par 2.4 RG6 : GET /{id} existe, 200 pour Patron et Nadia) : PATCH, DELETE /{id} : 404 ou 405 pour Patron et Nadia ; GET, PUT, PATCH, DELETE : 403 pour Alice, 401 pour un anonyme ; Course intacte")
+    @DisplayName("CA17 (mis à jour par 2.2 RG15 : PUT /{id} couvert par la 2.2, et par 2.4 RG6 : GET /{id} existe, 200 pour Patron et Nadia) : PATCH /{id} : 404 ou 405 pour Patron et Nadia (2.5 RG10 : DELETE /{id} est un endpoint, 403 pour Nadia) ; GET, PUT, PATCH, DELETE : 403 pour Alice, 401 pour un anonyme ; Course intacte")
     void ca17_aucun_autre_endpoint() throws Exception {
         JsonNode course = creerReussie(patron, "Backyard des Crêtes", "2026-11-14");
         String chemin = CHEMIN + "/" + course.get("id").asString();
@@ -592,8 +592,14 @@ class CoursesIntegrationTest {
                     assertThat(json.readTree(fiche.body()).get("id").asString()).isEqualTo(course.get("id").asString());
                 }
             }
-            for (Session admin : "PUT".equals(methode) || "GET".equals(methode) ? List.<Session>of()
-                    : List.of(patron, nadia)) {
+            if ("DELETE".equals(methode)) {
+                // 2.5 RG5/RG10 : DELETE /{id} est un endpoint (204/404/409 pour Patron, couvert par la 2.5) ;
+                // pour Nadia (ADMIN) il reste refusé en 403.
+                assertErreur(api.requete("DELETE", chemin, nadia.entetes(), null, null), 403, "ACCES_REFUSE",
+                        "Accès refusé", ACCES_REFUSE_DETAIL);
+            }
+            for (Session admin : "PUT".equals(methode) || "GET".equals(methode) || "DELETE".equals(methode)
+                    ? List.<Session>of() : List.of(patron, nadia)) {
                 HttpResponse<String> reponse = api.requete(methode, chemin, admin.entetes(), type, contenu);
                 assertThat(reponse.statusCode()).as(methode + " " + admin).isIn(404, 405);
                 if (reponse.statusCode() == 404) {

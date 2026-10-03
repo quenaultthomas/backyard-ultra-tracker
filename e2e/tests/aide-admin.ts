@@ -155,3 +155,12 @@ export async function affecterBenevolesParApi(request: APIRequestContext, course
   });
   expect(reponse.status()).toBe(200);
 }
+
+/** Supprime une course par l'API avec la session de l'admin master (contexte isolé). Renvoie le statut HTTP. */
+export async function supprimerCourseParApi(request: APIRequestContext, courseId: string): Promise<number> {
+  await connecterParApi(request, PSEUDO_ADMIN_MASTER, MOT_DE_PASSE_ADMIN_MASTER);
+  const reponse = await request.delete(`/api/administration/courses/${courseId}`, {
+    headers: { 'X-XSRF-TOKEN': await jetonCsrf(request) },
+  });
+  return reponse.status();
+}

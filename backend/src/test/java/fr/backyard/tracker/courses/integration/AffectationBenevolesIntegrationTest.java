@@ -386,12 +386,12 @@ class AffectationBenevolesIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA10 : PATCH /X et DELETE /X/benevoles par Patron donnent 404 ou 405, jamais 2xx ; la Course et ses affectations subsistent")
+    @DisplayName("CA10 (mis à jour par 2.5 RG10 : DELETE /X est un endpoint, 204/403/404/409) : PATCH /X et DELETE /X/benevoles par Patron donnent 404 ou 405, jamais 2xx ; la Course et ses affectations subsistent")
     void ca10_autres_methodes() throws Exception {
         String x = creerCourse(patron, "Backyard des Crêtes", "2026-11-14");
         assertThat(affecter(patron, x, ids(idLeo)).statusCode()).isEqualTo(200);
 
-        List<String[]> appels = List.of(new String[] {"PATCH", CHEMIN + "/" + x}, new String[] {"DELETE", CHEMIN + "/" + x},
+        List<String[]> appels = List.of(new String[] {"PATCH", CHEMIN + "/" + x},
                 new String[] {"DELETE", CHEMIN + "/" + x + "/benevoles"},
                 new String[] {"POST", CHEMIN + "/" + x + "/benevoles"},
                 new String[] {"GET", CHEMIN + "/" + x + "/benevoles"},

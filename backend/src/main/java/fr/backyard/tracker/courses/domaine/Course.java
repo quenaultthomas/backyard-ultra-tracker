@@ -114,6 +114,17 @@ public final class Course {
         }
     }
 
+    /**
+     * Seule une Course EN_PREPARATION peut être supprimée. Unique contrôle de cette règle.
+     *
+     * @throws CourseNonSupprimableException la Course est EN_COURS ou TERMINEE
+     */
+    public void verifierSuppressible() {
+        if (statut != StatutCourse.EN_PREPARATION) {
+            throw new CourseNonSupprimableException(id);
+        }
+    }
+
     private static String sansEspacesAutour(String nom) {
         return nom == null ? "" : nom.trim();
     }
