@@ -1,0 +1,53 @@
+# Increment 2.3 : logo d'une course (contexte courses), dans une table dediee pour que la liste des courses
+# ne lise jamais les octets. Type bytea (pas de Large Object) : inclus simplement dans pg_dump.
+# La borne haute de taille (2 Mo) est une regle du domaine : la base ne porte que la coherence.
+databaseChangeLog:
+  - changeSet:
+      id: 0005-logo-course
+      author: backyard-ultra-tracker
+      changes:
+        - createTable:
+            tableName: logo_course
+            columns:
+              - column:
+                  name: course_id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_logo_course
+              - column:
+                  name: contenu
+                  type: bytea
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type_mime
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: taille_octets
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: empreinte
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            constraintName: fk_logo_course_course
+            baseTableName: logo_course
+            baseColumnNames: course_id
+            referencedTableName: course
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - sql:
+            sql: >-
+              alter table logo_course
+              add constraint ck_logo_course_type_mime check (type_mime in ('image/png', 'image/jpeg', 'image/webp')),
+              add constraint ck_logo_course_taille_octets check (taille_octets > 0),
+              add constraint ck_logo_course_taille_coherente check (taille_octets = octet_length(contenu))
+      rollback:
+        - dropTable:
+            tableName: logo_course

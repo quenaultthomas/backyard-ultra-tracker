@@ -11,3 +11,6 @@ databaseChangeLog:
   - include:
       file: changesets/0004-course.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changesets/0005-logo-course.yaml
+      relativeToChangelogFile: true

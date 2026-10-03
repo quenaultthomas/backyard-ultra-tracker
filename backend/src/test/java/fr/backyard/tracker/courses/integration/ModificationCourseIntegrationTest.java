@@ -59,7 +59,7 @@ class ModificationCourseIntegrationTest {
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final List<String> CHAMPS_REPONSE = List.of("id", "nom", "date", "statut", "distanceBoucleMetres",
-            "dureeBoucleMinutes", "denivelePositifBoucleMetres", "nombreMaxParticipants", "nombreMaxBoucles");
+            "dureeBoucleMinutes", "denivelePositifBoucleMetres", "nombreMaxParticipants", "nombreMaxBoucles", "logoUrl");
 
     @Container
     @ServiceConnection
@@ -128,7 +128,7 @@ class ModificationCourseIntegrationTest {
     // ---------------------------------------------------------------- CA7
 
     @Test
-    @DisplayName("CA7 : Patron et Nadia modifient la Course (200), champs injectés ignorés, neuf champs, GET la renvoie seule, ligne mise à jour en place")
+    @DisplayName("CA7 : Patron et Nadia modifient la Course (200), champs injectés ignorés, dix champs, GET la renvoie seule, ligne mise à jour en place")
     void ca7_modification_par_les_admins() throws Exception {
         for (Session session : List.of(patron, nadia)) {
             jdbc.update("delete from course");
@@ -648,7 +648,7 @@ class ModificationCourseIntegrationTest {
         assertErreur(get(leo, "/api/administration/benevoles"), 403, "ACCES_REFUSE", "Accès refusé",
                 ACCES_REFUSE_DETAIL);
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
-                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course");
+                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course");
     }
 
     // ---------------------------------------------------------------- utilitaires

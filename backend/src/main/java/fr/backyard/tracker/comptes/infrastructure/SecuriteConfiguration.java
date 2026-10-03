@@ -51,6 +51,8 @@ public class SecuriteConfiguration {
                         .hasRole(Role.ADMIN_MASTER.name())
                         .requestMatchers("/api/administration/**")
                         .hasAnyRole(Role.ADMIN_MASTER.name(), Role.ADMIN.name())
+                        // Logo d'une Course : seule lecture publique sous /api/courses (écrans publics).
+                        .requestMatchers(HttpMethod.GET, "/api/courses/*/logo").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
                 .csrf(csrf -> csrf

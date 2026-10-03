@@ -4,9 +4,8 @@ import fr.backyard.tracker.courses.application.DeclarerCourse;
 import fr.backyard.tracker.courses.application.ListerCourses;
 import fr.backyard.tracker.courses.application.ModifierCourse;
 import fr.backyard.tracker.courses.domaine.Course;
-import fr.backyard.tracker.courses.domaine.CourseIntrouvableException;
 import java.util.List;
-import java.util.UUID;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -46,28 +45,19 @@ public class CourseController {
     public CourseReponse declarerCourse(@RequestBody CourseRequete requete) {
         Course course = declarerCourse.executer(requete.versCommandeDeDeclaration());
         JOURNAL.info("Course déclarée (course {})", course.id());
-        return CourseReponse.depuis(course);
+        return CourseReponse.depuis(course, Optional.empty());
     }
 
     @GetMapping
     public List<CourseReponse> listerCourses() {
-        return listerCourses.executer().stream().map(CourseReponse::depuis).toList();
+        return listerCourses.executerAvecLogos().stream().map(CourseReponse::depuis).toList();
     }
 
     /** Le corps est lu avant l'identifiant : un corps illisible donne 400 même pour une Course inexistante. */
     @PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public CourseReponse modifierCourse(@PathVariable("id") String id, @RequestBody CourseRequete requete) {
-        Course course = modifierCourse.executer(requete.versCommandeDeModification(identifiantDeCourse(id)));
+        Course course = modifierCourse.executer(requete.versCommandeDeModification(IdentifiantCourse.deCourse(id)));
         JOURNAL.info("Course modifiée (course {})", course.id());
-        return CourseReponse.depuis(course);
-    }
-
-    /** Un identifiant qui n'est pas un UUID ne désigne aucune Course : 404, comme un UUID inconnu. */
-    private static UUID identifiantDeCourse(String id) {
-        try {
-            return UUID.fromString(id);
-        } catch (IllegalArgumentException exception) {
-            throw new CourseIntrouvableException();
-        }
+        return CourseReponse.depuis(listerCourses.avecEmpreinteLogo(course));
     }
 }

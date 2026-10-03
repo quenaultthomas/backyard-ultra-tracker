@@ -52,6 +52,22 @@ export class AdministrationApiService {
 
   /** Remplace les champs modifiables d'une Course `EN_PREPARATION` (admins et admin master). */
   modifierCourse(id: string, requete: ModifierCourseRequete): Observable<CourseReponse> {
-    return this.http.put<CourseReponse>(`${URL_COURSES}/${encodeURIComponent(id)}`, requete);
+    return this.http.put<CourseReponse>(urlCourse(id), requete);
   }
+
+  /** Envoie (ou remplace) le logo d'une Course `EN_PREPARATION`, en partie multipart `fichier`. */
+  envoyerLogo(id: string, fichier: Blob): Observable<CourseReponse> {
+    const corps = new FormData();
+    corps.append('fichier', fichier);
+    return this.http.put<CourseReponse>(`${urlCourse(id)}/logo`, corps);
+  }
+
+  /** Supprime le logo d'une Course `EN_PREPARATION` (204, même sans logo). */
+  supprimerLogo(id: string): Observable<void> {
+    return this.http.delete<void>(`${urlCourse(id)}/logo`);
+  }
+}
+
+function urlCourse(id: string): string {
+  return `${URL_COURSES}/${encodeURIComponent(id)}`;
 }

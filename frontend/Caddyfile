@@ -33,6 +33,11 @@
 
 	# Endpoints métier : relayés sans réécriture du chemin.
 	handle /api/* {
+		# Logo de course : 2 Mo refusés par l'api (413 ProblemDetail) ; au-delà de 4 Mio, Caddy répond lui-même 413
+		# avant que Tomcat ne coupe la connexion sur un corps trop gros.
+		request_body {
+			max_size 4MiB
+		}
 		reverse_proxy api:8080
 	}
 

@@ -21,7 +21,10 @@ export interface DeclarerCourseRequete {
 /** Corps de `PUT /api/administration/courses/{id}` : strictement le schéma de la déclaration. */
 export type ModifierCourseRequete = DeclarerCourseRequete;
 
-/** Course renvoyée par `POST` (201), `PUT` (200) et `GET /api/administration/courses`. */
+/**
+ * Course renvoyée par `POST` (201), `PUT` (200), `GET /api/administration/courses` et
+ * `PUT /api/administration/courses/{id}/logo` (200).
+ */
 export interface CourseReponse {
   id: string;
   nom: string;
@@ -33,4 +36,6 @@ export interface CourseReponse {
   denivelePositifBoucleMetres: number;
   nombreMaxParticipants: number;
   nombreMaxBoucles: number;
+  /** Adresse publique du logo (`/api/courses/<id>/logo?v=…`), `null` sans logo. */
+  logoUrl: string | null;
 }

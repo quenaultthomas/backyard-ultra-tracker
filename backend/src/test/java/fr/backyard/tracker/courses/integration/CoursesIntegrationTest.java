@@ -68,7 +68,7 @@ class CoursesIntegrationTest {
             + "duree_boucle_minutes, denivele_positif_boucle_metres, nombre_max_participants, nombre_max_boucles) "
             + "values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     static final List<String> CHAMPS_REPONSE = List.of("id", "nom", "date", "statut", "distanceBoucleMetres",
-            "dureeBoucleMinutes", "denivelePositifBoucleMetres", "nombreMaxParticipants", "nombreMaxBoucles");
+            "dureeBoucleMinutes", "denivelePositifBoucleMetres", "nombreMaxParticipants", "nombreMaxBoucles", "logoUrl");
 
     /** Horloge de l'application remplacée : fixe, déplacée par les tests, et qui respecte le fuseau demandé. */
     static final class HorlogeMutable extends Clock {
@@ -174,7 +174,7 @@ class CoursesIntegrationTest {
     // ---------------------------------------------------------------- CA10
 
     @Test
-    @DisplayName("CA10 : Patron et Nadia déclarent la Course de référence (201), champs injectés ignorés, neuf champs, ligne en base, GET la renvoie")
+    @DisplayName("CA10 : Patron et Nadia déclarent la Course de référence (201), champs injectés ignorés, dix champs, ligne en base, GET la renvoie")
     void ca10_declaration_par_les_admins() throws Exception {
         ObjectNode corps = reference();
         corps.put("statut", "EN_COURS");
@@ -607,14 +607,15 @@ class CoursesIntegrationTest {
     @DisplayName("CA18 : Liquibase applique 0002, 0003, 0004 dans l'ordre, ddl-auto=validate, aucune clé étrangère entre course et compte")
     void ca18_changesets_et_absence_de_cle_etrangere() {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
-                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course");
+                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course");
         assertThat(environnement.getProperty("spring.jpa.hibernate.ddl-auto")).isEqualTo("validate");
         assertThat(jdbc.queryForObject("select count(*) from information_schema.table_constraints "
                 + "where constraint_type = 'FOREIGN KEY' and table_name in ('course', 'compte')", Integer.class))
                 .isZero();
         assertThat(jdbc.queryForObject("select count(*) from pg_constraint where contype = 'f' "
-                + "and (conrelid = 'course'::regclass or confrelid = 'course'::regclass "
-                + "or confrelid = 'compte'::regclass)", Integer.class)).isZero();
+                + "and (conrelid = 'course'::regclass or confrelid = 'compte'::regclass "
+                + "or (confrelid = 'course'::regclass and conrelid <> 'logo_course'::regclass))", Integer.class))
+                .isZero();
     }
 
     @Test

@@ -17,6 +17,13 @@ spring:
       ddl-auto: validate
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+  servlet:
+    multipart:
+      # Logo de course : 2 Mo par fichier (2 x 1024 x 1024, meme limite que le domaine), marge pour l'enveloppe.
+      # Depassement : 413 LOGO_TROP_VOLUMINEUX. Lecture differee : l'erreur survient dans le controleur concerne.
+      max-file-size: 2MB
+      max-request-size: 3MB
+      resolve-lazily: true
   web:
     resources:
       # L'API ne sert aucun fichier statique (le front est servi par Caddy) : un chemin inconnu

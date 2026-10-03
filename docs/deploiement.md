@@ -148,7 +148,7 @@ docker run --rm -v backyard-ultra-tracker_donnees-caddy:/data -v "$PWD":/sauvega
 
 Le nom du volume est préfixé par le nom du projet Compose (`backyard-ultra-tracker_` sur le VPS, `backyard-prod_` pour le test local décrit plus bas) : vérifier avec `docker volume ls`.
 
-Volume des logos de course : à venir (2.3), sa sauvegarde sera documentée à ce moment-là.
+Les logos de course sont stockés dans la base : ils sont inclus dans le `pg_dump` ci-dessus et restaurés avec lui. Il n'existe aucun volume séparé pour les logos.
 
 ## Restauration
 

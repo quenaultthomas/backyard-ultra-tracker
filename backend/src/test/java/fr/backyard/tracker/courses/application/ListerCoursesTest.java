@@ -20,7 +20,7 @@ class ListerCoursesTest {
     private static final UUID ID_2 = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
     private final DepotCoursesEnMemoire depot = new DepotCoursesEnMemoire();
-    private final ListerCourses listerCourses = new ListerCourses(depot);
+    private final ListerCourses listerCourses = new ListerCourses(depot, new DepotLogosDeTest());
 
     // CA8
     @Test

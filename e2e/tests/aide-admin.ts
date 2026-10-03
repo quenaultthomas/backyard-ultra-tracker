@@ -114,3 +114,21 @@ export async function creerCourseParApi(request: APIRequestContext, donnees: Don
   expect(creation.status()).toBe(201);
   return (await creation.json()) as Record<string, unknown>;
 }
+
+/**
+ * Envoie un logo par l'API (PUT multipart, partie `fichier`) avec la session de l'admin master
+ * (contexte isolé, une session par appel). Renvoie la `CourseReponse` mise à jour.
+ */
+export async function envoyerLogoParApi(
+  request: APIRequestContext,
+  courseId: string,
+  fichier: { nom: string; type: string; contenu: Buffer },
+): Promise<Record<string, unknown>> {
+  await connecterParApi(request, PSEUDO_ADMIN_MASTER, MOT_DE_PASSE_ADMIN_MASTER);
+  const reponse = await request.put(`/api/administration/courses/${courseId}/logo`, {
+    headers: { 'X-XSRF-TOKEN': await jetonCsrf(request) },
+    multipart: { fichier: { name: fichier.nom, mimeType: fichier.type, buffer: fichier.contenu } },
+  });
+  expect(reponse.status()).toBe(200);
+  return (await reponse.json()) as Record<string, unknown>;
+}
