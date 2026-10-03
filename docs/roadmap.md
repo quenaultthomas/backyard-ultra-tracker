@@ -18,7 +18,7 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 |---|---|---|---|
 | 0 | Socle | 0.1 → 0.4 | lancer la stack et voir la page d'accueil |
 | 1 | Comptes et sécurité | 1.1 → 1.6b | créer des comptes, te connecter avec chaque rôle |
-| 2 | Courses | 2.1 → 2.5 | déclarer une course complète avec logo et bénévoles |
+| 2 | Courses | 2.1a → 2.5 | déclarer une course complète avec logo et bénévoles |
 | 3 | Inscriptions | 3.1 → 3.6 | inscrire des coureurs et voir leurs dossards et QR |
 | 4 | Course en direct | 4.1 → 4.12 | faire tourner une course de bout en bout |
 | 5 | Scan hors ligne | 5.1 → 5.2 | scanner sans réseau sans perdre de passage |
@@ -81,9 +81,14 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 
 ## Jalon 2 : Courses
 
-### 2.1 Déclarer une course
-- **Livré** : formulaire admin (nom, date, distance d'une boucle en m, durée en min, dénivelé en m, nombre max de participants, nombre max de boucles), liste des courses avec statut `EN_PREPARATION`. Démarrage de `scripts/donnees-demo.sh`.
+### 2.1a Déclarer une course
+- **Livré** : formulaire admin (nom, date, distance d'une boucle en m, durée en min, dénivelé en m, nombre max de participants, nombre max de boucles), liste des courses avec statut `EN_PREPARATION`. Le dénivelé peut valoir 0 (boucle plate) ; les autres valeurs nulles ou négatives sont refusées.
 - **Tu testes** : créer une course, la retrouver dans la liste. Valeurs nulles ou négatives refusées.
+
+### 2.1b Données de démo
+- **Livré** : `scripts/donnees-demo.sh`, qui crée par l'API les comptes et courses nécessaires au test manuel.
+- **Tu testes** : lancer le script, retrouver les comptes et les courses ; le relancer ne duplique rien.
+- **Découpage** : l'ancien 2.1 dépassait la cible de 400 lignes, il a été scindé en 2.1a et 2.1b.
 
 ### 2.2 Modifier une course
 - **Livré** : modification de tous les champs tant que la course est `EN_PREPARATION`.

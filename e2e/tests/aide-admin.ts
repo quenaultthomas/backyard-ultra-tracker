@@ -63,3 +63,54 @@ export async function creerBenevoleParApi(request: APIRequestContext, pseudo: st
   });
   expect(creation.status()).toBe(201);
 }
+
+export interface DonneesCourse {
+  nom: string;
+  date: string;
+  distanceBoucleMetres: number;
+  dureeBoucleMinutes: number;
+  denivelePositifBoucleMetres: number;
+  nombreMaxParticipants: number;
+  nombreMaxBoucles: number;
+}
+
+export function nomCourseUnique(prefixe = 'Course E2E'): string {
+  return `${prefixe} ${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/** Date `aaaa-mm-jj` à `jours` jours d'aujourd'hui (calcul UTC, sans effet de fuseau à J+30). */
+export function dateDansJours(jours: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + jours);
+  return d.toISOString().slice(0, 10);
+}
+
+/** `aaaa-mm-jj` vers `jj/mm/aaaa`. */
+export function dateAffichee(iso: string): string {
+  const [a, m, j] = iso.split('-');
+  return `${j}/${m}/${a}`;
+}
+
+export function courseDeReference(surcharge: Partial<DonneesCourse> = {}): DonneesCourse {
+  return {
+    nom: nomCourseUnique(),
+    date: dateDansJours(30),
+    distanceBoucleMetres: 6706,
+    dureeBoucleMinutes: 60,
+    denivelePositifBoucleMetres: 120,
+    nombreMaxParticipants: 50,
+    nombreMaxBoucles: 24,
+    ...surcharge,
+  };
+}
+
+/** Déclare une course par l'API avec la session de l'admin master (contexte isolé, une session par appel). */
+export async function creerCourseParApi(request: APIRequestContext, donnees: DonneesCourse): Promise<Record<string, unknown>> {
+  await connecterParApi(request, PSEUDO_ADMIN_MASTER, MOT_DE_PASSE_ADMIN_MASTER);
+  const creation = await request.post('/api/administration/courses', {
+    headers: { 'X-XSRF-TOKEN': await jetonCsrf(request) },
+    data: donnees,
+  });
+  expect(creation.status()).toBe(201);
+  return (await creation.json()) as Record<string, unknown>;
+}

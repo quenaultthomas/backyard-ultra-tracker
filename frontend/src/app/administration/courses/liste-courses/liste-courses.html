@@ -1,0 +1,29 @@
+<ul class="liste" data-testid="liste-courses">
+  @for (course of courses(); track course.id) {
+    <li class="ligne" data-testid="ligne-course">
+      <span class="ligne__nom" data-testid="course-nom">{{ course.nom }}</span>
+      <dl class="details">
+        <div class="detail">
+          <dt>Date</dt>
+          <dd>
+            <time [attr.datetime]="course.date" data-testid="course-date">{{
+              formaterDate(course.date)
+            }}</time>
+          </dd>
+        </div>
+        <div class="detail">
+          <dt>Statut</dt>
+          <dd data-testid="course-statut">{{ libellesStatut[course.statut] }}</dd>
+        </div>
+        @for (champ of champsNombre; track champ.cle) {
+          <div class="detail">
+            <dt>{{ champ.libelleCourt }}</dt>
+            <dd [attr.data-testid]="'course-' + champ.suffixe">
+              {{ course[champ.cle] + champ.unite }}
+            </dd>
+          </div>
+        }
+      </dl>
+    </li>
+  }
+</ul>

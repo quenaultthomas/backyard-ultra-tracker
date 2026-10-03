@@ -1,0 +1,69 @@
+# Increment 2.1a : courses (contexte courses).
+# Aucune cle etrangere vers compte (contextes separes). Les bornes hautes sont une regle du domaine :
+# la base ne porte que les contraintes de signe (denivele >= 0 pour une boucle plate).
+databaseChangeLog:
+  - changeSet:
+      id: 0004-course
+      author: backyard-ultra-tracker
+      changes:
+        - createTable:
+            tableName: course
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_course
+              - column:
+                  name: nom
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: date_course
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: statut
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: distance_boucle_metres
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: duree_boucle_minutes
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: denivele_positif_boucle_metres
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: nombre_max_participants
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: nombre_max_boucles
+                  type: integer
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: >-
+              alter table course
+              add constraint ck_course_statut check (statut in ('EN_PREPARATION', 'EN_COURS', 'TERMINEE')),
+              add constraint ck_course_distance_boucle_metres check (distance_boucle_metres > 0),
+              add constraint ck_course_duree_boucle_minutes check (duree_boucle_minutes > 0),
+              add constraint ck_course_denivele_positif_boucle_metres check (denivele_positif_boucle_metres >= 0),
+              add constraint ck_course_nombre_max_participants check (nombre_max_participants > 0),
+              add constraint ck_course_nombre_max_boucles check (nombre_max_boucles > 0)
+      rollback:
+        - dropTable:
+            tableName: course
