@@ -16,3 +16,11 @@ export function estAdminMaster(role: Role): boolean {
 export function estBenevole(role: Role): boolean {
   return role === 'BENEVOLE';
 }
+
+/** Libellé affiché d'un rôle. */
+export const LIBELLES_ROLE: Readonly<Record<Role, string>> = {
+  ADMIN_MASTER: 'Administrateur master',
+  ADMIN: 'Administrateur',
+  BENEVOLE: 'Bénévole',
+  COUREUR: 'Coureur',
+};

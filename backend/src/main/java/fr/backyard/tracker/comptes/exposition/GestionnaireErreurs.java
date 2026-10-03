@@ -1,9 +1,12 @@
 package fr.backyard.tracker.comptes.exposition;
 
+import fr.backyard.tracker.comptes.domaine.CompteIntrouvableOuInutilisableException;
 import fr.backyard.tracker.comptes.domaine.CompteNonConnectableException;
 import fr.backyard.tracker.comptes.domaine.ConnexionBloqueeException;
 import fr.backyard.tracker.comptes.domaine.DonneesCompteInvalidesException;
 import fr.backyard.tracker.comptes.domaine.IdentifiantsInvalidesException;
+import fr.backyard.tracker.comptes.domaine.MotDePasseActuelIncorrectException;
+import fr.backyard.tracker.comptes.domaine.NouveauMotDePasseIdentiqueException;
 import fr.backyard.tracker.comptes.domaine.PseudoDejaUtiliseException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -76,8 +79,21 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
                 .body(probleme);
     }
 
+    /** Réponse identique quelle que soit la cause (valeur fausse ou hors bornes), sans erreurs par champ. */
+    @ExceptionHandler(MotDePasseActuelIncorrectException.class)
+    ProblemDetail motDePasseActuelIncorrect() {
+        return probleme(HttpStatus.BAD_REQUEST, "Mot de passe incorrect", "Le mot de passe actuel est incorrect.",
+                "MOT_DE_PASSE_ACTUEL_INCORRECT");
+    }
+
+    @ExceptionHandler(NouveauMotDePasseIdentiqueException.class)
+    ProblemDetail nouveauMotDePasseIdentique() {
+        return probleme(HttpStatus.BAD_REQUEST, TITRE_REQUETE_INVALIDE,
+                "Le nouveau mot de passe doit être différent de l'actuel.", "NOUVEAU_MOT_DE_PASSE_IDENTIQUE");
+    }
+
     /** Session d'un compte disparu ou anonymisé : la session est fermée, comme pour une session absente. */
-    @ExceptionHandler(CompteNonConnectableException.class)
+    @ExceptionHandler({CompteNonConnectableException.class, CompteIntrouvableOuInutilisableException.class})
     ProblemDetail compteNonConnectable(HttpServletRequest requete, HttpServletResponse reponse) {
         sessionConnexion.fermer(requete, reponse);
         return probleme(HttpStatus.UNAUTHORIZED, "Authentification requise", "Vous devez être connecté.",

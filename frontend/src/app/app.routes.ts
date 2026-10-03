@@ -7,6 +7,7 @@ import {
 } from './administration/reserve-aux-administrateurs.guard';
 import { ADMINS, BENEVOLES } from './administration/gestion-comptes/comptes-geres';
 import { reserveAuxAnonymes } from './comptes/reserve-aux-anonymes.guard';
+import { reserveAuxComptesConnectes } from './comptes/reserve-aux-roles.guard';
 import { reserveAuxBenevoles } from './scan/reserve-aux-benevoles.guard';
 
 const chargerGestionComptes = () =>
@@ -25,6 +26,12 @@ export const routes: Routes = [
     canActivate: [reserveAuxAnonymes],
     loadComponent: () => import('./comptes/creer-compte/creer-compte').then((m) => m.CreerCompte),
     title: 'Créer un compte - Backyard Ultra Tracker',
+  },
+  {
+    path: 'mon-compte',
+    canActivate: [reserveAuxComptesConnectes],
+    loadComponent: () => import('./comptes/mon-compte/mon-compte').then((m) => m.MonCompte),
+    title: 'Mon compte - Backyard Ultra Tracker',
   },
   {
     path: 'administration',

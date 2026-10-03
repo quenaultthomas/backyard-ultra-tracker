@@ -55,9 +55,10 @@ L'admin master est l'unique compte de rôle `ADMIN_MASTER`. Il n'est jamais cré
 - **Variables ignorées ensuite** : dès qu'un admin master existe (« Admin master déjà présent » dans les logs), les deux variables ne sont plus lues ; les modifier ne change ni son pseudo ni son mot de passe. Elles restent néanmoins exigées par `docker-compose.prod.yml` à chaque démarrage.
 - **Échec du démarrage** (`api` jamais `healthy`, cause dans `$PROD logs api`, sans aucune valeur) : une seule des deux variables renseignée ; pseudo invalide (3 à 30 caractères, lettres, chiffres, `.`, `_`, `-`) ; mot de passe de moins de 12 ou de plus de 128 caractères ; pseudo déjà utilisé par un autre compte (ce compte n'est jamais promu : choisir un autre pseudo).
 - **Dev** : les deux variables vides, `api` démarre sans admin master avec l'avertissement « Aucun admin master n'existe et ADMIN_MASTER_PSEUDO / ADMIN_MASTER_MOT_DE_PASSE ne sont pas renseignées ».
+- **Changement du mot de passe** : par l'écran « Mon compte » (http(s)://<domaine>/mon-compte), mot de passe actuel exigé. À faire après le premier déploiement : la valeur de `ADMIN_MASTER_MOT_DE_PASSE` n'est plus relue ensuite, c'est le nouveau mot de passe qui reste valable après redémarrage. Les autres sessions de l'admin master sont fermées.
 - **Mot de passe** : générer avec `openssl rand -base64 18`. Compose interprète `$` dans `.env` : éviter ce caractère ou le doubler (`$$`). Le mot de passe n'apparaît jamais dans les logs, mais reste visible par `docker inspect` et `printenv` sur le VPS : protéger l'accès au VPS et au fichier `.env` (`chmod 600`).
 
-**Mot de passe de l'admin master perdu** (en attendant le changement de mot de passe par l'interface) : supprimer le compte puis redémarrer `api` avec de nouvelles valeurs dans `.env` ; il est recréé.
+**Mot de passe de l'admin master perdu** (l'écran « Mon compte » exige le mot de passe actuel) : supprimer le compte puis redémarrer `api` avec de nouvelles valeurs dans `.env` ; il est recréé.
 
 ```sh
 # Remplacer backyard par BASE_UTILISATEUR et BASE_NOM s'ils ont été changés.

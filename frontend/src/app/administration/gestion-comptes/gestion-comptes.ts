@@ -17,13 +17,14 @@ import { CompteReponse } from '../../comptes/compte';
 import {
   LONGUEUR_MIN_MOT_DE_PASSE,
   confirmationIdentique,
+  erreurClientConfirmation,
   erreurClientMotDePasse,
   erreurClientPseudo,
 } from '../../comptes/controles-formulaire-compte';
 import { ErreursFormulaireCompte, interpreterErreurCompte } from '../../comptes/erreurs-compte';
 import { CsrfService } from '../../partage/csrf.service';
 import { AdministrationApiService } from '../administration-api.service';
-import { RefusAccesService } from '../refus-acces.service';
+import { RefusAccesService } from '../../comptes/refus-acces.service';
 import { ComptesGeres } from './comptes-geres';
 
 const ERREURS_SPECIFIQUES: Record<string, ErreursFormulaireCompte> = {
@@ -114,9 +115,7 @@ export class GestionComptes implements OnInit {
   }
 
   protected erreurConfirmation(): string | undefined {
-    return this.soumis() && this.formulaire.hasError('confirmationDifferente')
-      ? 'Les mots de passe ne correspondent pas.'
-      : undefined;
+    return this.soumis() ? erreurClientConfirmation(this.formulaire) : undefined;
   }
 
   private chargerComptes(): void {

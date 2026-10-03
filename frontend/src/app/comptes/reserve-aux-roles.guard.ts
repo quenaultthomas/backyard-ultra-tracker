@@ -26,3 +26,6 @@ export function reserveAuxRoles(estAutorise: (role: Role) => boolean): CanActiva
       );
   };
 }
+
+/** Écrans ouverts à tout Compte connecté, quel que soit son rôle. */
+export const reserveAuxComptesConnectes = reserveAuxRoles(() => true);

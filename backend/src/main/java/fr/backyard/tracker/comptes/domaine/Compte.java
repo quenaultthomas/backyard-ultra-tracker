@@ -63,6 +63,14 @@ public final class Compte {
         return empreinteMotDePasse != null;
     }
 
+    /**
+     * Remplace l'empreinte du mot de passe ; identité, pseudo, rôle et date de création inchangés.
+     * Une empreinte est exigée : un changement ne rend jamais un compte inutilisable.
+     */
+    public Compte changerMotDePasse(String nouvelleEmpreinte) {
+        return new Compte(id, pseudo, Objects.requireNonNull(nouvelleEmpreinte), role, creeLe);
+    }
+
     public UUID id() {
         return id;
     }
