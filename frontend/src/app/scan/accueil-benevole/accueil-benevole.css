@@ -1,0 +1,34 @@
+.liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid #e5e7eb;
+}
+
+.ligne {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Logo contenu dans 48 × 48 px, proportions conservées. */
+.logo {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.infos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.nom {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}

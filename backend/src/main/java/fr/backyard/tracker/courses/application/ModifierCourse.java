@@ -36,7 +36,8 @@ public class ModifierCourse {
      */
     @Transactional
     public Course executer(Commande commande) {
-        Course course = depotCourses.parId(commande.id()).orElseThrow(CourseIntrouvableException::new);
+        Course course = depotCourses.parIdPourModification(commande.id())
+                .orElseThrow(CourseIntrouvableException::new);
         Course modifiee = course.modifier(commande.nom(), commande.date(), commande.distanceBoucleMetres(),
                 commande.dureeBoucleMinutes(), commande.denivelePositifBoucleMetres(),
                 commande.nombreMaxParticipants(), commande.nombreMaxBoucles(),

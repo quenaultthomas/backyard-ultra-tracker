@@ -132,3 +132,26 @@ export async function envoyerLogoParApi(
   expect(reponse.status()).toBe(200);
   return (await reponse.json()) as Record<string, unknown>;
 }
+
+/** Identifiants des bénévoles (par pseudo) lus par l'API avec la session de l'admin master (contexte isolé). */
+export async function identifiantsBenevolesParApi(request: APIRequestContext, pseudos: string[]): Promise<string[]> {
+  await connecterParApi(request, PSEUDO_ADMIN_MASTER, MOT_DE_PASSE_ADMIN_MASTER);
+  const reponse = await request.get('/api/administration/benevoles');
+  expect(reponse.status()).toBe(200);
+  const comptes = (await reponse.json()) as Array<{ id: string; pseudo: string }>;
+  return pseudos.map((pseudo) => {
+    const compte = comptes.find((c) => c.pseudo === pseudo);
+    expect(compte, `bénévole ${pseudo} introuvable`).toBeTruthy();
+    return compte!.id;
+  });
+}
+
+/** Remplace les bénévoles affectés à une course par l'API (session de l'admin master, contexte isolé). */
+export async function affecterBenevolesParApi(request: APIRequestContext, courseId: string, pseudos: string[]): Promise<void> {
+  const ids = await identifiantsBenevolesParApi(request, pseudos);
+  const reponse = await request.put(`/api/administration/courses/${courseId}/benevoles`, {
+    headers: { 'X-XSRF-TOKEN': await jetonCsrf(request) },
+    data: { benevoleIds: ids },
+  });
+  expect(reponse.status()).toBe(200);
+}

@@ -1,5 +1,7 @@
-/* Boutons d'action d'une ligne de la liste des Courses (modification, logo). */
+/* Boutons et liens d'action d'une ligne de la liste des Courses (fiche, modification, logo). */
 .ligne__action {
+  display: inline-block;
+  text-decoration: none;
   align-self: flex-start;
   font: inherit;
   font-weight: 600;

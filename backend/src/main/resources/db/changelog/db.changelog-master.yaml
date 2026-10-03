@@ -14,3 +14,6 @@ databaseChangeLog:
   - include:
       file: changesets/0005-logo-course.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changesets/0006-affectation-benevole.yaml
+      relativeToChangelogFile: true

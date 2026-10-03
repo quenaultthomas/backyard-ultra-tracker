@@ -52,7 +52,7 @@ class LogoCourseSchemaRedemarrageIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA18 : base vierge migrée, changesets 0002 à 0005, table logo_course typée (bytea), contraintes refusant les insertions incohérentes, cascade, puis redémarrage avec le logo relu à l'identique")
+    @DisplayName("CA18 : base vierge migrée, changesets 0002 à 0006 (2.4 RG14), table logo_course typée (bytea), contraintes refusant les insertions incohérentes, cascade, puis redémarrage avec le logo relu à l'identique")
     void ca18_schema_contraintes_et_redemarrage() throws Exception {
         JsonMapper json = JsonMapper.builder().build();
         HttpClient http = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
@@ -104,7 +104,8 @@ class LogoCourseSchemaRedemarrageIntegrationTest {
 
     private void verifierSchema(JdbcTemplate jdbc) {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
-                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course");
+                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
+                "0006-affectation-benevole");
         List<Map<String, Object>> colonnes = jdbc.queryForList("select column_name, data_type, "
                 + "character_maximum_length, is_nullable from information_schema.columns "
                 + "where table_name = 'logo_course' order by column_name");

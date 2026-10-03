@@ -155,6 +155,7 @@ class CoursesIntegrationTest {
         alice = api.ouvrir("Alice", MOT_DE_PASSE);
         leo = api.ouvrir("Léo", MOT_DE_PASSE);
         journal = new ListAppender<>();
+        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
         journal.start();
         Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         racine.addAppender(journal);
@@ -248,8 +249,9 @@ class CoursesIntegrationTest {
         assertErreur(api.requete("POST", CHEMIN, Map.of(), "application/json", valide), 403, "CSRF_INVALIDE",
                 "Accès refusé", "Jeton CSRF absent ou invalide.");
 
-        assertErreur(get(nadia, CHEMIN + "/inexistant"), 404, "RESSOURCE_INTROUVABLE", "Introuvable",
-                "La ressource demandée est introuvable.");
+        // 2.4 RG6 : GET /{id} existe, un id inconnu ou non UUID donne 404 COURSE_INTROUVABLE.
+        assertErreur(get(nadia, CHEMIN + "/inexistant"), 404, "COURSE_INTROUVABLE", "Introuvable",
+                "La course est introuvable.");
         assertThat(lister(nadia).statusCode()).isEqualTo(200);
         assertThat(compterCourses()).isZero();
     }
@@ -571,7 +573,7 @@ class CoursesIntegrationTest {
     // ---------------------------------------------------------------- CA17
 
     @Test
-    @DisplayName("CA17 (mis à jour par 2.2, RG15 : PUT /{id} existe désormais, couvert par la 2.2) : GET, PATCH, DELETE /{id} : 404 ou 405 pour Patron et Nadia ; GET, PUT, PATCH, DELETE : 403 pour Alice, 401 pour un anonyme ; Course intacte")
+    @DisplayName("CA17 (mis à jour par 2.2 RG15 : PUT /{id} couvert par la 2.2, et par 2.4 RG6 : GET /{id} existe, 200 pour Patron et Nadia) : PATCH, DELETE /{id} : 404 ou 405 pour Patron et Nadia ; GET, PUT, PATCH, DELETE : 403 pour Alice, 401 pour un anonyme ; Course intacte")
     void ca17_aucun_autre_endpoint() throws Exception {
         JsonNode course = creerReussie(patron, "Backyard des Crêtes", "2026-11-14");
         String chemin = CHEMIN + "/" + course.get("id").asString();
@@ -582,8 +584,16 @@ class CoursesIntegrationTest {
         for (String methode : List.of("GET", "PUT", "PATCH", "DELETE")) {
             String contenu = "PUT".equals(methode) || "PATCH".equals(methode) ? corps : null;
             String type = contenu == null ? null : "application/json";
-            // PUT /{id} est un endpoint de la 2.2 (RG15) : il sort de la vérification « 404 ou 405 » des admins.
-            for (Session admin : "PUT".equals(methode) ? List.<Session>of() : List.of(patron, nadia)) {
+            // PUT /{id} (2.2 RG15) et GET /{id} (2.4 RG6) sont des endpoints : ils sortent de la vérification « 404 ou 405 ».
+            if ("GET".equals(methode)) {
+                for (Session admin : List.of(patron, nadia)) {
+                    HttpResponse<String> fiche = api.requete("GET", chemin, admin.enteteLecture(), null, null);
+                    assertThat(fiche.statusCode()).isEqualTo(200);
+                    assertThat(json.readTree(fiche.body()).get("id").asString()).isEqualTo(course.get("id").asString());
+                }
+            }
+            for (Session admin : "PUT".equals(methode) || "GET".equals(methode) ? List.<Session>of()
+                    : List.of(patron, nadia)) {
                 HttpResponse<String> reponse = api.requete(methode, chemin, admin.entetes(), type, contenu);
                 assertThat(reponse.statusCode()).as(methode + " " + admin).isIn(404, 405);
                 if (reponse.statusCode() == 404) {
@@ -604,17 +614,18 @@ class CoursesIntegrationTest {
     // ---------------------------------------------------------------- CA18
 
     @Test
-    @DisplayName("CA18 : Liquibase applique 0002, 0003, 0004 dans l'ordre, ddl-auto=validate, aucune clé étrangère entre course et compte")
+    @DisplayName("CA18 (mis à jour par 2.4 RG14 : 0002 à 0006) : Liquibase applique 0002 à 0006 dans l'ordre, ddl-auto=validate, aucune clé étrangère entre course et compte")
     void ca18_changesets_et_absence_de_cle_etrangere() {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
-                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course");
+                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
+                "0006-affectation-benevole");
         assertThat(environnement.getProperty("spring.jpa.hibernate.ddl-auto")).isEqualTo("validate");
         assertThat(jdbc.queryForObject("select count(*) from information_schema.table_constraints "
                 + "where constraint_type = 'FOREIGN KEY' and table_name in ('course', 'compte')", Integer.class))
                 .isZero();
         assertThat(jdbc.queryForObject("select count(*) from pg_constraint where contype = 'f' "
                 + "and (conrelid = 'course'::regclass or confrelid = 'compte'::regclass "
-                + "or (confrelid = 'course'::regclass and conrelid <> 'logo_course'::regclass))", Integer.class))
+                + "or (confrelid = 'course'::regclass and conrelid not in ('logo_course'::regclass, 'affectation_benevole'::regclass)))", Integer.class))
                 .isZero();
     }
 

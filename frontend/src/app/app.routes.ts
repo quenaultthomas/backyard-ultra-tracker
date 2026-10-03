@@ -66,6 +66,13 @@ export const routes: Routes = [
     title: 'Gestion des courses - Backyard Ultra Tracker',
   },
   {
+    path: 'administration/courses/:id',
+    canActivate: [reserveAuxAdministrateurs],
+    loadComponent: () =>
+      import('./administration/courses/fiche/fiche-course').then((m) => m.FicheCourse),
+    title: 'Fiche de la course - Backyard Ultra Tracker',
+  },
+  {
     path: 'benevole',
     canActivate: [reserveAuxBenevoles],
     loadComponent: () =>

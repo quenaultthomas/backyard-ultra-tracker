@@ -1,12 +1,17 @@
 package fr.backyard.tracker.courses.domaine;
 
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * Racine d'agrégat : une édition de backyard. Une Course ne se crée que par {@link #declarer} et ne change que par
  * {@link #modifier}, qui appliquent les mêmes règles de saisie : aucune Course invalide n'existe en mémoire.
+ * Les bénévoles affectés (identifiants de Comptes) ne changent que par {@link #affecterBenevoles}.
  */
 public final class Course {
 
@@ -22,9 +27,10 @@ public final class Course {
     private final ParametresBoucle parametresBoucle;
     private final int nombreMaxParticipants;
     private final int nombreMaxBoucles;
+    private Set<UUID> benevolesAffectes;
 
     private Course(UUID id, String nom, LocalDate date, StatutCourse statut, ParametresBoucle parametresBoucle,
-                   int nombreMaxParticipants, int nombreMaxBoucles) {
+                   int nombreMaxParticipants, int nombreMaxBoucles, Collection<UUID> benevolesAffectes) {
         this.id = id;
         this.nom = nom;
         this.date = date;
@@ -32,6 +38,7 @@ public final class Course {
         this.parametresBoucle = parametresBoucle;
         this.nombreMaxParticipants = nombreMaxParticipants;
         this.nombreMaxBoucles = nombreMaxBoucles;
+        this.benevolesAffectes = ensembleNonModifiable(benevolesAffectes);
     }
 
     /**
@@ -49,13 +56,13 @@ public final class Course {
                 denivelePositifBoucleMetres, nombreMaxParticipants, nombreMaxBoucles);
         return new Course(UUID.randomUUID(), nomSaisi, date, StatutCourse.EN_PREPARATION,
                 new ParametresBoucle(distanceBoucleMetres, dureeBoucleMinutes, denivelePositifBoucleMetres),
-                nombreMaxParticipants, nombreMaxBoucles);
+                nombreMaxParticipants, nombreMaxBoucles, Set.of());
     }
 
     /**
      * Remplace tous les champs modifiables d'une Course EN_PREPARATION, avec les règles de saisie de la déclaration,
-     * sauf qu'une date inchangée est toujours acceptée. La Course renvoyée garde l'identifiant et le statut ;
-     * celle-ci n'est pas affectée.
+     * sauf qu'une date inchangée est toujours acceptée. La Course renvoyée garde l'identifiant, le statut et les
+     * bénévoles affectés ; celle-ci n'est pas affectée.
      *
      * @param aujourdhui date du jour, calculée par l'appelant à partir de l'horloge
      * @throws CourseNonModifiableException la Course n'est plus EN_PREPARATION (contrôlé avant la saisie)
@@ -72,7 +79,28 @@ public final class Course {
                 denivelePositifBoucleMetres, nombreMaxParticipants, nombreMaxBoucles);
         return new Course(id, nomSaisi, date, statut,
                 new ParametresBoucle(distanceBoucleMetres, dureeBoucleMinutes, denivelePositifBoucleMetres),
-                nombreMaxParticipants, nombreMaxBoucles);
+                nombreMaxParticipants, nombreMaxBoucles, benevolesAffectes);
+    }
+
+    /**
+     * Remplace l'ensemble des bénévoles affectés par celui donné (doublons ignorés, ensemble vide permis).
+     *
+     * @throws CourseTermineeException la Course est TERMINEE ; l'ensemble précédent est conservé
+     */
+    public void affecterBenevoles(Collection<UUID> benevoles) {
+        autoriserAffectation();
+        this.benevolesAffectes = ensembleNonModifiable(benevoles);
+    }
+
+    /**
+     * Les bénévoles d'une Course EN_PREPARATION ou EN_COURS sont modifiables. Unique contrôle de cette règle.
+     *
+     * @throws CourseTermineeException la Course est TERMINEE
+     */
+    public void autoriserAffectation() {
+        if (statut == StatutCourse.TERMINEE) {
+            throw new CourseTermineeException(id);
+        }
     }
 
     /**
@@ -99,11 +127,24 @@ public final class Course {
                 .rejeterSiInvalide();
     }
 
-    /** Reconstitue une Course déjà enregistrée, sans revalider la saisie. */
+    private static Set<UUID> ensembleNonModifiable(Collection<UUID> benevoles) {
+        return Collections.unmodifiableSet(new LinkedHashSet<>(benevoles));
+    }
+
+    /** Reconstitue une Course déjà enregistrée sans bénévole affecté, sans revalider la saisie. */
     public static Course reconstituer(UUID id, String nom, LocalDate date, StatutCourse statut,
                                       ParametresBoucle parametresBoucle, int nombreMaxParticipants,
                                       int nombreMaxBoucles) {
-        return new Course(id, nom, date, statut, parametresBoucle, nombreMaxParticipants, nombreMaxBoucles);
+        return reconstituer(id, nom, date, statut, parametresBoucle, nombreMaxParticipants, nombreMaxBoucles,
+                Set.of());
+    }
+
+    /** Reconstitue une Course déjà enregistrée avec ses bénévoles affectés, sans revalider la saisie. */
+    public static Course reconstituer(UUID id, String nom, LocalDate date, StatutCourse statut,
+                                      ParametresBoucle parametresBoucle, int nombreMaxParticipants,
+                                      int nombreMaxBoucles, Collection<UUID> benevolesAffectes) {
+        return new Course(id, nom, date, statut, parametresBoucle, nombreMaxParticipants, nombreMaxBoucles,
+                benevolesAffectes);
     }
 
     public UUID id() {
@@ -132,5 +173,10 @@ public final class Course {
 
     public int nombreMaxBoucles() {
         return nombreMaxBoucles;
+    }
+
+    /** Identifiants des Comptes bénévoles affectés, sans doublon ni ordre significatif ; non modifiable. */
+    public Set<UUID> benevolesAffectes() {
+        return benevolesAffectes;
     }
 }

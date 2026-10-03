@@ -6,6 +6,11 @@
 
     <section class="formulaire" aria-labelledby="titre-liste-courses">
       <h2 id="titre-liste-courses" class="sous-titre">Courses</h2>
+      @if (messageErreur(); as message) {
+        <p class="erreur erreur--generale" role="alert" data-testid="courses-message-erreur">
+          {{ message }}
+        </p>
+      }
       @if (erreurChargement()) {
         <p class="erreur erreur--generale" role="alert" data-testid="courses-erreur">
           Impossible de charger la liste des courses. Réessayez plus tard.

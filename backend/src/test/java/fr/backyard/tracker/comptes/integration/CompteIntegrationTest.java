@@ -87,6 +87,7 @@ class CompteIntegrationTest {
         jdbc.update("delete from compte");
         api = new ApiHttp(port);
         journal = new ListAppender<>();
+        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
         journal.start();
         Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         racine.addAppender(journal);
@@ -440,7 +441,8 @@ class CompteIntegrationTest {
     @DisplayName("CA21 : changeset 0002 appliqué, 0001 inchangé, table compte conforme à RG14")
     void ca21_schema_de_la_table_compte() {
         List<String> changesets = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
-        assertThat(changesets).containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course");
+        assertThat(changesets).containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
+                "0006-affectation-benevole");
 
         Map<String, Map<String, Object>> colonnes = new java.util.HashMap<>();
         jdbc.queryForList("""

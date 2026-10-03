@@ -1,0 +1,41 @@
+# Increment 2.4 : benevoles affectes a une course (contexte courses). Le benevole n'est reference que par
+# l'identifiant de son compte : aucune cle etrangere vers compte (contextes separes). La suppression d'une course
+# supprime ses affectations (cascade, pour 2.5).
+databaseChangeLog:
+  - changeSet:
+      id: 0006-affectation-benevole
+      author: backyard-ultra-tracker
+      changes:
+        - createTable:
+            tableName: affectation_benevole
+            columns:
+              - column:
+                  name: course_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: benevole_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            constraintName: pk_affectation_benevole
+            tableName: affectation_benevole
+            columnNames: course_id, benevole_id
+        - addForeignKeyConstraint:
+            constraintName: fk_affectation_benevole_course
+            baseTableName: affectation_benevole
+            baseColumnNames: course_id
+            referencedTableName: course
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - createIndex:
+            indexName: ix_affectation_benevole_benevole
+            tableName: affectation_benevole
+            columns:
+              - column:
+                  name: benevole_id
+      rollback:
+        - dropTable:
+            tableName: affectation_benevole

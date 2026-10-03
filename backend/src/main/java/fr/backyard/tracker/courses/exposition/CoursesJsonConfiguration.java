@@ -1,5 +1,6 @@
 package fr.backyard.tracker.courses.exposition;
 
+import java.util.UUID;
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,7 +10,8 @@ import tools.jackson.databind.type.LogicalType;
 
 /**
  * Lecture stricte des entiers : une décimale (1.5), une chaîne ("12") ou un booléen reçus à la place d'un
- * entier rendent le corps illisible au lieu d'être tronqués ou convertis silencieusement.
+ * entier rendent le corps illisible au lieu d'être tronqués ou convertis silencieusement. Une chaîne vide reçue
+ * à la place d'un UUID rend aussi le corps illisible (au lieu de devenir null).
  */
 @Configuration(proxyBeanMethods = false)
 public class CoursesJsonConfiguration {
@@ -21,5 +23,11 @@ public class CoursesJsonConfiguration {
                 .setCoercion(CoercionInputShape.String, CoercionAction.Fail)
                 .setCoercion(CoercionInputShape.EmptyString, CoercionAction.Fail)
                 .setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail));
+    }
+
+    @Bean
+    JsonMapperBuilderCustomizer uuidStricts() {
+        return builder -> builder.withCoercionConfig(UUID.class, coercion -> coercion
+                .setCoercion(CoercionInputShape.EmptyString, CoercionAction.Fail));
     }
 }

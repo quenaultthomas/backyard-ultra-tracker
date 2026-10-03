@@ -3,8 +3,45 @@
     <h1 id="accueil-benevole-titre" class="titre" data-testid="accueil-benevole-titre">
       Espace bénévole
     </h1>
-    <p class="message" data-testid="accueil-benevole-vide">
-      Aucune course à scanner pour le moment.
-    </p>
+    @if (erreurChargement()) {
+      <p class="erreur erreur--generale" role="alert" data-testid="accueil-benevole-erreur">
+        Impossible de charger vos courses. Réessayez plus tard.
+      </p>
+    } @else if (courses(); as liste) {
+      @if (liste.length === 0) {
+        <p class="message" data-testid="accueil-benevole-vide">
+          Aucune course à scanner pour le moment.
+        </p>
+      } @else {
+        <ul class="liste" aria-label="Mes courses" data-testid="benevole-liste-courses">
+          @for (course of liste; track course.id) {
+            <li class="ligne" data-testid="benevole-ligne-course">
+              @if (course.logoUrl; as url) {
+                <img
+                  class="logo"
+                  [src]="url"
+                  [alt]="'Logo de ' + course.nom"
+                  data-testid="benevole-course-logo"
+                />
+              }
+              <div class="infos">
+                <span class="nom" data-testid="benevole-course-nom">{{ course.nom }}</span>
+                <span>
+                  <time [attr.datetime]="course.date" data-testid="benevole-course-date">{{
+                    formaterDate(course.date)
+                  }}</time>
+                  ·
+                  <span data-testid="benevole-course-statut">{{
+                    libellesStatut[course.statut]
+                  }}</span>
+                </span>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    } @else {
+      <p class="message" role="status">Chargement…</p>
+    }
   </section>
 </main>

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Données de démonstration pour le test manuel (incrément 2.1b). À NE PAS UTILISER EN PRODUCTION.
+# Données de démonstration pour le test manuel (incréments 2.1b et 2.4). À NE PAS UTILISER EN PRODUCTION.
 #
 # Crée par l'API de l'application lancée (jamais d'accès direct à la base), dans cet ordre :
 #   - admin Nadia, bénévoles Léo et Marc (session de l'admin master) ;
 #   - Courses « Backyard de démo » (J+30), « Backyard express » (J+7), « Backyard mini » (J+14) ;
+#   - affectation du bénévole Léo à « Backyard de démo » (les autres bénévoles déjà affectés sont conservés) ;
 #   - coureur Alice (session anonyme).
 # Mots de passe connus : Nadia mot-de-passe-admin-1, Léo et Marc mot-de-passe-benevole-1, Alice un-mot-de-passe-12.
 #
@@ -19,7 +20,8 @@
 # Idempotent : relancé, il ne crée rien en double. Limites :
 #   - un Compte dont le pseudo est déjà pris (409 PSEUDO_DEJA_UTILISE) est « déjà présent », même s'il
 #     a un autre rôle (non détecté) ;
-#   - une Course est « déjà présente » si une Course du même nom existe ; elle n'est ni comparée ni modifiée.
+#   - une Course est « déjà présente » si une Course du même nom existe ; elle n'est ni comparée ni modifiée ;
+#   - Léo déjà affecté à « Backyard de démo » : rien n'est envoyé.
 # Aucun mot de passe n'est affiché ni écrit sur disque ; les cookies vont dans un répertoire temporaire
 # supprimé en sortie. Prérequis : bash, curl, date GNU (Linux) ou BSD (macOS).
 set -euo pipefail
@@ -69,7 +71,7 @@ jour_plus() {
 # requete METHODE CHEMIN [corps sur l'entrée standard] : écrit le statut HTTP, le corps dans $REPONSE.
 requete() {
   local options=(-s -o "$REPONSE" -w '%{http_code}' -b "$COOKIES" -c "$COOKIES" -X "$1")
-  if [[ "$1" == "POST" ]]; then
+  if [[ "$1" == "POST" || "$1" == "PUT" ]]; then
     options+=(-H 'Content-Type: application/json' -H "X-XSRF-TOKEN: $(jeton_csrf)" --data-binary @-)
   fi
   curl "${options[@]}" "$BASE_URL$2" < "${3:-/dev/stdin}" || true
@@ -130,6 +132,29 @@ declarer_courses() {
   declarer_course "Backyard mini" 14 1000 2 10 2 2
 }
 
+# identifiant FICHIER CHAMP VALEUR : id du premier objet (plat) du tableau JSON dont CHAMP vaut VALEUR.
+identifiant() {
+  tr '{' '\n' < "$1" | grep -F "\"$2\":\"$3\"" | grep -o '"id":"[0-9a-f-]*"' | head -n 1 | cut -d '"' -f 4
+}
+
+affecter_benevole() {
+  local benevole="$1" course="$2" id_benevole id_course deja
+  attendre 200 "$(requete GET /api/administration/benevoles /dev/null)" "liste des bénévoles"
+  id_benevole="$(identifiant "$REPONSE" pseudo "$benevole")"
+  attendre 200 "$(requete GET /api/administration/courses /dev/null)" "liste des courses"
+  id_course="$(identifiant "$REPONSE" nom "$course")"
+  [[ -n "$id_benevole" && -n "$id_course" ]] || echouer "affectation de $benevole à $course : introuvable."
+  attendre 200 "$(requete GET "/api/administration/courses/$id_course" /dev/null)" "fiche de la course $course"
+  deja="$(grep -o '"benevoleIds":\[[^]]*\]' "$REPONSE" | sed 's/^"benevoleIds":\[//; s/\]$//')"
+  if [[ "$deja" == *"\"$id_benevole\""* ]]; then
+    echo "déjà présent : $benevole affecté à $course"
+    return
+  fi
+  attendre 200 "$(printf '{"benevoleIds":[%s"%s"]}' "${deja:+$deja,}" "$id_benevole" \
+    | requete PUT "/api/administration/courses/$id_course/benevoles")" "affectation de $benevole à $course"
+  echo "créé : $benevole affecté à $course"
+}
+
 verifier_cible
 TEMPORAIRE="$(mktemp -d)"
 trap 'rm -rf "$TEMPORAIRE"' EXIT
@@ -144,6 +169,7 @@ creer_compte /api/administration/admins Nadia mot-de-passe-admin-1 ADMIN
 creer_compte /api/administration/benevoles "Léo" mot-de-passe-benevole-1 BENEVOLE
 creer_compte /api/administration/benevoles Marc mot-de-passe-benevole-1 BENEVOLE
 declarer_courses
+affecter_benevole "Léo" "Backyard de démo"
 
 COOKIES="$TEMPORAIRE/cookies-anonyme"
 : > "$COOKIES"

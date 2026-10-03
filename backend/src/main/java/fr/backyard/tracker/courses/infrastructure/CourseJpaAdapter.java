@@ -4,19 +4,32 @@ import fr.backyard.tracker.courses.domaine.Course;
 import fr.backyard.tracker.courses.domaine.DepotCourses;
 import fr.backyard.tracker.courses.domaine.ParametresBoucle;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Adaptateur JPA du dépôt de Courses. Ne trie pas : l'ordre est appliqué par le domaine. Une Course déjà enregistrée
- * est mise à jour sur sa ligne, jamais insérée une seconde fois.
+ * Adaptateur JPA du dépôt de Courses, bénévoles affectés compris. Ne trie pas : l'ordre est appliqué par le
+ * domaine. Une Course déjà enregistrée est mise à jour sur sa ligne, jamais insérée une seconde fois.
  */
 @Repository
 public class CourseJpaAdapter implements DepotCourses {
+
+    private static final String COURSES_ET_BENEVOLES =
+            "select c from CourseJpaEntity c left join fetch c.benevolesAffectes";
+
+    /**
+     * Filtre par sous-requête sur les identifiants : la jointure chargée reste complète, la Course remonte avec
+     * tous ses bénévoles affectés et pas seulement celui recherché.
+     */
+    private static final String COURSES_DU_BENEVOLE = COURSES_ET_BENEVOLES
+            + " where c.id in (select a.id from CourseJpaEntity a join a.benevolesAffectes b where b = :idBenevole)";
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -34,29 +47,51 @@ public class CourseJpaAdapter implements DepotCourses {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<Course> parId(UUID id) {
         return Optional.ofNullable(entityManager.find(CourseJpaEntity.class, id)).map(CourseJpaAdapter::versDomaine);
     }
 
+    /** Verrou exclusif sur la ligne course jusqu'à la fin de la transaction, posé avant de lire les affectations. */
     @Override
+    @Transactional
+    public Optional<Course> parIdPourModification(UUID id) {
+        return Optional.ofNullable(entityManager.find(CourseJpaEntity.class, id, LockModeType.PESSIMISTIC_WRITE))
+                .map(CourseJpaAdapter::versDomaine);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<Course> toutes() {
-        return entityManager.createQuery("select c from CourseJpaEntity c", CourseJpaEntity.class)
-                .getResultStream()
-                .map(CourseJpaAdapter::versDomaine)
-                .toList();
+        return versDomaine(entityManager.createQuery(COURSES_ET_BENEVOLES, CourseJpaEntity.class).getResultList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Course> parBenevole(UUID idBenevole) {
+        return versDomaine(entityManager.createQuery(COURSES_DU_BENEVOLE, CourseJpaEntity.class)
+                .setParameter("idBenevole", idBenevole)
+                .getResultList());
+    }
+
+    /** La jointure chargée renvoie une ligne par bénévole affecté : une seule Course par identifiant, ordre conservé. */
+    private static List<Course> versDomaine(List<CourseJpaEntity> lignes) {
+        Map<UUID, CourseJpaEntity> parIdentifiant = new LinkedHashMap<>();
+        lignes.forEach(entite -> parIdentifiant.putIfAbsent(entite.id(), entite));
+        return parIdentifiant.values().stream().map(CourseJpaAdapter::versDomaine).toList();
     }
 
     private static CourseJpaEntity versEntite(Course course) {
         ParametresBoucle boucle = course.parametresBoucle();
         return new CourseJpaEntity(course.id(), course.nom(), course.date(), course.statut(),
                 boucle.distanceMetres(), boucle.dureeMinutes(), boucle.denivelePositifMetres(),
-                course.nombreMaxParticipants(), course.nombreMaxBoucles());
+                course.nombreMaxParticipants(), course.nombreMaxBoucles(), course.benevolesAffectes());
     }
 
     private static Course versDomaine(CourseJpaEntity entite) {
         return Course.reconstituer(entite.id(), entite.nom(), entite.date(), entite.statut(),
                 new ParametresBoucle(entite.distanceBoucleMetres(), entite.dureeBoucleMinutes(),
                         entite.denivelePositifBoucleMetres()),
-                entite.nombreMaxParticipants(), entite.nombreMaxBoucles());
+                entite.nombreMaxParticipants(), entite.nombreMaxBoucles(), entite.benevolesAffectes());
     }
 }

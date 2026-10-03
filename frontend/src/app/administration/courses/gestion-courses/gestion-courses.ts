@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -31,6 +32,7 @@ import { CourseReponse } from '../course';
 import {
   ECRAN_GESTION_COURSES,
   ERREURS_COURSE_NON_EDITABLE,
+  ETAT_MESSAGE_ERREUR,
   estCourseNonEditable,
 } from '../erreurs-course';
 import { ListeCourses } from '../liste-courses/liste-courses';
@@ -53,6 +55,7 @@ export class GestionCourses implements OnInit {
   private readonly refusAcces = inject(RefusAccesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly location = inject(Location);
   private readonly champNom = viewChild.required<ElementRef<HTMLInputElement>>('champNom');
 
   protected readonly champsNombre = CHAMPS_NOMBRE;
@@ -69,6 +72,8 @@ export class GestionCourses implements OnInit {
   /** `null` tant que la liste n'est pas chargée. */
   protected readonly courses = signal<CourseReponse[] | null>(null);
   protected readonly erreurChargement = signal(false);
+  /** Message transmis par un autre écran lors de la redirection (fiche d'une Course disparue). */
+  protected readonly messageErreur = signal<string | null>(null);
   protected readonly envoiEnCours = signal(false);
   /** Course en cours de modification ; `null` en mode déclaration. */
   protected readonly courseEditee = signal<CourseReponse | null>(null);
@@ -87,6 +92,7 @@ export class GestionCourses implements OnInit {
   }));
 
   ngOnInit(): void {
+    this.lireMessageTransmis();
     this.demanderJeton();
     this.chargerCourses();
   }
@@ -191,6 +197,16 @@ export class GestionCourses implements OnInit {
     this.soumis.set(false);
     this.erreursServeur.set({});
     this.formulaire.reset();
+  }
+
+  /** Message de l'état de navigation, retiré de l'historique pour ne pas réapparaître après F5. */
+  private lireMessageTransmis(): void {
+    const etat = this.location.getState() as Record<string, unknown> | null;
+    const message = etat?.[ETAT_MESSAGE_ERREUR];
+    if (typeof message === 'string') {
+      this.messageErreur.set(message);
+      this.location.replaceState(this.location.path());
+    }
   }
 
   private demanderJeton(): void {
