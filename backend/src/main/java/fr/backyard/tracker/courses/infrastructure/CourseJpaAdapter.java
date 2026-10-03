@@ -6,10 +6,15 @@ import fr.backyard.tracker.courses.domaine.ParametresBoucle;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Adaptateur JPA du dépôt de Courses. Ne trie pas : l'ordre est appliqué par le domaine. */
+/**
+ * Adaptateur JPA du dépôt de Courses. Ne trie pas : l'ordre est appliqué par le domaine. Une Course déjà enregistrée
+ * est mise à jour sur sa ligne, jamais insérée une seconde fois.
+ */
 @Repository
 public class CourseJpaAdapter implements DepotCourses {
 
@@ -19,8 +24,18 @@ public class CourseJpaAdapter implements DepotCourses {
     @Override
     @Transactional
     public void enregistrer(Course course) {
-        entityManager.persist(versEntite(course));
+        CourseJpaEntity existante = entityManager.find(CourseJpaEntity.class, course.id());
+        if (existante == null) {
+            entityManager.persist(versEntite(course));
+        } else {
+            existante.remplacerPar(versEntite(course));
+        }
         entityManager.flush();
+    }
+
+    @Override
+    public Optional<Course> parId(UUID id) {
+        return Optional.ofNullable(entityManager.find(CourseJpaEntity.class, id)).map(CourseJpaAdapter::versDomaine);
     }
 
     @Override

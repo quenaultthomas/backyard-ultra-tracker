@@ -1,4 +1,4 @@
-import { DeclarerCourseRequete } from './course';
+import { CourseReponse, DeclarerCourseRequete } from './course';
 
 /** Champs de `DeclarerCourseRequete`, dans l'ordre du formulaire et des `erreurs` de l'API. */
 export type ChampCourse = keyof DeclarerCourseRequete;
@@ -119,8 +119,20 @@ function joursDansLeMois(mois: number, annee: number): number {
   return [4, 6, 9, 11].includes(mois) ? 30 : 31;
 }
 
-/** Saisie contrôlée vers le corps de la requête (date convertie en `aaaa-mm-jj`). */
-export function versRequeteDeclaration(saisie: SaisieCourse): DeclarerCourseRequete {
+/** Course de la liste vers les valeurs du formulaire (date affichée en `jj/mm/aaaa`). */
+export function versSaisieCourse(course: CourseReponse): SaisieCourse {
+  const saisie = { nom: course.nom, date: formaterDateCourse(course.date) } as SaisieCourse;
+  for (const { cle } of CHAMPS_NOMBRE) {
+    saisie[cle] = course[cle];
+  }
+  return saisie;
+}
+
+/**
+ * Saisie contrôlée vers le corps de la déclaration ou de la modification, qui partagent le même
+ * schéma (date convertie en `aaaa-mm-jj`).
+ */
+export function versRequeteCourse(saisie: SaisieCourse): DeclarerCourseRequete {
   // Appelée après `controlerSaisieCourse` : date valide et chaque nombre renseigné.
   return { ...saisie, date: convertirDateSaisie(saisie.date) ?? '' } as DeclarerCourseRequete;
 }

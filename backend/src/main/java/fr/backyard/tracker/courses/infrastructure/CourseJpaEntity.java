@@ -61,6 +61,18 @@ public class CourseJpaEntity {
         this.nombreMaxBoucles = nombreMaxBoucles;
     }
 
+    /** Mise à jour de la ligne avec les valeurs d'une autre représentation de la même Course (l'id est conservé). */
+    void remplacerPar(CourseJpaEntity source) {
+        this.nom = source.nom;
+        this.date = source.date;
+        this.statut = source.statut;
+        this.distanceBoucleMetres = source.distanceBoucleMetres;
+        this.dureeBoucleMinutes = source.dureeBoucleMinutes;
+        this.denivelePositifBoucleMetres = source.denivelePositifBoucleMetres;
+        this.nombreMaxParticipants = source.nombreMaxParticipants;
+        this.nombreMaxBoucles = source.nombreMaxBoucles;
+    }
+
     UUID id() {
         return id;
     }
