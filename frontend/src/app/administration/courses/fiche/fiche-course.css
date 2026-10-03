@@ -1,0 +1,81 @@
+.carte {
+  max-width: 44rem;
+}
+
+.entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.titre {
+  overflow-wrap: anywhere;
+}
+
+/* Logo contenu dans 80 × 80 px, proportions conservées. */
+.logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+}
+
+dt {
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+dd {
+  margin: 0;
+}
+
+.benevoles {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+}
+
+.benevole {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Case agrandie : cible tactile confortable sur téléphone. */
+.benevole input {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  padding: 0;
+}
+
+.benevole label {
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.masque {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

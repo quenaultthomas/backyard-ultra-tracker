@@ -1,13 +1,15 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { CHAMPS_NOMBRE, formaterDateCourse } from '../champs-course';
 import { CourseReponse, LIBELLES_STATUT_COURSE } from '../course';
+import { ECRAN_GESTION_COURSES } from '../erreurs-course';
 import { LogoCourse } from '../logo-course/logo-course';
 
 /** Liste des Courses, dans l'ordre renvoyé par l'API (le front ne retrie pas). */
 @Component({
   selector: 'app-liste-courses',
-  imports: [LogoCourse],
+  imports: [RouterLink, LogoCourse],
   templateUrl: './liste-courses.html',
   styleUrls: ['../action-ligne.css', './liste-courses.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -19,6 +21,7 @@ export class ListeCourses {
   /** Logo envoyé, supprimé ou refusé : liste à recharger, avec le message de succès éventuel. */
   readonly actualiser = output<string | null>();
 
+  protected readonly ecranGestion = ECRAN_GESTION_COURSES;
   protected readonly champsNombre = CHAMPS_NOMBRE;
   protected readonly libellesStatut = LIBELLES_STATUT_COURSE;
   protected readonly formaterDate = formaterDateCourse;

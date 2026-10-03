@@ -74,7 +74,8 @@ class ModificationCourseRedemarrageIntegrationTest {
         JdbcTemplate jdbc = new JdbcTemplate(new DriverManagerDataSource(POSTGRES.getJdbcUrl(),
                 POSTGRES.getUsername(), POSTGRES.getPassword()));
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
-                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course");
+                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
+                "0006-affectation-benevole");
         assertThat(jdbc.queryForObject("select count(*) from information_schema.columns where table_name = 'course'",
                 Integer.class)).isEqualTo(9);
         assertThat(jdbc.queryForObject("select count(*) from pg_constraint where conrelid = 'course'::regclass",

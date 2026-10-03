@@ -110,6 +110,7 @@ class ModificationCourseIntegrationTest {
         alice = api.ouvrir("Alice", MOT_DE_PASSE);
         leo = api.ouvrir("Léo", MOT_DE_PASSE);
         journal = new ListAppender<>();
+        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
         journal.start();
         Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         racine.addAppender(journal);
@@ -563,7 +564,7 @@ class ModificationCourseIntegrationTest {
     // ---------------------------------------------------------------- CA15
 
     @Test
-    @DisplayName("CA15 : GET, PATCH, DELETE /{id} et PUT sans id : 404 ou 405 pour Patron et Nadia, 403 pour Alice, 401 pour un anonyme ; PUT /{id} valide ne répond plus 404")
+    @DisplayName("CA15 (mis à jour par 2.4 RG6 : GET /{id} renvoie 200) : PATCH, DELETE /{id} et PUT sans id : 404 ou 405 pour Patron et Nadia, 403 pour Alice, 401 pour un anonyme ; PUT /{id} valide ne répond plus 404")
     void ca15_autres_chemins_et_methodes() throws Exception {
         String x = creerCourse(patron, "Backyard des Crêtes", "2026-11-14");
         Map<String, Object> avant = ligne(x);
@@ -580,6 +581,11 @@ class ModificationCourseIntegrationTest {
             String type = avecCorps ? "application/json" : null;
             for (Session admin : List.of(patron, nadia)) {
                 HttpResponse<String> reponse = api.requete(appel[0], appel[1], admin.entetes(), type, contenu);
+                if ("GET".equals(appel[0]) && appel[1].equals(CHEMIN + "/" + x)) {
+                    // 2.4 RG6 : GET /{id} est la fiche de la Course, désormais 200.
+                    assertThat(reponse.statusCode()).isEqualTo(200);
+                    continue;
+                }
                 assertThat(reponse.statusCode()).as(appel[0] + " " + appel[1]).isIn(404, 405);
             }
             assertErreur(api.requete(appel[0], appel[1], alice.entetes(), type, contenu), 403, "ACCES_REFUSE",
@@ -648,7 +654,8 @@ class ModificationCourseIntegrationTest {
         assertErreur(get(leo, "/api/administration/benevoles"), 403, "ACCES_REFUSE", "Accès refusé",
                 ACCES_REFUSE_DETAIL);
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
-                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course");
+                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
+                "0006-affectation-benevole");
     }
 
     // ---------------------------------------------------------------- utilitaires

@@ -65,6 +65,7 @@ class AdminMasterDemarrageIntegrationTest {
                 POSTGRES.getPassword());
         jdbc = new JdbcTemplate(source);
         journal = new ListAppender<>();
+        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
         journal.start();
         // Premier test : le schéma n'existe pas encore, une première application le crée.
         if (Boolean.FALSE.equals(jdbc.queryForObject("select to_regclass('public.compte') is not null", Boolean.class))) {

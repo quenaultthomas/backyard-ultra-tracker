@@ -116,8 +116,8 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Une méthode non exposée sur un chemin existant (GET /api/administration/courses/{id} alors que seul PUT
-     * existe) est traitée comme une ressource inexistante : même 404 que pour un chemin inconnu.
+     * Une méthode non exposée sur un chemin existant (PATCH /api/administration/courses/{id} alors que seuls
+     * GET et PUT existent) est traitée comme une ressource inexistante : même 404 que pour un chemin inconnu.
      */
     @Override
     protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(

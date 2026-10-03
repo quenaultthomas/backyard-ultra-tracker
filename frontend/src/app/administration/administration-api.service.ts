@@ -3,7 +3,13 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { CompteReponse } from '../comptes/compte';
-import { CourseReponse, DeclarerCourseRequete, ModifierCourseRequete } from './courses/course';
+import {
+  AffecterBenevolesRequete,
+  CourseReponse,
+  DeclarerCourseRequete,
+  FicheCourseReponse,
+  ModifierCourseRequete,
+} from './courses/course';
 import { CreerAdminRequete, CreerBenevoleRequete } from './requetes-creation-compte';
 
 const URL_ACCES = '/api/administration/acces';
@@ -48,6 +54,16 @@ export class AdministrationApiService {
   /** Déclare une Course, créée `EN_PREPARATION` (admins et admin master). */
   declarerCourse(requete: DeclarerCourseRequete): Observable<CourseReponse> {
     return this.http.post<CourseReponse>(URL_COURSES, requete);
+  }
+
+  /** Fiche d'une Course avec ses bénévoles affectés (tous statuts). */
+  lireFicheCourse(id: string): Observable<FicheCourseReponse> {
+    return this.http.get<FicheCourseReponse>(urlCourse(id));
+  }
+
+  /** Remplace l'ensemble des bénévoles affectés à une Course ; renvoie la fiche enregistrée. */
+  affecterBenevoles(id: string, requete: AffecterBenevolesRequete): Observable<FicheCourseReponse> {
+    return this.http.put<FicheCourseReponse>(`${urlCourse(id)}/benevoles`, requete);
   }
 
   /** Remplace les champs modifiables d'une Course `EN_PREPARATION` (admins et admin master). */

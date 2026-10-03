@@ -1,0 +1,123 @@
+<main class="page">
+  <section class="carte" aria-labelledby="fiche-titre">
+    @if (introuvable()) {
+      <h1 id="fiche-titre" class="titre">Fiche de la course</h1>
+      <p class="erreur erreur--generale" role="alert" data-testid="fiche-erreur-introuvable">
+        Cette course n'existe plus.
+      </p>
+    } @else if (erreurChargement()) {
+      <h1 id="fiche-titre" class="titre">Fiche de la course</h1>
+      <p class="erreur erreur--generale" role="alert" data-testid="fiche-erreur-chargement">
+        Impossible de charger la course. Réessayez plus tard.
+      </p>
+    } @else if (fiche(); as c) {
+      <div class="entete">
+        @if (c.logoUrl; as url) {
+          <img class="logo" [src]="url" [alt]="'Logo de ' + c.nom" data-testid="fiche-logo" />
+        }
+        <h1 id="fiche-titre" class="titre" data-testid="fiche-titre">{{ c.nom }}</h1>
+      </div>
+
+      <dl class="details">
+        <div class="detail">
+          <dt>Statut</dt>
+          <dd data-testid="fiche-statut">{{ libellesStatut[c.statut] }}</dd>
+        </div>
+        <div class="detail">
+          <dt>Date</dt>
+          <dd>
+            <time [attr.datetime]="c.date" data-testid="fiche-date">{{
+              formaterDate(c.date)
+            }}</time>
+          </dd>
+        </div>
+        @for (champ of champsNombre; track champ.cle) {
+          <div class="detail">
+            <dt>{{ champ.libelleCourt }}</dt>
+            <dd [attr.data-testid]="'fiche-' + champ.suffixe">{{ c[champ.cle] + champ.unite }}</dd>
+          </div>
+        }
+      </dl>
+
+      <section class="formulaire" aria-labelledby="titre-benevoles">
+        <h2 id="titre-benevoles" class="sous-titre">Bénévoles</h2>
+        <p class="message" role="status" data-testid="fiche-benevoles-compteur">{{ compteur() }}</p>
+
+        @if (messageSucces(); as message) {
+          <p class="message-succes" role="status" data-testid="fiche-message-succes">
+            {{ message }}
+          </p>
+        }
+        @if (erreur(); as message) {
+          <p class="erreur erreur--generale" role="alert" data-testid="fiche-erreur">
+            {{ message }}
+          </p>
+        }
+        @if (verrouillee()) {
+          <p class="message-info" data-testid="fiche-benevoles-verrouille">
+            La course est terminée : les bénévoles ne peuvent plus être modifiés.
+          </p>
+        }
+
+        @if (erreurBenevoles()) {
+          <p class="erreur erreur--generale" role="alert" data-testid="fiche-benevoles-erreur">
+            Impossible de charger la liste des bénévoles. Réessayez plus tard.
+          </p>
+        } @else if (benevoles(); as liste) {
+          @if (liste.length === 0) {
+            <p class="message" data-testid="fiche-benevoles-vide">
+              Aucun bénévole n'existe encore.
+            </p>
+            <a
+              class="lien"
+              routerLink="/administration/benevoles"
+              data-testid="fiche-lien-benevoles"
+            >
+              Gérer les bénévoles
+            </a>
+          }
+          @if (lignes().length > 0) {
+            <fieldset class="benevoles">
+              <legend class="masque">Bénévoles affectés à la course</legend>
+              @for (ligne of lignes(); track ligne.id) {
+                @let idCase = 'fiche-benevole-' + ligne.id;
+                <div class="benevole" data-testid="fiche-ligne-benevole">
+                  <input
+                    #caseBenevole
+                    type="checkbox"
+                    [id]="idCase"
+                    [checked]="coches().has(ligne.id)"
+                    [disabled]="verrouillee()"
+                    (change)="basculer(ligne.id, caseBenevole.checked)"
+                    data-testid="fiche-benevole-case"
+                  />
+                  <label [attr.for]="idCase">{{ ligne.libelle }}</label>
+                </div>
+              }
+            </fieldset>
+          }
+          @if (!verrouillee()) {
+            <button
+              type="button"
+              class="bouton"
+              [disabled]="envoiEnCours()"
+              (click)="enregistrer()"
+              data-testid="fiche-bouton-enregistrer"
+            >
+              Enregistrer les bénévoles
+            </button>
+          }
+        } @else {
+          <p class="message" role="status">Chargement des bénévoles…</p>
+        }
+      </section>
+    } @else {
+      <h1 id="fiche-titre" class="titre">Fiche de la course</h1>
+      <p class="message" role="status">Chargement…</p>
+    }
+
+    <a class="lien" routerLink="/administration/courses" data-testid="fiche-lien-retour">
+      Retour aux courses
+    </a>
+  </section>
+</main>

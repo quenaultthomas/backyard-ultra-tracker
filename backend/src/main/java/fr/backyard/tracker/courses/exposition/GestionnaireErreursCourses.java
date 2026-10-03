@@ -1,8 +1,12 @@
 package fr.backyard.tracker.courses.exposition;
 
+import fr.backyard.tracker.courses.domaine.BenevoleInconnuException;
 import fr.backyard.tracker.courses.domaine.CourseIntrouvableException;
 import fr.backyard.tracker.courses.domaine.CourseNonModifiableException;
+import fr.backyard.tracker.courses.domaine.CourseTermineeException;
 import fr.backyard.tracker.courses.domaine.DonneesCourseInvalidesException;
+import fr.backyard.tracker.courses.domaine.ViolationValidation;
+import java.util.List;
 import java.net.URI;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -13,16 +17,34 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * Erreurs métier du contexte courses en ProblemDetail (même format que le reste de l'API). Le corps illisible,
  * le 404 générique et la sécurité restent traités globalement. Les messages ne reprennent jamais la valeur saisie.
  */
-@RestControllerAdvice(assignableTypes = {CourseController.class, LogoCourseController.class})
+@RestControllerAdvice(assignableTypes = {CourseController.class, LogoCourseController.class,
+        FicheCourseController.class, CoursesDuBenevoleController.class})
 public class GestionnaireErreursCourses {
 
     private static final URI TYPE_GENERIQUE = URI.create("about:blank");
 
     @ExceptionHandler(DonneesCourseInvalidesException.class)
     ProblemDetail donneesInvalides(DonneesCourseInvalidesException exception) {
+        return validationEchouee(exception.violations());
+    }
+
+    /** Aucun identifiant dans la réponse : une seule erreur pour toute la liste. */
+    @ExceptionHandler(BenevoleInconnuException.class)
+    ProblemDetail benevoleInconnu() {
+        return validationEchouee(List.of(new ViolationValidation("benevoleIds", "BENEVOLE_INCONNU",
+                "Un des comptes choisis n'est pas un bénévole.")));
+    }
+
+    @ExceptionHandler(CourseTermineeException.class)
+    ProblemDetail courseTerminee() {
+        return probleme(HttpStatus.CONFLICT, "Conflit",
+                "La course est terminée : ses bénévoles ne peuvent plus être modifiés.", "COURSE_TERMINEE");
+    }
+
+    private static ProblemDetail validationEchouee(List<ViolationValidation> violations) {
         ProblemDetail probleme = probleme(HttpStatus.BAD_REQUEST, "Requête invalide",
                 "Certains champs sont invalides.", "VALIDATION_ECHOUEE");
-        probleme.setProperty("erreurs", exception.violations().stream().map(ErreurChamp::depuis).toList());
+        probleme.setProperty("erreurs", violations.stream().map(ErreurChamp::depuis).toList());
         return probleme;
     }
 

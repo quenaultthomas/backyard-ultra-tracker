@@ -105,6 +105,7 @@ class ConnexionIntegrationTest {
         }
         clearInvocations(encodeurEspionne);
         journal = new ListAppender<>();
+        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
         journal.start();
         Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         racine.addAppender(journal);

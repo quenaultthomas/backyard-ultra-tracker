@@ -30,17 +30,27 @@
           </div>
         }
       </dl>
-      @if (course.statut === 'EN_PREPARATION') {
-        <button
-          type="button"
+      <div class="ligne__actions">
+        <a
           class="ligne__action"
-          [attr.aria-label]="'Modifier la course ' + course.nom"
-          (click)="modifier.emit(course)"
-          data-testid="course-bouton-modifier"
+          [routerLink]="[ecranGestion, course.id]"
+          [attr.aria-label]="'Fiche de la course ' + course.nom"
+          data-testid="course-lien-fiche"
         >
-          Modifier
-        </button>
-      }
+          Fiche
+        </a>
+        @if (course.statut === 'EN_PREPARATION') {
+          <button
+            type="button"
+            class="ligne__action"
+            [attr.aria-label]="'Modifier la course ' + course.nom"
+            (click)="modifier.emit(course)"
+            data-testid="course-bouton-modifier"
+          >
+            Modifier
+          </button>
+        }
+      </div>
     </li>
   }
 </ul>

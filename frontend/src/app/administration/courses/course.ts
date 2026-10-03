@@ -39,3 +39,14 @@ export interface CourseReponse {
   /** Adresse publique du logo (`/api/courses/<id>/logo?v=…`), `null` sans logo. */
   logoUrl: string | null;
 }
+
+/** Fiche renvoyée par `GET /api/administration/courses/{id}` et `PUT .../{id}/benevoles` (200). */
+export interface FicheCourseReponse extends CourseReponse {
+  /** Identifiants des Comptes `BENEVOLE` affectés, triés par l'API, `[]` si aucun. */
+  benevoleIds: string[];
+}
+
+/** Corps de `PUT /api/administration/courses/{id}/benevoles` : ensemble complet souhaité. */
+export interface AffecterBenevolesRequete {
+  benevoleIds: string[];
+}

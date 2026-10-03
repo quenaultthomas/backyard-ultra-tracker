@@ -38,3 +38,9 @@ dt {
 dd {
   margin: 0;
 }
+
+.ligne__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}

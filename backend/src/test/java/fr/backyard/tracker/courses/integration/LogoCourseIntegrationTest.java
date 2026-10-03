@@ -129,6 +129,7 @@ class LogoCourseIntegrationTest {
         alice = api.ouvrir("Alice", MOT_DE_PASSE);
         leo = api.ouvrir("Léo", MOT_DE_PASSE);
         journal = new ListAppender<>();
+        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
         journal.start();
         Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         racine.addAppender(journal);
