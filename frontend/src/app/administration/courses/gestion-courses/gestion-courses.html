@@ -1,4 +1,5 @@
 @let e = erreurs();
+@let enEdition = courseEditee() !== null;
 <main class="page">
   <section class="carte" aria-labelledby="titre-courses">
     <h1 id="titre-courses" class="titre" data-testid="titre-courses">Gestion des courses</h1>
@@ -13,7 +14,7 @@
         @if (liste.length === 0) {
           <p class="message" data-testid="courses-vide">Aucune course pour le moment.</p>
         } @else {
-          <app-liste-courses [courses]="liste" />
+          <app-liste-courses [courses]="liste" (modifier)="editer($event)" />
         }
       } @else {
         <p class="message" role="status">Chargement…</p>
@@ -25,13 +26,15 @@
       [formGroup]="formulaire"
       (ngSubmit)="soumettre()"
       novalidate
-      aria-labelledby="titre-declarer-course"
+      aria-labelledby="titre-formulaire-course"
     >
-      <h2 id="titre-declarer-course" class="sous-titre">Déclarer une course</h2>
+      <h2 id="titre-formulaire-course" class="sous-titre" data-testid="course-formulaire-titre">
+        {{ enEdition ? 'Modifier la course' : 'Déclarer une course' }}
+      </h2>
 
-      @if (nomCourseDeclaree(); as nom) {
+      @if (messageSucces(); as message) {
         <p class="message-succes" role="status" data-testid="course-message-succes">
-          La course {{ nom }} a été déclarée.
+          {{ message }}
         </p>
       }
       @if (e.generale; as erreurGenerale) {
@@ -44,6 +47,7 @@
         <label for="course-nom">Nom</label>
         <input
           id="course-nom"
+          #champNom
           type="text"
           formControlName="nom"
           autocomplete="off"
@@ -107,14 +111,36 @@
         }
       </div>
 
-      <button
-        type="submit"
-        class="bouton"
-        [disabled]="envoiEnCours()"
-        data-testid="course-bouton-creer"
-      >
-        Déclarer la course
-      </button>
+      @if (enEdition) {
+        <div class="actions">
+          <button
+            type="submit"
+            class="bouton"
+            [disabled]="envoiEnCours()"
+            data-testid="course-bouton-enregistrer"
+          >
+            Enregistrer les modifications
+          </button>
+          <button
+            type="button"
+            class="bouton bouton--secondaire"
+            [disabled]="envoiEnCours()"
+            (click)="annuler()"
+            data-testid="course-bouton-annuler"
+          >
+            Annuler
+          </button>
+        </div>
+      } @else {
+        <button
+          type="submit"
+          class="bouton"
+          [disabled]="envoiEnCours()"
+          data-testid="course-bouton-creer"
+        >
+          Déclarer la course
+        </button>
+      }
     </form>
 
     <a class="lien" routerLink="/administration" data-testid="lien-retour-administration">

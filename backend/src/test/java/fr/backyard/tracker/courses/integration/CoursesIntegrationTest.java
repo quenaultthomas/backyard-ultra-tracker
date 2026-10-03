@@ -571,7 +571,7 @@ class CoursesIntegrationTest {
     // ---------------------------------------------------------------- CA17
 
     @Test
-    @DisplayName("CA17 : GET, PUT, PATCH, DELETE /{id} : 404 ou 405 pour Patron et Nadia, 403 pour Alice, 401 pour un anonyme, Course intacte")
+    @DisplayName("CA17 (mis à jour par 2.2, RG15 : PUT /{id} existe désormais, couvert par la 2.2) : GET, PATCH, DELETE /{id} : 404 ou 405 pour Patron et Nadia ; GET, PUT, PATCH, DELETE : 403 pour Alice, 401 pour un anonyme ; Course intacte")
     void ca17_aucun_autre_endpoint() throws Exception {
         JsonNode course = creerReussie(patron, "Backyard des Crêtes", "2026-11-14");
         String chemin = CHEMIN + "/" + course.get("id").asString();
@@ -582,7 +582,8 @@ class CoursesIntegrationTest {
         for (String methode : List.of("GET", "PUT", "PATCH", "DELETE")) {
             String contenu = "PUT".equals(methode) || "PATCH".equals(methode) ? corps : null;
             String type = contenu == null ? null : "application/json";
-            for (Session admin : List.of(patron, nadia)) {
+            // PUT /{id} est un endpoint de la 2.2 (RG15) : il sort de la vérification « 404 ou 405 » des admins.
+            for (Session admin : "PUT".equals(methode) ? List.<Session>of() : List.of(patron, nadia)) {
                 HttpResponse<String> reponse = api.requete(methode, chemin, admin.entetes(), type, contenu);
                 assertThat(reponse.statusCode()).as(methode + " " + admin).isIn(404, 405);
                 if (reponse.statusCode() == 404) {

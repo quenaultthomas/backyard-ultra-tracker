@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Règles de saisie de la déclaration d'une Course : seul endroit où sont définies les bornes.
+ * Règles de saisie de la déclaration et de la modification d'une Course : seul endroit où sont définies les bornes.
  * Collecte au plus une violation par champ, dans l'ordre des champs du formulaire.
  */
 final class DeclarationCourse {
@@ -63,6 +63,14 @@ final class DeclarationCourse {
                     "La date ne peut pas dépasser de plus de 5 ans la date du jour."));
         }
         return this;
+    }
+
+    /**
+     * Date d'une Course déjà déclarée : une date inchangée est toujours acceptée (elle a été contrôlée à la
+     * déclaration et peut être arrivée ou passée depuis) ; une date changée est contrôlée comme à la déclaration.
+     */
+    DeclarationCourse verifierNouvelleDate(LocalDate date, LocalDate dateEnregistree) {
+        return dateEnregistree.equals(date) ? this : verifierDate(date);
     }
 
     DeclarationCourse verifierParametresBoucle(Integer distance, Integer duree, Integer denivele) {

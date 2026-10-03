@@ -24,6 +24,17 @@
           </div>
         }
       </dl>
+      @if (course.statut === 'EN_PREPARATION') {
+        <button
+          type="button"
+          class="ligne__action"
+          [attr.aria-label]="'Modifier la course ' + course.nom"
+          (click)="modifier.emit(course)"
+          data-testid="course-bouton-modifier"
+        >
+          Modifier
+        </button>
+      }
     </li>
   }
 </ul>

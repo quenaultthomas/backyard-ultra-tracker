@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -111,6 +112,17 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleNoResourceFoundException(NoResourceFoundException exception,
                                                                     HttpHeaders entetes, HttpStatusCode statut,
                                                                     WebRequest requete) {
+        return introuvable();
+    }
+
+    /**
+     * Une méthode non exposée sur un chemin existant (GET /api/administration/courses/{id} alors que seul PUT
+     * existe) est traitée comme une ressource inexistante : même 404 que pour un chemin inconnu.
+     */
+    @Override
+    protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(
+            HttpRequestMethodNotSupportedException exception, HttpHeaders entetes, HttpStatusCode statut,
+            WebRequest requete) {
         return introuvable();
     }
 

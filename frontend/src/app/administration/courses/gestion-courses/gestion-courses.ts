@@ -2,10 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
@@ -13,8 +15,13 @@ import { RouterLink } from '@angular/router';
 import { finalize, map } from 'rxjs';
 
 import { RefusAccesService } from '../../../comptes/refus-acces.service';
-import { ErreursFormulaire, interpreterErreurFormulaire } from '../../../comptes/erreurs-compte';
+import {
+  ErreursFormulaire,
+  ErreursSpecifiques,
+  interpreterErreurFormulaire,
+} from '../../../comptes/erreurs-compte';
 import { CsrfService } from '../../../partage/csrf.service';
+import { lireProbleme } from '../../../partage/probleme';
 import { AdministrationApiService } from '../../administration-api.service';
 import {
   CHAMPS_COURSE,
@@ -22,14 +29,21 @@ import {
   ChampCourse,
   SaisieCourse,
   controlerSaisieCourse,
-  versRequeteDeclaration,
+  versRequeteCourse,
+  versSaisieCourse,
 } from '../champs-course';
 import { CourseReponse } from '../course';
 import { ListeCourses } from '../liste-courses/liste-courses';
 
 const ECRAN = '/administration/courses';
 
-/** Liste des Courses et déclaration d'une Course (admins et admin master). */
+/** Refus d'une modification qui font quitter le mode édition (la Course n'est plus éditable). */
+const ERREURS_COURSE_NON_EDITABLE: ErreursSpecifiques<ChampCourse> = {
+  COURSE_NON_MODIFIABLE: ({ detail }) => ({ generale: detail }),
+  COURSE_INTROUVABLE: { generale: "Cette course n'existe plus." },
+};
+
+/** Liste, déclaration et modification des Courses (admins et admin master). */
 @Component({
   selector: 'app-gestion-courses',
   imports: [ReactiveFormsModule, RouterLink, ListeCourses],
@@ -47,6 +61,7 @@ export class GestionCourses implements OnInit {
   private readonly refusAcces = inject(RefusAccesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly champNom = viewChild.required<ElementRef<HTMLInputElement>>('champNom');
 
   protected readonly champsNombre = CHAMPS_NOMBRE;
   protected readonly formulaire = this.fb.group({
@@ -63,7 +78,9 @@ export class GestionCourses implements OnInit {
   protected readonly courses = signal<CourseReponse[] | null>(null);
   protected readonly erreurChargement = signal(false);
   protected readonly envoiEnCours = signal(false);
-  protected readonly nomCourseDeclaree = signal<string | null>(null);
+  /** Course en cours de modification ; `null` en mode déclaration. */
+  protected readonly courseEditee = signal<CourseReponse | null>(null);
+  protected readonly messageSucces = signal<string | null>(null);
   private readonly soumis = signal(false);
   private readonly erreursServeur = signal<ErreursFormulaire<ChampCourse>>({});
   private readonly saisie = toSignal(
@@ -82,27 +99,49 @@ export class GestionCourses implements OnInit {
     this.chargerCourses();
   }
 
+  /** Passe le formulaire en mode édition, pré-rempli depuis la ligne de la liste. */
+  protected editer(course: CourseReponse): void {
+    if (this.envoiEnCours()) {
+      return;
+    }
+    this.revenirEnDeclaration();
+    this.messageSucces.set(null);
+    this.courseEditee.set(course);
+    this.formulaire.setValue(versSaisieCourse(course));
+    this.champNom().nativeElement.focus();
+  }
+
+  protected annuler(): void {
+    this.revenirEnDeclaration();
+  }
+
   protected soumettre(): void {
     if (this.envoiEnCours()) {
       return;
     }
     this.erreursServeur.set({});
-    this.nomCourseDeclaree.set(null);
+    this.messageSucces.set(null);
     this.soumis.set(true);
     const saisie = this.formulaire.getRawValue();
     if (Object.keys(controlerSaisieCourse(saisie)).length > 0) {
       return;
     }
+    const requete = versRequeteCourse(saisie);
+    const courseEditee = this.courseEditee();
+    const envoi =
+      courseEditee === null
+        ? this.administrationApi.declarerCourse(requete)
+        : this.administrationApi.modifierCourse(courseEditee.id, requete);
+    const action = courseEditee === null ? 'déclarée' : 'modifiée';
     this.envoiEnCours.set(true);
-    this.administrationApi
-      .declarerCourse(versRequeteDeclaration(saisie))
+    envoi
       .pipe(
         finalize(() => this.envoiEnCours.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (course) => this.confirmerDeclaration(course),
-        error: (erreur: unknown) => this.traiterErreurDeclaration(erreur),
+        next: ({ nom }) => this.confirmer(`La course ${nom} a été ${action}.`),
+        error: (erreur: unknown) => this.traiterErreurEnvoi(erreur),
       });
   }
 
@@ -123,22 +162,34 @@ export class GestionCourses implements OnInit {
       });
   }
 
-  private confirmerDeclaration(course: CourseReponse): void {
-    this.nomCourseDeclaree.set(course.nom);
-    this.soumis.set(false);
-    this.formulaire.reset();
+  private confirmer(message: string): void {
+    this.revenirEnDeclaration();
+    this.messageSucces.set(message);
     this.chargerCourses();
   }
 
-  private traiterErreurDeclaration(erreur: unknown): void {
+  private traiterErreurEnvoi(erreur: unknown): void {
     if (this.refusAcces.rediriger(erreur, ECRAN)) {
       return;
     }
-    const erreurs = interpreterErreurFormulaire(erreur, {}, CHAMPS_COURSE);
+    const erreurs = interpreterErreurFormulaire(erreur, ERREURS_COURSE_NON_EDITABLE, CHAMPS_COURSE);
+    const code = lireProbleme(erreur)?.code;
+    if (code !== undefined && Object.hasOwn(ERREURS_COURSE_NON_EDITABLE, code)) {
+      this.revenirEnDeclaration();
+      this.chargerCourses();
+    }
     this.erreursServeur.set(erreurs);
     if (erreurs.jetonExpire) {
       this.demanderJeton();
     }
+  }
+
+  /** Mode déclaration, formulaire vidé et messages d'erreur effacés. */
+  private revenirEnDeclaration(): void {
+    this.courseEditee.set(null);
+    this.soumis.set(false);
+    this.erreursServeur.set({});
+    this.formulaire.reset();
   }
 
   private demanderJeton(): void {

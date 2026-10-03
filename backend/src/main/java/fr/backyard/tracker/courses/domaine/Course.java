@@ -5,8 +5,8 @@ import java.util.Comparator;
 import java.util.UUID;
 
 /**
- * Racine d'agrégat : une édition de backyard. Une Course ne se crée que par {@link #declarer}, qui applique
- * toutes les règles de saisie : aucune Course invalide n'existe en mémoire.
+ * Racine d'agrégat : une édition de backyard. Une Course ne se crée que par {@link #declarer} et ne change que par
+ * {@link #modifier}, qui appliquent les mêmes règles de saisie : aucune Course invalide n'existe en mémoire.
  */
 public final class Course {
 
@@ -43,16 +43,51 @@ public final class Course {
     public static Course declarer(String nom, LocalDate date, Integer distanceBoucleMetres, Integer dureeBoucleMinutes,
                                   Integer denivelePositifBoucleMetres, Integer nombreMaxParticipants,
                                   Integer nombreMaxBoucles, LocalDate aujourdhui) {
-        String nomSaisi = nom == null ? "" : nom.trim();
-        new DeclarationCourse(aujourdhui)
-                .verifierNom(nomSaisi)
-                .verifierDate(date)
-                .verifierParametresBoucle(distanceBoucleMetres, dureeBoucleMinutes, denivelePositifBoucleMetres)
-                .verifierLimites(nombreMaxParticipants, nombreMaxBoucles)
-                .rejeterSiInvalide();
+        String nomSaisi = sansEspacesAutour(nom);
+        DeclarationCourse declaration = new DeclarationCourse(aujourdhui).verifierNom(nomSaisi).verifierDate(date);
+        verifierParametresEtLimites(declaration, distanceBoucleMetres, dureeBoucleMinutes,
+                denivelePositifBoucleMetres, nombreMaxParticipants, nombreMaxBoucles);
         return new Course(UUID.randomUUID(), nomSaisi, date, StatutCourse.EN_PREPARATION,
                 new ParametresBoucle(distanceBoucleMetres, dureeBoucleMinutes, denivelePositifBoucleMetres),
                 nombreMaxParticipants, nombreMaxBoucles);
+    }
+
+    /**
+     * Remplace tous les champs modifiables d'une Course EN_PREPARATION, avec les règles de saisie de la déclaration,
+     * sauf qu'une date inchangée est toujours acceptée. La Course renvoyée garde l'identifiant et le statut ;
+     * celle-ci n'est pas affectée.
+     *
+     * @param aujourdhui date du jour, calculée par l'appelant à partir de l'horloge
+     * @throws CourseNonModifiableException la Course n'est plus EN_PREPARATION (contrôlé avant la saisie)
+     * @throws DonneesCourseInvalidesException toutes les violations, au plus une par champ, dans l'ordre des champs
+     */
+    public Course modifier(String nom, LocalDate date, Integer distanceBoucleMetres, Integer dureeBoucleMinutes,
+                           Integer denivelePositifBoucleMetres, Integer nombreMaxParticipants,
+                           Integer nombreMaxBoucles, LocalDate aujourdhui) {
+        if (statut != StatutCourse.EN_PREPARATION) {
+            throw new CourseNonModifiableException(id);
+        }
+        String nomSaisi = sansEspacesAutour(nom);
+        DeclarationCourse declaration = new DeclarationCourse(aujourdhui).verifierNom(nomSaisi)
+                .verifierNouvelleDate(date, this.date);
+        verifierParametresEtLimites(declaration, distanceBoucleMetres, dureeBoucleMinutes,
+                denivelePositifBoucleMetres, nombreMaxParticipants, nombreMaxBoucles);
+        return new Course(id, nomSaisi, date, statut,
+                new ParametresBoucle(distanceBoucleMetres, dureeBoucleMinutes, denivelePositifBoucleMetres),
+                nombreMaxParticipants, nombreMaxBoucles);
+    }
+
+    private static String sansEspacesAutour(String nom) {
+        return nom == null ? "" : nom.trim();
+    }
+
+    private static void verifierParametresEtLimites(DeclarationCourse declaration, Integer distanceBoucleMetres,
+                                                    Integer dureeBoucleMinutes, Integer denivelePositifBoucleMetres,
+                                                    Integer nombreMaxParticipants, Integer nombreMaxBoucles) {
+        declaration
+                .verifierParametresBoucle(distanceBoucleMetres, dureeBoucleMinutes, denivelePositifBoucleMetres)
+                .verifierLimites(nombreMaxParticipants, nombreMaxBoucles)
+                .rejeterSiInvalide();
     }
 
     /** Reconstitue une Course déjà enregistrée, sans revalider la saisie. */

@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { CompteReponse } from '../comptes/compte';
-import { CourseReponse, DeclarerCourseRequete } from './courses/course';
+import { CourseReponse, DeclarerCourseRequete, ModifierCourseRequete } from './courses/course';
 import { CreerAdminRequete, CreerBenevoleRequete } from './requetes-creation-compte';
 
 const URL_ACCES = '/api/administration/acces';
@@ -48,5 +48,10 @@ export class AdministrationApiService {
   /** Déclare une Course, créée `EN_PREPARATION` (admins et admin master). */
   declarerCourse(requete: DeclarerCourseRequete): Observable<CourseReponse> {
     return this.http.post<CourseReponse>(URL_COURSES, requete);
+  }
+
+  /** Remplace les champs modifiables d'une Course `EN_PREPARATION` (admins et admin master). */
+  modifierCourse(id: string, requete: ModifierCourseRequete): Observable<CourseReponse> {
+    return this.http.put<CourseReponse>(`${URL_COURSES}/${encodeURIComponent(id)}`, requete);
   }
 }

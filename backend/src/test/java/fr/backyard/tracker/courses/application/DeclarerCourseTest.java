@@ -140,5 +140,10 @@ class DeclarerCourseTest {
         public List<Course> toutes() {
             return List.copyOf(enregistrees);
         }
+
+        /** Recherche par identifiant, ajoutée au port en 2.2 (RG12). */
+        public java.util.Optional<Course> parId(java.util.UUID id) {
+            return enregistrees.stream().filter(c -> c.id().equals(id)).findFirst();
+        }
     }
 }

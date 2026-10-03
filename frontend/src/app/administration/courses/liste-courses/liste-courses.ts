@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { CHAMPS_NOMBRE, formaterDateCourse } from '../champs-course';
 import { CourseReponse, LIBELLES_STATUT_COURSE } from '../course';
@@ -12,6 +12,8 @@ import { CourseReponse, LIBELLES_STATUT_COURSE } from '../course';
 })
 export class ListeCourses {
   readonly courses = input.required<readonly CourseReponse[]>();
+  /** Demande de modification d'une Course (bouton affiché selon le statut renvoyé par l'API). */
+  readonly modifier = output<CourseReponse>();
 
   protected readonly champsNombre = CHAMPS_NOMBRE;
   protected readonly libellesStatut = LIBELLES_STATUT_COURSE;

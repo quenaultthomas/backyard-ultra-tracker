@@ -18,7 +18,10 @@ export interface DeclarerCourseRequete {
   nombreMaxBoucles: number;
 }
 
-/** Course renvoyée par `POST` (201) et `GET /api/administration/courses`. */
+/** Corps de `PUT /api/administration/courses/{id}` : strictement le schéma de la déclaration. */
+export type ModifierCourseRequete = DeclarerCourseRequete;
+
+/** Course renvoyée par `POST` (201), `PUT` (200) et `GET /api/administration/courses`. */
 export interface CourseReponse {
   id: string;
   nom: string;
