@@ -8,3 +8,6 @@ databaseChangeLog:
   - include:
       file: changesets/0003-admin-master-unique.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changesets/0004-course.yaml
+      relativeToChangelogFile: true

@@ -3,11 +3,13 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { CompteReponse } from '../comptes/compte';
+import { CourseReponse, DeclarerCourseRequete } from './courses/course';
 import { CreerAdminRequete, CreerBenevoleRequete } from './requetes-creation-compte';
 
 const URL_ACCES = '/api/administration/acces';
 const URL_ADMINS = '/api/administration/admins';
 const URL_BENEVOLES = '/api/administration/benevoles';
+const URL_COURSES = '/api/administration/courses';
 
 @Injectable({ providedIn: 'root' })
 export class AdministrationApiService {
@@ -36,5 +38,15 @@ export class AdministrationApiService {
   /** Crée un Compte `BENEVOLE` (admins et admin master). */
   creerBenevole(requete: CreerBenevoleRequete): Observable<CompteReponse> {
     return this.http.post<CompteReponse>(URL_BENEVOLES, requete);
+  }
+
+  /** Toutes les Courses, dans l'ordre renvoyé par l'API (admins et admin master). */
+  listerCourses(): Observable<CourseReponse[]> {
+    return this.http.get<CourseReponse[]>(URL_COURSES);
+  }
+
+  /** Déclare une Course, créée `EN_PREPARATION` (admins et admin master). */
+  declarerCourse(requete: DeclarerCourseRequete): Observable<CourseReponse> {
+    return this.http.post<CourseReponse>(URL_COURSES, requete);
   }
 }

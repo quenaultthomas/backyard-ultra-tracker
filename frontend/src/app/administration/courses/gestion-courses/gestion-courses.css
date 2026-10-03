@@ -1,0 +1,10 @@
+/* Écran plus large que les écrans de compte : liste détaillée et sept champs. */
+.carte {
+  max-width: 44rem;
+}
+
+.champs-nombre {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}

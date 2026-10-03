@@ -1,0 +1,124 @@
+@let e = erreurs();
+<main class="page">
+  <section class="carte" aria-labelledby="titre-courses">
+    <h1 id="titre-courses" class="titre" data-testid="titre-courses">Gestion des courses</h1>
+
+    <section class="formulaire" aria-labelledby="titre-liste-courses">
+      <h2 id="titre-liste-courses" class="sous-titre">Courses</h2>
+      @if (erreurChargement()) {
+        <p class="erreur erreur--generale" role="alert" data-testid="courses-erreur">
+          Impossible de charger la liste des courses. Réessayez plus tard.
+        </p>
+      } @else if (courses(); as liste) {
+        @if (liste.length === 0) {
+          <p class="message" data-testid="courses-vide">Aucune course pour le moment.</p>
+        } @else {
+          <app-liste-courses [courses]="liste" />
+        }
+      } @else {
+        <p class="message" role="status">Chargement…</p>
+      }
+    </section>
+
+    <form
+      class="formulaire"
+      [formGroup]="formulaire"
+      (ngSubmit)="soumettre()"
+      novalidate
+      aria-labelledby="titre-declarer-course"
+    >
+      <h2 id="titre-declarer-course" class="sous-titre">Déclarer une course</h2>
+
+      @if (nomCourseDeclaree(); as nom) {
+        <p class="message-succes" role="status" data-testid="course-message-succes">
+          La course {{ nom }} a été déclarée.
+        </p>
+      }
+      @if (e.generale; as erreurGenerale) {
+        <p class="erreur erreur--generale" role="alert" data-testid="course-erreur-generale">
+          {{ erreurGenerale }}
+        </p>
+      }
+
+      <div class="champ">
+        <label for="course-nom">Nom</label>
+        <input
+          id="course-nom"
+          type="text"
+          formControlName="nom"
+          autocomplete="off"
+          aria-describedby="erreur-course-nom"
+          [attr.aria-invalid]="e.nom ? true : null"
+          data-testid="course-champ-nom"
+        />
+        @if (e.nom; as message) {
+          <p id="erreur-course-nom" class="erreur" role="alert" data-testid="course-erreur-nom">
+            {{ message }}
+          </p>
+        }
+      </div>
+
+      <div class="champ">
+        <label for="course-date">Date</label>
+        <input
+          id="course-date"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder="jj/mm/aaaa"
+          formControlName="date"
+          aria-describedby="aide-course-date erreur-course-date"
+          [attr.aria-invalid]="e.date ? true : null"
+          data-testid="course-champ-date"
+        />
+        <p id="aide-course-date" class="aide">Format : jj/mm/aaaa</p>
+        @if (e.date; as message) {
+          <p id="erreur-course-date" class="erreur" role="alert" data-testid="course-erreur-date">
+            {{ message }}
+          </p>
+        }
+      </div>
+
+      <div class="champs-nombre">
+        @for (champ of champsNombre; track champ.cle) {
+          @let id = 'course-' + champ.suffixe;
+          <div class="champ">
+            <label [attr.for]="id">{{ champ.libelle }}</label>
+            <input
+              [id]="id"
+              type="number"
+              step="1"
+              [formControlName]="champ.cle"
+              [attr.aria-describedby]="'erreur-' + id"
+              [attr.aria-invalid]="e[champ.cle] ? true : null"
+              [attr.data-testid]="'course-champ-' + champ.suffixe"
+            />
+            @if (e[champ.cle]; as message) {
+              <p
+                [id]="'erreur-' + id"
+                class="erreur"
+                role="alert"
+                [attr.data-testid]="'course-erreur-' + champ.suffixe"
+              >
+                {{ message }}
+              </p>
+            }
+          </div>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="bouton"
+        [disabled]="envoiEnCours()"
+        data-testid="course-bouton-creer"
+      >
+        Déclarer la course
+      </button>
+    </form>
+
+    <a class="lien" routerLink="/administration" data-testid="lien-retour-administration">
+      Retour à l'administration
+    </a>
+  </section>
+</main>
