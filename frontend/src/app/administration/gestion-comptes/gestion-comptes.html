@@ -1,0 +1,148 @@
+@let geres = comptesGeres();
+@let p = geres.prefixe;
+@let pp = geres.prefixePluriel;
+<main class="page">
+  <section class="carte" [attr.aria-labelledby]="'titre-' + pp">
+    <h1 [id]="'titre-' + pp" class="titre" [attr.data-testid]="'titre-' + pp">
+      {{ geres.titre }}
+    </h1>
+
+    <section class="formulaire" [attr.aria-labelledby]="'titre-liste-' + pp">
+      <h2 [id]="'titre-liste-' + pp" class="sous-titre">{{ geres.titreListe }}</h2>
+      @if (erreurChargement()) {
+        <p class="erreur erreur--generale" role="alert" [attr.data-testid]="pp + '-erreur'">
+          {{ geres.erreurChargement }}
+        </p>
+      } @else if (comptes(); as liste) {
+        @if (liste.length === 0) {
+          <p class="message" [attr.data-testid]="pp + '-vide'">{{ geres.listeVide }}</p>
+        } @else {
+          <ul class="liste" [attr.data-testid]="'liste-' + pp">
+            @for (compte of liste; track compte.id) {
+              <li class="ligne" [attr.data-testid]="'ligne-' + p">
+                <span class="ligne__pseudo">{{ compte.pseudo }}</span>
+                <span class="ligne__date">
+                  Créé le
+                  <time [attr.datetime]="compte.creeLe">{{
+                    compte.creeLe | date: "dd/MM/yyyy 'à' HH:mm"
+                  }}</time>
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      } @else {
+        <p class="message" role="status">Chargement…</p>
+      }
+    </section>
+
+    <form
+      class="formulaire"
+      [formGroup]="formulaire"
+      (ngSubmit)="soumettre()"
+      novalidate
+      [attr.aria-labelledby]="'titre-creer-' + p"
+    >
+      <h2 [id]="'titre-creer-' + p" class="sous-titre">{{ geres.titreCreation }}</h2>
+
+      @if (pseudoCree(); as pseudo) {
+        <p class="message-succes" role="status" [attr.data-testid]="p + '-message-succes'">
+          {{ geres.succes(pseudo) }}
+        </p>
+      }
+      @if (erreursServeur().generale; as erreurGenerale) {
+        <p class="erreur erreur--generale" role="alert" [attr.data-testid]="p + '-erreur-generale'">
+          {{ erreurGenerale }}
+        </p>
+      }
+
+      <div class="champ">
+        <label [attr.for]="p + '-pseudo'">Pseudo</label>
+        <input
+          [id]="p + '-pseudo'"
+          type="text"
+          formControlName="pseudo"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+          [attr.aria-describedby]="'aide-' + p + '-pseudo erreur-' + p + '-pseudo'"
+          [attr.aria-invalid]="erreurPseudo() ? true : null"
+          [attr.data-testid]="p + '-champ-pseudo'"
+        />
+        <p [id]="'aide-' + p + '-pseudo'" class="aide">
+          Pseudo : 3 à 30 caractères, lettres, chiffres, . _ -
+        </p>
+        @if (erreurPseudo(); as message) {
+          <p
+            [id]="'erreur-' + p + '-pseudo'"
+            class="erreur"
+            role="alert"
+            [attr.data-testid]="p + '-erreur-pseudo'"
+          >
+            {{ message }}
+          </p>
+        }
+      </div>
+
+      <div class="champ">
+        <label [attr.for]="p + '-mot-de-passe'">Mot de passe</label>
+        <input
+          [id]="p + '-mot-de-passe'"
+          type="password"
+          formControlName="motDePasse"
+          autocomplete="new-password"
+          [attr.aria-describedby]="'aide-' + p + '-mot-de-passe erreur-' + p + '-mot-de-passe'"
+          [attr.aria-invalid]="erreurMotDePasse() ? true : null"
+          [attr.data-testid]="p + '-champ-mot-de-passe'"
+        />
+        <p [id]="'aide-' + p + '-mot-de-passe'" class="aide">12 caractères minimum</p>
+        @if (erreurMotDePasse(); as message) {
+          <p
+            [id]="'erreur-' + p + '-mot-de-passe'"
+            class="erreur"
+            role="alert"
+            [attr.data-testid]="p + '-erreur-mot-de-passe'"
+          >
+            {{ message }}
+          </p>
+        }
+      </div>
+
+      <div class="champ">
+        <label [attr.for]="p + '-confirmation'">Confirmer le mot de passe</label>
+        <input
+          [id]="p + '-confirmation'"
+          type="password"
+          formControlName="confirmation"
+          autocomplete="new-password"
+          [attr.aria-describedby]="'erreur-' + p + '-confirmation'"
+          [attr.aria-invalid]="erreurConfirmation() ? true : null"
+          [attr.data-testid]="p + '-champ-confirmation'"
+        />
+        @if (erreurConfirmation(); as message) {
+          <p
+            [id]="'erreur-' + p + '-confirmation'"
+            class="erreur"
+            role="alert"
+            [attr.data-testid]="p + '-erreur-confirmation'"
+          >
+            {{ message }}
+          </p>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="bouton"
+        [disabled]="envoiEnCours()"
+        [attr.data-testid]="p + '-bouton-creer'"
+      >
+        {{ geres.boutonCreer }}
+      </button>
+    </form>
+
+    <a class="lien" routerLink="/administration" data-testid="lien-retour-administration">
+      Retour à l'administration
+    </a>
+  </section>
+</main>

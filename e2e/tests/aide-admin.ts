@@ -47,3 +47,19 @@ export async function connecterAdminMaster(page: Page, chemin = '/connexion'): P
   await saisir(page, PSEUDO_ADMIN_MASTER, MOT_DE_PASSE_ADMIN_MASTER);
   await page.getByTestId('bouton-connexion').click();
 }
+
+export const MOT_DE_PASSE_BENEVOLE_CREE = 'mot-de-passe-benevole-1';
+
+export function pseudoBenevoleUnique(): string {
+  return pseudoUnique('benevole');
+}
+
+/** Crée un bénévole par l'API avec la session de l'admin master (contexte isolé). */
+export async function creerBenevoleParApi(request: APIRequestContext, pseudo: string, motDePasse = MOT_DE_PASSE_BENEVOLE_CREE): Promise<void> {
+  await connecterParApi(request, PSEUDO_ADMIN_MASTER, MOT_DE_PASSE_ADMIN_MASTER);
+  const creation = await request.post('/api/administration/benevoles', {
+    headers: { 'X-XSRF-TOKEN': await jetonCsrf(request) },
+    data: { pseudo, motDePasse },
+  });
+  expect(creation.status()).toBe(201);
+}

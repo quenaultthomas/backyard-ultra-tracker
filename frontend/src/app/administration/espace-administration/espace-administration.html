@@ -15,6 +15,9 @@
       <p class="message" data-testid="administration-vide">
         Aucune fonctionnalité d'administration pour le moment.
       </p>
+      <a class="lien" routerLink="/administration/benevoles" data-testid="lien-gestion-benevoles">
+        Gérer les bénévoles
+      </a>
       @if (peutGererAdmins()) {
         <a class="lien" routerLink="/administration/admins" data-testid="lien-gestion-admins">
           Gérer les administrateurs

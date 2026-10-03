@@ -11,3 +11,8 @@ export function estAdministrateur(role: Role): role is RoleAdministrateur {
 export function estAdminMaster(role: Role): boolean {
   return role === 'ADMIN_MASTER';
 }
+
+/** Seul rôle ayant accès à l'espace bénévole (aide d'affichage, aucune donnée exposée). */
+export function estBenevole(role: Role): boolean {
+  return role === 'BENEVOLE';
+}

@@ -5,7 +5,12 @@ import {
   reserveAAdminMaster,
   reserveAuxAdministrateurs,
 } from './administration/reserve-aux-administrateurs.guard';
+import { ADMINS, BENEVOLES } from './administration/gestion-comptes/comptes-geres';
 import { reserveAuxAnonymes } from './comptes/reserve-aux-anonymes.guard';
+import { reserveAuxBenevoles } from './scan/reserve-aux-benevoles.guard';
+
+const chargerGestionComptes = () =>
+  import('./administration/gestion-comptes/gestion-comptes').then((m) => m.GestionComptes);
 
 export const routes: Routes = [
   { path: '', component: Accueil, title: 'Backyard Ultra Tracker' },
@@ -33,9 +38,23 @@ export const routes: Routes = [
   {
     path: 'administration/admins',
     canActivate: [reserveAAdminMaster],
-    loadComponent: () =>
-      import('./administration/gestion-admins/gestion-admins').then((m) => m.GestionAdmins),
+    loadComponent: chargerGestionComptes,
+    data: { comptesGeres: ADMINS },
     title: 'Gestion des administrateurs - Backyard Ultra Tracker',
+  },
+  {
+    path: 'administration/benevoles',
+    canActivate: [reserveAuxAdministrateurs],
+    loadComponent: chargerGestionComptes,
+    data: { comptesGeres: BENEVOLES },
+    title: 'Gestion des bénévoles - Backyard Ultra Tracker',
+  },
+  {
+    path: 'benevole',
+    canActivate: [reserveAuxBenevoles],
+    loadComponent: () =>
+      import('./scan/accueil-benevole/accueil-benevole').then((m) => m.AccueilBenevole),
+    title: 'Espace bénévole - Backyard Ultra Tracker',
   },
   {
     path: 'acces-refuse',

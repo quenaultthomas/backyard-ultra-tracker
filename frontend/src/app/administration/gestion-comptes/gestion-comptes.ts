@@ -5,6 +5,7 @@ import {
   DestroyRef,
   OnInit,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -23,26 +24,30 @@ import { ErreursFormulaireCompte, interpreterErreurCompte } from '../../comptes/
 import { CsrfService } from '../../partage/csrf.service';
 import { AdministrationApiService } from '../administration-api.service';
 import { RefusAccesService } from '../refus-acces.service';
-
-const ECRAN = '/administration/admins';
+import { ComptesGeres } from './comptes-geres';
 
 const ERREURS_SPECIFIQUES: Record<string, ErreursFormulaireCompte> = {
   PSEUDO_DEJA_UTILISE: { pseudo: 'Ce pseudo est déjà utilisé.' },
 };
 
-/** Liste des Comptes `ADMIN` et création d'un admin, réservées à l'admin master. */
+/**
+ * Liste et création des Comptes d'un rôle géré par l'administration (admins, bénévoles).
+ * Le type de Compte est fourni par la route (`data.comptesGeres`).
+ */
 @Component({
-  selector: 'app-gestion-admins',
+  selector: 'app-gestion-comptes',
   imports: [ReactiveFormsModule, RouterLink, DatePipe],
-  templateUrl: './gestion-admins.html',
+  templateUrl: './gestion-comptes.html',
   styleUrls: [
     '../../partage/page-carte.css',
     '../../comptes/formulaire-compte.css',
-    './gestion-admins.css',
+    './gestion-comptes.css',
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GestionAdmins implements OnInit {
+export class GestionComptes implements OnInit {
+  readonly comptesGeres = input.required<ComptesGeres>();
+
   private readonly administrationApi = inject(AdministrationApiService);
   private readonly csrf = inject(CsrfService);
   private readonly refusAcces = inject(RefusAccesService);
@@ -58,7 +63,7 @@ export class GestionAdmins implements OnInit {
   );
 
   /** `null` tant que la liste n'est pas chargée. */
-  protected readonly admins = signal<CompteReponse[] | null>(null);
+  protected readonly comptes = signal<CompteReponse[] | null>(null);
   protected readonly erreurChargement = signal(false);
   protected readonly envoiEnCours = signal(false);
   protected readonly soumis = signal(false);
@@ -67,7 +72,7 @@ export class GestionAdmins implements OnInit {
 
   ngOnInit(): void {
     this.demanderJeton();
-    this.chargerAdmins();
+    this.chargerComptes();
   }
 
   protected soumettre(): void {
@@ -82,14 +87,14 @@ export class GestionAdmins implements OnInit {
     }
     const { pseudo, motDePasse } = this.formulaire.getRawValue();
     this.envoiEnCours.set(true);
-    this.administrationApi
-      .creerAdmin({ pseudo, motDePasse })
+    this.comptesGeres()
+      .creer(this.administrationApi, { pseudo, motDePasse })
       .pipe(
         finalize(() => this.terminerEnvoi()),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (admin) => this.confirmerCreation(admin),
+        next: (compte) => this.confirmerCreation(compte),
         error: (erreur: unknown) => this.traiterErreurCreation(erreur),
       });
   }
@@ -114,31 +119,31 @@ export class GestionAdmins implements OnInit {
       : undefined;
   }
 
-  private chargerAdmins(): void {
-    this.administrationApi
-      .listerAdmins()
+  private chargerComptes(): void {
+    this.comptesGeres()
+      .lister(this.administrationApi)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (admins) => {
-          this.admins.set(admins);
+        next: (comptes) => {
+          this.comptes.set(comptes);
           this.erreurChargement.set(false);
         },
         error: (erreur: unknown) => {
-          if (!this.refusAcces.rediriger(erreur, ECRAN)) {
+          if (!this.refusAcces.rediriger(erreur, this.comptesGeres().ecran)) {
             this.erreurChargement.set(true);
           }
         },
       });
   }
 
-  private confirmerCreation(admin: CompteReponse): void {
-    this.pseudoCree.set(admin.pseudo);
+  private confirmerCreation(compte: CompteReponse): void {
+    this.pseudoCree.set(compte.pseudo);
     this.formulaire.controls.pseudo.setValue('');
-    this.chargerAdmins();
+    this.chargerComptes();
   }
 
   private traiterErreurCreation(erreur: unknown): void {
-    if (this.refusAcces.rediriger(erreur, ECRAN)) {
+    if (this.refusAcces.rediriger(erreur, this.comptesGeres().ecran)) {
       return;
     }
     const erreurs = interpreterErreurCompte(erreur, ERREURS_SPECIFIQUES);

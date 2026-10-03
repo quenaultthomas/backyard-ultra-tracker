@@ -1,6 +1,7 @@
 package fr.backyard.tracker.comptes.domaine;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -9,6 +10,10 @@ import java.util.UUID;
  * Ne contient jamais le mot de passe en clair, seulement son empreinte, absente pour un compte anonymisé.
  */
 public final class Compte {
+
+    /** Ordre d'affichage des listes de comptes : date de création, puis pseudo normalisé. */
+    public static final Comparator<Compte> ORDRE_DE_CREATION =
+            Comparator.comparing(Compte::creeLe).thenComparing(Compte::pseudoNormalise);
 
     private final UUID id;
     private final Pseudo pseudo;
@@ -33,6 +38,12 @@ public final class Compte {
     /** Les comptes administrateurs sont créés par l'admin master, toujours avec le rôle ADMIN. */
     public static Compte creerAdmin(Pseudo pseudo, String empreinteMotDePasse, Instant creeLe) {
         return new Compte(UUID.randomUUID(), pseudo, Objects.requireNonNull(empreinteMotDePasse), Role.ADMIN,
+                creeLe);
+    }
+
+    /** Les comptes bénévoles sont créés par un admin (ou l'admin master), toujours avec le rôle BENEVOLE. */
+    public static Compte creerBenevole(Pseudo pseudo, String empreinteMotDePasse, Instant creeLe) {
+        return new Compte(UUID.randomUUID(), pseudo, Objects.requireNonNull(empreinteMotDePasse), Role.BENEVOLE,
                 creeLe);
     }
 

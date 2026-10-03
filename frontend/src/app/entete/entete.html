@@ -17,6 +17,11 @@
             Administration
           </a>
         }
+        @if (session.estBenevole()) {
+          <a class="entete__lien" routerLink="/benevole" data-testid="lien-espace-benevole">
+            Espace bénévole
+          </a>
+        }
         <button
           type="button"
           class="entete__bouton"
