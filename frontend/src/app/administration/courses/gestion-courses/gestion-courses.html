@@ -14,7 +14,11 @@
         @if (liste.length === 0) {
           <p class="message" data-testid="courses-vide">Aucune course pour le moment.</p>
         } @else {
-          <app-liste-courses [courses]="liste" (modifier)="editer($event)" />
+          <app-liste-courses
+            [courses]="liste"
+            (modifier)="editer($event)"
+            (actualiser)="actualiserApresLogo($event)"
+          />
         }
       } @else {
         <p class="message" role="status">Chargement…</p>

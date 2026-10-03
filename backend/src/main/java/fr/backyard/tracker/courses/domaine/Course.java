@@ -64,9 +64,7 @@ public final class Course {
     public Course modifier(String nom, LocalDate date, Integer distanceBoucleMetres, Integer dureeBoucleMinutes,
                            Integer denivelePositifBoucleMetres, Integer nombreMaxParticipants,
                            Integer nombreMaxBoucles, LocalDate aujourdhui) {
-        if (statut != StatutCourse.EN_PREPARATION) {
-            throw new CourseNonModifiableException(id);
-        }
+        autoriserModification();
         String nomSaisi = sansEspacesAutour(nom);
         DeclarationCourse declaration = new DeclarationCourse(aujourdhui).verifierNom(nomSaisi)
                 .verifierNouvelleDate(date, this.date);
@@ -75,6 +73,17 @@ public final class Course {
         return new Course(id, nomSaisi, date, statut,
                 new ParametresBoucle(distanceBoucleMetres, dureeBoucleMinutes, denivelePositifBoucleMetres),
                 nombreMaxParticipants, nombreMaxBoucles);
+    }
+
+    /**
+     * Seule une Course EN_PREPARATION est modifiable (champs de la Course comme logo). Unique contrôle de ce statut.
+     *
+     * @throws CourseNonModifiableException la Course n'est plus EN_PREPARATION
+     */
+    public void autoriserModification() {
+        if (statut != StatutCourse.EN_PREPARATION) {
+            throw new CourseNonModifiableException(id);
+        }
     }
 
     private static String sansEspacesAutour(String nom) {

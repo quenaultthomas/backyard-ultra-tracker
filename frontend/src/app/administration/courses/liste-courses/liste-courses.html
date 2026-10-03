@@ -2,6 +2,12 @@
   @for (course of courses(); track course.id) {
     <li class="ligne" data-testid="ligne-course">
       <span class="ligne__nom" data-testid="course-nom">{{ course.nom }}</span>
+      <app-logo-course
+        [course]="course"
+        [actif]="logoActif() === course.id"
+        (activer)="logoActif.set(course.id)"
+        (actualiser)="actualiser.emit($event)"
+      />
       <dl class="details">
         <div class="detail">
           <dt>Date</dt>

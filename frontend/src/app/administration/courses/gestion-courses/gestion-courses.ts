@@ -15,13 +15,8 @@ import { RouterLink } from '@angular/router';
 import { finalize, map } from 'rxjs';
 
 import { RefusAccesService } from '../../../comptes/refus-acces.service';
-import {
-  ErreursFormulaire,
-  ErreursSpecifiques,
-  interpreterErreurFormulaire,
-} from '../../../comptes/erreurs-compte';
+import { ErreursFormulaire, interpreterErreurFormulaire } from '../../../comptes/erreurs-compte';
 import { CsrfService } from '../../../partage/csrf.service';
-import { lireProbleme } from '../../../partage/probleme';
 import { AdministrationApiService } from '../../administration-api.service';
 import {
   CHAMPS_COURSE,
@@ -33,15 +28,12 @@ import {
   versSaisieCourse,
 } from '../champs-course';
 import { CourseReponse } from '../course';
+import {
+  ECRAN_GESTION_COURSES,
+  ERREURS_COURSE_NON_EDITABLE,
+  estCourseNonEditable,
+} from '../erreurs-course';
 import { ListeCourses } from '../liste-courses/liste-courses';
-
-const ECRAN = '/administration/courses';
-
-/** Refus d'une modification qui font quitter le mode édition (la Course n'est plus éditable). */
-const ERREURS_COURSE_NON_EDITABLE: ErreursSpecifiques<ChampCourse> = {
-  COURSE_NON_MODIFIABLE: ({ detail }) => ({ generale: detail }),
-  COURSE_INTROUVABLE: { generale: "Cette course n'existe plus." },
-};
 
 /** Liste, déclaration et modification des Courses (admins et admin master). */
 @Component({
@@ -145,6 +137,15 @@ export class GestionCourses implements OnInit {
       });
   }
 
+  /**
+   * Après une action sur un logo : message de succès (ou effacement de l'ancien) et liste
+   * rechargée. Le formulaire, en déclaration comme en édition, n'est pas touché.
+   */
+  protected actualiserApresLogo(messageSucces: string | null): void {
+    this.messageSucces.set(messageSucces);
+    this.chargerCourses();
+  }
+
   private chargerCourses(): void {
     this.administrationApi
       .listerCourses()
@@ -155,7 +156,7 @@ export class GestionCourses implements OnInit {
           this.erreurChargement.set(false);
         },
         error: (erreur: unknown) => {
-          if (!this.refusAcces.rediriger(erreur, ECRAN)) {
+          if (!this.refusAcces.rediriger(erreur, ECRAN_GESTION_COURSES)) {
             this.erreurChargement.set(true);
           }
         },
@@ -169,12 +170,12 @@ export class GestionCourses implements OnInit {
   }
 
   private traiterErreurEnvoi(erreur: unknown): void {
-    if (this.refusAcces.rediriger(erreur, ECRAN)) {
+    if (this.refusAcces.rediriger(erreur, ECRAN_GESTION_COURSES)) {
       return;
     }
     const erreurs = interpreterErreurFormulaire(erreur, ERREURS_COURSE_NON_EDITABLE, CHAMPS_COURSE);
-    const code = lireProbleme(erreur)?.code;
-    if (code !== undefined && Object.hasOwn(ERREURS_COURSE_NON_EDITABLE, code)) {
+    // La Course n'est plus éditable : le mode édition est quitté.
+    if (estCourseNonEditable(erreur)) {
       this.revenirEnDeclaration();
       this.chargerCourses();
     }

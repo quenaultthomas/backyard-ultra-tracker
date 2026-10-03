@@ -1,0 +1,83 @@
+@let c = course();
+@let e = etatAffiche();
+<div class="logo">
+  @if (c.logoUrl; as url) {
+    <img class="vignette" [src]="url" [alt]="'Logo de ' + c.nom" data-testid="course-logo" />
+  } @else {
+    <span class="vignette vignette--absente" data-testid="course-logo-absent">Aucun logo</span>
+  }
+
+  @if (modifiable()) {
+    <div class="logo__actions">
+      <input
+        #champLogo
+        type="file"
+        class="champ-masque"
+        accept="image/png,image/jpeg,image/webp"
+        tabindex="-1"
+        aria-hidden="true"
+        (change)="choisir(champLogo)"
+        data-testid="course-champ-logo"
+      />
+      <button
+        type="button"
+        class="ligne__action"
+        [disabled]="envoiEnCours()"
+        [attr.aria-label]="'Choisir un logo pour la course ' + c.nom"
+        (click)="champLogo.click()"
+        data-testid="course-bouton-logo"
+      >
+        Choisir un logo
+      </button>
+      @if (c.logoUrl !== null) {
+        <button
+          type="button"
+          class="ligne__action"
+          [disabled]="envoiEnCours()"
+          [attr.aria-label]="'Supprimer le logo de la course ' + c.nom"
+          (click)="supprimer()"
+          data-testid="course-bouton-logo-supprimer"
+        >
+          Supprimer le logo
+        </button>
+      }
+    </div>
+  }
+</div>
+
+@if (e.erreur; as message) {
+  <p class="logo__erreur" role="alert" data-testid="course-logo-erreur">{{ message }}</p>
+}
+
+@if (modifiable() && e.fichier !== null) {
+  <div class="apercu" role="group" [attr.aria-label]="'Nouveau logo de la course ' + c.nom">
+    @if (e.apercu; as apercu) {
+      <img
+        class="vignette"
+        [src]="apercu"
+        [alt]="'Aperçu du nouveau logo de ' + c.nom"
+        data-testid="course-logo-apercu"
+      />
+      <button
+        type="button"
+        class="ligne__action"
+        [disabled]="envoiEnCours()"
+        (click)="envoyer()"
+        data-testid="course-bouton-logo-envoyer"
+      >
+        Envoyer le logo
+      </button>
+    } @else {
+      <p class="apercu__lecture" role="status">Lecture du fichier…</p>
+    }
+    <button
+      type="button"
+      class="ligne__action"
+      [disabled]="envoiEnCours()"
+      (click)="annuler()"
+      data-testid="course-bouton-logo-annuler"
+    >
+      Annuler
+    </button>
+  </div>
+}

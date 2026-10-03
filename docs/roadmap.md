@@ -95,7 +95,7 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 - **Tu testes** : modifier la durée de boucle, vérifier dans la liste.
 
 ### 2.3 Logo de course
-- **Livré** : envoi d'un logo (formats et taille limités), stockage sur le volume `logos`, affichage dans la liste et la fiche de la course.
+- **Livré** : envoi d'un logo (PNG, JPEG ou WebP, 2 Mo maximum), remplacement et suppression tant que la course est `EN_PREPARATION`, stockage en base PostgreSQL (sauvegardé avec `pg_dump`, pas de volume `logos`), affichage dans la liste et la fiche de la course. Le fichier est servi en lecture publique pour l'écran de suivi.
 - **Tu testes** : envoyer un PNG → affiché. Fichier trop lourd ou non image → refusé. `docker compose down` puis `up` → le logo est toujours là.
 
 ### 2.4 Affecter des bénévoles

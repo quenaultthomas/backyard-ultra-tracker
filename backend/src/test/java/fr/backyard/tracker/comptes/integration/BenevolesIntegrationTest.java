@@ -388,7 +388,7 @@ class BenevolesIntegrationTest {
                 ACCES_REFUSE_DETAIL);
 
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
-                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course");
+                .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course");
     }
 
     // ---------------------------------------------------------------- CA16
