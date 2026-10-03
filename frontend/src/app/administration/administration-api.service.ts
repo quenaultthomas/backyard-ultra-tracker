@@ -3,10 +3,11 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { CompteReponse } from '../comptes/compte';
-import { CreerAdminRequete } from './admin';
+import { CreerAdminRequete, CreerBenevoleRequete } from './requetes-creation-compte';
 
 const URL_ACCES = '/api/administration/acces';
 const URL_ADMINS = '/api/administration/admins';
+const URL_BENEVOLES = '/api/administration/benevoles';
 
 @Injectable({ providedIn: 'root' })
 export class AdministrationApiService {
@@ -25,5 +26,15 @@ export class AdministrationApiService {
   /** Crée un Compte `ADMIN` (réservé à l'admin master). */
   creerAdmin(requete: CreerAdminRequete): Observable<CompteReponse> {
     return this.http.post<CompteReponse>(URL_ADMINS, requete);
+  }
+
+  /** Comptes `BENEVOLE`, dans l'ordre renvoyé par l'API (admins et admin master). */
+  listerBenevoles(): Observable<CompteReponse[]> {
+    return this.http.get<CompteReponse[]>(URL_BENEVOLES);
+  }
+
+  /** Crée un Compte `BENEVOLE` (admins et admin master). */
+  creerBenevole(requete: CreerBenevoleRequete): Observable<CompteReponse> {
+    return this.http.post<CompteReponse>(URL_BENEVOLES, requete);
   }
 }

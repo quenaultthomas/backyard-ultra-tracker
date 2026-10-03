@@ -17,7 +17,7 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 | Jalon | Contenu | Incréments | À la fin du jalon, tu peux… |
 |---|---|---|---|
 | 0 | Socle | 0.1 → 0.4 | lancer la stack et voir la page d'accueil |
-| 1 | Comptes et sécurité | 1.1 → 1.6 | créer des comptes, te connecter avec chaque rôle |
+| 1 | Comptes et sécurité | 1.1 → 1.6b | créer des comptes, te connecter avec chaque rôle |
 | 2 | Courses | 2.1 → 2.5 | déclarer une course complète avec logo et bénévoles |
 | 3 | Inscriptions | 3.1 → 3.6 | inscrire des coureurs et voir leurs dossards et QR |
 | 4 | Course en direct | 4.1 → 4.12 | faire tourner une course de bout en bout |
@@ -68,9 +68,14 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 - **Livré** : l'admin master crée et liste les admins.
 - **Tu testes** : créer un admin, s'y connecter. Un admin (non master) ne voit pas cette fonction et l'API lui répond 403.
 
-### 1.6 Créer des comptes bénévoles et changer son mot de passe
-- **Livré** : les admins (et l'admin master) créent et listent les bénévoles ; écran « Mon compte » avec changement de mot de passe pour tous les rôles.
-- **Tu testes** : créer un bénévole, s'y connecter (écran d'accueil bénévole vide). Changer son mot de passe, se reconnecter avec le nouveau.
+### 1.6a Créer des comptes bénévoles
+- **Livré** : les admins (et l'admin master) créent et listent les bénévoles ; écran d'accueil bénévole (vide) vers lequel un bénévole est redirigé après connexion.
+- **Tu testes** : créer un bénévole, s'y connecter (écran d'accueil bénévole vide).
+
+### 1.6b Changer son mot de passe
+- **Livré** : écran « Mon compte » avec changement de mot de passe pour tous les rôles ; les autres sessions du compte sont fermées au changement ; les échecs comptent dans le blocage de connexion.
+- **Tu testes** : changer son mot de passe, se reconnecter avec le nouveau.
+- **Découpage** : l'ancien 1.6 dépassait la cible de 400 lignes, il a été scindé en 1.6a et 1.6b.
 
 ---
 

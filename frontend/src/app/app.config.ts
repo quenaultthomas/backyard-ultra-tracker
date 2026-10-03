@@ -5,7 +5,7 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { routes } from './app.routes';
 import { SessionService } from './comptes/session.service';
@@ -13,7 +13,8 @@ import { SessionService } from './comptes/session.service';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    // Les données de route (`data`) alimentent les entrées des composants routés.
+    provideRouter(routes, withComponentInputBinding()),
     // Cookie posé par GET /api/csrf, renvoyé en en-tête sur les requêtes modifiantes (relatives).
     provideHttpClient(
       withFetch(),

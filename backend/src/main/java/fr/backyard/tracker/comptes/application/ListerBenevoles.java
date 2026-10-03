@@ -7,18 +7,18 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Liste des comptes ADMIN (jamais l'admin master), par date de création puis pseudo normalisé. */
+/** Liste des comptes BENEVOLE, par date de création puis pseudo normalisé. */
 @Service
-public class ListerAdmins {
+public class ListerBenevoles {
 
     private final DepotComptes depotComptes;
 
-    public ListerAdmins(DepotComptes depotComptes) {
+    public ListerBenevoles(DepotComptes depotComptes) {
         this.depotComptes = depotComptes;
     }
 
     @Transactional(readOnly = true)
     public List<Compte> executer() {
-        return depotComptes.listerParRole(Role.ADMIN).stream().sorted(Compte.ORDRE_DE_CREATION).toList();
+        return depotComptes.listerParRole(Role.BENEVOLE).stream().sorted(Compte.ORDRE_DE_CREATION).toList();
     }
 }
