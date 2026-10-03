@@ -17,3 +17,6 @@ databaseChangeLog:
   - include:
       file: changesets/0006-affectation-benevole.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changesets/0007-inscription.yaml
+      relativeToChangelogFile: true

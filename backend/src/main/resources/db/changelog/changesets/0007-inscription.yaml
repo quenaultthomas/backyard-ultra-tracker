@@ -1,0 +1,75 @@
+# Increment 3.1 : inscriptions d'un compte coureur a une course (contexte courses). Le compte n'est reference que
+# par son identifiant : aucune cle etrangere vers compte (contextes separes). La suppression d'une course supprime
+# ses inscriptions (cascade). Le dossard est unique par course, le jeton QR unique en base.
+databaseChangeLog:
+  - changeSet:
+      id: 0007-inscription
+      author: backyard-ultra-tracker
+      changes:
+        - createTable:
+            tableName: inscription
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_inscription
+              - column:
+                  name: course_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: compte_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: dossard
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: jeton_qr
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: statut
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            constraintName: fk_inscription_course
+            baseTableName: inscription
+            baseColumnNames: course_id
+            referencedTableName: course
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            constraintName: uq_inscription_course_dossard
+            tableName: inscription
+            columnNames: course_id, dossard
+        - addUniqueConstraint:
+            constraintName: uq_inscription_course_compte
+            tableName: inscription
+            columnNames: course_id, compte_id
+        - addUniqueConstraint:
+            constraintName: uq_inscription_jeton_qr
+            tableName: inscription
+            columnNames: jeton_qr
+        - sql:
+            sql: >-
+              alter table inscription
+              add constraint ck_inscription_dossard check (dossard > 0),
+              add constraint ck_inscription_statut check (statut in ('EN_COURSE', 'ABANDON', 'VAINQUEUR'))
+        - createIndex:
+            indexName: ix_inscription_compte
+            tableName: inscription
+            columns:
+              - column:
+                  name: compte_id
+      rollback:
+        - dropTable:
+            tableName: inscription

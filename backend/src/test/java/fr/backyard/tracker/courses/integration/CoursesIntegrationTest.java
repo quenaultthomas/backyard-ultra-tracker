@@ -624,14 +624,14 @@ class CoursesIntegrationTest {
     void ca18_changesets_et_absence_de_cle_etrangere() {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                "0006-affectation-benevole");
+                "0006-affectation-benevole", "0007-inscription");
         assertThat(environnement.getProperty("spring.jpa.hibernate.ddl-auto")).isEqualTo("validate");
         assertThat(jdbc.queryForObject("select count(*) from information_schema.table_constraints "
                 + "where constraint_type = 'FOREIGN KEY' and table_name in ('course', 'compte')", Integer.class))
                 .isZero();
         assertThat(jdbc.queryForObject("select count(*) from pg_constraint where contype = 'f' "
                 + "and (conrelid = 'course'::regclass or confrelid = 'compte'::regclass "
-                + "or (confrelid = 'course'::regclass and conrelid not in ('logo_course'::regclass, 'affectation_benevole'::regclass)))", Integer.class))
+                + "or (confrelid = 'course'::regclass and conrelid not in ('logo_course'::regclass, 'affectation_benevole'::regclass, 'inscription'::regclass)))", Integer.class))
                 .isZero();
     }
 

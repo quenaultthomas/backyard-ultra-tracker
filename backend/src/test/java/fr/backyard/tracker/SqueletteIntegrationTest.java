@@ -52,12 +52,12 @@ class SqueletteIntegrationTest {
 
         List<String> changesets = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
         assertThat(changesets).containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                "0006-affectation-benevole");
+                "0006-affectation-benevole", "0007-inscription");
 
         List<String> tables = jdbc.queryForList(
                 "select table_name from information_schema.tables where table_schema = 'public'", String.class);
         assertThat(tables).containsExactlyInAnyOrder("databasechangelog", "databasechangeloglock", "compte", "course", "logo_course",
-                "affectation_benevole");
+                "affectation_benevole", "inscription");
     }
 
     @Test

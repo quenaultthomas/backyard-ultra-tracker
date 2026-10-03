@@ -100,7 +100,7 @@ class AffectationBenevolesSchemaRedemarrageIntegrationTest {
     private void verifierSchema(JdbcTemplate jdbc) {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                        "0006-affectation-benevole");
+                        "0006-affectation-benevole", "0007-inscription");
         List<Map<String, Object>> colonnes = jdbc.queryForList("select column_name, data_type, is_nullable "
                 + "from information_schema.columns where table_name = 'affectation_benevole'");
         assertThat(colonnes).extracting(c -> c.get("column_name") + ":" + c.get("data_type") + ":"
