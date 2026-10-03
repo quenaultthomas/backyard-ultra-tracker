@@ -2,10 +2,16 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { CompteReponse, ConnexionRequete, CreerCompteRequete } from './compte';
+import {
+  ChangerMotDePasseRequete,
+  CompteReponse,
+  ConnexionRequete,
+  CreerCompteRequete,
+} from './compte';
 
 const URL_COMPTES = '/api/comptes';
 const URL_COMPTE_COURANT = '/api/comptes/moi';
+const URL_MOT_DE_PASSE = '/api/comptes/moi/mot-de-passe';
 const URL_CONNEXION = '/api/connexion';
 const URL_DECONNEXION = '/api/deconnexion';
 
@@ -23,6 +29,10 @@ export class ComptesApiService {
 
   deconnecter(): Observable<void> {
     return this.http.post<void>(URL_DECONNEXION, null);
+  }
+
+  changerMotDePasse(requete: ChangerMotDePasseRequete): Observable<void> {
+    return this.http.put<void>(URL_MOT_DE_PASSE, requete);
   }
 
   lireCompteCourant(): Observable<CompteReponse> {

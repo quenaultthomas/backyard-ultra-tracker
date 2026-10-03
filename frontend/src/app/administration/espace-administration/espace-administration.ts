@@ -10,15 +10,10 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
-import { RoleAdministrateur, estAdminMaster, estAdministrateur } from '../../comptes/roles';
+import { LIBELLES_ROLE, estAdminMaster, estAdministrateur } from '../../comptes/roles';
 import { SessionService } from '../../comptes/session.service';
 import { AdministrationApiService } from '../administration-api.service';
-import { RefusAccesService } from '../refus-acces.service';
-
-const LIBELLES_ROLE: Record<RoleAdministrateur, string> = {
-  ADMIN_MASTER: 'Administrateur master',
-  ADMIN: 'Administrateur',
-};
+import { RefusAccesService } from '../../comptes/refus-acces.service';
 
 const MESSAGE_VERIFICATION_IMPOSSIBLE =
   "Impossible de vérifier vos droits d'accès. Réessayez plus tard.";

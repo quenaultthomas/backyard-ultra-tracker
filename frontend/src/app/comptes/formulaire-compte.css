@@ -11,6 +11,11 @@
   gap: 0.25rem;
 }
 
+.sous-titre {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
 label {
   font-weight: 600;
 }

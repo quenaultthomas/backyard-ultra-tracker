@@ -2,6 +2,7 @@ package fr.backyard.tracker.comptes.infrastructure;
 
 import fr.backyard.tracker.comptes.domaine.AdminMasterDejaPresentException;
 import fr.backyard.tracker.comptes.domaine.Compte;
+import fr.backyard.tracker.comptes.domaine.CompteIntrouvableOuInutilisableException;
 import fr.backyard.tracker.comptes.domaine.DepotComptes;
 import fr.backyard.tracker.comptes.domaine.Pseudo;
 import fr.backyard.tracker.comptes.domaine.PseudoDejaUtiliseException;
@@ -86,6 +87,18 @@ public class CompteJpaAdapter implements DepotComptes {
         } catch (ConstraintViolationException exception) {
             throw traduire(exception);
         }
+    }
+
+    /** Le pseudo, le rôle et la date de création d'un compte ne changent jamais : seule l'empreinte est reportée. */
+    @Override
+    @Transactional
+    public void mettreAJour(Compte compte) {
+        CompteJpaEntity entite = entityManager.find(CompteJpaEntity.class, compte.id());
+        if (entite == null) {
+            throw new CompteIntrouvableOuInutilisableException();
+        }
+        entite.remplacerEmpreinte(compte.empreinteMotDePasse());
+        entityManager.flush();
     }
 
     private static RuntimeException traduire(ConstraintViolationException exception) {

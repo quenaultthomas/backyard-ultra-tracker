@@ -20,6 +20,8 @@ public record MotDePasse(String valeur) {
             CHAMP, "MOT_DE_PASSE_REQUIS", "Le mot de passe est obligatoire.");
     private static final ViolationValidation TROP_COURT = new ViolationValidation(
             CHAMP, "MOT_DE_PASSE_TROP_COURT", "Le mot de passe doit faire au moins 12 caractères.");
+    private static final ViolationValidation ACTUEL_REQUIS = new ViolationValidation(
+            "motDePasseActuel", "MOT_DE_PASSE_ACTUEL_REQUIS", "Le mot de passe actuel est obligatoire.");
     private static final ViolationValidation TROP_LONG = new ViolationValidation(
             CHAMP, "MOT_DE_PASSE_TROP_LONG", "Le mot de passe ne doit pas dépasser 128 caractères.");
 
@@ -48,6 +50,22 @@ public record MotDePasse(String valeur) {
     /** Seul contrôle de saisie appliqué à la connexion : une chaîne d'espaces est une valeur. */
     public static Optional<ViolationValidation> verifierPresence(String saisie) {
         return saisie == null || saisie.isEmpty() ? Optional.of(REQUIS) : Optional.empty();
+    }
+
+    /** Mot de passe actuel d'un changement : seule la présence est exigée, comme à la connexion. */
+    public static Optional<ViolationValidation> verifierActuel(String saisie) {
+        return verifierPresence(saisie).map(absence -> ACTUEL_REQUIS);
+    }
+
+    /**
+     * Un nouveau mot de passe doit différer de l'actuel (comparaison exacte, casse et espaces compris).
+     *
+     * @throws NouveauMotDePasseIdentiqueException s'ils sont identiques
+     */
+    public void exigerDifferentDe(String motDePasseActuel) {
+        if (valeur.equals(motDePasseActuel)) {
+            throw new NouveauMotDePasseIdentiqueException();
+        }
     }
 
     /** Plus de {@value #LONGUEUR_MAX} caractères, comptés en points de code. */

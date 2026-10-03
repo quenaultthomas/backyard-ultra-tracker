@@ -2,10 +2,10 @@ import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { SessionService } from '../comptes/session.service';
 import { lireProbleme } from '../partage/probleme';
+import { SessionService } from './session.service';
 
-/** Redirige l'utilisateur quand l'API refuse l'accès à un écran d'administration. */
+/** Redirige l'utilisateur quand l'API refuse l'accès à un écran (session absente, rôle insuffisant). */
 @Injectable({ providedIn: 'root' })
 export class RefusAccesService {
   private readonly session = inject(SessionService);

@@ -42,6 +42,16 @@ public interface DepotComptes {
     }
 
     /**
+     * Enregistre les modifications d'un compte existant (empreinte du mot de passe).
+     *
+     * @throws CompteIntrouvableOuInutilisableException si le compte n'existe plus
+     * @throws UnsupportedOperationException            si le dépôt ne sait pas mettre à jour
+     */
+    default void mettreAJour(Compte compte) {
+        throw new UnsupportedOperationException("Ce dépôt ne sait pas mettre à jour un compte.");
+    }
+
+    /**
      * Comptes du rôle donné, dans un ordre quelconque (l'ordre d'affichage est une règle des cas d'usage).
      *
      * @throws UnsupportedOperationException si le dépôt ne sait pas rechercher

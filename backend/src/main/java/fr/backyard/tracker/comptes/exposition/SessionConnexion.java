@@ -43,6 +43,11 @@ public class SessionConnexion {
         depotContexte.saveContext(contexte, requete, reponse);
     }
 
+    /** Nouvel identifiant pour la session (existante) d'une requête authentifiée, avec la même identité. */
+    void renouvelerIdentifiant(HttpServletRequest requete) {
+        requete.changeSessionId();
+    }
+
     /** Idempotent : invalide la session éventuelle et efface le cookie de session. */
     void fermer(HttpServletRequest requete, HttpServletResponse reponse) {
         HttpSession session = requete.getSession(false);

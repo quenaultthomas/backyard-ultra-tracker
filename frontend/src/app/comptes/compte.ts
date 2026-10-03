@@ -10,6 +10,12 @@ export interface ConnexionRequete {
   motDePasse: string;
 }
 
+/** Corps de `PUT /api/comptes/moi/mot-de-passe` (réponse 204 sans corps). */
+export interface ChangerMotDePasseRequete {
+  motDePasseActuel: string;
+  nouveauMotDePasse: string;
+}
+
 /** Compte renvoyé par `POST /api/comptes` (201), `POST /api/connexion` et `GET /api/comptes/moi`. */
 export interface CompteReponse {
   id: string;

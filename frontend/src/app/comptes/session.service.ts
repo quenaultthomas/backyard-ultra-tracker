@@ -3,7 +3,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { Observable, catchError, concatMap, filter, map, of, take, tap, timeout } from 'rxjs';
 
 import { CsrfService } from '../partage/csrf.service';
-import { CompteReponse, ConnexionRequete } from './compte';
+import { ChangerMotDePasseRequete, CompteReponse, ConnexionRequete } from './compte';
 import { ComptesApiService } from './comptes-api.service';
 import { estAdministrateur, estBenevole } from './roles';
 
@@ -81,6 +81,16 @@ export class SessionService {
       concatMap((compte) => this.csrf.renouvelerJeton().pipe(map(() => compte))),
       tap((compte) => this.compteCourant.set(compte)),
     );
+  }
+
+  /**
+   * L'identifiant de session est renouvelé par l'API : on redemande un jeton CSRF. Le Compte
+   * reste connecté, l'état local est inchangé.
+   */
+  changerMotDePasse(requete: ChangerMotDePasseRequete): Observable<void> {
+    return this.comptesApi
+      .changerMotDePasse(requete)
+      .pipe(concatMap(() => this.csrf.renouvelerJeton()));
   }
 
   deconnecter(): Observable<void> {

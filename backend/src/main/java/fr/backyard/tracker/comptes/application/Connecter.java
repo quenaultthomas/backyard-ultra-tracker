@@ -10,14 +10,9 @@ import fr.backyard.tracker.comptes.domaine.MotDePasse;
 import fr.backyard.tracker.comptes.domaine.PolitiqueBlocage;
 import fr.backyard.tracker.comptes.domaine.Pseudo;
 import fr.backyard.tracker.comptes.domaine.RegistreTentativesConnexion;
-import fr.backyard.tracker.comptes.domaine.TentativesConnexion;
 import fr.backyard.tracker.comptes.domaine.ViolationValidation;
-import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -33,15 +28,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class Connecter {
 
-    private static final int OCTETS_VALEUR_FACTICE = 24;
-    private static final Logger JOURNAL = System.getLogger(Connecter.class.getName());
-
     private final DepotComptes depotComptes;
     private final EncodeurMotDePasse encodeurMotDePasse;
-    private final RegistreTentativesConnexion registreTentatives;
-    private final PolitiqueBlocage politiqueBlocage;
+    private final LimitationTentatives limitation;
     private final Clock horloge;
-    /** Vérifiée à la place d'une empreinte absente, pour un coût de calcul égal ; sa valeur source est oubliée. */
+    /** Vérifiée à la place d'une empreinte absente, pour un coût de calcul égal. */
     private final String empreinteFactice;
 
     public Connecter(DepotComptes depotComptes, EncodeurMotDePasse encodeurMotDePasse,
@@ -49,10 +40,9 @@ public class Connecter {
                      Clock horloge) {
         this.depotComptes = depotComptes;
         this.encodeurMotDePasse = encodeurMotDePasse;
-        this.registreTentatives = registreTentatives;
-        this.politiqueBlocage = politiqueBlocage;
+        this.limitation = new LimitationTentatives(registreTentatives, politiqueBlocage);
         this.horloge = horloge;
-        this.empreinteFactice = encodeurMotDePasse.encoder(new MotDePasse(valeurAleatoire()));
+        this.empreinteFactice = EmpreinteFactice.calculer(encodeurMotDePasse);
     }
 
     /**
@@ -68,22 +58,14 @@ public class Connecter {
         }
         String cle = Pseudo.normaliser(saisiePseudo);
         Instant maintenant = horloge.instant();
-        verifierNonBloquee(cle, maintenant);
+        limitation.verifierNonBloquee(cle, maintenant);
         Optional<Compte> compte = authentifier(cle, saisieMotDePasse);
         if (compte.isEmpty()) {
-            enregistrerEchec(cle, maintenant);
+            limitation.enregistrerEchec(cle, maintenant);
             throw new IdentifiantsInvalidesException();
         }
-        registreTentatives.effacer(cle);
+        limitation.oublier(cle);
         return compte.get();
-    }
-
-    private void verifierNonBloquee(String cle, Instant maintenant) {
-        TentativesConnexion tentatives = registreTentatives.constater(cle, maintenant);
-        if (tentatives.estBloquee(maintenant)) {
-            JOURNAL.log(Level.INFO, "Connexion refusée : blocage en cours");
-            throw new ConnexionBloqueeException(tentatives.tempsRestant(maintenant));
-        }
     }
 
     private Optional<Compte> authentifier(String cle, String saisieMotDePasse) {
@@ -91,13 +73,6 @@ public class Connecter {
         String empreinte = compte.map(Compte::empreinteMotDePasse).orElse(empreinteFactice);
         boolean motDePasseCorrect = encodeurMotDePasse.verifier(saisieMotDePasse, empreinte);
         return compte.filter(trouve -> motDePasseCorrect);
-    }
-
-    private void enregistrerEchec(String cle, Instant maintenant) {
-        TentativesConnexion apres = registreTentatives.enregistrerEchec(cle, maintenant, politiqueBlocage);
-        if (apres.blocageDeclencheA(maintenant)) {
-            JOURNAL.log(Level.WARNING, "Connexion bloquée temporairement");
-        }
     }
 
     private static void verifierPresence(String saisiePseudo, String saisieMotDePasse) {
@@ -109,11 +84,5 @@ public class Connecter {
         if (!violations.isEmpty()) {
             throw new DonneesCompteInvalidesException(violations);
         }
-    }
-
-    private static String valeurAleatoire() {
-        byte[] octets = new byte[OCTETS_VALEUR_FACTICE];
-        new SecureRandom().nextBytes(octets);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(octets);
     }
 }

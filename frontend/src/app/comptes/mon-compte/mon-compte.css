@@ -1,0 +1,27 @@
+/* Identité du Compte, en complément des styles de carte et de formulaire. */
+.identite {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.identite__ligne {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+}
+
+.identite dt {
+  min-width: 4rem;
+  color: #4b5563;
+}
+
+.identite dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.identite__pseudo {
+  overflow-wrap: anywhere;
+}
