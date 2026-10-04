@@ -65,6 +65,11 @@
   font-weight: 500;
 }
 
+.complete {
+  color: #9a3412;
+  font-weight: 600;
+}
+
 .ligne__erreur {
   flex-basis: 100%;
 }

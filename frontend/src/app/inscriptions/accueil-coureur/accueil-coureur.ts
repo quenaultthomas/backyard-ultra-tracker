@@ -24,8 +24,12 @@ import { CoureurApiService } from '../coureur-api.service';
 import { CourseOuverteReponse, InscriptionReponse } from '../course-ouverte';
 
 const ECRAN_ACCUEIL_COUREUR = '/coureur';
-const CODE_INSCRIPTION_DEJA_EXISTANTE = 'INSCRIPTION_DEJA_EXISTANTE';
-const MESSAGE_DEJA_INSCRIT = 'Vous êtes déjà inscrit à cette course.';
+/** Refus d'inscription (409) suivis d'une relecture de la liste : message dérivé du `code`, jamais du `detail`. */
+const MESSAGES_REFUS_INSCRIPTION: Readonly<Record<string, string>> = {
+  INSCRIPTION_DEJA_EXISTANTE: 'Vous êtes déjà inscrit à cette course.',
+  COURSE_COMPLETE: 'Cette course est complète.',
+  COURSE_NON_OUVERTE: 'Les inscriptions à cette course sont closes.',
+};
 
 /** Erreur d'inscription, rattachée à la ligne de la Course concernée. */
 interface ErreurInscription {
@@ -138,8 +142,9 @@ export class AccueilCoureur implements OnInit {
       return;
     }
     const code = lireProbleme(erreur)?.code;
-    if (code === CODE_INSCRIPTION_DEJA_EXISTANTE) {
-      this.erreur.set({ courseId, message: MESSAGE_DEJA_INSCRIT });
+    const messageRefus = code !== undefined ? MESSAGES_REFUS_INSCRIPTION[code] : undefined;
+    if (messageRefus !== undefined && estConflit(erreur)) {
+      this.erreur.set({ courseId, message: messageRefus });
       this.charger();
     } else if (erreur instanceof HttpErrorResponse && erreur.status === HttpStatusCode.NotFound) {
       this.erreur.set({ courseId, message: MESSAGE_COURSE_INTROUVABLE });
@@ -151,4 +156,8 @@ export class AccueilCoureur implements OnInit {
       this.erreur.set({ courseId, message: MESSAGE_SERVICE_INDISPONIBLE });
     }
   }
+}
+
+function estConflit(erreur: unknown): boolean {
+  return erreur instanceof HttpErrorResponse && erreur.status === HttpStatusCode.Conflict;
 }

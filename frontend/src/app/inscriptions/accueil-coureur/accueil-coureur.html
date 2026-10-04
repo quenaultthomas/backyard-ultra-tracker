@@ -50,10 +50,13 @@
                   >
                   <span class="statut" data-testid="coureur-statut-inscription">Inscrit</span>
                 } @else {
+                  @if (course.complete) {
+                    <span class="complete" data-testid="coureur-course-complete">Complète</span>
+                  }
                   <button
                     type="button"
                     class="ligne__action"
-                    [disabled]="envoiEnCours() !== null"
+                    [disabled]="course.complete || envoiEnCours() !== null"
                     [attr.aria-busy]="envoiEnCours() === course.id"
                     [attr.aria-describedby]="'coureur-nom-' + course.id"
                     (click)="sinscrire(course)"
