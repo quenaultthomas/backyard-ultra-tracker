@@ -8,6 +8,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
 import java.util.List;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.hibernate.exception.ConstraintViolationException;
@@ -64,6 +67,21 @@ public class InscriptionJpaAdapter implements DepotInscriptions {
                         "select count(i) from InscriptionJpaEntity i where i.courseId = :courseId", Long.class)
                 .setParameter("courseId", courseId)
                 .getSingleResult());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<UUID, Integer> nombresInscrits(Collection<UUID> courseIds) {
+        if (courseIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, Integer> nombresParCourse = new HashMap<>();
+        entityManager.createQuery("select i.courseId, count(i) from InscriptionJpaEntity i "
+                        + "where i.courseId in :courseIds group by i.courseId", Object[].class)
+                .setParameter("courseIds", courseIds)
+                .getResultList()
+                .forEach(ligne -> nombresParCourse.put((UUID) ligne[0], Math.toIntExact((Long) ligne[1])));
+        return Map.copyOf(nombresParCourse);
     }
 
     @Override

@@ -40,11 +40,15 @@ public class ListerCoursesOuvertes {
     public List<CourseOuverte> executer(UUID compteId) {
         Map<UUID, Inscription> mesInscriptions = depotInscriptions.parCompte(compteId).stream()
                 .collect(Collectors.toMap(Inscription::courseId, Function.identity()));
-        return depotCourses.toutes().stream()
+        List<Course> coursesOuvertes = depotCourses.toutes().stream()
                 .filter(Course::estOuverte)
                 .sorted(Course.ORDRE_DE_LISTE)
+                .toList();
+        Map<UUID, Integer> nombresInscrits = depotInscriptions.nombresInscrits(
+                coursesOuvertes.stream().map(Course::id).toList());
+        return coursesOuvertes.stream()
                 .map(course -> new CourseOuverte(course, Optional.ofNullable(mesInscriptions.get(course.id())),
-                        course.estComplete(depotInscriptions.nombreInscrits(course.id()))))
+                        course.estComplete(nombresInscrits.getOrDefault(course.id(), 0))))
                 .toList();
     }
 }

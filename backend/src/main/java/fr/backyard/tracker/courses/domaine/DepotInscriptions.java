@@ -1,6 +1,8 @@
 package fr.backyard.tracker.courses.domaine;
 
 import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +23,9 @@ public interface DepotInscriptions {
 
     /** Nombre d'Inscriptions de la Course, quel que soit leur statut ; ne compare à aucun maximum. */
     int nombreInscrits(UUID courseId);
+
+    /** Nombre d'Inscriptions par Course pour les identifiants demandés, tous statuts confondus. */
+    Map<UUID, Integer> nombresInscrits(Collection<UUID> courseIds);
 
     /** Inscriptions du Compte, toutes Courses confondues, dans un ordre quelconque. */
     List<Inscription> parCompte(UUID compteId);

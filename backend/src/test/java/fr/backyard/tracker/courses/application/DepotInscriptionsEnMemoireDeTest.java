@@ -4,6 +4,10 @@ import fr.backyard.tracker.courses.domaine.DepotInscriptions;
 import fr.backyard.tracker.courses.domaine.Inscription;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collection;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,6 +36,13 @@ final class DepotInscriptionsEnMemoireDeTest implements DepotInscriptions {
     @Override
     public int nombreInscrits(UUID courseId) {
         return (int) inscriptions.stream().filter(i -> i.courseId().equals(courseId)).count();
+    }
+
+    @Override
+    public Map<UUID, Integer> nombresInscrits(Collection<UUID> courseIds) {
+        return inscriptions.stream().filter(i -> courseIds.contains(i.courseId()))
+                .collect(Collectors.groupingBy(Inscription::courseId,
+                        HashMap::new, Collectors.summingInt(ignored -> 1)));
     }
 
     @Override
