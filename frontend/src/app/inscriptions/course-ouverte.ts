@@ -24,4 +24,6 @@ export interface CourseOuverteReponse {
   logoUrl: string | null;
   /** Inscription du coureur connecté à cette Course, `null` s'il n'y est pas inscrit. */
   monInscription: InscriptionReponse | null;
+  /** Course pleine (calculé par le serveur) ; toujours présent. */
+  complete: boolean;
 }

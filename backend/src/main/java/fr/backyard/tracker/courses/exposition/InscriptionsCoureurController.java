@@ -56,6 +56,6 @@ public class InscriptionsCoureurController {
 
     private CourseOuverteReponse versReponse(CourseOuverte courseOuverte) {
         return CourseOuverteReponse.depuis(listerCourses.avecEmpreinteLogo(courseOuverte.course()),
-                courseOuverte.monInscription());
+                courseOuverte.monInscription(), courseOuverte.complete());
     }
 }

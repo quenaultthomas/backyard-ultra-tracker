@@ -1,8 +1,10 @@
 package fr.backyard.tracker.courses.exposition;
 
 import fr.backyard.tracker.courses.domaine.BenevoleInconnuException;
+import fr.backyard.tracker.courses.domaine.CourseCompleteException;
 import fr.backyard.tracker.courses.domaine.CourseIntrouvableException;
 import fr.backyard.tracker.courses.domaine.CourseNonModifiableException;
+import fr.backyard.tracker.courses.domaine.CourseNonOuverteException;
 import fr.backyard.tracker.courses.domaine.CourseNonSupprimableException;
 import fr.backyard.tracker.courses.domaine.CourseTermineeException;
 import fr.backyard.tracker.courses.domaine.DonneesCourseInvalidesException;
@@ -71,6 +73,17 @@ public class GestionnaireErreursCourses {
     ProblemDetail inscriptionDejaExistante() {
         return probleme(HttpStatus.CONFLICT, "Conflit", "Vous êtes déjà inscrit à cette course.",
                 "INSCRIPTION_DEJA_EXISTANTE");
+    }
+
+    @ExceptionHandler(CourseNonOuverteException.class)
+    ProblemDetail courseNonOuverte() {
+        return probleme(HttpStatus.CONFLICT, "Conflit", "La course n'est plus ouverte aux inscriptions.",
+                "COURSE_NON_OUVERTE");
+    }
+
+    @ExceptionHandler(CourseCompleteException.class)
+    ProblemDetail courseComplete() {
+        return probleme(HttpStatus.CONFLICT, "Conflit", "La course est complète.", "COURSE_COMPLETE");
     }
 
     /** ProblemDetail au format de l'API : type about:blank, titre, détail et code stable. */

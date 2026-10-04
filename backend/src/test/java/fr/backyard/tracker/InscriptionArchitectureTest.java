@@ -7,6 +7,7 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
+import fr.backyard.tracker.courses.domaine.Course;
 
 /** CA3 (3.1) - placement et dépendances de l'inscription à une Course, sans exception supplémentaire (RG13). */
 @AnalyzeClasses(packages = "fr.backyard.tracker", importOptions = ImportOption.DoNotIncludeTests.class)
@@ -21,6 +22,8 @@ class InscriptionArchitectureTest {
                 .or().haveSimpleName("InscriptionDejaExistanteException")
                 .or().haveSimpleName("DepotInscriptions")
                 .or().haveSimpleName("GenerateurJetonQr")
+                .or().haveSimpleName("CourseNonOuverteException")
+                .or().haveSimpleName("CourseCompleteException")
                 .should().resideInAPackage(COURSES + "domaine..")
                 .as("CA3 : Inscription, JetonQr, l'exception et les ports sont dans courses.domaine")
                 .check(classes);
@@ -45,6 +48,30 @@ class InscriptionArchitectureTest {
                         "java..", COURSES + "domaine..", COURSES + "application..",
                         "org.springframework.stereotype..", "org.springframework.transaction..")
                 .as("CA3 : les cas d'usage d'inscription ne dépendent que du domaine, de java, du stéréotype et de la transaction")
+                .check(classes);
+    }
+
+    @ArchTest
+    static void ca4_aucune_regle_de_remplissage_hors_du_domaine(JavaClasses classes) {
+        noClasses().that().haveSimpleName("InscriptionJpaAdapter")
+                .or().haveSimpleName("InscrireCoureur")
+                .or().haveSimpleName("ListerCoursesOuvertes")
+                .or().haveSimpleName("GestionnaireErreursCourses")
+                .or().haveSimpleName("CourseOuverteReponse")
+                .should().callMethod(Course.class, "nombreMaxParticipants")
+                .as("CA4 : la comparaison au maximum de participants n'est faite que dans Course")
+                .check(classes);
+    }
+
+    @ArchTest
+    static void ca4_aucune_regle_de_statut_dans_l_inscription_hors_du_domaine(JavaClasses classes) {
+        noClasses().that().haveSimpleName("InscriptionJpaAdapter")
+                .or().haveSimpleName("InscrireCoureur")
+                .or().haveSimpleName("ListerCoursesOuvertes")
+                .or().haveSimpleName("GestionnaireErreursCourses")
+                .or().haveSimpleName("CourseOuverteReponse")
+                .should().callMethod(Course.class, "statut")
+                .as("CA4 : le statut de la Course n'est testé que dans Course (estOuverte, autoriserInscription)")
                 .check(classes);
     }
 
