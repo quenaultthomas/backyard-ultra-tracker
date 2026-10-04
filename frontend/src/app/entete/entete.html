@@ -22,6 +22,11 @@
             Espace bénévole
           </a>
         }
+        @if (session.estCoureur()) {
+          <a class="entete__lien" routerLink="/coureur" data-testid="lien-espace-coureur">
+            Espace coureur
+          </a>
+        }
         <a class="entete__lien" routerLink="/mon-compte" data-testid="lien-mon-compte">
           Mon compte
         </a>

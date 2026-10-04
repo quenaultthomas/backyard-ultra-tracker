@@ -5,7 +5,7 @@ import { Observable, catchError, concatMap, filter, map, of, take, tap, timeout 
 import { CsrfService } from '../partage/csrf.service';
 import { ChangerMotDePasseRequete, CompteReponse, ConnexionRequete } from './compte';
 import { ComptesApiService } from './comptes-api.service';
-import { estAdminMaster, estAdministrateur, estBenevole } from './roles';
+import { estAdminMaster, estAdministrateur, estBenevole, estCoureur } from './roles';
 
 /** `INCONNU` tant que `GET /api/comptes/moi` n'a pas répondu. */
 export type EtatSession = 'INCONNU' | 'ANONYME' | 'CONNECTE';
@@ -45,6 +45,10 @@ export class SessionService {
   readonly estBenevole = computed(() => {
     const compte = this.compteCourant();
     return compte != null && estBenevole(compte.role);
+  });
+  readonly estCoureur = computed(() => {
+    const compte = this.compteCourant();
+    return compte != null && estCoureur(compte.role);
   });
   private readonly compte$ = toObservable(this.compteCourant);
 

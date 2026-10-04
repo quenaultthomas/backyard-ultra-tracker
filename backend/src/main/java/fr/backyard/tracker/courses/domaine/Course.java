@@ -125,6 +125,14 @@ public final class Course {
         }
     }
 
+    /**
+     * Une Course est ouverte aux inscriptions tant qu'elle est EN_PREPARATION, quelle que soit sa date. Unique
+     * définition de cette règle.
+     */
+    public boolean estOuverte() {
+        return statut == StatutCourse.EN_PREPARATION;
+    }
+
     private static String sansEspacesAutour(String nom) {
         return nom == null ? "" : nom.trim();
     }

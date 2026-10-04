@@ -637,10 +637,10 @@ class AffectationBenevolesIntegrationTest {
         assertThat(lireMesCourses(leo).statusCode()).isEqualTo(200);
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                        "0006-affectation-benevole");
+                        "0006-affectation-benevole", "0007-inscription");
         assertThat(jdbc.queryForList("select table_name from information_schema.tables where table_schema = 'public'",
                 String.class)).containsExactlyInAnyOrder("databasechangelog", "databasechangeloglock", "compte",
-                "course", "logo_course", "affectation_benevole");
+                "course", "logo_course", "affectation_benevole", "inscription");
     }
 
     // ---------------------------------------------------------------- utilitaires

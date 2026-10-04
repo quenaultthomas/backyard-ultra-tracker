@@ -17,6 +17,11 @@ export function estBenevole(role: Role): boolean {
   return role === 'BENEVOLE';
 }
 
+/** Seul rôle ayant accès à l'espace coureur (contrôle serveur : `/api/coureur/**`). */
+export function estCoureur(role: Role): boolean {
+  return role === 'COUREUR';
+}
+
 /** Libellé affiché d'un rôle. */
 export const LIBELLES_ROLE: Readonly<Record<Role, string>> = {
   ADMIN_MASTER: 'Administrateur master',

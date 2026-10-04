@@ -442,7 +442,7 @@ class CompteIntegrationTest {
     void ca21_schema_de_la_table_compte() {
         List<String> changesets = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
         assertThat(changesets).containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                "0006-affectation-benevole");
+                "0006-affectation-benevole", "0007-inscription");
 
         Map<String, Map<String, Object>> colonnes = new java.util.HashMap<>();
         jdbc.queryForList("""

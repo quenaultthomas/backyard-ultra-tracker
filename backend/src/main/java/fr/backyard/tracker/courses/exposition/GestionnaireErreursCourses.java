@@ -6,6 +6,7 @@ import fr.backyard.tracker.courses.domaine.CourseNonModifiableException;
 import fr.backyard.tracker.courses.domaine.CourseNonSupprimableException;
 import fr.backyard.tracker.courses.domaine.CourseTermineeException;
 import fr.backyard.tracker.courses.domaine.DonneesCourseInvalidesException;
+import fr.backyard.tracker.courses.domaine.InscriptionDejaExistanteException;
 import fr.backyard.tracker.courses.domaine.ViolationValidation;
 import java.util.List;
 import java.net.URI;
@@ -19,7 +20,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * le 404 générique et la sécurité restent traités globalement. Les messages ne reprennent jamais la valeur saisie.
  */
 @RestControllerAdvice(assignableTypes = {CourseController.class, LogoCourseController.class,
-        FicheCourseController.class, CoursesDuBenevoleController.class})
+        FicheCourseController.class, CoursesDuBenevoleController.class, InscriptionsCoureurController.class})
 public class GestionnaireErreursCourses {
 
     private static final URI TYPE_GENERIQUE = URI.create("about:blank");
@@ -64,6 +65,12 @@ public class GestionnaireErreursCourses {
     ProblemDetail courseNonSupprimable() {
         return probleme(HttpStatus.CONFLICT, "Conflit",
                 "La course n'est plus en préparation : elle ne peut plus être supprimée.", "COURSE_NON_SUPPRIMABLE");
+    }
+
+    @ExceptionHandler(InscriptionDejaExistanteException.class)
+    ProblemDetail inscriptionDejaExistante() {
+        return probleme(HttpStatus.CONFLICT, "Conflit", "Vous êtes déjà inscrit à cette course.",
+                "INSCRIPTION_DEJA_EXISTANTE");
     }
 
     /** ProblemDetail au format de l'API : type about:blank, titre, détail et code stable. */
