@@ -15,7 +15,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Adaptateur JPA du dépôt d'Inscriptions. Il ne calcule aucun dossard : il fournit seulement le plus grand existant.
+ * Adaptateur JPA du dépôt d'Inscriptions. Il ne calcule aucun dossard ni aucune complétude : il fournit
+ * seulement le plus grand dossard existant et le nombre d'Inscriptions.
  * La contrainte d'unicité (Course, Compte) est le filet ultime du contrôle de doublon, traduite en exception métier.
  */
 @Repository
@@ -54,6 +55,15 @@ public class InscriptionJpaAdapter implements DepotInscriptions {
                 .setParameter("courseId", courseId)
                 .setParameter("compteId", compteId)
                 .getSingleResult() > 0;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public int nombreInscrits(UUID courseId) {
+        return Math.toIntExact(entityManager.createQuery(
+                        "select count(i) from InscriptionJpaEntity i where i.courseId = :courseId", Long.class)
+                .setParameter("courseId", courseId)
+                .getSingleResult());
     }
 
     @Override

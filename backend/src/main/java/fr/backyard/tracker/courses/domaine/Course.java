@@ -133,6 +133,34 @@ public final class Course {
         return statut == StatutCourse.EN_PREPARATION;
     }
 
+    /**
+     * Seule une Course ouverte ({@link #estOuverte()}) accepte une Inscription. Unique contrôle de cette règle.
+     *
+     * @throws CourseNonOuverteException la Course est EN_COURS ou TERMINEE
+     */
+    public void autoriserInscription() {
+        if (!estOuverte()) {
+            throw new CourseNonOuverteException();
+        }
+    }
+
+    /**
+     * Une Course est complète quand son nombre d'Inscriptions, tous statuts confondus, atteint le nombre maximum de
+     * participants. Unique définition de cette règle.
+     */
+    public boolean estComplete(int nombreInscriptions) {
+        return nombreInscriptions >= nombreMaxParticipants;
+    }
+
+    /**
+     * @throws CourseCompleteException la Course est complète pour ce nombre d'Inscriptions
+     */
+    public void verifierPlaceDisponible(int nombreInscriptions) {
+        if (estComplete(nombreInscriptions)) {
+            throw new CourseCompleteException();
+        }
+    }
+
     private static String sansEspacesAutour(String nom) {
         return nom == null ? "" : nom.trim();
     }

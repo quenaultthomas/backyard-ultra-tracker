@@ -19,6 +19,9 @@ public interface DepotInscriptions {
 
     boolean existePour(UUID courseId, UUID compteId);
 
+    /** Nombre d'Inscriptions de la Course, quel que soit leur statut ; ne compare à aucun maximum. */
+    int nombreInscrits(UUID courseId);
+
     /** Inscriptions du Compte, toutes Courses confondues, dans un ordre quelconque. */
     List<Inscription> parCompte(UUID compteId);
 }
