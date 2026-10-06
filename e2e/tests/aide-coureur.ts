@@ -53,3 +53,28 @@ export function placerStatutCourseEnBase(courseId: string, statut: 'EN_PREPARATI
     { cwd: join(__dirname, '..', '..'), stdio: 'pipe' },
   );
 }
+
+/** Exécute une requête SQL en base (docker compose exec, depuis la racine du dépôt) et renvoie la sortie brute sans décoration. */
+function executerSql(requete: string): string {
+  return execFileSync(
+    'docker',
+    ['compose', 'exec', '-T', 'base', 'psql', '-U', process.env.E2E_BASE_UTILISATEUR ?? 'backyard', '-d', process.env.E2E_BASE_NOM ?? 'backyard', '-t', '-A', '-c', requete],
+    { cwd: join(__dirname, '..', '..'), stdio: 'pipe', encoding: 'utf8' },
+  ).trim();
+}
+
+function exigerUuid(valeur: string): void {
+  if (!/^[0-9a-f-]{36}$/.test(valeur)) throw new Error('identifiant invalide');
+}
+
+/** Lit la colonne `jeton_qr` d'une inscription : la référence indépendante de l'API. */
+export function lireJetonQrEnBase(inscriptionId: string): string {
+  exigerUuid(inscriptionId);
+  return executerSql(`select jeton_qr from inscription where id = '${inscriptionId}'`);
+}
+
+/** Change le statut d'une inscription directement en base (aucun endpoint avant le jalon 4). */
+export function placerStatutInscriptionEnBase(inscriptionId: string, statut: 'EN_COURSE' | 'ABANDON' | 'VAINQUEUR'): void {
+  exigerUuid(inscriptionId);
+  executerSql(`update inscription set statut = '${statut}' where id = '${inscriptionId}'`);
+}

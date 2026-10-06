@@ -3,8 +3,10 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { CourseOuverteReponse, InscriptionReponse } from './course-ouverte';
+import { MonInscriptionReponse } from './mon-inscription';
 
 const URL_COURSES_OUVERTES = '/api/coureur/courses';
+const URL_MES_INSCRIPTIONS = '/api/coureur/inscriptions';
 
 @Injectable({ providedIn: 'root' })
 export class CoureurApiService {
@@ -21,5 +23,10 @@ export class CoureurApiService {
       `${URL_COURSES_OUVERTES}/${encodeURIComponent(courseId)}/inscriptions`,
       null,
     );
+  }
+
+  /** Inscriptions du coureur connecté (toutes Courses, tous statuts), jeton QR compris, dans l'ordre de l'API. */
+  listerMesInscriptions(): Observable<MonInscriptionReponse[]> {
+    return this.http.get<MonInscriptionReponse[]>(URL_MES_INSCRIPTIONS);
   }
 }

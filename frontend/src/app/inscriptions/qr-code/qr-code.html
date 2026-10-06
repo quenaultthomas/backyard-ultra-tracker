@@ -1,0 +1,17 @@
+@if (dessin(); as qr) {
+  <svg
+    class="qr"
+    role="img"
+    [attr.aria-label]="libelle()"
+    [attr.viewBox]="'0 0 ' + qr.cote + ' ' + qr.cote"
+    shape-rendering="crispEdges"
+    data-testid="inscriptions-qr"
+  >
+    <rect width="100%" height="100%" fill="#fff" />
+    <path [attr.d]="qr.trace" fill="#000" />
+  </svg>
+} @else {
+  <p class="erreur" role="alert" data-testid="inscriptions-erreur-qr">
+    Impossible d'afficher le QR code.
+  </p>
+}

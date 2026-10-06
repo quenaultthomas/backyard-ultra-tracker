@@ -88,6 +88,13 @@ export const routes: Routes = [
     title: 'Courses ouvertes - Backyard Ultra Tracker',
   },
   {
+    path: 'coureur/inscriptions',
+    canActivate: [reserveAuxCoureurs],
+    loadComponent: () =>
+      import('./inscriptions/mes-inscriptions/mes-inscriptions').then((m) => m.MesInscriptions),
+    title: 'Mes inscriptions - Backyard Ultra Tracker',
+  },
+  {
     path: 'acces-refuse',
     loadComponent: () => import('./comptes/acces-refuse/acces-refuse').then((m) => m.AccesRefuse),
     title: 'Accès refusé - Backyard Ultra Tracker',
