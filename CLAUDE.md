@@ -97,6 +97,8 @@ frontend/             application Angular (PWA) + Dockerfile (build Angular serv
 e2e/                  tests Playwright
 docs/roadmap.md       roadmap des incréments
 docs/specs/           specs des incréments (increment-X.Y.md)
+docs/audits/          référentiel des points d'audit (referentiel.md) et rapports d'audit
+.claude/agents/       définitions des sous-agents (dont auditeur et auditeur-lacunes)
 scripts/              scripts utilitaires (données de démo)
 docs/deploiement.md   procédure de déploiement sur le VPS
 docker-compose.yml    stack commune (dev, tests E2E, production)
@@ -221,6 +223,8 @@ Sous-agents :
 | `developpeur-front` | Implémente les écrans Angular à partir du contrat d'API | Code Angular, `frontend/Dockerfile`, configuration Caddy |
 | `testeur-it` | Tests d'intégration (API, persistance, sécurité), après le code | JUnit 5 + Testcontainers |
 | `testeur-e2e` | Tests de bout en bout des écrans livrés, après le code | Playwright |
+| `auditeur` | Audit en lecture seule à la demande, hors workflow d'incrément (voir « Audits ») | `docs/audits/audit-AAAA-MM-JJ[-périmètre].md` |
+| `auditeur-lacunes` | Cible un point du référentiel jamais audité et l'audite, à la demande (voir « Audits ») | `docs/audits/audit-AAAA-MM-JJ-<ID>.md` |
 
 La spec de chaque incrément contient :
 - les règles et cas limites ;
@@ -241,3 +245,12 @@ Un incrément se lance en demandant à l'orchestrateur de réaliser l'incrément
 Chaque test référence le numéro du critère d'acceptation qu'il couvre. En cas de `KO`, retour au développeur concerné (back ou front) avec la liste des écarts : 3 allers-retours maximum par testeur, puis remonter le problème à l'utilisateur. Un test n'est jamais supprimé ni affaibli pour obtenir un verdict vert.
 
 Si un développeur constate que le contrat d'API de la spec est incomplet ou faux, il le signale ; l'orchestrateur rappelle le `fonctionnel`, qui met à jour la spec, puis le développement reprend. Personne d'autre ne modifie la spec.
+
+## Audits
+
+Les audits ne font pas partie du workflow d'incrément : ils sont lancés à la demande de l'utilisateur, jamais automatiquement.
+
+- `docs/audits/referentiel.md` liste les points auditables (identifiants stables SEC-01, MET-04…, priorité, incrément à partir duquel ils s'appliquent). Un point ajouté ne reprend jamais un identifiant existant.
+- `auditeur` : audit complet, par axe (SEC, ARC, MET, PER, DEP, TST, FRT), sur le diff d'une branche ou des chemins précis. Sans périmètre donné, il le demande. Lecture seule : son seul livrable est un rapport dans `docs/audits/`.
+- `auditeur-lacunes` : lit la table « Couverture » des rapports existants, retient les points applicables jamais audités (ou audités partiellement ou depuis longtemps), en choisit un et l'audite.
+- Les corrections issues d'un rapport sont confiées aux développeurs par l'utilisateur ; l'auditeur ne corrige jamais le code.
