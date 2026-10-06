@@ -1,0 +1,58 @@
+<main class="page">
+  <section class="carte" aria-labelledby="inscriptions-titre">
+    <h1 id="inscriptions-titre" class="titre" data-testid="inscriptions-titre">Mes inscriptions</h1>
+    @if (erreurChargement()) {
+      <p class="erreur erreur--generale" role="alert" data-testid="inscriptions-erreur-chargement">
+        Impossible de charger vos inscriptions. Réessayez plus tard.
+      </p>
+    } @else if (inscriptions(); as liste) {
+      @if (liste.length === 0) {
+        <p class="message" data-testid="inscriptions-vide">Vous n'êtes inscrit à aucune course.</p>
+        <a class="lien" routerLink="/coureur" data-testid="inscriptions-lien-courses-ouvertes">
+          Voir les courses ouvertes
+        </a>
+      } @else {
+        <ul class="liste" aria-label="Mes inscriptions" data-testid="inscriptions-liste">
+          @for (inscription of liste; track inscription.id) {
+            <li class="ligne" data-testid="inscriptions-ligne">
+              <div class="course">
+                @if (inscription.logoUrl; as url) {
+                  <img
+                    class="logo"
+                    [src]="url"
+                    [alt]="'Logo de ' + inscription.courseNom"
+                    data-testid="inscriptions-course-logo"
+                  />
+                }
+                <div class="infos">
+                  <span class="nom" data-testid="inscriptions-course-nom">{{
+                    inscription.courseNom
+                  }}</span>
+                  <time
+                    [attr.datetime]="inscription.courseDate"
+                    data-testid="inscriptions-course-date"
+                    >{{ formaterDate(inscription.courseDate) }}</time
+                  >
+                  <span data-testid="inscriptions-course-statut">{{
+                    libellesStatutCourse[inscription.courseStatut]
+                  }}</span>
+                </div>
+              </div>
+              <div class="inscription">
+                <span class="dossard" data-testid="inscriptions-dossard"
+                  >Dossard {{ inscription.dossard }}</span
+                >
+                <span class="statut" data-testid="inscriptions-statut">{{
+                  libellesStatutInscription[inscription.statut]
+                }}</span>
+              </div>
+              <app-qr-code [contenu]="inscription.jetonQr" [libelle]="libelleQr(inscription)" />
+            </li>
+          }
+        </ul>
+      }
+    } @else {
+      <p class="message" role="status">Chargement…</p>
+    }
+  </section>
+</main>
