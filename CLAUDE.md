@@ -228,7 +228,7 @@ La spec de chaque incrément contient :
 - le contrat d'API (endpoints, DTO, codes d'erreur), pour que back et front avancent en parallèle ;
 - une section « Tester à la main » : les étapes pour vérifier l'incrément dans l'application lancée.
 
-Un incrément se lance avec la skill `/demarrer-increment X.Y`, qui porte le déroulé détaillé (préconditions, gates, commits, gestion des KO, restitution). En résumé, dans cet ordre :
+Un incrément se lance en demandant à l'orchestrateur de réaliser l'incrément X.Y de `docs/roadmap.md`. Déroulé, dans cet ordre :
 
 1. `fonctionnel` : rédige la spec à partir de la ligne correspondante de `docs/roadmap.md`.
 2. `testeur-unitaire` : écrit les tests unitaires à partir de la spec, pas à partir du code.
