@@ -10,8 +10,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
-  padding: 1rem;
+  gap: var(--espace-6);
+  padding: var(--espace-4);
   text-align: center;
 }
 
@@ -23,32 +23,27 @@
 .etat-api {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--espace-2);
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--taille-grande);
 }
 
+/* Puce d'état : la couleur double le libellé, jamais seule. */
 .pastille {
   width: 0.875rem;
   height: 0.875rem;
   border-radius: 50%;
-  background: #6b7280;
+  background-color: var(--couleur-encre-douce);
 }
 
 .etat-api--disponible .pastille {
-  background: #15803d;
+  background-color: var(--couleur-foret-survol);
 }
 
 .etat-api--indisponible .pastille {
-  background: #b91c1c;
+  background-color: var(--couleur-danger);
 }
 
 .lien {
-  font-size: 1.125rem;
-  color: #1d4ed8;
-}
-
-.lien:focus-visible {
-  outline: 3px solid #f59e0b;
-  outline-offset: 2px;
+  font-size: var(--taille-moyenne);
 }

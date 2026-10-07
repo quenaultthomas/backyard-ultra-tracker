@@ -5,27 +5,16 @@
 
 .champs-nombre {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: var(--espace-4);
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--espace-3);
 }
 
 .actions .bouton {
   flex: 1 1 12rem;
-}
-
-.bouton--secondaire {
-  border: 1px solid #1d4ed8;
-  background: #fff;
-  color: #1d4ed8;
-}
-
-.bouton--secondaire:disabled {
-  border-color: #6b7280;
-  color: #fff;
 }

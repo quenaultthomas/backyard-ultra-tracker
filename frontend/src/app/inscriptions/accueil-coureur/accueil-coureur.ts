@@ -41,11 +41,7 @@ interface ErreurInscription {
 @Component({
   selector: 'app-accueil-coureur',
   templateUrl: './accueil-coureur.html',
-  styleUrls: [
-    '../../partage/page-carte.css',
-    '../../administration/courses/action-ligne.css',
-    './accueil-coureur.css',
-  ],
+  styleUrls: ['../../partage/page-carte.css', './accueil-coureur.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccueilCoureur implements OnInit {

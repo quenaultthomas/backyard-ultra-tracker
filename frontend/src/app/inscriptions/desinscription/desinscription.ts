@@ -39,11 +39,7 @@ export interface ResultatDesinscription {
 @Component({
   selector: 'app-desinscription',
   templateUrl: './desinscription.html',
-  styleUrls: [
-    '../../administration/courses/action-ligne.css',
-    '../../partage/confirmation-en-ligne.css',
-    './desinscription.css',
-  ],
+  styleUrls: ['../../partage/confirmation-en-ligne.css', './desinscription.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Desinscription {

@@ -25,3 +25,10 @@ export const LIBELLES_STATUT_INSCRIPTION: Readonly<Record<StatutInscription, str
   ABANDON: 'Abandon',
   VAINQUEUR: 'Vainqueur',
 };
+
+/** Classes de la pastille de statut d'une Inscription (affichage seulement, docs/design.md). */
+export const PASTILLES_STATUT_INSCRIPTION: Readonly<Record<StatutInscription, string>> = {
+  EN_COURSE: 'pastille-statut pastille-statut--en-course',
+  ABANDON: 'pastille-statut pastille-statut--abandon',
+  VAINQUEUR: 'pastille-statut pastille-statut--vainqueur',
+};

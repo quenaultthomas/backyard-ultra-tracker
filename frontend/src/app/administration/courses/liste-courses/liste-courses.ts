@@ -13,7 +13,7 @@ import { CourseRetiree, SuppressionCourse } from '../suppression-course/suppress
   selector: 'app-liste-courses',
   imports: [RouterLink, LogoCourse, SuppressionCourse],
   templateUrl: './liste-courses.html',
-  styleUrls: ['../action-ligne.css', './liste-courses.css'],
+  styleUrl: './liste-courses.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListeCourses {

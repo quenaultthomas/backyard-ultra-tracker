@@ -50,7 +50,7 @@ const ETAT_INITIAL: EtatLogo = { fichier: null, apercu: null, erreur: null };
 @Component({
   selector: 'app-logo-course',
   templateUrl: './logo-course.html',
-  styleUrls: ['../action-ligne.css', './logo-course.css'],
+  styleUrl: './logo-course.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LogoCourse {

@@ -42,7 +42,6 @@ const ERREURS_SPECIFIQUES: ErreursSpecifiques<ChampSuppression> = {
   styleUrls: [
     '../../../partage/page-carte.css',
     '../../formulaire-compte.css',
-    '../../../administration/courses/action-ligne.css',
     '../../../partage/confirmation-en-ligne.css',
     './suppression-compte.css',
   ],
