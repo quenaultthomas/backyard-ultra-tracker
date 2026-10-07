@@ -38,4 +38,17 @@ final class DepotInscriptionsEnMemoireDeTest implements DepotInscriptions {
     public List<Inscription> parCompte(UUID compteId) {
         return inscriptions.stream().filter(i -> i.compteId().equals(compteId)).toList();
     }
+
+    /** 3.4 RG3 : recherche par (identifiant, Compte) ; l'Inscription d'autrui n'est jamais renvoyée. */
+    @Override
+    public Optional<Inscription> parIdEtCompte(UUID inscriptionId, UUID compteId) {
+        return inscriptions.stream().filter(i -> i.id().equals(inscriptionId) && i.compteId().equals(compteId))
+                .findFirst();
+    }
+
+    /** 3.4 RG1 : suppression définitive. */
+    @Override
+    public void supprimer(UUID inscriptionId) {
+        inscriptions.removeIf(i -> i.id().equals(inscriptionId));
+    }
 }

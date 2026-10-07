@@ -145,6 +145,18 @@ public final class Course {
     }
 
     /**
+     * Une Inscription ne peut être supprimée par son coureur que tant que la Course est EN_PREPARATION. Unique
+     * contrôle de cette règle.
+     *
+     * @throws DesinscriptionImpossibleException la Course est EN_COURS ou TERMINEE
+     */
+    public void autoriserDesinscription() {
+        if (statut != StatutCourse.EN_PREPARATION) {
+            throw new DesinscriptionImpossibleException();
+        }
+    }
+
+    /**
      * Une Course est complète quand son nombre d'Inscriptions, tous statuts confondus, atteint le nombre maximum de
      * participants. Unique définition de cette règle.
      */

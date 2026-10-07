@@ -1,6 +1,17 @@
 <main class="page">
   <section class="carte" aria-labelledby="inscriptions-titre">
     <h1 id="inscriptions-titre" class="titre" data-testid="inscriptions-titre">Mes inscriptions</h1>
+    @if (retourDesinscription(); as retour) {
+      @if (retour.succes) {
+        <p class="succes" role="status" data-testid="inscriptions-message-desinscription">
+          {{ retour.message }}
+        </p>
+      } @else {
+        <p class="erreur erreur--generale" role="alert" data-testid="inscriptions-erreur-desinscription">
+          {{ retour.message }}
+        </p>
+      }
+    }
     @if (erreurChargement()) {
       <p class="erreur erreur--generale" role="alert" data-testid="inscriptions-erreur-chargement">
         Impossible de charger vos inscriptions. Réessayez plus tard.
@@ -47,6 +58,13 @@
                 }}</span>
               </div>
               <app-qr-code [contenu]="inscription.jetonQr" [libelle]="libelleQr(inscription)" />
+              <app-desinscription
+                [inscription]="inscription"
+                [ouverte]="desinscriptionOuverte() === inscription.id"
+                (ouvrir)="desinscriptionOuverte.set(inscription.id)"
+                (fermer)="desinscriptionOuverte.set(null)"
+                (resultat)="afficherResultat($event)"
+              />
             </li>
           }
         </ul>

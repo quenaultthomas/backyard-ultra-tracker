@@ -1,0 +1,50 @@
+@let i = inscription();
+@if (desinscriptible()) {
+  <button
+    #boutonDesinscrire
+    type="button"
+    class="ligne__action ligne__action--danger"
+    [disabled]="envoiEnCours()"
+    [attr.aria-label]="'Se désinscrire de ' + i.courseNom"
+    [attr.aria-expanded]="confirmationAffichee()"
+    (click)="ouvrir.emit()"
+    data-testid="inscriptions-bouton-desinscrire"
+  >
+    Se désinscrire
+  </button>
+}
+
+@if (confirmationAffichee()) {
+  <div
+    class="confirmation"
+    role="group"
+    [attr.aria-labelledby]="'confirmation-desinscription-' + i.id"
+    data-testid="inscriptions-confirmation-desinscription"
+  >
+    <p [id]="'confirmation-desinscription-' + i.id" class="confirmation__texte">
+      Se désinscrire de {{ i.courseNom }} ? Votre dossard {{ i.dossard }} et votre QR code seront
+      supprimés. Si vous vous réinscrivez, vous recevrez un nouveau dossard et un nouveau QR code.
+    </p>
+    <div class="confirmation__actions">
+      <button
+        type="button"
+        class="ligne__action ligne__action--danger-plein"
+        [disabled]="envoiEnCours()"
+        (click)="confirmer()"
+        data-testid="inscriptions-bouton-confirmer-desinscription"
+      >
+        Se désinscrire
+      </button>
+      <button
+        #boutonAnnuler
+        type="button"
+        class="ligne__action"
+        [disabled]="envoiEnCours()"
+        (click)="annuler()"
+        data-testid="inscriptions-bouton-annuler-desinscription"
+      >
+        Annuler
+      </button>
+    </div>
+  </div>
+}

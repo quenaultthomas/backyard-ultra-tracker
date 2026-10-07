@@ -24,4 +24,10 @@ public interface DepotInscriptions {
 
     /** Inscriptions du Compte, toutes Courses confondues, dans un ordre quelconque. */
     List<Inscription> parCompte(UUID compteId);
+
+    /** Inscription de cet identifiant si elle appartient au Compte, vide sinon (inconnue ou d'un autre Compte). */
+    Optional<Inscription> parIdEtCompte(UUID inscriptionId, UUID compteId);
+
+    /** Supprime définitivement l'Inscription ; une Inscription déjà absente ne supprime rien. */
+    void supprimer(UUID inscriptionId);
 }
