@@ -3,7 +3,9 @@ package fr.backyard.tracker.comptes.exposition;
 import fr.backyard.tracker.comptes.application.ChangerMotDePasse;
 import fr.backyard.tracker.comptes.application.ConsulterCompteConnecte;
 import fr.backyard.tracker.comptes.application.CreerCompteCoureur;
+import fr.backyard.tracker.comptes.application.SupprimerCompteCoureur;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,13 +25,16 @@ public class CompteController {
     private final CreerCompteCoureur creerCompteCoureur;
     private final ConsulterCompteConnecte consulterCompteConnecte;
     private final ChangerMotDePasse changerMotDePasse;
+    private final SupprimerCompteCoureur supprimerCompteCoureur;
     private final SessionConnexion sessionConnexion;
 
     public CompteController(CreerCompteCoureur creerCompteCoureur, ConsulterCompteConnecte consulterCompteConnecte,
-                            ChangerMotDePasse changerMotDePasse, SessionConnexion sessionConnexion) {
+                            ChangerMotDePasse changerMotDePasse, SupprimerCompteCoureur supprimerCompteCoureur,
+                            SessionConnexion sessionConnexion) {
         this.creerCompteCoureur = creerCompteCoureur;
         this.consulterCompteConnecte = consulterCompteConnecte;
         this.changerMotDePasse = changerMotDePasse;
+        this.supprimerCompteCoureur = supprimerCompteCoureur;
         this.sessionConnexion = sessionConnexion;
     }
 
@@ -56,5 +61,17 @@ public class CompteController {
         changerMotDePasse.executer(new ChangerMotDePasse.Commande(
                 idCompte, requete.motDePasseActuel(), requete.nouveauMotDePasse()));
         sessionConnexion.renouvelerIdentifiant(requeteHttp);
+    }
+
+    /**
+     * Supprime (anonymise) le compte coureur de la session, jamais un autre ; toutes ses sessions sont fermées par le
+     * cas d'usage, le cookie de la session en cours est effacé.
+     */
+    @PostMapping(path = "/moi/suppression", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void supprimerCompte(@RequestBody SupprimerCompteRequete requete, @AuthenticationPrincipal UUID idCompte,
+                                HttpServletRequest requeteHttp, HttpServletResponse reponseHttp) {
+        supprimerCompteCoureur.executer(new SupprimerCompteCoureur.Commande(idCompte, requete.motDePasseActuel()));
+        sessionConnexion.fermer(requeteHttp, reponseHttp);
     }
 }

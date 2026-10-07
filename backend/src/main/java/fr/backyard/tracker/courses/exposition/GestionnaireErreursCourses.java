@@ -14,6 +14,7 @@ import fr.backyard.tracker.courses.domaine.InscriptionIntrouvableException;
 import fr.backyard.tracker.courses.domaine.ViolationValidation;
 import java.util.List;
 import java.net.URI;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -22,10 +23,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /**
  * Erreurs métier du contexte courses en ProblemDetail (même format que le reste de l'API). Le corps illisible,
  * le 404 générique et la sécurité restent traités globalement. Les messages ne reprennent jamais la valeur saisie.
+ *
+ * <p>Ordre explicite : consulté avant le gestionnaire de dernier recours des erreurs inattendues (500).
  */
 @RestControllerAdvice(assignableTypes = {CourseController.class, LogoCourseController.class,
         FicheCourseController.class, CoursesDuBenevoleController.class, InscriptionsCoureurController.class,
         MesInscriptionsController.class})
+@Order(0)
 public class GestionnaireErreursCourses {
 
     private static final URI TYPE_GENERIQUE = URI.create("about:blank");

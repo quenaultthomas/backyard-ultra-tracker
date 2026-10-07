@@ -7,11 +7,13 @@ import {
   CompteReponse,
   ConnexionRequete,
   CreerCompteRequete,
+  SupprimerCompteRequete,
 } from './compte';
 
 const URL_COMPTES = '/api/comptes';
 const URL_COMPTE_COURANT = '/api/comptes/moi';
 const URL_MOT_DE_PASSE = '/api/comptes/moi/mot-de-passe';
+const URL_SUPPRESSION = '/api/comptes/moi/suppression';
 const URL_CONNEXION = '/api/connexion';
 const URL_DECONNEXION = '/api/deconnexion';
 
@@ -33,6 +35,10 @@ export class ComptesApiService {
 
   changerMotDePasse(requete: ChangerMotDePasseRequete): Observable<void> {
     return this.http.put<void>(URL_MOT_DE_PASSE, requete);
+  }
+
+  supprimerCompte(requete: SupprimerCompteRequete): Observable<void> {
+    return this.http.post<void>(URL_SUPPRESSION, requete);
   }
 
   lireCompteCourant(): Observable<CompteReponse> {

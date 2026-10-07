@@ -16,7 +16,6 @@ import fr.backyard.tracker.comptes.domaine.ViolationValidation;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,10 +47,9 @@ public class ChangerMotDePasse {
     private final DepotComptes depotComptes;
     private final EncodeurMotDePasse encodeurMotDePasse;
     private final LimitationTentatives limitation;
+    private final ConfirmationMotDePasse confirmation;
     private final InvalidationAutresSessions invalidationAutresSessions;
     private final Clock horloge;
-    /** Vérifiée pour un compte introuvable ou inutilisable, pour un coût de calcul égal. */
-    private final String empreinteFactice;
 
     public ChangerMotDePasse(DepotComptes depotComptes, EncodeurMotDePasse encodeurMotDePasse,
                              RegistreTentativesConnexion registreTentatives, PolitiqueBlocage politiqueBlocage,
@@ -59,9 +57,10 @@ public class ChangerMotDePasse {
         this.depotComptes = depotComptes;
         this.encodeurMotDePasse = encodeurMotDePasse;
         this.limitation = new LimitationTentatives(registreTentatives, politiqueBlocage);
+        this.confirmation = new ConfirmationMotDePasse(depotComptes, encodeurMotDePasse, limitation, JOURNAL,
+                "Échec de changement de mot de passe (compte {0})");
         this.invalidationAutresSessions = invalidationAutresSessions;
         this.horloge = horloge;
-        this.empreinteFactice = EmpreinteFactice.calculer(encodeurMotDePasse);
     }
 
     /**
@@ -74,49 +73,13 @@ public class ChangerMotDePasse {
     @Transactional
     public void executer(Commande commande) {
         verifierSaisies(commande);
-        Compte compte = compteUtilisable(commande);
-        String cle = compte.pseudoNormalise();
-        Instant maintenant = horloge.instant();
-        limitation.verifierNonBloquee(cle, maintenant);
-        verifierMotDePasseActuel(compte, commande.motDePasseActuel(), maintenant);
+        Compte compte = confirmation.confirmer(commande.compteId(), commande.motDePasseActuel(), horloge.instant());
         MotDePasse nouveau = new MotDePasse(commande.nouveauMotDePasse());
         nouveau.exigerDifferentDe(commande.motDePasseActuel());
         depotComptes.mettreAJour(compte.changerMotDePasse(encodeurMotDePasse.encoder(nouveau)));
-        limitation.oublier(cle);
+        limitation.oublier(compte.pseudoNormalise());
         invalidationAutresSessions.invaliderAutresSessions(compte.id());
         JOURNAL.log(Level.INFO, "Mot de passe modifié (compte {0})", compte.id());
-    }
-
-    private Compte compteUtilisable(Commande commande) {
-        Optional<Compte> compte = depotComptes.trouverParId(commande.compteId()).filter(Compte::peutSeConnecter);
-        if (compte.isEmpty()) {
-            verifierSansEffet(commande.motDePasseActuel());
-            throw new CompteIntrouvableOuInutilisableException();
-        }
-        return compte.get();
-    }
-
-    /** Même coût de calcul que pour un compte existant ; le résultat est sans objet. */
-    private void verifierSansEffet(String motDePasseActuel) {
-        if (!MotDePasse.excedeLongueurMax(motDePasseActuel)) {
-            encodeurMotDePasse.verifier(motDePasseActuel, empreinteFactice);
-        }
-    }
-
-    /** Une valeur hors bornes est refusée sans calcul d'empreinte ni comptage. */
-    private void verifierMotDePasseActuel(Compte compte, String motDePasseActuel, Instant maintenant) {
-        if (MotDePasse.excedeLongueurMax(motDePasseActuel)) {
-            throw echecMotDePasseActuel(compte);
-        }
-        if (!encodeurMotDePasse.verifier(motDePasseActuel, compte.empreinteMotDePasse())) {
-            limitation.enregistrerEchec(compte.pseudoNormalise(), maintenant);
-            throw echecMotDePasseActuel(compte);
-        }
-    }
-
-    private static MotDePasseActuelIncorrectException echecMotDePasseActuel(Compte compte) {
-        JOURNAL.log(Level.INFO, "Échec de changement de mot de passe (compte {0})", compte.id());
-        return new MotDePasseActuelIncorrectException();
     }
 
     private static void verifierSaisies(Commande commande) {

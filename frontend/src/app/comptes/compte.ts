@@ -16,6 +16,11 @@ export interface ChangerMotDePasseRequete {
   nouveauMotDePasse: string;
 }
 
+/** Corps de `POST /api/comptes/moi/suppression` (réponse 204 sans corps). */
+export interface SupprimerCompteRequete {
+  motDePasseActuel: string;
+}
+
 /** Compte renvoyé par `POST /api/comptes` (201), `POST /api/connexion` et `GET /api/comptes/moi`. */
 export interface CompteReponse {
   id: string;

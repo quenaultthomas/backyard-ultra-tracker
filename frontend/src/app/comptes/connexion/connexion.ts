@@ -52,7 +52,7 @@ export class Connexion implements OnInit {
   protected readonly envoiEnCours = signal(false);
   protected readonly soumis = signal(false);
   protected readonly erreursServeur = signal<ErreursFormulaireCompte>({});
-  protected readonly deconnexionRecente = signal(this.session.consommerDeconnexionRecente());
+  protected readonly finSessionRecente = signal(this.session.consommerFinSessionRecente());
 
   ngOnInit(): void {
     this.demanderJeton();
@@ -63,7 +63,7 @@ export class Connexion implements OnInit {
       return;
     }
     this.erreursServeur.set({});
-    this.deconnexionRecente.set(false);
+    this.finSessionRecente.set(null);
     this.soumis.set(true);
     if (this.formulaire.invalid) {
       return;

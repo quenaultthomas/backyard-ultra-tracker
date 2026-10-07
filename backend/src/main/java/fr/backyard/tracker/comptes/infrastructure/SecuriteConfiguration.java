@@ -26,7 +26,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  * Politique de sécurité HTTP : tout /api/** exige une authentification sauf les endpoints publics,
  * /api/administration/admins/** et la suppression d'une Course sont réservés à ADMIN_MASTER, le reste de /api/administration/** aux rôles
  * ADMIN_MASTER et ADMIN (refus avant toute résolution du chemin), /api/benevole/** au seul rôle BENEVOLE,
- * /api/coureur/** au seul rôle COUREUR,
+ * /api/coureur/** et la suppression de son propre compte au seul rôle COUREUR,
  * CSRF actif en mode cookie pour l'application Angular, session serveur ouverte uniquement par une
  * connexion réussie (cookie JSESSIONID, paramètres dans application.yml).
  */
@@ -57,6 +57,9 @@ public class SecuriteConfiguration {
                         .hasAnyRole(Role.ADMIN_MASTER.name(), Role.ADMIN.name())
                         .requestMatchers("/api/benevole/**").hasRole(Role.BENEVOLE.name())
                         .requestMatchers("/api/coureur/**").hasRole(Role.COUREUR.name())
+                        // Suppression de son propre Compte : COUREUR seul (3.6 RG3).
+                        .requestMatchers(HttpMethod.POST, "/api/comptes/moi/suppression")
+                        .hasRole(Role.COUREUR.name())
                         // Logo d'une Course : seule lecture publique sous /api/courses (écrans publics).
                         .requestMatchers(HttpMethod.GET, "/api/courses/*/logo").permitAll()
                         .requestMatchers("/api/**").authenticated()

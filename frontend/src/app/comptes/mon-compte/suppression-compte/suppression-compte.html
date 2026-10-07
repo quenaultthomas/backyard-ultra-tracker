@@ -1,0 +1,85 @@
+<section
+  class="suppression"
+  aria-labelledby="titre-supprimer-compte"
+  data-testid="mon-compte-suppression"
+>
+  <h2 id="titre-supprimer-compte" class="sous-titre">Supprimer mon compte</h2>
+  <p class="aide" data-testid="mon-compte-suppression-avertissement">
+    Cette action est définitive. Vos inscriptions aux courses qui n'ont pas démarré seront annulées.
+    Vos résultats aux courses démarrées ou terminées sont conservés sous le nom « Coureur anonyme ».
+    Votre pseudo pourra être repris par un autre compte.
+  </p>
+
+  <button
+    #boutonSupprimer
+    type="button"
+    class="ligne__action ligne__action--danger"
+    [disabled]="envoiEnCours()"
+    [attr.aria-expanded]="confirmationOuverte()"
+    (click)="ouvrir()"
+    data-testid="mon-compte-bouton-supprimer"
+  >
+    Supprimer mon compte
+  </button>
+
+  @if (confirmationOuverte()) {
+    <form
+      class="confirmation"
+      [formGroup]="formulaire"
+      (ngSubmit)="confirmer()"
+      novalidate
+      aria-label="Confirmer la suppression du compte"
+      data-testid="mon-compte-confirmation-suppression"
+    >
+      @if (erreursServeur().generale; as erreurGenerale) {
+        <p class="erreur erreur--generale" role="alert" data-testid="mon-compte-erreur-suppression">
+          {{ erreurGenerale }}
+        </p>
+      }
+
+      <div class="champ">
+        <label for="mot-de-passe-suppression">Saisissez votre mot de passe pour confirmer</label>
+        <input
+          #champMotDePasse
+          id="mot-de-passe-suppression"
+          type="password"
+          formControlName="motDePasseActuel"
+          autocomplete="current-password"
+          aria-describedby="erreur-mot-de-passe-suppression"
+          [attr.aria-invalid]="erreurMotDePasse() ? true : null"
+          data-testid="mon-compte-champ-suppression-mot-de-passe"
+        />
+        @if (erreurMotDePasse(); as message) {
+          <p
+            id="erreur-mot-de-passe-suppression"
+            class="erreur"
+            role="alert"
+            data-testid="mon-compte-erreur-suppression-mot-de-passe"
+          >
+            {{ message }}
+          </p>
+        }
+      </div>
+
+      <div class="confirmation__actions">
+        <button
+          type="submit"
+          class="ligne__action ligne__action--danger-plein"
+          [disabled]="envoiEnCours()"
+          data-testid="mon-compte-bouton-confirmer-suppression"
+        >
+          Supprimer définitivement
+        </button>
+        <button
+          type="button"
+          class="ligne__action"
+          [disabled]="envoiEnCours()"
+          (click)="annuler()"
+          data-testid="mon-compte-bouton-annuler-suppression"
+        >
+          Annuler
+        </button>
+      </div>
+    </form>
+  }
+</section>

@@ -3,12 +3,20 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { Observable, catchError, concatMap, filter, map, of, take, tap, timeout } from 'rxjs';
 
 import { CsrfService } from '../partage/csrf.service';
-import { ChangerMotDePasseRequete, CompteReponse, ConnexionRequete } from './compte';
+import {
+  ChangerMotDePasseRequete,
+  CompteReponse,
+  ConnexionRequete,
+  SupprimerCompteRequete,
+} from './compte';
 import { ComptesApiService } from './comptes-api.service';
 import { estAdminMaster, estAdministrateur, estBenevole, estCoureur } from './roles';
 
 /** `INCONNU` tant que `GET /api/comptes/moi` n'a pas répondu. */
 export type EtatSession = 'INCONNU' | 'ANONYME' | 'CONNECTE';
+
+/** Fin de session volontaire, annoncée une fois par l'écran de connexion. */
+export type FinSession = 'DECONNEXION' | 'SUPPRESSION_COMPTE';
 
 const DELAI_MAX_RESTAURATION_MS = 5000;
 
@@ -23,7 +31,7 @@ export class SessionService {
 
   /** `undefined` : état inconnu ; `null` : anonyme. */
   private readonly compteCourant = signal<CompteReponse | null | undefined>(undefined);
-  private readonly deconnexionRecente = signal(false);
+  private readonly finSessionRecente = signal<FinSession | null>(null);
 
   readonly compte = this.compteCourant.asReadonly();
   readonly etat = computed<EtatSession>(() => {
@@ -103,19 +111,32 @@ export class SessionService {
   }
 
   deconnecter(): Observable<void> {
-    return this.comptesApi.deconnecter().pipe(
-      concatMap(() => this.csrf.renouvelerJeton()),
-      tap(() => {
-        this.compteCourant.set(null);
-        this.deconnexionRecente.set(true);
-      }),
-    );
+    return this.comptesApi.deconnecter().pipe(this.terminerSession('DECONNEXION'));
   }
 
-  /** Indique, une seule fois, qu'une déconnexion vient d'avoir lieu (message de l'écran de connexion). */
-  consommerDeconnexionRecente(): boolean {
-    const recente = this.deconnexionRecente();
-    this.deconnexionRecente.set(false);
-    return recente;
+  /** Le Compte est anonymisé et toutes ses sessions sont fermées par l'API (204). */
+  supprimerCompte(requete: SupprimerCompteRequete): Observable<void> {
+    return this.comptesApi
+      .supprimerCompte(requete)
+      .pipe(this.terminerSession('SUPPRESSION_COMPTE'));
+  }
+
+  /** Indique, une seule fois, la fin de session qui vient d'avoir lieu (message de l'écran de connexion). */
+  consommerFinSessionRecente(): FinSession | null {
+    const fin = this.finSessionRecente();
+    this.finSessionRecente.set(null);
+    return fin;
+  }
+
+  /** La session serveur est fermée : nouveau jeton CSRF, puis état local anonyme. */
+  private terminerSession(fin: FinSession): (source: Observable<void>) => Observable<void> {
+    return (source) =>
+      source.pipe(
+        concatMap(() => this.csrf.renouvelerJeton()),
+        tap(() => {
+          this.compteCourant.set(null);
+          this.finSessionRecente.set(fin);
+        }),
+      );
   }
 }

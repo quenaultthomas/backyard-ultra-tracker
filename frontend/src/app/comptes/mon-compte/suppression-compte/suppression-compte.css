@@ -1,0 +1,13 @@
+/* Section « Supprimer mon compte », séparée du changement de mot de passe. */
+:host {
+  display: block;
+  flex: none;
+}
+
+.suppression {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e5e7eb;
+}
