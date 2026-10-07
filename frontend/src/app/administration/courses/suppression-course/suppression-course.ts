@@ -52,7 +52,11 @@ interface ErreurSuppression {
 @Component({
   selector: 'app-suppression-course',
   templateUrl: './suppression-course.html',
-  styleUrls: ['../action-ligne.css', './suppression-course.css'],
+  styleUrls: [
+    '../action-ligne.css',
+    '../../../partage/confirmation-en-ligne.css',
+    './suppression-course.css',
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SuppressionCourse {

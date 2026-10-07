@@ -29,4 +29,9 @@ export class CoureurApiService {
   listerMesInscriptions(): Observable<MonInscriptionReponse[]> {
     return this.http.get<MonInscriptionReponse[]>(URL_MES_INSCRIPTIONS);
   }
+
+  /** Supprime l'Inscription du coureur connecté (204 sans corps) ; l'API décide si c'est possible. */
+  seDesinscrire(inscriptionId: string): Observable<void> {
+    return this.http.delete<void>(`${URL_MES_INSCRIPTIONS}/${encodeURIComponent(inscriptionId)}`);
+  }
 }

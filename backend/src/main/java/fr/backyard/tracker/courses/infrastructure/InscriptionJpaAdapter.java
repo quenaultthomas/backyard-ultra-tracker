@@ -77,6 +77,27 @@ public class InscriptionJpaAdapter implements DepotInscriptions {
                 .toList();
     }
 
+    /** Requête (et non find) : relue sous le verrou de la Course, elle voit une suppression concurrente validée. */
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Inscription> parIdEtCompte(UUID inscriptionId, UUID compteId) {
+        return entityManager.createQuery("select i from InscriptionJpaEntity i "
+                        + "where i.id = :id and i.compteId = :compteId", InscriptionJpaEntity.class)
+                .setParameter("id", inscriptionId)
+                .setParameter("compteId", compteId)
+                .getResultStream()
+                .findFirst()
+                .map(InscriptionJpaAdapter::versDomaine);
+    }
+
+    @Override
+    @Transactional
+    public void supprimer(UUID inscriptionId) {
+        entityManager.createQuery("delete from InscriptionJpaEntity i where i.id = :id")
+                .setParameter("id", inscriptionId)
+                .executeUpdate();
+    }
+
     /** Seule la violation de l'unicité (Course, Compte) est un doublon métier ; toute autre erreur est relancée. */
     private static RuntimeException traduire(PersistenceException exception) {
         return violeUniciteCourseCompte(exception) ? new InscriptionDejaExistanteException() : exception;

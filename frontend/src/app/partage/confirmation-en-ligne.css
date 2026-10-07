@@ -1,0 +1,41 @@
+/* Action destructive confirmée dans la ligne (suppression d'une Course, désinscription). */
+.ligne__action--danger {
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+.ligne__action--danger:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+.ligne__action--danger-plein {
+  border-color: #b91c1c;
+  background: #b91c1c;
+  color: #fff;
+}
+
+.ligne__action--danger-plein:hover:not(:disabled) {
+  background: #991b1b;
+}
+
+.confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #fca5a5;
+  border-radius: 0.375rem;
+  background: #fef2f2;
+}
+
+.confirmation__texte {
+  margin: 0;
+  color: #7f1d1d;
+  overflow-wrap: anywhere;
+}
+
+.confirmation__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}

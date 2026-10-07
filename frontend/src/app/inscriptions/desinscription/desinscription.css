@@ -1,0 +1,12 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  align-self: stretch;
+}
+
+/* Course démarrée : ni bouton ni confirmation, pas d'espace réservé dans la ligne. */
+:host:empty {
+  display: none;
+}

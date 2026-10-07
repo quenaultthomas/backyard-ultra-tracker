@@ -78,3 +78,19 @@ export function placerStatutInscriptionEnBase(inscriptionId: string, statut: 'EN
   exigerUuid(inscriptionId);
   executerSql(`update inscription set statut = '${statut}' where id = '${inscriptionId}'`);
 }
+
+/** Indique si la ligne `inscription` existe encore en base. */
+export function inscriptionExisteEnBase(inscriptionId: string): boolean {
+  exigerUuid(inscriptionId);
+  return executerSql(`select count(*) from inscription where id = '${inscriptionId}'`) === '1';
+}
+
+/** Se désinscrit par l'API (session du coureur, CSRF relu) et renvoie le statut HTTP. */
+export async function seDesinscrireParApi(request: APIRequestContext, pseudo: string, inscriptionId: string): Promise<number> {
+  await connecterParApi(request, pseudo, MOT_DE_PASSE);
+  await request.get('/api/csrf');
+  const jeton = (await request.storageState()).cookies.find((c) => c.name === 'XSRF-TOKEN')?.value;
+  expect(jeton).toBeTruthy();
+  const reponse = await request.delete(`/api/coureur/inscriptions/${inscriptionId}`, { headers: { 'X-XSRF-TOKEN': jeton! } });
+  return reponse.status();
+}

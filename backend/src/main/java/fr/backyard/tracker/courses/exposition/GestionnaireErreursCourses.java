@@ -7,8 +7,10 @@ import fr.backyard.tracker.courses.domaine.CourseNonModifiableException;
 import fr.backyard.tracker.courses.domaine.CourseNonOuverteException;
 import fr.backyard.tracker.courses.domaine.CourseNonSupprimableException;
 import fr.backyard.tracker.courses.domaine.CourseTermineeException;
+import fr.backyard.tracker.courses.domaine.DesinscriptionImpossibleException;
 import fr.backyard.tracker.courses.domaine.DonneesCourseInvalidesException;
 import fr.backyard.tracker.courses.domaine.InscriptionDejaExistanteException;
+import fr.backyard.tracker.courses.domaine.InscriptionIntrouvableException;
 import fr.backyard.tracker.courses.domaine.ViolationValidation;
 import java.util.List;
 import java.net.URI;
@@ -22,7 +24,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * le 404 générique et la sécurité restent traités globalement. Les messages ne reprennent jamais la valeur saisie.
  */
 @RestControllerAdvice(assignableTypes = {CourseController.class, LogoCourseController.class,
-        FicheCourseController.class, CoursesDuBenevoleController.class, InscriptionsCoureurController.class})
+        FicheCourseController.class, CoursesDuBenevoleController.class, InscriptionsCoureurController.class,
+        MesInscriptionsController.class})
 public class GestionnaireErreursCourses {
 
     private static final URI TYPE_GENERIQUE = URI.create("about:blank");
@@ -84,6 +87,18 @@ public class GestionnaireErreursCourses {
     @ExceptionHandler(CourseCompleteException.class)
     ProblemDetail courseComplete() {
         return probleme(HttpStatus.CONFLICT, "Conflit", "La course est complète.", "COURSE_COMPLETE");
+    }
+
+    @ExceptionHandler(InscriptionIntrouvableException.class)
+    ProblemDetail inscriptionIntrouvable() {
+        return probleme(HttpStatus.NOT_FOUND, "Introuvable", "L'inscription est introuvable.",
+                "INSCRIPTION_INTROUVABLE");
+    }
+
+    @ExceptionHandler(DesinscriptionImpossibleException.class)
+    ProblemDetail desinscriptionImpossible() {
+        return probleme(HttpStatus.CONFLICT, "Conflit",
+                "La course n'est plus en préparation : la désinscription est impossible.", "DESINSCRIPTION_IMPOSSIBLE");
     }
 
     /** ProblemDetail au format de l'API : type about:blank, titre, détail et code stable. */
