@@ -43,6 +43,17 @@ public interface DepotComptes {
     }
 
     /**
+     * Compte relu sous verrou exclusif jusqu'à la fin de la transaction de l'appelant : une modification concurrente
+     * du même Compte attend, puis relit l'état validé (deux suppressions simultanées : la seconde voit le Compte
+     * anonymisé). Par défaut, simple recherche par identifiant, pour les dépôts sans transaction (dépôts en mémoire).
+     *
+     * @throws UnsupportedOperationException si le dépôt ne sait pas rechercher
+     */
+    default Optional<Compte> trouverParIdPourModification(UUID id) {
+        return trouverParId(id);
+    }
+
+    /**
      * Comptes trouvés parmi ces identifiants, en une seule recherche, dans un ordre quelconque ; les identifiants
      * inconnus sont ignorés.
      *
@@ -53,7 +64,8 @@ public interface DepotComptes {
     }
 
     /**
-     * Enregistre les modifications d'un compte existant (empreinte du mot de passe).
+     * Enregistre les modifications d'un compte existant : empreinte du mot de passe, et pour un compte anonymisé
+     * pseudo et clé d'unicité.
      *
      * @throws CompteIntrouvableOuInutilisableException si le compte n'existe plus
      * @throws UnsupportedOperationException            si le dépôt ne sait pas mettre à jour

@@ -145,13 +145,20 @@ public final class Course {
     }
 
     /**
-     * Une Inscription ne peut être supprimée par son coureur que tant que la Course est EN_PREPARATION. Unique
-     * contrôle de cette règle.
+     * Une Inscription ne peut être supprimée (désinscription, annulation à la suppression du Compte) que tant que la
+     * Course est EN_PREPARATION. Unique définition de cette règle.
+     */
+    public boolean permetDesinscription() {
+        return statut == StatutCourse.EN_PREPARATION;
+    }
+
+    /**
+     * Contrôle de {@link #permetDesinscription()} pour la désinscription par le coureur.
      *
      * @throws DesinscriptionImpossibleException la Course est EN_COURS ou TERMINEE
      */
     public void autoriserDesinscription() {
-        if (statut != StatutCourse.EN_PREPARATION) {
+        if (!permetDesinscription()) {
             throw new DesinscriptionImpossibleException();
         }
     }

@@ -48,8 +48,10 @@ public class CompteJpaEntity {
         this.creeLe = creeLe;
     }
 
-    /** Seule donnée modifiable d'un compte existant (changement de mot de passe). */
-    void remplacerEmpreinte(String nouvelleEmpreinte) {
+    /** Données modifiables d'un compte existant (changement de mot de passe, anonymisation). */
+    void reporter(String nouveauPseudo, String nouveauPseudoNormalise, String nouvelleEmpreinte) {
+        this.pseudo = nouveauPseudo;
+        this.pseudoNormalise = nouveauPseudoNormalise;
         this.empreinteMotDePasse = nouvelleEmpreinte;
     }
 

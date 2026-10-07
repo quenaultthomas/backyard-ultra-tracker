@@ -109,5 +109,9 @@
         Changer le mot de passe
       </button>
     </form>
+
+    @if (estCoureur()) {
+      <app-suppression-compte />
+    }
   </section>
 </main>

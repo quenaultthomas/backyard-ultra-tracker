@@ -8,6 +8,7 @@ import fr.backyard.tracker.comptes.domaine.Pseudo;
 import fr.backyard.tracker.comptes.domaine.PseudoDejaUtiliseException;
 import fr.backyard.tracker.comptes.domaine.Role;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
 import java.util.Collection;
 import java.util.List;
@@ -64,6 +65,13 @@ public class CompteJpaAdapter implements DepotComptes {
         return Optional.ofNullable(entityManager.find(CompteJpaEntity.class, id)).map(CompteJpaAdapter::versDomaine);
     }
 
+    /** {@code select ... for update} : doit être appelé dans la transaction du cas d'usage. */
+    @Override
+    public Optional<Compte> trouverParIdPourModification(UUID id) {
+        return Optional.ofNullable(entityManager.find(CompteJpaEntity.class, id, LockModeType.PESSIMISTIC_WRITE))
+                .map(CompteJpaAdapter::versDomaine);
+    }
+
     @Override
     public List<Compte> trouverParIds(Collection<UUID> ids) {
         if (ids.isEmpty()) {
@@ -103,7 +111,10 @@ public class CompteJpaAdapter implements DepotComptes {
         }
     }
 
-    /** Le pseudo, le rôle et la date de création d'un compte ne changent jamais : seule l'empreinte est reportée. */
+    /**
+     * Le rôle et la date de création d'un compte ne changent jamais : l'empreinte, le pseudo et sa clé d'unicité
+     * (modifiés par l'anonymisation) sont reportés.
+     */
     @Override
     @Transactional
     public void mettreAJour(Compte compte) {
@@ -111,8 +122,12 @@ public class CompteJpaAdapter implements DepotComptes {
         if (entite == null) {
             throw new CompteIntrouvableOuInutilisableException();
         }
-        entite.remplacerEmpreinte(compte.empreinteMotDePasse());
-        entityManager.flush();
+        entite.reporter(compte.pseudo().valeur(), compte.pseudoNormalise(), compte.empreinteMotDePasse());
+        try {
+            entityManager.flush();
+        } catch (ConstraintViolationException exception) {
+            throw traduire(exception);
+        }
     }
 
     private static RuntimeException traduire(ConstraintViolationException exception) {
@@ -132,7 +147,7 @@ public class CompteJpaAdapter implements DepotComptes {
     }
 
     private static Compte versDomaine(CompteJpaEntity entite) {
-        return Compte.reconstituer(entite.id(), new Pseudo(entite.pseudo()), entite.empreinteMotDePasse(),
+        return Compte.reconstituer(entite.id(), Pseudo.reconstituer(entite.pseudo()), entite.empreinteMotDePasse(),
                 entite.role(), entite.creeLe());
     }
 }

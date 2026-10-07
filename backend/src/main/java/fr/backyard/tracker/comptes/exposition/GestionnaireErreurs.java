@@ -8,12 +8,14 @@ import fr.backyard.tracker.comptes.domaine.IdentifiantsInvalidesException;
 import fr.backyard.tracker.comptes.domaine.MotDePasseActuelIncorrectException;
 import fr.backyard.tracker.comptes.domaine.NouveauMotDePasseIdentiqueException;
 import fr.backyard.tracker.comptes.domaine.PseudoDejaUtiliseException;
+import fr.backyard.tracker.comptes.domaine.SuppressionCompteInterditeException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.net.URI;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -31,8 +33,11 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 /**
  * Traduction des erreurs en ProblemDetail avec une propriété « code » stable.
  * Les messages ne reprennent jamais le contenu reçu (aucun écho d'un mot de passe).
+ *
+ * <p>Ordre explicite : consulté avant {@link GestionnaireErreursInattendues}.
  */
 @RestControllerAdvice
+@Order(0)
 public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
 
     private static final String TITRE_REQUETE_INVALIDE = "Requête invalide";
@@ -99,6 +104,13 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
         sessionConnexion.fermer(requete, reponse);
         return probleme(HttpStatus.UNAUTHORIZED, "Authentification requise", "Vous devez être connecté.",
                 "NON_AUTHENTIFIE");
+    }
+
+    /** Défense en profondeur : même réponse que le refus de rôle de la politique de sécurité HTTP. */
+    @ExceptionHandler(SuppressionCompteInterditeException.class)
+    ProblemDetail suppressionCompteInterdite() {
+        return probleme(HttpStatus.FORBIDDEN, "Accès refusé", "Vous n'avez pas les droits nécessaires.",
+                "ACCES_REFUSE");
     }
 
     @Override

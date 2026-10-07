@@ -45,7 +45,13 @@ public class RegistreSessionsEnMemoire
     @Override
     public void invaliderAutresSessions(UUID compteId) {
         Optional<String> courante = identifiantSessionCourante();
-        autresSessions(compteId, courante).forEach(RegistreSessionsEnMemoire::invalider);
+        sessionsDuCompte(compteId, courante).forEach(RegistreSessionsEnMemoire::invalider);
+    }
+
+    /** Toutes les sessions du compte, celle de la requête en cours comprise, sont invalidées hors verrou. */
+    @Override
+    public void invaliderToutesLesSessions(UUID compteId) {
+        sessionsDuCompte(compteId, Optional.empty()).forEach(RegistreSessionsEnMemoire::invalider);
     }
 
     @Override
@@ -98,10 +104,10 @@ public class RegistreSessionsEnMemoire
         sessions.remove(identifiantSession);
     }
 
-    private synchronized List<HttpSession> autresSessions(UUID compteId, Optional<String> courante) {
+    private synchronized List<HttpSession> sessionsDuCompte(UUID compteId, Optional<String> sauf) {
         return sessions.entrySet().stream()
                 .filter(entree -> entree.getValue().compteId().equals(compteId))
-                .filter(entree -> courante.map(id -> !id.equals(entree.getKey())).orElse(true))
+                .filter(entree -> sauf.map(id -> !id.equals(entree.getKey())).orElse(true))
                 .map(entree -> entree.getValue().session())
                 .toList();
     }

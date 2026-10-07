@@ -15,8 +15,14 @@ public final class Compte {
     public static final Comparator<Compte> ORDRE_DE_CREATION =
             Comparator.comparing(Compte::creeLe).thenComparing(Compte::pseudoNormalise);
 
+    /** Longueur de la clé d'unicité d'un Compte anonymisé : « # » puis des chiffres hexadécimaux de l'id. */
+    private static final int LONGUEUR_CLE_ANONYME = 30;
+    private static final String PREFIXE_CLE_ANONYME = "#";
+
     private final UUID id;
     private final Pseudo pseudo;
+    /** Clé d'unicité : pseudo normalisé, ou clé propre au Compte s'il est anonymisé. */
+    private final String pseudoNormalise;
     private final String empreinteMotDePasse;
     private final Role role;
     private final Instant creeLe;
@@ -24,6 +30,7 @@ public final class Compte {
     private Compte(UUID id, Pseudo pseudo, String empreinteMotDePasse, Role role, Instant creeLe) {
         this.id = Objects.requireNonNull(id);
         this.pseudo = Objects.requireNonNull(pseudo);
+        this.pseudoNormalise = pseudo.estAnonyme() ? cleAnonyme(id) : pseudo.normalise();
         this.empreinteMotDePasse = empreinteMotDePasse;
         this.role = Objects.requireNonNull(role);
         this.creeLe = Objects.requireNonNull(creeLe);
@@ -71,6 +78,30 @@ public final class Compte {
         return new Compte(id, pseudo, Objects.requireNonNull(nouvelleEmpreinte), role, creeLe);
     }
 
+    /**
+     * Suppression d'un Compte coureur par lui-même : même identifiant, rôle et date de création, pseudo
+     * {@link Pseudo#anonyme()}, clé d'unicité propre au Compte (le pseudo d'origine est libéré), plus d'empreinte
+     * (connexion impossible). Unique contrôle de la règle « seul un coureur supprime son Compte ».
+     *
+     * @throws SuppressionCompteInterditeException le Compte n'est pas un Compte coureur
+     */
+    public Compte anonymiser() {
+        if (role != Role.COUREUR) {
+            throw new SuppressionCompteInterditeException();
+        }
+        return new Compte(id, Pseudo.anonyme(), null, role, creeLe);
+    }
+
+    public boolean estAnonyme() {
+        return pseudo.estAnonyme();
+    }
+
+    /** « # » (refusé à la saisie d'un pseudo) suivi des premiers chiffres hexadécimaux de l'identifiant. */
+    private static String cleAnonyme(UUID id) {
+        String hexadecimal = id.toString().replace("-", "");
+        return PREFIXE_CLE_ANONYME + hexadecimal.substring(0, LONGUEUR_CLE_ANONYME - PREFIXE_CLE_ANONYME.length());
+    }
+
     public UUID id() {
         return id;
     }
@@ -80,7 +111,7 @@ public final class Compte {
     }
 
     public String pseudoNormalise() {
-        return pseudo.normalise();
+        return pseudoNormalise;
     }
 
     /** Nulle si le compte ne peut pas se connecter ({@link #peutSeConnecter()}). */

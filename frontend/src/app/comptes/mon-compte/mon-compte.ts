@@ -28,6 +28,8 @@ import {
 import { RefusAccesService } from '../refus-acces.service';
 import { LIBELLES_ROLE } from '../roles';
 import { SessionService } from '../session.service';
+import { ECRAN_MON_COMPTE } from './ecran-mon-compte';
+import { SuppressionCompte } from './suppression-compte/suppression-compte';
 
 type ChampMotDePasse = keyof ChangerMotDePasseRequete;
 
@@ -41,12 +43,13 @@ const ERREURS_SPECIFIQUES: ErreursSpecifiques<ChampMotDePasse> = {
   TENTATIVES_EXCESSIVES: erreurTentativesExcessives('Trop de tentatives.'),
 };
 
-const ECRAN = '/mon-compte';
-
-/** Écran « Mon compte » de tout Compte connecté : identité et changement du mot de passe. */
+/**
+ * Écran « Mon compte » de tout Compte connecté : identité, changement du mot de passe et, pour un
+ * coureur, suppression du Compte.
+ */
 @Component({
   selector: 'app-mon-compte',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, SuppressionCompte],
   templateUrl: './mon-compte.html',
   styleUrls: ['../../partage/page-carte.css', '../formulaire-compte.css', './mon-compte.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,6 +61,8 @@ export class MonCompte implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly compte = this.session.compte;
+  /** Simple aide d'affichage : l'API refuse la suppression aux autres rôles (403). */
+  protected readonly estCoureur = this.session.estCoureur;
   protected readonly libelleRole = computed(() => {
     const role = this.compte()?.role;
     return role === undefined ? null : LIBELLES_ROLE[role];
@@ -133,7 +138,7 @@ export class MonCompte implements OnInit {
 
   /** 401 : retour à la connexion ; sinon message sous le champ concerné ou message général. */
   private traiterErreur(erreur: unknown): void {
-    if (this.refusAcces.rediriger(erreur, ECRAN)) {
+    if (this.refusAcces.rediriger(erreur, ECRAN_MON_COMPTE)) {
       return;
     }
     const erreurs = interpreterErreurFormulaire(erreur, ERREURS_SPECIFIQUES, CHAMPS);

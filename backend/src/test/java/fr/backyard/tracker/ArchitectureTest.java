@@ -26,7 +26,10 @@ class ArchitectureTest {
     private static final String ADAPTATEUR_ANNUAIRE = RACINE + ".assemblage.AnnuaireBenevolesAdapter";
     // 3.5 RG6 : seconde exception nommée, l'adaptateur de l'annuaire des pseudos (même assemblage)
     private static final String ADAPTATEUR_PSEUDOS = RACINE + ".assemblage.AnnuairePseudosAdapter";
-    private static final List<String> ADAPTATEURS_NOMMES = List.of(ADAPTATEUR_ANNUAIRE, ADAPTATEUR_PSEUDOS);
+    // 3.6 RG16 : troisième exception nommée, le pont d'annulation des inscriptions (même assemblage)
+    private static final String ADAPTATEUR_ANNULATION = RACINE + ".assemblage.AnnulationInscriptionsAdapter";
+    private static final List<String> ADAPTATEURS_NOMMES =
+            List.of(ADAPTATEUR_ANNUAIRE, ADAPTATEUR_PSEUDOS, ADAPTATEUR_ANNULATION);
     private static final List<String> COUCHES = List.of("domaine", "application", "infrastructure", "exposition");
 
     private static String paquet(String contexte, String couche) {
@@ -77,7 +80,7 @@ class ArchitectureTest {
                 .whereLayer("Exposition").mayNotBeAccessedByAnyLayer()
                 .withOptionalLayers(true)
                 .ignoreDependency(
-                        DescribedPredicate.describe("les adaptateurs nommés des annuaires (bénévoles, pseudos)",
+                        DescribedPredicate.describe("les adaptateurs nommés d'assemblage (bénévoles, pseudos, annulation)",
                                 (JavaClass origine) -> ADAPTATEURS_NOMMES.contains(origine.getName())),
                         DescribedPredicate.alwaysTrue())
                 .as("RG14 : dépendances uniquement vers l'intérieur")
@@ -139,6 +142,7 @@ class ArchitectureTest {
                 .and().doNotHaveFullyQualifiedName(BackyardUltraTrackerApplication.class.getName())
                 .and().doNotHaveFullyQualifiedName(ADAPTATEUR_ANNUAIRE)
                 .and().doNotHaveFullyQualifiedName(ADAPTATEUR_PSEUDOS)
+                .and().doNotHaveFullyQualifiedName(ADAPTATEUR_ANNULATION)
                 .should().resideInAnyPackage(paquets)
                 .as("RG9/RG16 : toute classe est dans fr.backyard.tracker.<comptes|courses>.<couche>")
                 .check(classes);

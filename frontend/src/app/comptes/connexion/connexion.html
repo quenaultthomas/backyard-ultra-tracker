@@ -2,10 +2,17 @@
   <section class="carte" aria-labelledby="titre-connexion">
     <h1 id="titre-connexion" class="titre" data-testid="titre-connexion">Se connecter</h1>
 
-    @if (deconnexionRecente()) {
-      <p class="message-info" role="status" data-testid="message-deconnexion">
-        Vous êtes déconnecté.
-      </p>
+    @switch (finSessionRecente()) {
+      @case ('DECONNEXION') {
+        <p class="message-info" role="status" data-testid="message-deconnexion">
+          Vous êtes déconnecté.
+        </p>
+      }
+      @case ('SUPPRESSION_COMPTE') {
+        <p class="message-info" role="status" data-testid="message-compte-supprime">
+          Votre compte a été supprimé.
+        </p>
+      }
     }
 
     <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
