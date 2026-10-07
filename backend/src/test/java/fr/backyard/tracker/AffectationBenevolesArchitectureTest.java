@@ -21,9 +21,12 @@ class AffectationBenevolesArchitectureTest {
     private static final String COURSES = "fr.backyard.tracker.courses.";
     private static final String ASSEMBLAGE = "fr.backyard.tracker.assemblage..";
     private static final String ADAPTATEUR = "AnnuaireBenevolesAdapter";
+    // 3.5 RG6 : seconde exception nommée, l'adaptateur de l'annuaire des pseudos
+    private static final String ADAPTATEUR_PSEUDOS = "AnnuairePseudosAdapter";
 
     private static final DescribedPredicate<JavaClass> HORS_ADAPTATEUR_NOMME =
-            DescribedPredicate.describe("autre que " + ADAPTATEUR, c -> !c.getSimpleName().equals(ADAPTATEUR));
+            DescribedPredicate.describe("autre que " + ADAPTATEUR + " et " + ADAPTATEUR_PSEUDOS,
+                    c -> !c.getSimpleName().equals(ADAPTATEUR) && !c.getSimpleName().equals(ADAPTATEUR_PSEUDOS));
 
     @ArchTest
     static void ca5_le_port_et_les_exceptions_sont_dans_le_domaine_courses(JavaClasses classes) {

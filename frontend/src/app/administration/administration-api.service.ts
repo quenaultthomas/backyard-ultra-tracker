@@ -8,6 +8,7 @@ import {
   CourseReponse,
   DeclarerCourseRequete,
   FicheCourseReponse,
+  InscritsCourseReponse,
   ModifierCourseRequete,
 } from './courses/course';
 import { CreerAdminRequete, CreerBenevoleRequete } from './requetes-creation-compte';
@@ -59,6 +60,11 @@ export class AdministrationApiService {
   /** Fiche d'une Course avec ses bénévoles affectés (tous statuts). */
   lireFicheCourse(id: string): Observable<FicheCourseReponse> {
     return this.http.get<FicheCourseReponse>(urlCourse(id));
+  }
+
+  /** Inscrits d'une Course triés par dossard, avec les nombres calculés par l'API (tous statuts). */
+  listerInscrits(id: string): Observable<InscritsCourseReponse> {
+    return this.http.get<InscritsCourseReponse>(`${urlCourse(id)}/inscriptions`);
   }
 
   /** Remplace l'ensemble des bénévoles affectés à une Course ; renvoie la fiche enregistrée. */

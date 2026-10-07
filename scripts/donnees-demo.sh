@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# Données de démonstration pour le test manuel (incréments 2.1b et 2.4). À NE PAS UTILISER EN PRODUCTION.
+# Données de démonstration pour le test manuel (incréments 2.1b, 2.4 et 3.5). À NE PAS UTILISER EN PRODUCTION.
 #
 # Crée par l'API de l'application lancée (jamais d'accès direct à la base), dans cet ordre :
 #   - admin Nadia, bénévoles Léo et Marc (session de l'admin master) ;
 #   - Courses « Backyard de démo » (J+30), « Backyard express » (J+7), « Backyard mini » (J+14) ;
 #   - affectation du bénévole Léo à « Backyard de démo » (les autres bénévoles déjà affectés sont conservés) ;
-#   - coureur Alice (session anonyme).
-# Mots de passe connus : Nadia mot-de-passe-admin-1, Léo et Marc mot-de-passe-benevole-1, Alice un-mot-de-passe-12.
+#   - coureurs Alice, Karim, Sophie et Tom (session anonyme) ;
+#   - Inscriptions, chacune dans la session de son coureur et dans cet ordre : Karim, Sophie, Tom à
+#     « Backyard de démo » ; Karim, Sophie à « Backyard express ». Alice et « Backyard mini » n'en reçoivent aucune.
+# Mots de passe connus : Nadia mot-de-passe-admin-1, Léo et Marc mot-de-passe-benevole-1,
+#   Alice, Karim, Sophie et Tom un-mot-de-passe-12.
 #
 # Usage, à la racine du dépôt, stack lancée : ./scripts/donnees-demo.sh
 # Variables :
@@ -21,7 +24,9 @@
 #   - un Compte dont le pseudo est déjà pris (409 PSEUDO_DEJA_UTILISE) est « déjà présent », même s'il
 #     a un autre rôle (non détecté) ;
 #   - une Course est « déjà présente » si une Course du même nom existe ; elle n'est ni comparée ni modifiée ;
-#   - Léo déjà affecté à « Backyard de démo » : rien n'est envoyé.
+#   - Léo déjà affecté à « Backyard de démo » : rien n'est envoyé ;
+#   - une Inscription déjà existante (409 INSCRIPTION_DEJA_EXISTANTE) est « déjà présente » ; une Course qui n'est
+#     plus ouverte aux inscriptions (EN_COURS, TERMINEE) fait échouer le script.
 # Aucun mot de passe n'est affiché ni écrit sur disque ; les cookies vont dans un répertoire temporaire
 # supprimé en sortie. Prérequis : bash, curl, date GNU (Linux) ou BSD (macOS).
 set -euo pipefail
@@ -155,7 +160,38 @@ affecter_benevole() {
   echo "créé : $benevole affecté à $course"
 }
 
+connecter_coureur() {
+  local pseudo="$1"
+  COOKIES="$TEMPORAIRE/cookies-$pseudo"
+  : > "$COOKIES"
+  renouveler_csrf
+  attendre 200 "$(printf '{"pseudo":"%s","motDePasse":"%s"}' "$(echapper_json "$pseudo")" \
+    "$MOT_DE_PASSE_COUREUR" | requete POST /api/connexion)" "connexion du coureur $pseudo"
+  renouveler_csrf
+}
+
+# inscrire COUREUR COURSE... : inscrit le coureur, dans sa propre session, à chaque Course ouverte nommée.
+inscrire() {
+  local pseudo="$1" course id_course statut
+  shift
+  connecter_coureur "$pseudo"
+  for course in "$@"; do
+    attendre 200 "$(requete GET /api/coureur/courses /dev/null)" "courses ouvertes de $pseudo"
+    id_course="$(identifiant "$REPONSE" nom "$course")"
+    [[ -n "$id_course" ]] || echouer "inscription de $pseudo à $course : course introuvable ou plus ouverte."
+    statut="$(requete POST "/api/coureur/courses/$id_course/inscriptions" /dev/null)"
+    if [[ "$statut" == "201" ]]; then
+      echo "créé : $pseudo (inscription à $course)"
+    elif [[ "$statut" == "409" ]] && grep -q '"code" *: *"INSCRIPTION_DEJA_EXISTANTE"' "$REPONSE"; then
+      echo "déjà présent : $pseudo (inscription à $course)"
+    else
+      echouer "inscription de $pseudo à $course : réponse inattendue (HTTP $statut)."
+    fi
+  done
+}
+
 verifier_cible
+MOT_DE_PASSE_COUREUR="un-mot-de-passe-12"
 TEMPORAIRE="$(mktemp -d)"
 trap 'rm -rf "$TEMPORAIRE"' EXIT
 trap 'exit 130' INT TERM
@@ -174,4 +210,10 @@ affecter_benevole "Léo" "Backyard de démo"
 COOKIES="$TEMPORAIRE/cookies-anonyme"
 : > "$COOKIES"
 renouveler_csrf
-creer_compte /api/comptes Alice un-mot-de-passe-12 COUREUR
+for coureur in Alice Karim Sophie Tom; do
+  creer_compte /api/comptes "$coureur" "$MOT_DE_PASSE_COUREUR" COUREUR
+done
+
+inscrire Karim "Backyard de démo" "Backyard express"
+inscrire Sophie "Backyard de démo" "Backyard express"
+inscrire Tom "Backyard de démo"

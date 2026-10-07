@@ -35,9 +35,20 @@ const COMPTES = [
   { pseudo: 'Léo', motDePasse: 'mot-de-passe-benevole-1', role: 'BENEVOLE' },
   { pseudo: 'Marc', motDePasse: 'mot-de-passe-benevole-1', role: 'BENEVOLE' },
   { pseudo: 'Alice', motDePasse: 'un-mot-de-passe-12', role: 'COUREUR' },
+  { pseudo: 'Karim', motDePasse: 'un-mot-de-passe-12', role: 'COUREUR' },
+  { pseudo: 'Sophie', motDePasse: 'un-mot-de-passe-12', role: 'COUREUR' },
+  { pseudo: 'Tom', motDePasse: 'un-mot-de-passe-12', role: 'COUREUR' },
 ];
 const NOMS_COURSES = ['Backyard de démo', 'Backyard express', 'Backyard mini'];
-const ELEMENTS = ['Nadia', 'Léo', 'Marc', 'Alice', ...NOMS_COURSES];
+const ELEMENTS = ['Nadia', 'Léo', 'Marc', 'Alice', 'Karim', 'Sophie', 'Tom', ...NOMS_COURSES];
+/** Inscriptions de démonstration (3.5, CA13) : pseudo et course, dans l'ordre de création. */
+const INSCRIPTIONS: Array<[string, string]> = [
+  ['Karim', 'Backyard de démo'],
+  ['Sophie', 'Backyard de démo'],
+  ['Tom', 'Backyard de démo'],
+  ['Karim', 'Backyard express'],
+  ['Sophie', 'Backyard express'],
+];
 const MOTS_DE_PASSE_CONNUS = [...COMPTES.map((c) => c.motDePasse)];
 
 interface Resultat {
@@ -96,8 +107,14 @@ function verifierAucunSecret(r: Resultat): void {
 
 function verifierSeptElements(r: Resultat, etat: 'créé' | 'déjà présent'): void {
   const lignesEtat = lignes(r.sortie, `${etat} : `);
-  // 7 éléments (4 comptes, 3 courses) + l'affectation de Léo à « Backyard de démo » (2.4)
-  expect(lignesEtat).toHaveLength(8);
+  // 16 lignes (CA13) : 7 comptes, 3 courses, l'affectation de Léo à « Backyard de démo » (2.4) et 5 inscriptions (3.5)
+  expect(lignesEtat).toHaveLength(16);
+  for (const [pseudo, course] of INSCRIPTIONS) {
+    expect(lignesEtat.filter((l) => l === `${etat} : ${pseudo} (inscription à ${course})`), `${pseudo} / ${course}`).toHaveLength(1);
+  }
+  expect(lignesEtat.filter((l) => l.includes('(inscription à '))).toHaveLength(5);
+  expect(lignesEtat.filter((l) => l.includes('Alice') && l.includes('inscription'))).toHaveLength(0);
+  expect(lignesEtat.filter((l) => l.includes('inscription à Backyard mini'))).toHaveLength(0);
   expect(lignesEtat.filter((l) => l.includes('Léo affecté à Backyard de démo'))).toHaveLength(1);
   for (const element of ELEMENTS) {
     expect(lignesEtat.filter((l) => l.includes(element))).not.toHaveLength(0);
@@ -150,6 +167,26 @@ async function lireLigneCourse(page: Page, nom: string): Promise<Record<string, 
   return resultat;
 }
 
+/** CA13 : dossards et places restantes des inscriptions de démo, lus par l'API en admin master. */
+async function verifierInscriptionsDemo(request: Parameters<typeof connecterParApi>[0]): Promise<void> {
+  const courses = await coursesParApi(request);
+  const attendu: Record<string, { pseudos: string[]; places: number }> = {
+    'Backyard de démo': { pseudos: ['Karim', 'Sophie', 'Tom'], places: 47 },
+    'Backyard express': { pseudos: ['Karim', 'Sophie'], places: 8 },
+    'Backyard mini': { pseudos: [], places: 2 },
+  };
+  for (const [nom, { pseudos, places }] of Object.entries(attendu)) {
+    const course = courses.find((c) => c['nom'] === nom);
+    expect(course, nom).toBeTruthy();
+    const reponse = await request.get(`/api/administration/courses/${course!['id']}/inscriptions`);
+    expect(reponse.status(), nom).toBe(200);
+    const corps = (await reponse.json()) as { nombreInscrits: number; placesRestantes: number; inscrits: Array<{ dossard: number; pseudo: string }> };
+    expect(corps.nombreInscrits, nom).toBe(pseudos.length);
+    expect(corps.placesRestantes, nom).toBe(places);
+    expect(corps.inscrits.map((i) => [i.dossard, i.pseudo]), nom).toEqual(pseudos.map((p, i) => [i + 1, p]));
+  }
+}
+
 type Contexte = Parameters<typeof connecterParApi>[0];
 
 /** Contexte de requêtes isolé (une session par préparation de données). */
@@ -172,7 +209,7 @@ test.describe('Données de démonstration, base neuve', () => {
   test.skip(SCENARIO !== 'neuve', 'scénario réservé à une base neuve (DEMO_SCENARIO=neuve)');
   test.describe.configure({ mode: 'serial' });
 
-  test('CA1 - le premier lancement crée sept éléments, les comptes se connectent et les courses sont listées', async ({ page, request, playwright }) => {
+  test('CA1 et CA13 - le premier lancement crée seize éléments, les comptes se connectent et les courses sont listées', async ({ page, request, playwright }) => {
     const r = await lancerScript({ env: envAdminMaster() });
     expect(r.code, `sortie : ${r.sortie}\nerreur : ${r.erreur}`).toBe(0);
     verifierSeptElements(r, 'créé');
@@ -193,6 +230,8 @@ test.describe('Données de démonstration, base neuve', () => {
       expect(trouvees, nom).toHaveLength(1);
       expect(trouvees[0]).toMatchObject({ ...attendue, statut: 'EN_PREPARATION' });
     }
+
+    await avecContexte(playwright, verifierInscriptionsDemo);
 
     await connecterAdminMaster(page);
     await expect(page).toHaveURL(/\/administration$/);
@@ -222,7 +261,7 @@ test.describe('Données de démonstration, base neuve', () => {
     }
   });
 
-  test('CA2 - la relance ne crée rien : sept éléments déjà présents et une seule course de chaque nom', async ({ request }) => {
+  test('CA2 et CA13 - la relance ne crée rien : seize éléments déjà présents et une seule course de chaque nom', async ({ request }) => {
     const r = await lancerScript({ env: envAdminMaster() });
     expect(r.code, `sortie : ${r.sortie}\nerreur : ${r.erreur}`).toBe(0);
     verifierSeptElements(r, 'déjà présent');
@@ -239,7 +278,7 @@ test.describe('Données de démonstration, base neuve', () => {
 test.describe('Données de démonstration, lancement partiel', () => {
   test.skip(SCENARIO !== 'partiel', 'scénario réservé à une base neuve (DEMO_SCENARIO=partiel)');
 
-  test('CA2 - avec Nadia et Backyard express déjà présents, deux éléments déjà présents et six créés', async ({ playwright }) => {
+  test('CA2 et CA13 - avec Nadia et Backyard express déjà présents, deux éléments déjà présents et quatorze créés', async ({ playwright }) => {
     await avecContexte(playwright, (ctx) => creerAdminParApi(ctx, 'Nadia', 'mot-de-passe-admin-1'));
     await avecContexte(playwright, (ctx) => creerCourseParApi(ctx, {
       nom: 'Backyard express', date: jourPlus(7), distanceBoucleMetres: 400, dureeBoucleMinutes: 1,
@@ -251,10 +290,10 @@ test.describe('Données de démonstration, lancement partiel', () => {
     const presents = lignes(r.sortie, 'déjà présent : ');
     const crees = lignes(r.sortie, 'créé : ');
     expect(presents).toHaveLength(2);
-    expect(crees).toHaveLength(6);
+    expect(crees).toHaveLength(14);
     expect(presents.join('\n')).toContain('Nadia');
     expect(presents.join('\n')).toContain('Backyard express');
-    for (const nom of ['Léo', 'Marc', 'Alice', 'Backyard de démo', 'Backyard mini', 'Léo affecté à Backyard de démo']) {
+    for (const nom of ['Léo', 'Marc', 'Alice', 'Karim', 'Sophie', 'Tom', 'Backyard de démo', 'Backyard mini', 'Léo affecté à Backyard de démo']) {
       expect(crees.join('\n')).toContain(nom);
     }
     verifierAucunSecret(r);
@@ -264,7 +303,7 @@ test.describe('Données de démonstration, lancement partiel', () => {
 test.describe('Données de démonstration, course de même nom', () => {
   test.skip(SCENARIO !== 'mini', 'scénario réservé à une base neuve (DEMO_SCENARIO=mini)');
 
-  test('CA2 - une course Backyard mini préexistante avec 2000 m n\'est pas modifiée', async ({ request, playwright }) => {
+  test('CA2 et CA13 - une course Backyard mini préexistante avec 2000 m n\'est pas modifiée', async ({ request, playwright }) => {
     await avecContexte(playwright, (ctx) => creerCourseParApi(ctx, {
       nom: 'Backyard mini', date: jourPlus(14), distanceBoucleMetres: 2000, dureeBoucleMinutes: 2,
       denivelePositifBoucleMetres: 10, nombreMaxParticipants: 2, nombreMaxBoucles: 2,
@@ -275,7 +314,7 @@ test.describe('Données de démonstration, course de même nom', () => {
     const presents = lignes(r.sortie, 'déjà présent : ');
     expect(presents).toHaveLength(1);
     expect(presents[0]).toContain('Backyard mini');
-    expect(lignes(r.sortie, 'créé : ')).toHaveLength(7);
+    expect(lignes(r.sortie, 'créé : ')).toHaveLength(15);
 
     const mini = (await coursesParApi(request)).filter((c) => c['nom'] === 'Backyard mini');
     expect(mini).toHaveLength(1);
