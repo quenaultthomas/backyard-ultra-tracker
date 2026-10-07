@@ -20,6 +20,7 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 | 1 | Comptes et sécurité | 1.1 → 1.6b | créer des comptes, te connecter avec chaque rôle |
 | 2 | Courses | 2.1a → 2.5 | déclarer une course complète avec logo et bénévoles |
 | 3 | Inscriptions | 3.1 → 3.6 | inscrire des coureurs et voir leurs dossards et QR |
+| R | Refonte graphique | R.1 → R.9 | naviguer dans une application au thème backyard, avec menu burger et liste de courses en cartes |
 | 4 | Course en direct | 4.1 → 4.12 | faire tourner une course de bout en bout |
 | 5 | Scan hors ligne | 5.1 → 5.2 | scanner sans réseau sans perdre de passage |
 | 6 | Suivi public | 6.1 → 6.4 | projeter le suivi d'une course |
@@ -136,6 +137,48 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 
 ---
 
+## Jalon R : Refonte graphique
+
+Refonte purement visuelle, sans aucun changement de règle métier ni de contrat d'API. Les tests E2E existants sont adaptés (sélecteurs, textes), jamais supprimés ni affaiblis. Pas de dépendance lourde : SVG et CSS maison, polices auto-hébergées. Responsive (téléphone d'abord), contrastes AA, navigation clavier et attributs ARIA sur les menus. Univers visuel : une boucle de 6,7 km refaite toutes les heures, de jour comme de nuit, en forêt (vert forêt profond, orange balise/frontale, crème, courbes de niveau avec boucle fermée, sapins, dossards, chronomètre).
+
+### R.1 Charte graphique et fondations du thème
+- **Livré** : `docs/design.md` (palette, typographie, espacements, rayons, ombres, motif de fond, pastilles de statut) ; variables CSS globales ; styles de base partagés (boutons principal, secondaire et danger, champs, cartes, messages, pastilles de statut) ; polices auto-hébergées ; nouvelle palette et nouveau fond appliqués à l'en-tête et au corps de page, sans changement de structure ni de texte.
+- **Tu testes** : tous les écrans existants affichent la nouvelle palette et la nouvelle typographie, sans régression. Une section illustrée de `docs/design.md` montre chaque composant. Les tests E2E existants passent.
+
+### R.2 Menu burger visiteur
+- **Livré** : composant d'en-tête partagé avec menu burger en haut à droite pour le visiteur non connecté : icône « tête », menu avec « Se connecter » et « Créer un compte ». Fermeture au clic extérieur et à Échap, navigation clavier, adapté au téléphone. Le lien « Se connecter » actuel disparaît.
+- **Tu testes** : déconnecté, titre à gauche et icône à droite ; le menu propose les deux entrées et mène aux bons écrans ; Échap et clic extérieur le ferment ; utilisable au clavier et sur écran étroit.
+
+### R.3 Menu burger utilisateur connecté
+- **Livré** : burger contenant le pseudo (en tête, non cliquable), puis par rôle : `COUREUR` : Espace coureur, Mes inscriptions, Mon compte, Se déconnecter ; `ADMIN` / `ADMIN_MASTER` : Administration, Mon compte, Se déconnecter ; `BENEVOLE` : ses entrées actuelles, Mon compte, Se déconnecter. Les liens alignés dans l'en-tête disparaissent.
+- **Tu testes** : se connecter avec chaque rôle (script de démo) → bonnes entrées et pseudo ; déconnexion fonctionnelle ; un coureur ne voit pas « Administration ».
+
+### R.4 Accueil : suppression de l'indicateur API et décor backyard
+- **Livré** : suppression de l'indicateur « API : disponible » et de l'appel de santé côté page d'accueil ; titre, accroche et décor de fond backyard (courbes de niveau, boucle, sapins), identique pour le visiteur et l'utilisateur connecté. Test E2E de la page d'accueil mis à jour.
+- **Tu testes** : http://localhost affiche le décor, plus aucune mention de l'API ; identique une fois connecté ; texte lisible sur le décor, y compris sur téléphone.
+
+### R.5 Écrans de connexion et de création de compte
+- **Livré** : les deux écrans au nouveau thème (carte centrée sur le décor de fond), sans changement de comportement ni de messages.
+- **Tu testes** : création de compte → connexion → déconnexion ; erreurs (mauvais mot de passe, pseudo pris, mot de passe trop court) toujours affichées.
+
+### R.6 Mon compte : changement de mot de passe repliable
+- **Livré** : l'écran affiche pseudo et rôle ; le formulaire de changement de mot de passe est replié par défaut sous une section dépliable (`aria-expanded`), se referme après un changement réussi, reste déplié en cas d'erreur.
+- **Tu testes** : à l'ouverture, pas de formulaire visible ; un clic le déploie ; changement réussi → refermé avec confirmation ; erreur → formulaire visible avec le message.
+
+### R.7 Gestion des courses : liste en cartes
+- **Livré** : liste admin en grille de cartes : visuel avec le logo (ou visuel de substitution au thème à la place de « Aucun logo »), nom, date mise en avant, pastille de statut, indicateurs avec icônes (distance, durée, dénivelé, participants max, boucles max), actions « Fiche » et « Modifier », « Choisir un logo » intégré à la carte. Plusieurs colonnes sur grand écran, une sur téléphone. État vide soigné.
+- **Tu testes** : avec le script de démo, la liste s'affiche en cartes avec toutes les données de l'ancienne liste ; logo, fiche et modification fonctionnent comme avant ; lisible sur téléphone.
+
+### R.8 Thème sur les écrans coureur, bénévole et gestion des comptes
+- **Livré** : Espace coureur, Mes inscriptions (dossard et QR mis en valeur façon dossard), écrans bénévole, gestion des comptes admins et bénévoles au thème : cartes, listes, boutons, messages, états vides.
+- **Tu testes** : parcourir chaque écran avec le rôle concerné : cohérence visuelle, aucune régression.
+
+### R.9 Fiche course, formulaires admin et finition
+- **Livré** : fiche de course (identité visuelle, statut, bénévoles affectés, inscrits) et formulaires de création et de modification au thème ; passe de cohérence globale (espacements, titres, focus clavier, contrastes, écrans étroits) ; `docs/design.md` complété avec les règles à suivre pour les écrans des jalons 4 à 6 (pilotage, scan, suivi public, y compris grand format projeté).
+- **Tu testes** : parcours admin complet (créer, modifier, fiche, logo, bénévoles) ; revue visuelle de tous les écrans sur ordinateur et téléphone ; `docs/design.md` à jour.
+
+---
+
 ## Jalon 4 : Course en direct
 
 ### 4.1 Démarrer une course
@@ -227,7 +270,10 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 | Maîtrise du temps pour les tests E2E | Horloge pilotable activée uniquement dans le profil `e2e`. Les vrais essais en temps réel se font en recette sur le terrain. | 4.3 |
 | Suppression d'un compte ayant couru | Anonymisation : le compte ne peut plus se connecter, son pseudo est remplacé, ses résultats sont conservés. | 3.6 |
 | Suppression d'une course | Par l'admin master uniquement, tant que la course est `EN_PREPARATION`. | 2.5 |
+| Thème graphique | Charte `docs/design.md` appliquée à tous les écrans, y compris ceux des jalons 4 à 6 | R.1 |
 
 ## Décisions en attente
 
-Aucune pour l'instant. Toute nouvelle question est ajoutée ici et tranchée avant l'incrément concerné.
+- Direction artistique (palette, motif de fond) à trancher avec l'utilisateur dans la spec de R.1.
+
+Toute nouvelle question est ajoutée ici et tranchée avant l'incrément concerné.
