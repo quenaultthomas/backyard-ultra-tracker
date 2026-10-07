@@ -1,0 +1,31 @@
+.resume {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+}
+
+.tableau {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.5rem 0.5rem 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+th {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.dossard {
+  font-variant-numeric: tabular-nums;
+}
+
+.pseudo {
+  overflow-wrap: anywhere;
+}

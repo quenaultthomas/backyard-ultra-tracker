@@ -165,6 +165,14 @@ public final class Course {
     }
 
     /**
+     * Places encore disponibles pour ce nombre d'Inscriptions, tous statuts confondus ; jamais négatif, même si la
+     * Course compte plus d'Inscriptions que son maximum. Unique définition de ce calcul.
+     */
+    public int placesRestantes(int nombreInscriptions) {
+        return Math.max(0, nombreMaxParticipants - nombreInscriptions);
+    }
+
+    /**
      * @throws CourseCompleteException la Course est complète pour ce nombre d'Inscriptions
      */
     public void verifierPlaceDisponible(int nombreInscriptions) {

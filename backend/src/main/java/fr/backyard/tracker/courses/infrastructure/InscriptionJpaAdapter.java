@@ -77,6 +77,17 @@ public class InscriptionJpaAdapter implements DepotInscriptions {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<Inscription> parCourse(UUID courseId) {
+        return entityManager.createQuery("select i from InscriptionJpaEntity i where i.courseId = :courseId",
+                        InscriptionJpaEntity.class)
+                .setParameter("courseId", courseId)
+                .getResultList().stream()
+                .map(InscriptionJpaAdapter::versDomaine)
+                .toList();
+    }
+
     /** Requête (et non find) : relue sous le verrou de la Course, elle voit une suppression concurrente validée. */
     @Override
     @Transactional(readOnly = true)

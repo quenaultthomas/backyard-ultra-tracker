@@ -1,3 +1,5 @@
+import { StatutInscription } from '../../inscriptions/course-ouverte';
+
 /** Statut d'une Course, tel que renvoyé par l'API. */
 export type StatutCourse = 'EN_PREPARATION' | 'EN_COURS' | 'TERMINEE';
 
@@ -44,6 +46,26 @@ export interface CourseReponse {
 export interface FicheCourseReponse extends CourseReponse {
   /** Identifiants des Comptes `BENEVOLE` affectés, triés par l'API, `[]` si aucun. */
   benevoleIds: string[];
+}
+
+/** Ligne de `InscritsCourseReponse` : jamais de jeton QR ni d'identifiant de Compte. */
+export interface InscritReponse {
+  inscriptionId: string;
+  dossard: number;
+  /** Pseudo du coureur, ou « Compte inconnu » : affiché en texte, jamais interprété. */
+  pseudo: string;
+  statut: StatutInscription;
+}
+
+/** Réponse de `GET /api/administration/courses/{id}/inscriptions` : nombres calculés par l'API. */
+export interface InscritsCourseReponse {
+  courseId: string;
+  nombreMaxParticipants: number;
+  nombreInscrits: number;
+  placesRestantes: number;
+  complete: boolean;
+  /** Triés par dossard croissant par l'API, `[]` si aucune Inscription. */
+  inscrits: InscritReponse[];
 }
 
 /** Corps de `PUT /api/administration/courses/{id}/benevoles` : ensemble complet souhaité. */

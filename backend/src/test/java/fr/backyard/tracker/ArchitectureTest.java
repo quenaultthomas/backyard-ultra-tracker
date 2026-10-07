@@ -24,6 +24,9 @@ class ArchitectureTest {
     private static final List<String> CONTEXTES = List.of("comptes", "courses");
     // CA5 (2.4, D3) : seule exception, l'adaptateur de l'annuaire des bénévoles (assemblage inter-contextes)
     private static final String ADAPTATEUR_ANNUAIRE = RACINE + ".assemblage.AnnuaireBenevolesAdapter";
+    // 3.5 RG6 : seconde exception nommée, l'adaptateur de l'annuaire des pseudos (même assemblage)
+    private static final String ADAPTATEUR_PSEUDOS = RACINE + ".assemblage.AnnuairePseudosAdapter";
+    private static final List<String> ADAPTATEURS_NOMMES = List.of(ADAPTATEUR_ANNUAIRE, ADAPTATEUR_PSEUDOS);
     private static final List<String> COUCHES = List.of("domaine", "application", "infrastructure", "exposition");
 
     private static String paquet(String contexte, String couche) {
@@ -74,8 +77,8 @@ class ArchitectureTest {
                 .whereLayer("Exposition").mayNotBeAccessedByAnyLayer()
                 .withOptionalLayers(true)
                 .ignoreDependency(
-                        DescribedPredicate.describe("l'adaptateur nommé de l'annuaire des bénévoles",
-                                (JavaClass origine) -> origine.getName().equals(ADAPTATEUR_ANNUAIRE)),
+                        DescribedPredicate.describe("les adaptateurs nommés des annuaires (bénévoles, pseudos)",
+                                (JavaClass origine) -> ADAPTATEURS_NOMMES.contains(origine.getName())),
                         DescribedPredicate.alwaysTrue())
                 .as("RG14 : dépendances uniquement vers l'intérieur")
                 .check(classes);
@@ -135,6 +138,7 @@ class ArchitectureTest {
         classes().that().resideInAPackage(RACINE + "..")
                 .and().doNotHaveFullyQualifiedName(BackyardUltraTrackerApplication.class.getName())
                 .and().doNotHaveFullyQualifiedName(ADAPTATEUR_ANNUAIRE)
+                .and().doNotHaveFullyQualifiedName(ADAPTATEUR_PSEUDOS)
                 .should().resideInAnyPackage(paquets)
                 .as("RG9/RG16 : toute classe est dans fr.backyard.tracker.<comptes|courses>.<couche>")
                 .check(classes);

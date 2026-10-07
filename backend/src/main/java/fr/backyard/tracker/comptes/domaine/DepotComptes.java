@@ -1,5 +1,6 @@
 package fr.backyard.tracker.comptes.domaine;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,6 +40,16 @@ public interface DepotComptes {
     /** @throws UnsupportedOperationException si le dépôt ne sait pas rechercher */
     default Optional<Compte> trouverParId(UUID id) {
         throw new UnsupportedOperationException("Ce dépôt ne sait pas rechercher par identifiant.");
+    }
+
+    /**
+     * Comptes trouvés parmi ces identifiants, en une seule recherche, dans un ordre quelconque ; les identifiants
+     * inconnus sont ignorés.
+     *
+     * @throws UnsupportedOperationException si le dépôt ne sait pas rechercher
+     */
+    default List<Compte> trouverParIds(Collection<UUID> ids) {
+        throw new UnsupportedOperationException("Ce dépôt ne sait pas rechercher par identifiants.");
     }
 
     /**

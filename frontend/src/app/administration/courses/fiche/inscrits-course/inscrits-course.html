@@ -1,0 +1,39 @@
+<section class="formulaire" aria-labelledby="titre-inscrits" data-testid="fiche-inscrits">
+  <h2 id="titre-inscrits" class="sous-titre">Inscrits</h2>
+
+  @if (erreur()) {
+    <p class="erreur erreur--generale" role="alert" data-testid="fiche-inscrits-erreur">
+      Impossible de charger les inscrits. Réessayez plus tard.
+    </p>
+  } @else if (inscrits(); as reponse) {
+    <p class="message resume">
+      <span data-testid="fiche-inscrits-compteur">{{ compteur() }}</span>
+      <span data-testid="fiche-inscrits-places">{{ places() }}</span>
+    </p>
+
+    @if (reponse.inscrits.length === 0) {
+      <p class="message" data-testid="fiche-inscrits-vide">Aucun inscrit pour le moment.</p>
+    } @else {
+      <table class="tableau" aria-labelledby="titre-inscrits">
+        <thead>
+          <tr>
+            <th scope="col">Dossard</th>
+            <th scope="col">Coureur</th>
+            <th scope="col">Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (inscrit of reponse.inscrits; track inscrit.inscriptionId) {
+            <tr data-testid="fiche-inscrits-ligne">
+              <td class="dossard" data-testid="fiche-inscrit-dossard">{{ inscrit.dossard }}</td>
+              <td class="pseudo" data-testid="fiche-inscrit-pseudo">{{ inscrit.pseudo }}</td>
+              <td data-testid="fiche-inscrit-statut">{{ libellesStatut[inscrit.statut] }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  } @else {
+    <p class="message" role="status">Chargement des inscrits…</p>
+  }
+</section>

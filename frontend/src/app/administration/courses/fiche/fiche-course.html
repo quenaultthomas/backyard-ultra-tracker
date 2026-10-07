@@ -111,6 +111,8 @@
           <p class="message" role="status">Chargement des bénévoles…</p>
         }
       </section>
+
+      <app-inscrits-course [inscrits]="inscrits()" [erreur]="erreurInscrits()" />
     } @else {
       <h1 id="fiche-titre" class="titre">Fiche de la course</h1>
       <p class="message" role="status">Chargement…</p>

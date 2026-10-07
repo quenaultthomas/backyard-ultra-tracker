@@ -20,12 +20,13 @@ import { CsrfService } from '../../../partage/csrf.service';
 import { MESSAGE_SERVICE_INDISPONIBLE, lireProbleme } from '../../../partage/probleme';
 import { AdministrationApiService } from '../../administration-api.service';
 import { CHAMPS_NOMBRE, formaterDateCourse } from '../champs-course';
-import { FicheCourseReponse, LIBELLES_STATUT_COURSE } from '../course';
+import { FicheCourseReponse, InscritsCourseReponse, LIBELLES_STATUT_COURSE } from '../course';
 import {
   ECRAN_GESTION_COURSES,
   ETAT_MESSAGE_ERREUR,
   MESSAGE_COURSE_INTROUVABLE,
 } from '../erreurs-course';
+import { InscritsCourse } from './inscrits-course/inscrits-course';
 
 const ERREURS_AFFECTATION: ErreursSpecifiques<never> = {
   VALIDATION_ECHOUEE: ({ erreurs }) => ({
@@ -47,7 +48,7 @@ interface LigneBenevole {
 /** Fiche d'une Course (admins et admin master) : rappel de la Course et bénévoles affectés. */
 @Component({
   selector: 'app-fiche-course',
-  imports: [RouterLink],
+  imports: [RouterLink, InscritsCourse],
   templateUrl: './fiche-course.html',
   styleUrls: [
     '../../../partage/page-carte.css',
@@ -78,6 +79,9 @@ export class FicheCourse implements OnInit {
   /** Tous les Comptes `BENEVOLE`, `null` tant que la liste n'est pas chargée. */
   protected readonly benevoles = signal<CompteReponse[] | null>(null);
   protected readonly erreurBenevoles = signal(false);
+  /** Inscrits de la Course, `null` tant que la réponse n'est pas arrivée. */
+  protected readonly inscrits = signal<InscritsCourseReponse | null>(null);
+  protected readonly erreurInscrits = signal(false);
   /** Identifiants cochés, non encore enregistrés. */
   protected readonly coches = signal<ReadonlySet<string>>(new Set());
   protected readonly envoiEnCours = signal(false);
@@ -116,6 +120,7 @@ export class FicheCourse implements OnInit {
           }
         },
       });
+    this.chargerInscrits();
   }
 
   protected basculer(id: string, coche: boolean): void {
@@ -166,6 +171,21 @@ export class FicheCourse implements OnInit {
             return;
           }
           (estIntrouvable(erreur) ? this.introuvable : this.erreurChargement).set(true);
+        },
+      });
+  }
+
+  /** Lecture unique, indépendante de la fiche : un échec n'affecte que la section « Inscrits ». */
+  private chargerInscrits(): void {
+    this.administrationApi
+      .listerInscrits(this.id())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (inscrits) => this.inscrits.set(inscrits),
+        error: (erreur: unknown) => {
+          if (!this.refusAcces.rediriger(erreur, this.ecran())) {
+            this.erreurInscrits.set(true);
+          }
         },
       });
   }

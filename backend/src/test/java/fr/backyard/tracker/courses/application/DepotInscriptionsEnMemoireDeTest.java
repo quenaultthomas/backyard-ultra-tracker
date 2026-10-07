@@ -51,4 +51,10 @@ final class DepotInscriptionsEnMemoireDeTest implements DepotInscriptions {
     public void supprimer(UUID inscriptionId) {
         inscriptions.removeIf(i -> i.id().equals(inscriptionId));
     }
+
+    /** 3.5 RG3 : Inscriptions de la seule Course demandée, dans l'ordre d'insertion (le tri est une règle du cas d'usage). */
+    @Override
+    public List<Inscription> parCourse(UUID courseId) {
+        return inscriptions.stream().filter(i -> i.courseId().equals(courseId)).toList();
+    }
 }

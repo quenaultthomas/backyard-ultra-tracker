@@ -25,6 +25,9 @@ public interface DepotInscriptions {
     /** Inscriptions du Compte, toutes Courses confondues, dans un ordre quelconque. */
     List<Inscription> parCompte(UUID compteId);
 
+    /** Inscriptions de la Course, quel que soit leur statut, dans un ordre quelconque (l'ordre est une règle des cas d'usage). */
+    List<Inscription> parCourse(UUID courseId);
+
     /** Inscription de cet identifiant si elle appartient au Compte, vide sinon (inconnue ou d'un autre Compte). */
     Optional<Inscription> parIdEtCompte(UUID inscriptionId, UUID compteId);
 
