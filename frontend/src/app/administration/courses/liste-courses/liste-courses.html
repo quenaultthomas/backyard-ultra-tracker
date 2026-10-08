@@ -1,28 +1,29 @@
 <ul class="liste" data-testid="liste-courses">
   @for (course of courses(); track course.id) {
-    <li class="ligne" data-testid="ligne-course">
-      <span class="ligne__nom" data-testid="course-nom">{{ course.nom }}</span>
+    <li class="course-carte" data-testid="ligne-course">
       <app-logo-course
         [course]="course"
         [actif]="logoActif() === course.id"
         (activer)="logoActif.set(course.id)"
         (actualiser)="actualiser.emit($event)"
       />
-      <dl class="details">
-        <div class="detail">
-          <dt>Date</dt>
-          <dd>
-            <time [attr.datetime]="course.date" data-testid="course-date">{{
-              formaterDate(course.date)
-            }}</time>
-          </dd>
+      <div class="course-carte__entete">
+        <div class="course-carte__repere">
+          <time
+            class="course-carte__date"
+            [attr.datetime]="course.date"
+            data-testid="course-date"
+            >{{ formaterDate(course.date) }}</time
+          >
+          <span [class]="pastillesStatut[course.statut]" data-testid="course-statut">{{
+            libellesStatut[course.statut]
+          }}</span>
         </div>
-        <div class="detail">
-          <dt>Statut</dt>
-          <dd data-testid="course-statut">{{ libellesStatut[course.statut] }}</dd>
-        </div>
+        <h3 class="course-carte__nom" data-testid="course-nom">{{ course.nom }}</h3>
+      </div>
+      <dl class="indicateurs">
         @for (champ of champsNombre; track champ.cle) {
-          <div class="detail">
+          <div class="indicateur" [class]="'indicateur--' + champ.suffixe">
             <dt>{{ champ.libelleCourt }}</dt>
             <dd [attr.data-testid]="'course-' + champ.suffixe">
               {{ course[champ.cle] + champ.unite }}
@@ -30,7 +31,7 @@
           </div>
         }
       </dl>
-      <div class="ligne__actions">
+      <div class="course-carte__actions">
         <a
           class="ligne__action"
           [routerLink]="[ecranGestion, course.id]"

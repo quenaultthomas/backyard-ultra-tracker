@@ -222,6 +222,29 @@ Source de la couche courbes de niveau et boucle :
 </svg>
 ```
 
+### Visuel de substitution des Courses
+
+Visuel d'une Course sans logo (R.7), en tête de sa carte (section 7, « Carte de course ») et, réduit, dans l'état vide de la liste.
+
+- **Classe partagée** `.visuel-substitution`, définie dans `frontend/src/styles/pictogrammes.css` (importé par `styles.css` après `decor.css`) : fond `--couleur-sable`, bordure 1px `--couleur-trait`, une couche `background-image` en URI `data:image/svg+xml` (mêmes règles d'encodage que le motif du `body`), `background-size: cover`, centrée, sans répétition. La zone (`aspect-ratio: 16 / 9`, `border-radius: var(--rayon-s)`) est fixée par le composant qui l'utilise.
+- Tuile `viewBox="0 0 320 180"` (16 / 9), **au plus 2 048 octets** décodée : 4 courbes de niveau ouvertes (trait 1,5) et **une boucle fermée en pointillés** (chemin terminé par `Z`, trait 2,5, `stroke-dasharray`), traits `#D9CFB6` (`--couleur-trait`) uniquement, `fill="none"`. Ni script, ni texte, ni image, ni lien externe.
+- Sur une carte de course, l'élément `course-logo-absent` contient le texte « Aucun logo » **masqué visuellement** (`position: absolute`, 1 x 1 px, `clip-path: inset(50%)`, `overflow: hidden`, `white-space: nowrap`, parent `position: relative`, couleur `--couleur-encre-douce` : 5,89 sur sable) : lu par les lecteurs d'écran, jamais affiché. Le visuel lui-même est décoratif.
+- En **contraste forcé** (`forced-colors: active`), `background-image: none` : il reste un cadre bordé.
+
+Source du visuel de substitution :
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180" fill="none" stroke="#D9CFB6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Courbes de niveau. -->
+  <path stroke-width="1.5" d="M0 22C60 6 120 40 180 28S280 34 320 20"/>
+  <path stroke-width="1.5" d="M0 58C70 40 130 76 200 62S290 66 320 54"/>
+  <path stroke-width="1.5" d="M0 136C70 154 140 118 210 140S290 122 320 134"/>
+  <path stroke-width="1.5" d="M0 166C80 154 150 178 220 166S290 172 320 162"/>
+  <!-- Boucle fermée en pointillés : le yard. -->
+  <path stroke-width="2.5" stroke-dasharray="8 6" d="M108 96C106 68 136 52 168 54C202 56 222 76 218 102C214 128 188 140 160 138C130 136 110 122 108 96Z"/>
+</svg>
+```
+
 ## 7. Composants
 
 **Base** (`base.css`)
@@ -271,6 +294,31 @@ Désactivé (`:disabled`, envoi en cours) : fond `--couleur-desactive-fond`, tex
 
 **Section repliable** (disclosure, R.6, écran Mon compte : `comptes/mon-compte/mon-compte.css`) : le titre `h2` de la section contient un `<button type="button">` dont le libellé est le titre ; le bouton porte `aria-expanded` (`true` / `false`, toujours présent) et `aria-controls` vers le panneau. Le panneau reste **toujours dans le DOM** (pas de `@if`) et est masqué par `display: none` quand la section est repliée (attribut `hidden` + règle `[hidden] { display: none }`, voir section 10) ; un message de résultat (succès) se place dans la section, hors du panneau, pour rester visible panneau replié. Le focus reste sur le bouton au dépliage et au repli ; s'il était dans le panneau quand celui-ci se replie (envoi réussi), il est rendu au bouton. Le bouton est `bouton bouton--secondaire` pleine largeur, texte à gauche, `font-size: var(--taille-base)`, désactivé pendant un envoi ; l'état est indiqué par un chevron `::after` (carré de 0,5rem, bordures droite et basse 2px `currentColor`, `rotate(45deg)` replié, `rotate(-135deg)` déplié, `flex: none`), sans transition. Pas de fermeture par Échap. Replier vide les champs et les messages du panneau.
 
+**Carte de course** (R.7, écran Gestion des courses : `administration/courses/liste-courses/liste-courses.css`, `logo-course/logo-course.css`, `gestion-courses/gestion-courses.css`)
+- **Grille** `ul.liste` : `display: grid`, `grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr))`, `gap: var(--espace-4)`, sans filet ; ordre de l'API, de gauche à droite puis ligne par ligne (ordre du DOM = ordre de Tab, aucun `order`). La carte de l'écran est élargie à `max-width: 64rem` (3 colonnes de 314 px à 1 280 px, 2 à 768 px, 1 sur téléphone) et le formulaire de déclaration / modification (`.formulaire--saisie`) borné à `40rem`.
+- **Carte** `li.course-carte` (jamais `.carte`, réservée à la carte de la page) : `box-sizing: border-box`, fond surface, bordure 1px `--couleur-trait`, `border-radius: var(--rayon-m)`, `box-shadow: var(--ombre-carte)`, `padding: var(--espace-4)`, colonne flex à `gap: var(--espace-4)`, `min-width: 0`, `overflow-wrap: anywhere`, aucun `overflow: hidden` (contour de focus entier). Contenu, dans l'ordre : visuel puis actions de logo, en-tête, indicateurs, actions, suppression.
+- **Visuel** : zone `aspect-ratio: 16 / 9`, pleine largeur, `border-radius: var(--rayon-s)`, fond sable ; logo en `object-fit: contain` (ni déformé ni recadré) ou visuel de substitution (section 6). Actions de logo (`ligne__action`) **sous** le visuel, jamais en surimpression ; l'aperçu d'un nouveau logo garde sa vignette de 64 x 64 px dans son panneau sable.
+- **En-tête** : ligne date + pastille (flex, retour à la ligne, `gap` 8 px 12 px), date `--taille-grande`, graisse 700, forêt ; pastille de statut (section 8) ; nom en `h3` `--taille-moyenne`, forêt, jamais tronqué.
+- **Indicateurs** : `dl.indicateurs` (`repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr))`, `gap` 12 px 16 px) de `div.indicateur.indicateur--<suffixe>` ; pictogramme `::before` 1.5rem (24 px) sur deux lignes, à gauche du libellé `dt` (`--taille-secondaire`, encre-douce, toujours présent : le pictogramme ne porte jamais seul le sens) et de la valeur `dd` (graisse 600, encre). Pictogramme = `mask-image` (et `-webkit-mask-image`) en URI `data:image/svg+xml` teinté par `background-color: var(--couleur-foret)` (13,03 sur surface) ; en contraste forcé, `forced-color-adjust: none` et `background-color: CanvasText`. Règles dans `pictogrammes.css`.
+- **Actions** : flex, retour à la ligne, `gap` 12 px, `margin-top: auto` (alignées au bas des cartes d'une rangée) : « Fiche » (lien) et « Modifier » en `ligne__action` secondaires ; la suppression (`ligne__action--danger`) suit.
+- **Écran étroit et texte agrandi** : `main.page` de l'écran est un conteneur de requête (`container: page-gestion-courses / inline-size`) ; sous `15rem` de large (320 ou 360 px avec le texte à 200 %, jamais au texte normal), la carte de la page passe à `padding: var(--espace-3)`, la carte de course à `var(--espace-2)`, le panneau d'aperçu du logo à `var(--espace-2)` et les boutons de la carte et du logo à `padding-inline: var(--espace-3)` : la confirmation de suppression et l'aperçu tiennent dans la carte.
+- **État vide** `div.etat-vide` : centré, `padding: var(--espace-6)`, bordure 1px **pointillée** `--couleur-trait`, `border-radius: var(--rayon-m)`, fond sable ; visuel de substitution réduit (16 / 9, largeur bornée à 12rem), message (graisse 600, encre) puis `.aide`.
+
+Sources des pictogrammes des indicateurs (tuiles d'au plus 1 024 octets décodées, une seule couleur, seul le canal alpha du masque compte) :
+
+```svg
+<!-- Distance : balise (fanion) et tracé. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14352A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V3"/><path d="M6 4h12l-3 4 3 4H6"/><path d="M3 21h6"/><path d="M13 21c2.5 0 4-1.5 8-1.5"/></svg>
+<!-- Durée : chronomètre. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14352A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="14" r="7"/><path d="M12 14v-3.5"/><path d="M10 3h4"/><path d="M12 3v4"/><path d="M18 7.5 19.5 6"/></svg>
+<!-- Dénivelé positif : sommets. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14352A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20 9 7l4 6.5 2.5-3.5L22 20Z"/><path d="M7.2 10.3 9 12l1.6-2.3"/></svg>
+<!-- Participants max. : silhouette. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14352A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7.5" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+<!-- Boucles max. : boucle fléchée. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14352A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 3.5V9h-5.5"/></svg>
+```
+
 ## 8. Pastilles de statut
 
 Classe de base `.pastille-statut` : `inline-flex`, `gap: var(--espace-2)`, `padding: 0.125rem 0.625rem`, `border-radius: var(--rayon-pastille)`, `--taille-petite`, graisse 700, bordure 1px, puce `::before` (cercle de 0,5rem de la couleur du texte, en CSS). Le libellé est toujours affiché en texte.
@@ -299,7 +347,7 @@ La capture `docs/images/design-apercu.png` est régénérée par le test E2E de 
 - **Variables uniquement** : aucune couleur, police, taille, espacement, rayon ni ombre en dur hors de `variables.css` ; toujours `var(--…)`. Une nouvelle valeur s'ajoute d'abord à la charte (ce document et `variables.css`), avec son ratio de contraste.
 - **Pas de couleur en dur**, pas de noir ni de blanc purs (seule exception : le QR code, noir sur blanc).
 - **Orange jamais en texte sur fond clair** : `--couleur-orange` sur fond sombre ou en aplat ; sur crème, surface ou sable, utiliser `--couleur-orange-fonce`.
-- **Pas de `svg`, `img` ni `canvas` décoratif dans le DOM** : puces, filets et motifs en CSS (`::before`, `background`) ; seule exception : l'icône du menu burger de l'en-tête (section 7). Le décor backyard de l'accueil (`.decor-backyard`) est un fond CSS (`background-image` en URI `data:`), pas un `svg` du DOM : il respecte cette règle.
+- **Pas de `svg`, `img` ni `canvas` décoratif dans le DOM** : puces, filets et motifs en CSS (`::before`, `background`) ; seule exception : l'icône du menu burger de l'en-tête (section 7). Le décor backyard de l'accueil (`.decor-backyard`) est un fond CSS (`background-image` en URI `data:`), pas un `svg` du DOM : il respecte cette règle. De même, un **pictogramme décoratif** est un `mask-image` / `background-image` CSS en URI `data:` (jamais un `svg`, `img` ni `canvas` du DOM), déclaré dans une feuille globale (`decor.css`, `pictogrammes.css`) : les tuiles ne tiennent pas dans le budget `anyComponentStyle` d'un composant.
 - Réutiliser les classes partagées (`.bouton*`, `.message--*`, `.pastille-statut*`, `.carte`, `.champ`) plutôt que de redéfinir un style ; les alias historiques disparaissent quand les templates adoptent ces classes.
 - Cibles tactiles de 44 px minimum, texte de 13 px minimum, contour de focus `3px solid` toujours visible, aucun défilement horizontal à 320 px.
 - Tout contenu d'une carte (titre, libellés, aides, messages, boutons, liens, textes saisis par l'utilisateur) doit rester dans la carte à 320 px avec le texte à 200 % : couper les mots trop longs (`overflow-wrap: anywhere`) plutôt que laisser déborder.

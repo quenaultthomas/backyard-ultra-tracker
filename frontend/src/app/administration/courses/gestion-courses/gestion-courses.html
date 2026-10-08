@@ -26,7 +26,13 @@
         </p>
       } @else if (courses(); as liste) {
         @if (liste.length === 0) {
-          <p class="message" data-testid="courses-vide">Aucune course pour le moment.</p>
+          <div class="etat-vide">
+            <span class="etat-vide__visuel visuel-substitution"></span>
+            <p class="etat-vide__message" data-testid="courses-vide">
+              Aucune course pour le moment.
+            </p>
+            <p class="aide">Utilisez le formulaire ci-dessous pour déclarer la première course.</p>
+          </div>
         } @else {
           <app-liste-courses
             [courses]="liste"
@@ -41,7 +47,7 @@
     </section>
 
     <form
-      class="formulaire"
+      class="formulaire formulaire--saisie"
       [formGroup]="formulaire"
       (ngSubmit)="soumettre()"
       novalidate

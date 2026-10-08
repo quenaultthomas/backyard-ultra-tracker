@@ -1,0 +1,68 @@
+/*
+ * Pictogrammes décoratifs et visuel de substitution, en URI data: (aucune requête réseau,
+ * aucun svg ni img dans le DOM). Feuille globale : les tuiles ne tiennent pas dans le budget
+ * anyComponentStyle d'un composant. Sources lisibles : docs/design.md, sections 6 et 7.
+ */
+
+/* Visuel de substitution d'une Course sans logo : courbes de niveau et boucle du yard. */
+.visuel-substitution {
+  box-sizing: border-box;
+  border: 1px solid var(--couleur-trait);
+  background-color: var(--couleur-sable);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 180' width='320' height='180' fill='none' stroke='%23D9CFB6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath stroke-width='1.5' d='M0 22C60 6 120 40 180 28S280 34 320 20'/%3E%3Cpath stroke-width='1.5' d='M0 58C70 40 130 76 200 62S290 66 320 54'/%3E%3Cpath stroke-width='1.5' d='M0 136C70 154 140 118 210 140S290 122 320 134'/%3E%3Cpath stroke-width='1.5' d='M0 166C80 154 150 178 220 166S290 172 320 162'/%3E%3Cpath stroke-width='2.5' stroke-dasharray='8 6' d='M108 96C106 68 136 52 168 54C202 56 222 76 218 102C214 128 188 140 160 138C130 136 110 122 108 96Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+/* Pictogramme d'un indicateur de Course : masque de 1.5rem teinté forêt, à gauche du libellé. */
+.indicateur::before {
+  content: '';
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  background-color: var(--couleur-foret);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.indicateur--distance::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%2314352A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 21V3'/%3E%3Cpath d='M6 4h12l-3 4 3 4H6'/%3E%3Cpath d='M3 21h6'/%3E%3Cpath d='M13 21c2.5 0 4-1.5 8-1.5'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%2314352A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 21V3'/%3E%3Cpath d='M6 4h12l-3 4 3 4H6'/%3E%3Cpath d='M3 21h6'/%3E%3Cpath d='M13 21c2.5 0 4-1.5 8-1.5'/%3E%3C/svg%3E");
+}
+
+.indicateur--duree::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%2314352A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='14' r='7'/%3E%3Cpath d='M12 14v-3.5'/%3E%3Cpath d='M10 3h4'/%3E%3Cpath d='M12 3v4'/%3E%3Cpath d='M18 7.5 19.5 6'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%2314352A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='14' r='7'/%3E%3Cpath d='M12 14v-3.5'/%3E%3Cpath d='M10 3h4'/%3E%3Cpath d='M12 3v4'/%3E%3Cpath d='M18 7.5 19.5 6'/%3E%3C/svg%3E");
+}
+
+.indicateur--denivele::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%2314352A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 20 9 7l4 6.5 2.5-3.5L22 20Z'/%3E%3Cpath d='M7.2 10.3 9 12l1.6-2.3'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%2314352A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 20 9 7l4 6.5 2.5-3.5L22 20Z'/%3E%3Cpath d='M7.2 10.3 9 12l1.6-2.3'/%3E%3C/svg%3E");
+}
+
+.indicateur--participants-max::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%2314352A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='7.5' r='4'/%3E%3Cpath d='M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%2314352A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='7.5' r='4'/%3E%3Cpath d='M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8'/%3E%3C/svg%3E");
+}
+
+.indicateur--boucles-max::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%2314352A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12a8 8 0 1 1-2.34-5.66'/%3E%3Cpath d='M20 3.5V9h-5.5'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%2314352A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12a8 8 0 1 1-2.34-5.66'/%3E%3Cpath d='M20 3.5V9h-5.5'/%3E%3C/svg%3E");
+}
+
+/* Contraste forcé : le visuel n'est plus qu'un cadre, les pictogrammes prennent la couleur du texte. */
+@media (forced-colors: active) {
+  .visuel-substitution {
+    background-image: none;
+  }
+
+  .indicateur::before {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}

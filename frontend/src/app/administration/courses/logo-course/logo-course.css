@@ -1,36 +1,39 @@
+/* Bloc logo en tête de carte : visuel 16 / 9, actions dessous, puis erreur et aperçu. */
 :host {
   display: flex;
   flex-direction: column;
-  gap: var(--espace-2);
+  gap: var(--espace-3);
+  min-width: 0;
 }
 
-.logo,
+/* Logo entier sur fond sable (contain : ni déformé ni recadré) ou visuel de substitution. */
+.visuel {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-sable);
+  object-fit: contain;
+  color: var(--couleur-encre-douce);
+}
+
 .logo__actions,
 .apercu {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--espace-3);
+  min-width: 0;
 }
 
-/* Vignette contenue dans 64 × 64 px, proportions conservées. */
+/* Aperçu du nouveau logo, contenu dans 64 × 64 px, proportions conservées. */
 .vignette {
-  box-sizing: border-box;
   width: 64px;
   height: 64px;
   object-fit: contain;
-}
-
-.vignette--absente {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px dashed var(--couleur-bordure-champ);
-  border-radius: var(--rayon-s);
-  font-size: var(--taille-petite);
-  line-height: var(--interligne-titre);
-  text-align: center;
-  color: var(--couleur-encre-douce);
 }
 
 .apercu {
@@ -43,12 +46,23 @@
   margin: 0;
 }
 
-/* Sélecteur natif masqué : ouvert par le bouton « Choisir un logo ». */
-.champ-masque {
+/* Masqué visuellement : sélecteur natif (ouvert par « Choisir un logo ») et libellé « Aucun logo ». */
+.masque {
   position: absolute;
   width: 1px;
   height: 1px;
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Écran étroit et texte agrandi (conteneur défini par gestion-courses.css). */
+@container page-gestion-courses (max-width: 15rem) {
+  .apercu {
+    padding: var(--espace-2);
+  }
+
+  .ligne__action {
+    padding-inline: var(--espace-3);
+  }
 }

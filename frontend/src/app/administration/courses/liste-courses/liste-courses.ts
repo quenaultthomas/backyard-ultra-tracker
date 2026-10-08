@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 
 import { SessionService } from '../../../comptes/session.service';
 import { CHAMPS_NOMBRE, formaterDateCourse } from '../champs-course';
-import { CourseReponse, LIBELLES_STATUT_COURSE } from '../course';
+import { CourseReponse, LIBELLES_STATUT_COURSE, PASTILLES_STATUT_COURSE } from '../course';
 import { ECRAN_GESTION_COURSES } from '../erreurs-course';
 import { LogoCourse } from '../logo-course/logo-course';
 import { CourseRetiree, SuppressionCourse } from '../suppression-course/suppression-course';
@@ -31,6 +31,7 @@ export class ListeCourses {
   protected readonly ecranGestion = ECRAN_GESTION_COURSES;
   protected readonly champsNombre = CHAMPS_NOMBRE;
   protected readonly libellesStatut = LIBELLES_STATUT_COURSE;
+  protected readonly pastillesStatut = PASTILLES_STATUT_COURSE;
   protected readonly formaterDate = formaterDateCourse;
   /** Course dont le bloc logo est actif : un seul aperçu ou message de logo à la fois. */
   protected readonly logoActif = signal<string | null>(null);

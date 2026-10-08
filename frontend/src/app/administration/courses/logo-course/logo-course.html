@@ -1,49 +1,50 @@
 @let c = course();
 @let e = etatAffiche();
-<div class="logo">
-  @if (c.logoUrl; as url) {
-    <img class="vignette" [src]="url" [alt]="'Logo de ' + c.nom" data-testid="course-logo" />
-  } @else {
-    <span class="vignette vignette--absente" data-testid="course-logo-absent">Aucun logo</span>
-  }
+@if (c.logoUrl; as url) {
+  <img class="visuel" [src]="url" [alt]="'Logo de ' + c.nom" data-testid="course-logo" />
+} @else {
+  <!-- Visuel décoratif ; seul le texte masqué « Aucun logo » est lu. -->
+  <span class="visuel visuel-substitution" data-testid="course-logo-absent"
+    ><span class="masque">Aucun logo</span></span
+  >
+}
 
-  @if (modifiable()) {
-    <div class="logo__actions">
-      <input
-        #champLogo
-        type="file"
-        class="champ-masque"
-        accept="image/png,image/jpeg,image/webp"
-        tabindex="-1"
-        aria-hidden="true"
-        (change)="choisir(champLogo)"
-        data-testid="course-champ-logo"
-      />
+@if (modifiable()) {
+  <div class="logo__actions">
+    <input
+      #champLogo
+      type="file"
+      class="masque"
+      accept="image/png,image/jpeg,image/webp"
+      tabindex="-1"
+      aria-hidden="true"
+      (change)="choisir(champLogo)"
+      data-testid="course-champ-logo"
+    />
+    <button
+      type="button"
+      class="ligne__action"
+      [disabled]="envoiEnCours()"
+      [attr.aria-label]="'Choisir un logo pour la course ' + c.nom"
+      (click)="champLogo.click()"
+      data-testid="course-bouton-logo"
+    >
+      Choisir un logo
+    </button>
+    @if (c.logoUrl !== null) {
       <button
         type="button"
         class="ligne__action"
         [disabled]="envoiEnCours()"
-        [attr.aria-label]="'Choisir un logo pour la course ' + c.nom"
-        (click)="champLogo.click()"
-        data-testid="course-bouton-logo"
+        [attr.aria-label]="'Supprimer le logo de la course ' + c.nom"
+        (click)="supprimer()"
+        data-testid="course-bouton-logo-supprimer"
       >
-        Choisir un logo
+        Supprimer le logo
       </button>
-      @if (c.logoUrl !== null) {
-        <button
-          type="button"
-          class="ligne__action"
-          [disabled]="envoiEnCours()"
-          [attr.aria-label]="'Supprimer le logo de la course ' + c.nom"
-          (click)="supprimer()"
-          data-testid="course-bouton-logo-supprimer"
-        >
-          Supprimer le logo
-        </button>
-      }
-    </div>
-  }
-</div>
+    }
+  </div>
+}
 
 @if (e.erreur; as message) {
   <p class="logo__erreur" role="alert" data-testid="course-logo-erreur">{{ message }}</p>
