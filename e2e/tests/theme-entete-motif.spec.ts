@@ -91,7 +91,7 @@ test('CA7 - l\'en-tête coureur de « Mes inscriptions » a la charte et ses dat
 
 test('CA8 - le motif de fond est une tuile SVG conforme (courbes de niveau et une boucle fermée)', async ({ page, request }) => {
   await page.goto('/');
-  await expect(page.getByTestId('etat-api')).toBeVisible();
+  await expect(page.getByTestId('accroche')).toBeVisible();
   const fond = await page.locator('body').evaluate((e) => ({ image: getComputedStyle(e).backgroundImage, repetition: getComputedStyle(e).backgroundRepeat }));
   expect(fond.repetition).toMatch(/^repeat(\s+repeat)?$/);
 

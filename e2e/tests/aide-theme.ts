@@ -209,7 +209,7 @@ const visible = (testid: string) => async (page: Page) => {
 
 /** Les 13 écrans de la RG17. */
 export const ECRANS: Scene[] = [
-  { nom: 'accueil', route: '/', role: 'anonyme', pret: async (p) => { await expect(p.getByTestId('etat-api')).toBeVisible(); } },
+  { nom: 'accueil', route: '/', role: 'anonyme', pret: async (p) => { await expect(p.getByTestId('accroche')).toBeVisible(); } },
   { nom: 'connexion', route: '/connexion', role: 'anonyme', pret: visible('titre-connexion') },
   { nom: 'creation de compte', route: '/creer-compte', role: 'anonyme', pret: visible('titre-creer-compte') },
   { nom: 'mon compte', route: '/mon-compte', role: 'coureur', pret: async (p) => { await expect(p.getByTestId('mon-compte-suppression')).toBeVisible(); } },

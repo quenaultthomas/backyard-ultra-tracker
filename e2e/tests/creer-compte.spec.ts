@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { ouvrirMenuVisiteur } from './aide-entete';
+
 const MOT_DE_PASSE_VALIDE = 'un-mot-de-passe-12';
 
 function pseudoUnique(prefixe = 'coureur'): string {
@@ -24,8 +26,8 @@ test.describe('Créer un compte coureur', () => {
   test('CA22 - le visiteur accède au formulaire depuis l\'accueil', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByTestId('titre')).toHaveText('Backyard Ultra Tracker');
-    await expect(page.getByTestId('etat-api')).toHaveText('API : disponible', { timeout: 5000 });
-    await page.getByTestId('lien-creer-compte').click();
+    await ouvrirMenuVisiteur(page);
+    await page.getByTestId('menu-lien-creer-compte').click();
     await expect(page).toHaveURL(/\/creer-compte$/);
     await expect(page.getByTestId('titre-creer-compte')).toHaveText('Créer un compte');
   });

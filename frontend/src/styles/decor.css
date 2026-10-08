@@ -1,0 +1,25 @@
+/*
+ * Décor backyard : fond partagé (accueil, puis connexion et création de compte en R.5).
+ * Deux couches en URI data: (aucune requête réseau), de haut en bas : bande de sapins
+ * collée au bas de l'élément, puis courbes de niveau et boucle du yard.
+ * Sources lisibles et contraintes : docs/design.md, section 6 « Décor de la page d'accueil ».
+ */
+.decor-backyard {
+  /* Hauteur de la bande de sapins, en rem : elle suit l'agrandissement du texte. */
+  --decor-hauteur-sapins: 6rem;
+
+  background-color: var(--couleur-creme);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 160' width='480' height='160'%3E%3Cpath fill='%2314352A' d='M60 10L88.6 64 74.6 64 101.6 112 83.4 112 112 160 8 160 36.6 112 18.4 112 45.4 64 31.4 64Z'/%3E%3Cpath fill='%231F5A43' d='M150 60L169.8 96 160.1 96 178.8 128 166.2 128 186 160 114 160 133.8 128 121.2 128 139.9 96 130.2 96Z'/%3E%3Cpath fill='%2314352A' d='M230 34L254.2 79.4 242.3 79.4 265.2 119.7 249.8 119.7 274 160 186 160 210.2 119.7 194.8 119.7 217.7 79.4 205.8 79.4Z'/%3E%3Cpath fill='%231F5A43' d='M310 70L327.6 102.4 319 102.4 335.6 131.2 324.4 131.2 342 160 278 160 295.6 131.2 284.4 131.2 301 102.4 292.4 102.4Z'/%3E%3Cpath fill='%231F5A43' d='M398 16L425.5 67.8 412 67.8 438 113.9 420.5 113.9 448 160 348 160 375.5 113.9 358 113.9 384 67.8 370.5 67.8Z'/%3E%3Cpath fill='%2314352A' d='M460 100L468.8 121.6 464.5 121.6 472.8 140.8 467.2 140.8 476 160 444 160 452.8 140.8 447.2 140.8 455.5 121.6 451.2 121.6Z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 480' width='640' height='480' stroke='%23D9CFB6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath fill='none' stroke-width='2' d='M0 40C100 14 210 74 320 50S540 66 640 40'/%3E%3Cpath fill='none' stroke-width='1.5' d='M0 118C90 92 200 150 330 128S550 144 640 118'/%3E%3Cpath fill='none' stroke-width='2' d='M0 214C110 184 220 240 330 206S530 244 640 214'/%3E%3Cpath fill='none' stroke-width='1.5' d='M0 330C100 362 210 300 320 334S540 298 640 330'/%3E%3Cpath fill='none' stroke-width='2.5' d='M0 410C90 432 220 380 330 404S550 388 640 410'/%3E%3Cpath fill='none' stroke-width='1.5' d='M0 456C120 442 220 470 340 458S520 470 640 456'/%3E%3Cpath fill='none' stroke-width='2.5' stroke-dasharray='10 8' d='M200 250C196 186 262 146 340 150C420 154 466 206 458 266C450 330 388 352 318 346C250 340 204 312 200 250Z'/%3E%3C/svg%3E");
+  background-repeat: repeat-x, repeat;
+  background-position: left bottom, left top;
+  background-size: auto var(--decor-hauteur-sapins), auto;
+}
+
+/* Contraste forcé : le décor ne porte aucune information, il disparaît. */
+@media (forced-colors: active) {
+  .decor-backyard {
+    background-image: none;
+  }
+}

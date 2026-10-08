@@ -136,9 +136,10 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     await expect(page.getByTestId('entete-titre')).toBeVisible();
     await expect(page.getByTestId('bouton-menu')).toBeVisible();
     await expect(page.getByTestId('menu-visiteur')).toHaveCount(1);
-    await expect(page.getByTestId('lien-creer-compte')).toBeVisible();
+    await expect(page.getByTestId('lien-creer-compte')).toHaveCount(0);
 
     await ouvrirMenuVisiteur(page);
+    await expect(page.getByTestId('menu-lien-creer-compte')).toBeVisible();
     await page.getByTestId('menu-lien-se-connecter').click();
     await expect(page).toHaveURL(/\/connexion$/);
     await expect(page.getByTestId('titre-connexion')).toBeVisible();

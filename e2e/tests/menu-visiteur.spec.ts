@@ -535,12 +535,12 @@ test.describe('Menu burger du visiteur (R.2)', () => {
 
   test('CA12 - les liens des écrans sont conservés et distincts de ceux du menu', async ({ page }) => {
     await charger(page, '/', 'titre');
-    await expect(page.getByTestId('lien-creer-compte')).toHaveCount(1);
-    await expect(page.getByTestId('lien-creer-compte')).toBeVisible();
+    await expect(page.getByTestId('lien-creer-compte')).toHaveCount(0);
+    await expect(page.getByTestId('lien-creer-compte')).toHaveCount(0);
     await ouvrirMenuVisiteur(page);
     await expect(page.getByTestId('menu-lien-creer-compte')).toHaveCount(1);
     await expect(page.getByTestId('menu-lien-creer-compte')).toBeVisible();
-    await expect(page.getByTestId('lien-creer-compte')).toHaveCount(1);
+    await expect(page.getByTestId('lien-creer-compte')).toHaveCount(0);
     await expect(page.locator('.entete').getByTestId('lien-se-connecter')).toHaveCount(0);
     await expect(page.getByTestId('lien-se-connecter')).toHaveCount(0);
 
