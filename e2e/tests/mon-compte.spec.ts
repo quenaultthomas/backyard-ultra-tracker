@@ -10,6 +10,7 @@ import {
   pseudoAdminUnique,
   pseudoBenevoleUnique,
 } from './aide-admin';
+import { deplierChangementMotDePasse } from './aide-mon-compte';
 
 test.beforeAll(() => {
   exigerIdentifiantsAdminMaster();
@@ -36,6 +37,7 @@ async function ouvrirMonCompte(page: Page, pseudo: string, motDePasse: string): 
 }
 
 async function changer(page: Page, actuel: string, nouveau: string, confirmation = nouveau): Promise<void> {
+  await deplierChangementMotDePasse(page);
   await page.getByTestId('mon-compte-champ-actuel').fill(actuel);
   await page.getByTestId('mon-compte-champ-nouveau').fill(nouveau);
   await page.getByTestId('mon-compte-champ-confirmation').fill(confirmation);
@@ -52,6 +54,7 @@ async function parcoursChangement(page: Page, pseudo: string, ancien: string, li
   await ouvrirMonCompte(page, pseudo, ancien);
   await expect(page.getByTestId('mon-compte-pseudo')).toHaveText(pseudo);
   await expect(page.getByTestId('mon-compte-role')).toHaveText(libelleRole);
+  await deplierChangementMotDePasse(page);
   await expect(page.getByTestId('mon-compte-aide')).toContainText('12 caractères minimum');
 
   await changer(page, ancien, NOUVEAU);
@@ -107,6 +110,7 @@ test.describe('Mon compte', () => {
       if (r.method() === 'PUT' && r.url().includes('/api/comptes/moi/mot-de-passe')) envois++;
     });
 
+    await deplierChangementMotDePasse(page);
     await page.getByTestId('mon-compte-bouton-changer').click();
     await expect(page.getByTestId('mon-compte-erreur-actuel')).toHaveText('Le mot de passe actuel est obligatoire.');
     await expect(page.getByTestId('mon-compte-erreur-nouveau')).toHaveText('Le nouveau mot de passe est obligatoire.');

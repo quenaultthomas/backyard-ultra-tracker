@@ -25,3 +25,44 @@
 .identite__pseudo {
   overflow-wrap: anywhere;
 }
+
+/* Tout mot plus large que la carte (texte à 200 % à 320 px) est coupé au lieu de déborder. */
+.carte {
+  overflow-wrap: anywhere;
+}
+
+/* Section repliable « Changer mon mot de passe » (docs/design.md, section 7). */
+.section-repliable {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-4);
+}
+
+.section-repliable__bouton {
+  width: 100%;
+  justify-content: space-between;
+  gap: var(--espace-3);
+  font-size: var(--taille-base);
+  text-align: left;
+}
+
+/* Chevron décoratif : vers le bas replié, vers le haut déplié, sans transition. */
+.section-repliable__bouton::after {
+  content: '';
+  flex: none;
+  box-sizing: content-box;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.section-repliable__bouton[aria-expanded='true']::after {
+  transform: rotate(-135deg);
+}
+
+/* `.formulaire` fixe `display: flex` : l'attribut `hidden` seul serait sans effet. */
+.formulaire[hidden] {
+  display: none;
+}

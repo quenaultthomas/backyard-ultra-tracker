@@ -13,6 +13,7 @@ import {
   pseudoBenevoleUnique,
 } from './aide-admin';
 import { ouvrirMenuCompte, ouvrirMenuVisiteur } from './aide-entete';
+import { deplierChangementMotDePasse } from './aide-mon-compte';
 import { RGB_PALETTE, RGB_TRANSPARENT } from './aide-theme';
 
 const CREME = 'rgb(247, 241, 227)';
@@ -435,6 +436,7 @@ test.describe('Menu burger de l\'utilisateur connecté (R.3)', () => {
 
     await page.goto('/mon-compte');
     await expect(page.getByTestId('titre-mon-compte')).toBeVisible();
+    await deplierChangementMotDePasse(page);
     await page.getByTestId('mon-compte-champ-actuel').focus();
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('mon-compte-champ-actuel')).toBeFocused();
@@ -445,6 +447,7 @@ test.describe('Menu burger de l\'utilisateur connecté (R.3)', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await coureurConnecte(page, request, 'coureur', '/mon-compte');
     await expect(page.getByTestId('titre-mon-compte')).toBeVisible();
+    await deplierChangementMotDePasse(page);
 
     // Appui sur le pseudo et dans la marge du panneau : le menu reste ouvert.
     await ouvrirMenuCompte(page);

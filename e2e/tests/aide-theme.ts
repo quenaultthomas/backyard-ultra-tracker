@@ -12,6 +12,7 @@ import {
   nomCourseUnique,
   pseudoBenevoleUnique,
 } from './aide-admin';
+import { deplierChangementMotDePasse } from './aide-mon-compte';
 import { placerStatutCourseEnBase, sinscrireParApi, type Inscription } from './aide-coureur';
 
 type PlaywrightLib = PlaywrightWorkerArgs['playwright'];
@@ -289,6 +290,14 @@ export const ETATS: Scene[] = [
     etat: async (page) => {
       await page.getByTestId('mon-compte-bouton-supprimer').click();
       await expect(page.getByTestId('mon-compte-confirmation-suppression')).toBeVisible();
+    },
+  },
+  {
+    nom: 'mon compte avec changement de mot de passe deplie',
+    route: '/mon-compte',
+    role: 'coureur',
+    pret: async (page) => {
+      await deplierChangementMotDePasse(page);
     },
   },
   {

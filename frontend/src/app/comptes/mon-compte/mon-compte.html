@@ -13,102 +13,126 @@
       </div>
     </dl>
 
-    <form
-      class="formulaire"
-      [formGroup]="formulaire"
-      (ngSubmit)="soumettre()"
-      novalidate
-      aria-labelledby="titre-changer-mot-de-passe"
-    >
-      <h2 id="titre-changer-mot-de-passe" class="sous-titre">Changer mon mot de passe</h2>
+    <section class="section-repliable" aria-labelledby="titre-changer-mot-de-passe">
+      <h2 id="titre-changer-mot-de-passe" class="sous-titre">
+        <button
+          #boutonSection
+          type="button"
+          class="bouton bouton--secondaire section-repliable__bouton"
+          [attr.aria-expanded]="deplie()"
+          aria-controls="panneau-changer-mot-de-passe"
+          [disabled]="envoiEnCours()"
+          (click)="basculer()"
+          data-testid="mon-compte-bouton-deplier"
+        >
+          Changer mon mot de passe
+        </button>
+      </h2>
 
       @if (succes()) {
         <p class="message-succes" role="status" data-testid="mon-compte-message-succes">
           Votre mot de passe a été modifié.
         </p>
       }
-      @if (erreursServeur().generale; as erreurGenerale) {
-        <p class="erreur erreur--generale" role="alert" data-testid="mon-compte-erreur-generale">
-          {{ erreurGenerale }}
-        </p>
-      }
 
-      <div class="champ">
-        <label for="mot-de-passe-actuel">Mot de passe actuel</label>
-        <input
-          id="mot-de-passe-actuel"
-          type="password"
-          formControlName="motDePasseActuel"
-          autocomplete="current-password"
-          aria-describedby="erreur-actuel"
-          [attr.aria-invalid]="erreurActuel() ? true : null"
-          data-testid="mon-compte-champ-actuel"
-        />
-        @if (erreurActuel(); as message) {
-          <p id="erreur-actuel" class="erreur" role="alert" data-testid="mon-compte-erreur-actuel">
-            {{ message }}
-          </p>
-        }
-      </div>
-
-      <div class="champ">
-        <label for="nouveau-mot-de-passe">Nouveau mot de passe</label>
-        <input
-          id="nouveau-mot-de-passe"
-          type="password"
-          formControlName="nouveauMotDePasse"
-          autocomplete="new-password"
-          aria-describedby="aide-nouveau erreur-nouveau"
-          [attr.aria-invalid]="erreurNouveau() ? true : null"
-          data-testid="mon-compte-champ-nouveau"
-        />
-        <p id="aide-nouveau" class="aide" data-testid="mon-compte-aide">
-          12 caractères minimum. Vos autres connexions seront fermées.
-        </p>
-        @if (erreurNouveau(); as message) {
-          <p
-            id="erreur-nouveau"
-            class="erreur"
-            role="alert"
-            data-testid="mon-compte-erreur-nouveau"
-          >
-            {{ message }}
-          </p>
-        }
-      </div>
-
-      <div class="champ">
-        <label for="confirmation">Confirmer le nouveau mot de passe</label>
-        <input
-          id="confirmation"
-          type="password"
-          formControlName="confirmation"
-          autocomplete="new-password"
-          aria-describedby="erreur-confirmation"
-          [attr.aria-invalid]="erreurConfirmation() ? true : null"
-          data-testid="mon-compte-champ-confirmation"
-        />
-        @if (erreurConfirmation(); as message) {
-          <p
-            id="erreur-confirmation"
-            class="erreur"
-            role="alert"
-            data-testid="mon-compte-erreur-confirmation"
-          >
-            {{ message }}
-          </p>
-        }
-      </div>
-
-      <button
-        type="submit"
-        class="bouton"
-        [disabled]="envoiEnCours()"
-        data-testid="mon-compte-bouton-changer"
+      <form
+        id="panneau-changer-mot-de-passe"
+        class="formulaire"
+        [hidden]="!deplie()"
+        [formGroup]="formulaire"
+        (ngSubmit)="soumettre()"
+        novalidate
+        aria-labelledby="titre-changer-mot-de-passe"
+        data-testid="mon-compte-panneau-mot-de-passe"
       >
-        Changer le mot de passe
-      </button>
-    </form>
+        @if (erreursServeur().generale; as erreurGenerale) {
+          <p class="erreur erreur--generale" role="alert" data-testid="mon-compte-erreur-generale">
+            {{ erreurGenerale }}
+          </p>
+        }
+
+        <div class="champ">
+          <label for="mot-de-passe-actuel">Mot de passe actuel</label>
+          <input
+            id="mot-de-passe-actuel"
+            type="password"
+            formControlName="motDePasseActuel"
+            autocomplete="current-password"
+            aria-describedby="erreur-actuel"
+            [attr.aria-invalid]="erreurActuel() ? true : null"
+            data-testid="mon-compte-champ-actuel"
+          />
+          @if (erreurActuel(); as message) {
+            <p
+              id="erreur-actuel"
+              class="erreur"
+              role="alert"
+              data-testid="mon-compte-erreur-actuel"
+            >
+              {{ message }}
+            </p>
+          }
+        </div>
+
+        <div class="champ">
+          <label for="nouveau-mot-de-passe">Nouveau mot de passe</label>
+          <input
+            id="nouveau-mot-de-passe"
+            type="password"
+            formControlName="nouveauMotDePasse"
+            autocomplete="new-password"
+            aria-describedby="aide-nouveau erreur-nouveau"
+            [attr.aria-invalid]="erreurNouveau() ? true : null"
+            data-testid="mon-compte-champ-nouveau"
+          />
+          <p id="aide-nouveau" class="aide" data-testid="mon-compte-aide">
+            12 caractères minimum. Vos autres connexions seront fermées.
+          </p>
+          @if (erreurNouveau(); as message) {
+            <p
+              id="erreur-nouveau"
+              class="erreur"
+              role="alert"
+              data-testid="mon-compte-erreur-nouveau"
+            >
+              {{ message }}
+            </p>
+          }
+        </div>
+
+        <div class="champ">
+          <label for="confirmation">Confirmer le nouveau mot de passe</label>
+          <input
+            id="confirmation"
+            type="password"
+            formControlName="confirmation"
+            autocomplete="new-password"
+            aria-describedby="erreur-confirmation"
+            [attr.aria-invalid]="erreurConfirmation() ? true : null"
+            data-testid="mon-compte-champ-confirmation"
+          />
+          @if (erreurConfirmation(); as message) {
+            <p
+              id="erreur-confirmation"
+              class="erreur"
+              role="alert"
+              data-testid="mon-compte-erreur-confirmation"
+            >
+              {{ message }}
+            </p>
+          }
+        </div>
+
+        <button
+          type="submit"
+          class="bouton"
+          [disabled]="envoiEnCours()"
+          data-testid="mon-compte-bouton-changer"
+        >
+          Changer le mot de passe
+        </button>
+      </form>
+    </section>
 
     @if (estCoureur()) {
       <app-suppression-compte />
