@@ -183,7 +183,7 @@ Source du motif :
 
 Décor « backyard » de l'accueil (R.4), plus illustratif que le motif du `body`, qu'il recouvre.
 
-- **Classe partagée** `.decor-backyard`, définie dans `frontend/src/styles/decor.css` (importé par `frontend/src/styles.css` après `composants.css`) : les tuiles pèsent plusieurs ko et ne tiennent pas dans le budget `anyComponentStyle` (4 kB) d'un composant ; la classe est réutilisable par d'autres écrans (connexion et création de compte, R.5). Appliquée au `main` de l'accueil.
+- **Classe partagée** `.decor-backyard`, définie dans `frontend/src/styles/decor.css` (importé par `frontend/src/styles.css` après `composants.css`) : les tuiles pèsent plusieurs ko et ne tiennent pas dans le budget `anyComponentStyle` (4 kB) d'un composant ; la classe a été réutilisée par la connexion et la création de compte (R.5). Appliquée au `main` de l'accueil, de la connexion et de la création de compte.
 - **Fond opaque** `--couleur-creme` et **deux couches** `background-image` en URI `data:image/svg+xml` (mêmes règles d'encodage que le motif du `body`), de haut en bas :
   1. **Sapins** : tuile `viewBox="0 0 480 160"` sans couture horizontale (aucune forme ne touche les bords gauche et droit), `repeat-x`, collée au bas de l'élément (`background-position: left bottom`), hauteur affichée de **6rem** (propriété locale `--decor-hauteur-sapins`, en `rem` : la bande suit l'agrandissement du texte). Six silhouettes de quatre tailles, en aplats `#1F5A43` (`--couleur-foret-survol`) et `#14352A` (`--couleur-foret`).
   2. **Courbes de niveau et boucle** : tuile `viewBox="0 0 640 480"` sans couture, `repeat`, traits `#D9CFB6` (`--couleur-trait`) uniquement, `fill="none"` : 6 courbes ouvertes (traits 1,5 à 2,5) et **exactement une boucle fermée** (chemin terminé par `Z`, trait 2,5, `stroke-dasharray`) entièrement dans la tuile.
@@ -248,6 +248,8 @@ Désactivé (`:disabled`, envoi en cours) : fond `--couleur-desactive-fond`, tex
 
 **Carte** : `.carte` en fond surface, bordure 1px `--couleur-trait`, `border-radius: var(--rayon-m)`, `box-shadow: var(--ombre-carte)`, `padding: var(--espace-6)`, `max-width: var(--largeur-carte)` (variantes locales plus larges conservées), `box-sizing: border-box`.
 
+**Carte sur décor** (connexion et création de compte, R.5) : la carte, opaque, est le seul contenu du `main` décoré (`main.page.decor-backyard`) ; aucun texte n'est posé sur le décor. Le `main` réserve la bande de sapins par un `padding-bottom` d'au moins `var(--decor-hauteur-sapins) + var(--espace-4)` et la carte reste centrée dans l'espace au-dessus. La carte porte `overflow-wrap: anywhere` : un mot plus large que la carte (titre, pseudo de 30 caractères) est coupé au lieu de déborder. Règles dans `comptes/formulaire-compte.css` (sélecteurs `.page.decor-backyard` et `.page.decor-backyard .carte`), `page-carte.css` reste inchangé.
+
 **Messages** : `padding: var(--espace-3)`, `border-radius: var(--rayon-s)`, bordure gauche 4px de la couleur du texte.
 
 | Classe | Fond | Texte | Alias historiques |
@@ -298,4 +300,5 @@ La capture `docs/images/design-apercu.png` est régénérée par le test E2E de 
 - **Pas de `svg`, `img` ni `canvas` décoratif dans le DOM** : puces, filets et motifs en CSS (`::before`, `background`) ; seule exception : l'icône du menu burger de l'en-tête (section 7). Le décor backyard de l'accueil (`.decor-backyard`) est un fond CSS (`background-image` en URI `data:`), pas un `svg` du DOM : il respecte cette règle.
 - Réutiliser les classes partagées (`.bouton*`, `.message--*`, `.pastille-statut*`, `.carte`, `.champ`) plutôt que de redéfinir un style ; les alias historiques disparaissent quand les templates adoptent ces classes.
 - Cibles tactiles de 44 px minimum, texte de 13 px minimum, contour de focus `3px solid` toujours visible, aucun défilement horizontal à 320 px.
+- Tout contenu d'une carte (titre, libellés, aides, messages, boutons, liens, textes saisis par l'utilisateur) doit rester dans la carte à 320 px avec le texte à 200 % : couper les mots trop longs (`overflow-wrap: anywhere`) plutôt que laisser déborder.
 - La couleur ne porte jamais seule une information : toujours un libellé en texte.

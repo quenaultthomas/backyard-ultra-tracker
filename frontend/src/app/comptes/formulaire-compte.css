@@ -9,3 +9,16 @@
   margin: 0;
   font-size: var(--taille-grande);
 }
+
+/*
+ * Écrans de compte sur le décor backyard (connexion, création de compte) :
+ * la marge basse réserve la bande de sapins (jamais de sapin derrière la carte)
+ * et les mots trop longs sont coupés pour rester dans la carte à 320 px / texte à 200 %.
+ */
+.page.decor-backyard {
+  padding-bottom: calc(var(--decor-hauteur-sapins) + var(--espace-4));
+}
+
+.page.decor-backyard .carte {
+  overflow-wrap: anywhere;
+}
