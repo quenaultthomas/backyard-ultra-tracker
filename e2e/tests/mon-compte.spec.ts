@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ouvrirMenuVisiteur } from './aide-entete';
+import { ouvrirMenuCompte, ouvrirMenuVisiteur, seDeconnecterParLeMenu } from './aide-entete';
 import { creerCompteParApi, MOT_DE_PASSE, ouvrirConnexion, pseudoUnique, saisir } from './aide-connexion';
 import {
   MOT_DE_PASSE_ADMIN_CREE,
@@ -29,7 +29,8 @@ async function connecter(page: Page, pseudo: string, motDePasse: string, chemin 
 async function ouvrirMonCompte(page: Page, pseudo: string, motDePasse: string): Promise<void> {
   await connecter(page, pseudo, motDePasse);
   await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
-  await page.getByTestId('lien-mon-compte').click();
+  await ouvrirMenuCompte(page);
+  await page.getByTestId('menu-lien-mon-compte').click();
   await expect(page).toHaveURL(URL_MON_COMPTE);
   await expect(page.getByTestId('titre-mon-compte')).toHaveText('Mon compte');
 }
@@ -63,8 +64,9 @@ async function parcoursChangement(page: Page, pseudo: string, ancien: string, li
   await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
   await expect(page.getByTestId('titre-mon-compte')).toBeVisible();
 
-  await page.getByTestId('bouton-deconnexion').click();
+  await seDeconnecterParLeMenu(page);
   await expect(page.getByTestId('bouton-menu')).toBeVisible();
+  await expect(page.getByTestId('menu-visiteur')).toHaveCount(1);
 
   await connecter(page, pseudo, ancien);
   await expect(page.getByTestId('erreur-generale')).toHaveText('Pseudo ou mot de passe incorrect.');
@@ -132,8 +134,9 @@ test.describe('Mon compte', () => {
     expect(envois).toBe(3);
 
     // l'ancien mot de passe est toujours valable
-    await page.getByTestId('bouton-deconnexion').click();
+    await seDeconnecterParLeMenu(page);
     await expect(page.getByTestId('bouton-menu')).toBeVisible();
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(1);
     await connecter(page, pseudo, MOT_DE_PASSE);
     await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
   });
@@ -167,8 +170,9 @@ test.describe('Mon compte', () => {
     await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
     await expect(page).toHaveURL(URL_MON_COMPTE);
 
-    await page.getByTestId('bouton-deconnexion').click();
+    await seDeconnecterParLeMenu(page);
     await expect(page.getByTestId('bouton-menu')).toBeVisible();
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(1);
     await connecter(page, pseudo, MOT_DE_PASSE);
     await expect(page.getByTestId('erreur-generale')).toHaveText('Trop de tentatives de connexion. Réessayez dans 15 minutes.');
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
@@ -226,6 +230,7 @@ test.describe('Mon compte', () => {
 
       await pageB.reload();
       await expect(pageB.getByTestId('bouton-menu')).toBeVisible();
+      await expect(pageB.getByTestId('menu-visiteur')).toHaveCount(1);
       await expect(pageB.getByTestId('entete-pseudo')).toHaveCount(0);
 
       await pageA.reload();

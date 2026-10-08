@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Browser, type Locator, type Page, type PlaywrightWorkerArgs, type Request } from '@playwright/test';
-import { ouvrirMenuVisiteur } from './aide-entete';
+import { fermerMenuCompte, ouvrirMenuCompte, ouvrirMenuVisiteur } from './aide-entete';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import jsQR from 'jsqr';
@@ -114,7 +114,8 @@ test.describe('Mes inscriptions', () => {
     await seConnecterEnTantQue(page, alice, MOT_DE_PASSE);
     await expect(page).toHaveURL(/\/$/);
     const reponseListe = page.waitForResponse((r) => estListe(r.request()));
-    await page.getByTestId('lien-mes-inscriptions').click();
+    await ouvrirMenuCompte(page);
+    await page.getByTestId('menu-lien-mes-inscriptions').click();
     expect((await reponseListe).status()).toBe(200);
     await expect(page).toHaveURL(/\/coureur\/inscriptions$/);
     await expect(page).toHaveTitle('Mes inscriptions - Backyard Ultra Tracker');
@@ -152,7 +153,8 @@ test.describe('Mes inscriptions', () => {
     await page.reload();
     await verifier();
 
-    await page.getByTestId('lien-espace-coureur').click();
+    await ouvrirMenuCompte(page);
+    await page.getByTestId('menu-lien-espace-coureur').click();
     await expect(page).toHaveURL(/\/coureur$/);
     await expect(page.getByTestId('coureur-titre')).toBeVisible();
     await expect(page.getByTestId('inscriptions-titre')).toHaveCount(0);
@@ -306,7 +308,8 @@ test.describe('Mes inscriptions', () => {
     // Anonyme : pas de lien, redirection puis retour sur l'écran après connexion.
     await page.goto('/');
     await expect(page.getByTestId('bouton-menu')).toBeVisible();
-    await expect(page.getByTestId('lien-mes-inscriptions')).toHaveCount(0);
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(1);
+    await expect(page.getByTestId('menu-lien-mes-inscriptions')).toHaveCount(0);
     await page.goto('/coureur/inscriptions');
     await expect(page).toHaveURL(RETOUR);
     await expect(page.getByTestId('titre-connexion')).toBeVisible();
@@ -314,8 +317,10 @@ test.describe('Mes inscriptions', () => {
     await page.getByTestId('bouton-connexion').click();
     await expect(page).toHaveURL(/\/coureur\/inscriptions$/);
     await expect(page.getByTestId('inscriptions-titre')).toBeVisible();
-    await expect(page.getByTestId('lien-mes-inscriptions')).toBeVisible();
-    await expect(page.getByTestId('lien-espace-coureur')).toBeVisible();
+    await ouvrirMenuCompte(page);
+    await expect(page.getByTestId('menu-lien-mes-inscriptions')).toBeVisible();
+    await expect(page.getByTestId('menu-lien-espace-coureur')).toBeVisible();
+    await fermerMenuCompte(page);
 
     // Autres rôles : accès refusé, pas de lien.
     const roles: Array<[string, string, boolean]> = [
@@ -325,8 +330,8 @@ test.describe('Mes inscriptions', () => {
     for (const [pseudo, motDePasse] of roles) {
       await ouvrirDansNouveauContexte(browser, async (p) => {
         await seConnecterEnTantQue(p, pseudo, motDePasse);
-        await expect(p.getByTestId('lien-mes-inscriptions')).toHaveCount(0);
-        await expect(p.getByTestId('lien-espace-coureur')).toHaveCount(0);
+        await expect(p.getByTestId('menu-lien-mes-inscriptions')).toHaveCount(0);
+        await expect(p.getByTestId('menu-lien-espace-coureur')).toHaveCount(0);
         await p.goto('/coureur/inscriptions');
         await expect(p).toHaveURL(/\/acces-refuse$/);
         await expect(p.getByTestId('titre-acces-refuse')).toBeVisible();
@@ -334,8 +339,10 @@ test.describe('Mes inscriptions', () => {
     }
     await ouvrirDansNouveauContexte(browser, async (p) => {
       await connecterAdminMaster(p);
+      await ouvrirMenuCompte(p);
       await expect(p.getByTestId('entete-pseudo')).toBeVisible();
-      await expect(p.getByTestId('lien-mes-inscriptions')).toHaveCount(0);
+      await fermerMenuCompte(p);
+      await expect(p.getByTestId('menu-lien-mes-inscriptions')).toHaveCount(0);
       await p.goto('/coureur/inscriptions');
       await expect(p).toHaveURL(/\/acces-refuse$/);
     });

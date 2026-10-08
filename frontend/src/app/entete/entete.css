@@ -1,4 +1,4 @@
-/* En-tête : fond forêt, filet orange balise ; bouton et message d'erreur : styles globaux. */
+/* En-tête : fond forêt, filet orange balise ; message d'erreur : style global. */
 .entete {
   display: flex;
   flex-wrap: wrap;
@@ -26,39 +26,22 @@
   min-height: var(--cible-min);
 }
 
-.entete__pseudo {
-  font-weight: 600;
-  color: var(--couleur-creme);
-  overflow-wrap: anywhere;
-}
-
-.entete__lien {
-  color: var(--couleur-orange);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.entete__lien:hover,
-.entete__lien:focus-visible {
-  text-decoration: underline;
-}
-
 /* Focus visible sur fond sombre. */
 .entete :focus-visible {
   outline-color: var(--couleur-focus-sur-fonce);
 }
 
-/* Visiteur : le bouton du menu reste à droite du titre, qui passe à la ligne si besoin. */
-.entete--visiteur {
-  flex-wrap: nowrap;
-}
-
-.entete--visiteur .entete__titre {
+/*
+ * Menu burger (visiteur ou connecté) : le titre, borné, passe à la ligne pour laisser le bouton
+ * à sa droite ; seul le message d'erreur occupe une ligne à lui.
+ */
+.entete--menu .entete__titre {
   min-width: 0;
+  max-width: calc(100% - var(--cible-min) - var(--espace-4));
   overflow-wrap: anywhere;
 }
 
-.entete--visiteur .entete__compte {
+.entete--menu .entete__compte {
   flex: none;
   margin-left: auto;
 }

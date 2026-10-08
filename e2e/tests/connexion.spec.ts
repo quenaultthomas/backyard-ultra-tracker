@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ouvrirMenuVisiteur } from './aide-entete';
+import { fermerMenuCompte, ouvrirMenuCompte, ouvrirMenuVisiteur, seDeconnecterParLeMenu } from './aide-entete';
 import {
   MOT_DE_PASSE,
   creerCompteParApi,
@@ -20,13 +20,19 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
 
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
+    await ouvrirMenuCompte(page);
     await expect(page.getByTestId('bouton-deconnexion')).toBeVisible();
-    await expect(page.getByTestId('bouton-menu')).toHaveCount(0);
+    await fermerMenuCompte(page);
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(0);
+    await expect(page.getByTestId('menu-compte')).toHaveCount(1);
 
     await page.reload();
     await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
+    await ouvrirMenuCompte(page);
     await expect(page.getByTestId('bouton-deconnexion')).toBeVisible();
-    await expect(page.getByTestId('bouton-menu')).toHaveCount(0);
+    await fermerMenuCompte(page);
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(0);
+    await expect(page.getByTestId('menu-compte')).toHaveCount(1);
   });
 
   test('1.2 CA28 - la connexion avec le pseudo en majuscules donne le même résultat', async ({ page, request }) => {
@@ -39,8 +45,11 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
 
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
+    await ouvrirMenuCompte(page);
     await expect(page.getByTestId('bouton-deconnexion')).toBeVisible();
-    await expect(page.getByTestId('bouton-menu')).toHaveCount(0);
+    await fermerMenuCompte(page);
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(0);
+    await expect(page.getByTestId('menu-compte')).toHaveCount(1);
   });
 
   test('1.2 CA29 - mauvais mot de passe et pseudo inexistant donnent le même message générique', async ({ page, request }) => {
@@ -68,15 +77,17 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     await creerCompteParApi(request, pseudo);
     await seConnecter(page, pseudo);
 
-    await page.getByTestId('bouton-deconnexion').click();
+    await seDeconnecterParLeMenu(page);
 
     await expect(page).toHaveURL(/\/connexion$/);
     await expect(page.getByTestId('message-deconnexion')).toHaveText('Vous êtes déconnecté.');
     await expect(page.getByTestId('bouton-menu')).toBeVisible();
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(1);
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
 
     await page.reload();
     await expect(page.getByTestId('bouton-menu')).toBeVisible();
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(1);
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
     await expect(page.getByTestId('message-deconnexion')).toHaveCount(0);
 
@@ -97,7 +108,7 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
       await expect(page).toHaveURL(/\/$/);
       expect(new URL(page.url()).origin).toBe(new URL(baseURL).origin);
 
-      await page.getByTestId('bouton-deconnexion').click();
+      await seDeconnecterParLeMenu(page);
       await expect(page.getByTestId('message-deconnexion')).toBeVisible();
     }
   });
@@ -124,6 +135,7 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     await page.goto('/');
     await expect(page.getByTestId('entete-titre')).toBeVisible();
     await expect(page.getByTestId('bouton-menu')).toBeVisible();
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(1);
     await expect(page.getByTestId('lien-creer-compte')).toBeVisible();
 
     await ouvrirMenuVisiteur(page);
@@ -247,6 +259,7 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     await page.reload();
 
     await expect(page.getByTestId('bouton-menu')).toBeVisible();
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(1);
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
   });
 
@@ -258,6 +271,7 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
 
     await expect(page.getByTestId('titre')).toHaveText('Backyard Ultra Tracker');
     await expect(page.getByTestId('bouton-menu')).toBeVisible();
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(1);
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
     await ouvrirMenuVisiteur(page);
     await page.getByTestId('menu-lien-se-connecter').click();
@@ -283,12 +297,14 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     });
 
     const nouveauJeton = page.waitForRequest((r) => r.url().includes('/api/csrf'));
-    await page.getByTestId('bouton-deconnexion').click();
+    await seDeconnecterParLeMenu(page);
     await nouveauJeton;
 
     await expect(page.getByTestId('entete-erreur')).toHaveText('La page a expiré, veuillez réessayer.');
     await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
+    await ouvrirMenuCompte(page);
     await expect(page.getByTestId('bouton-deconnexion')).toBeVisible();
+    await fermerMenuCompte(page);
     await expect(page).toHaveURL(/\/$/);
   });
 
@@ -300,13 +316,15 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
       await route.fulfill({ status: 503, contentType: 'text/plain', body: 'Service Unavailable' });
     });
 
-    await page.getByTestId('bouton-deconnexion').click();
+    await seDeconnecterParLeMenu(page);
 
     const erreur = page.getByTestId('entete-erreur');
     await expect(erreur).toHaveText('Service indisponible, veuillez réessayer plus tard.');
     await expect(erreur).not.toContainText('503');
     await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
+    await ouvrirMenuCompte(page);
     await expect(page.getByTestId('bouton-deconnexion')).toBeVisible();
+    await fermerMenuCompte(page);
   });
 
   test('1.2 CA36 - GET /api/comptes/moi sans réponse : en-tête vide pendant la restauration puis anonyme après 5 s', async ({ page }) => {
@@ -320,6 +338,7 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
 
     await expect(page.getByTestId('bouton-menu')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(1);
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
     await expect(page.getByTestId('titre')).toHaveText('Backyard Ultra Tracker');
 

@@ -1,11 +1,11 @@
-/* Menu burger du visiteur : bouton à icône et panneau ancré au bord droit de l'en-tête. */
+/* Menu burger de l'en-tête : bouton à icône et panneau ancré au bord droit de l'en-tête. */
 :host {
   position: relative;
   display: flex;
   flex: none;
 }
 
-.menu-visiteur__bouton {
+.menu-burger__bouton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -20,17 +20,20 @@
   cursor: pointer;
 }
 
-.menu-visiteur__bouton:hover,
-.menu-visiteur__bouton[aria-expanded='true'] {
+.menu-burger__bouton:hover,
+.menu-burger__bouton[aria-expanded='true'] {
   background-color: var(--couleur-foret-survol);
 }
 
-.menu-visiteur__bouton svg {
+.menu-burger__bouton svg {
   flex: none;
 }
 
-/* Bord droit sur celui de l'en-tête (son padding horizontal est --espace-4). */
-.menu-visiteur__panneau {
+/*
+ * Bord droit sur celui de l'en-tête (son padding horizontal est --espace-4) ; hauteur bornée
+ * avec défilement interne pour que chaque entrée reste atteignable (texte agrandi).
+ */
+.menu-burger__panneau {
   position: absolute;
   top: calc(100% + var(--espace-2));
   right: calc(-1 * var(--espace-4));
@@ -38,47 +41,80 @@
   box-sizing: border-box;
   min-width: min(14rem, calc(100vw - 2 * var(--espace-4)));
   max-width: calc(100vw - 2 * var(--espace-4));
+  max-height: calc(100vh - 100%);
+  overflow-y: auto;
   padding: var(--espace-2) 0;
   border-radius: var(--rayon-m);
   background-color: var(--couleur-foret);
   box-shadow: var(--ombre-carte);
 }
 
-.menu-visiteur__panneau[hidden] {
+.menu-burger__panneau[hidden] {
   display: none;
 }
 
-.menu-visiteur__liste {
+/* Pseudo : texte simple, jamais tronqué (retour à la ligne). */
+.menu-burger__pseudo {
+  margin: 0;
+  padding: var(--espace-3) var(--espace-4);
+  border-bottom: 1px solid var(--couleur-foret-survol);
+  color: var(--couleur-creme);
+  font-weight: var(--poids-gras);
+  overflow-wrap: anywhere;
+}
+
+.menu-burger__masque {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.menu-burger__liste {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.menu-visiteur__lien {
+/* Lien ou commande : même ligne entière cliquable. */
+.menu-burger__entree {
   display: flex;
   align-items: center;
   box-sizing: border-box;
+  width: 100%;
   min-height: var(--cible-min);
+  margin: 0;
   padding: var(--espace-3) var(--espace-4);
+  border: 0;
+  background-color: transparent;
   color: var(--couleur-creme);
+  font: inherit;
   font-weight: 600;
+  text-align: left;
   text-decoration: none;
   overflow-wrap: anywhere;
+  cursor: pointer;
 }
 
-.menu-visiteur__lien:hover,
-.menu-visiteur__lien:focus-visible {
+.menu-burger__entree:hover,
+.menu-burger__entree:focus-visible {
   background-color: var(--couleur-foret-survol);
   text-decoration: underline;
 }
 
-.menu-visiteur__lien--courant {
+.menu-burger__entree:disabled {
+  cursor: wait;
+}
+
+.menu-burger__entree--courante {
   font-weight: var(--poids-gras);
   border-left: 4px solid var(--couleur-orange);
 }
 
 /* Le contour orange de l'en-tête (entete.css) ne traverse pas l'encapsulation des styles. */
-.menu-visiteur__bouton:focus-visible,
-.menu-visiteur__lien:focus-visible {
+.menu-burger__bouton:focus-visible,
+.menu-burger__entree:focus-visible {
   outline-color: var(--couleur-focus-sur-fonce);
 }

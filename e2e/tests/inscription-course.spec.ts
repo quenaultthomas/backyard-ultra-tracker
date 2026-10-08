@@ -18,6 +18,7 @@ import {
   pseudoBenevoleUnique,
 } from './aide-admin';
 import { connecterCoureur, ligneCoureur, placerStatutCourseEnBase, sinscrireParApi } from './aide-coureur';
+import { fermerMenuCompte, ouvrirMenuCompte } from './aide-entete';
 
 type PlaywrightLib = PlaywrightWorkerArgs['playwright'];
 
@@ -75,8 +76,9 @@ test.describe('Inscription à une course', () => {
     await saisir(page, alice, MOT_DE_PASSE);
     await page.getByTestId('bouton-connexion').click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByTestId('lien-espace-coureur')).toBeVisible();
-    await page.getByTestId('lien-espace-coureur').click();
+    await ouvrirMenuCompte(page);
+    await expect(page.getByTestId('menu-lien-espace-coureur')).toBeVisible();
+    await page.getByTestId('menu-lien-espace-coureur').click();
     await expect(page).toHaveURL(/\/coureur$/);
     await expect(page.getByTestId('coureur-titre')).toHaveText('Courses ouvertes');
 
@@ -186,16 +188,18 @@ test.describe('Inscription à une course', () => {
       await page.goto('/coureur');
       await expect(page).toHaveURL(RETOUR_COUREUR);
       await expect(page.getByTestId('titre-connexion')).toBeVisible();
-      await expect(page.getByTestId('lien-espace-coureur')).toHaveCount(0);
+      await expect(page.getByTestId('menu-lien-espace-coureur')).toHaveCount(0);
 
       await saisir(page, alice, MOT_DE_PASSE);
       await page.getByTestId('bouton-connexion').click();
       await expect(page).toHaveURL(/\/coureur$/);
       await expect(page.getByTestId('coureur-titre')).toBeVisible();
-      await expect(page.getByTestId('lien-espace-coureur')).toBeVisible();
-      await expect(page.getByTestId('lien-espace-coureur')).toHaveText('Espace coureur');
-      await expect(page.getByTestId('lien-espace-benevole')).toHaveCount(0);
-      await expect(page.getByTestId('lien-administration')).toHaveCount(0);
+      await ouvrirMenuCompte(page);
+      await expect(page.getByTestId('menu-lien-espace-coureur')).toBeVisible();
+      await expect(page.getByTestId('menu-lien-espace-coureur')).toHaveText('Espace coureur');
+      await fermerMenuCompte(page);
+      await expect(page.getByTestId('menu-lien-espace-benevole')).toHaveCount(0);
+      await expect(page.getByTestId('menu-lien-administration')).toHaveCount(0);
     });
 
     for (const role of ['bénévole', 'admin', 'admin master']) {
@@ -212,10 +216,10 @@ test.describe('Inscription à une course', () => {
           await page.getByTestId('bouton-connexion').click();
           await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
         }
-        await expect(page.getByTestId('lien-espace-coureur')).toHaveCount(0);
+        await expect(page.getByTestId('menu-lien-espace-coureur')).toHaveCount(0);
         await page.goto('/coureur');
         await expect(page).toHaveURL(/\/acces-refuse$/);
-        await expect(page.getByTestId('lien-espace-coureur')).toHaveCount(0);
+        await expect(page.getByTestId('menu-lien-espace-coureur')).toHaveCount(0);
       });
     }
   });

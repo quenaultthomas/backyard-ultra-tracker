@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { exigerIdentifiantsAdminMaster } from './aide-admin';
 import { placerStatutCourseEnBase, placerStatutInscriptionEnBase } from './aide-coureur';
+import { ouvrirMenuCompte } from './aide-entete';
 import { ECRANS, ETATS, ouvrirScene, ouvrirSession, preparerJeuReference, type JeuReference } from './aide-theme';
 
 test.beforeAll(() => {
@@ -80,11 +81,15 @@ test('CA9 - les boutons de la gestion des courses (secondaire, danger contour, d
   await expect(confirmer).toHaveCSS('background-color', DANGER);
   await expect(confirmer).toHaveCSS('color', SURFACE);
 
+  await ouvrirMenuCompte(page);
   const deconnexion = page.getByTestId('bouton-deconnexion');
+  const lienCompte = page.getByTestId('menu-lien-mon-compte');
   await expect(deconnexion).toHaveCSS('background-color', TRANSPARENT);
-  await expect(deconnexion).toHaveCSS('border-top-color', CREME);
   await expect(deconnexion).toHaveCSS('color', CREME);
   expect(await hauteur(deconnexion)).toBeGreaterThanOrEqual(44);
+  await expect(deconnexion).toHaveCSS('color', await lienCompte.evaluate((e) => getComputedStyle(e).color));
+  await expect(deconnexion).toHaveCSS('font-weight', await lienCompte.evaluate((e) => getComputedStyle(e).fontWeight));
+  expect(await hauteur(deconnexion)).toBe(await hauteur(lienCompte));
 });
 
 test('CA10 - le message d\'erreur de connexion, les champs et la carte suivent la charte', async ({ page, playwright }) => {

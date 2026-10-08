@@ -1,0 +1,83 @@
+<button
+  #bouton
+  type="button"
+  id="entete-menu-bouton"
+  class="menu-burger__bouton"
+  aria-label="Menu du compte"
+  aria-controls="entete-menu-panneau"
+  [attr.aria-expanded]="ouvert()"
+  (click)="basculer()"
+  data-testid="bouton-menu"
+>
+  <svg
+    viewBox="0 0 24 24"
+    width="24"
+    height="24"
+    aria-hidden="true"
+    focusable="false"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21a8 8 0 0 1 16 0" />
+  </svg>
+</button>
+
+<nav
+  id="entete-menu-panneau"
+  class="menu-burger__panneau"
+  [attr.aria-label]="nomPanneau()"
+  [hidden]="!ouvert()"
+  [attr.data-testid]="testidPanneau()"
+>
+  @if (pseudo(); as pseudo) {
+    <!-- Hors de la liste et non focusable : simple rappel du Compte connecté. -->
+    <p class="menu-burger__pseudo">
+      <span class="menu-burger__masque">Connecté en tant que</span>&ngsp;<span
+        data-testid="entete-pseudo"
+        >{{ pseudo }}</span
+      >
+    </p>
+    &ngsp;
+  }
+  <!-- Espace conservé entre les entrées : textContent « Se connecter Créer un compte ». -->
+  <ul class="menu-burger__liste">
+    @for (entree of entrees(); track entree.testid) {
+      @if (!$first) {
+        &ngsp;
+      }
+      <li>
+        @switch (entree.type) {
+          @case ('lien') {
+            <a
+              #focusable
+              class="menu-burger__entree"
+              [routerLink]="entree.route"
+              routerLinkActive="menu-burger__entree--courante"
+              [routerLinkActiveOptions]="pageCourante"
+              ariaCurrentWhenActive="page"
+              (click)="fermer()"
+              [attr.data-testid]="entree.testid"
+              >{{ entree.libelle }}</a
+            >
+          }
+          @case ('action') {
+            <button
+              #focusable
+              type="button"
+              class="menu-burger__entree"
+              [disabled]="actionEnCours()"
+              (click)="activer(entree)"
+              [attr.data-testid]="entree.testid"
+            >
+              {{ entree.libelle }}
+            </button>
+          }
+        }
+      </li>
+    }
+  </ul>
+</nav>

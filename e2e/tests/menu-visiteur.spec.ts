@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { MOT_DE_PASSE, creerCompteParApi, ouvrirConnexion, pseudoUnique, saisir, seConnecter } from './aide-connexion';
 import { MOT_DE_PASSE_ADMIN_MASTER, PSEUDO_ADMIN_MASTER, exigerIdentifiantsAdminMaster } from './aide-admin';
-import { ouvrirMenuVisiteur } from './aide-entete';
+import { ouvrirMenuCompte, ouvrirMenuVisiteur, seDeconnecterParLeMenu } from './aide-entete';
 import { RGB_PALETTE, RGB_TRANSPARENT } from './aide-theme';
 
 const CREME = 'rgb(247, 241, 227)';
@@ -320,26 +320,29 @@ test.describe('Menu burger du visiteur (R.2)', () => {
     const pseudo = pseudoUnique();
     await creerCompteParApi(request, pseudo);
     await seConnecter(page, pseudo);
-    await expect(bouton(page)).toHaveCount(0);
+    await expect(page.getByTestId('menu-compte')).toHaveCount(1);
     await expect(panneau(page)).toHaveCount(0);
     expect(await contenu()).toEqual([
       { testid: 'entete-titre', texte: 'Backyard Ultra Tracker' },
+      { testid: 'bouton-menu', texte: '' },
+      { testid: 'menu-compte', texte: `Connecté en tant que ${pseudo} Espace coureur Mes inscriptions Mon compte Se déconnecter` },
       { testid: 'entete-pseudo', texte: pseudo },
-      { testid: 'lien-espace-coureur', texte: 'Espace coureur' },
-      { testid: 'lien-mes-inscriptions', texte: 'Mes inscriptions' },
-      { testid: 'lien-mon-compte', texte: 'Mon compte' },
+      { testid: 'menu-lien-espace-coureur', texte: 'Espace coureur' },
+      { testid: 'menu-lien-mes-inscriptions', texte: 'Mes inscriptions' },
+      { testid: 'menu-lien-mon-compte', texte: 'Mon compte' },
       { testid: 'bouton-deconnexion', texte: 'Se déconnecter' },
     ]);
 
-    await page.getByTestId('lien-mes-inscriptions').click();
+    await ouvrirMenuCompte(page);
+    await page.getByTestId('menu-lien-mes-inscriptions').click();
     await expect(page).toHaveURL(/\/coureur\/inscriptions$/);
-    await expect(bouton(page)).toHaveCount(0);
+    await expect(page.getByTestId('menu-compte')).toHaveCount(1);
     await expect(panneau(page)).toHaveCount(0);
     expect((await contenu()).map((c) => c.testid)).toEqual([
-      'entete-titre', 'entete-pseudo', 'lien-espace-coureur', 'lien-mes-inscriptions', 'lien-mon-compte', 'bouton-deconnexion',
+      'entete-titre', 'bouton-menu', 'menu-compte', 'entete-pseudo', 'menu-lien-espace-coureur', 'menu-lien-mes-inscriptions', 'menu-lien-mon-compte', 'bouton-deconnexion',
     ]);
 
-    await page.getByTestId('bouton-deconnexion').click();
+    await seDeconnecterParLeMenu(page);
     await expect(page).toHaveURL(/\/connexion$/);
     await expect(bouton(page)).toBeVisible();
     await expect(bouton(page)).toHaveAttribute('aria-expanded', 'false');
@@ -350,16 +353,18 @@ test.describe('Menu burger du visiteur (R.2)', () => {
     await saisir(page, PSEUDO_ADMIN_MASTER, MOT_DE_PASSE_ADMIN_MASTER);
     await page.getByTestId('bouton-connexion').click();
     await expect(page.getByTestId('entete-pseudo')).toHaveText(PSEUDO_ADMIN_MASTER);
-    await expect(bouton(page)).toHaveCount(0);
+    await expect(page.getByTestId('menu-compte')).toHaveCount(1);
     await expect(panneau(page)).toHaveCount(0);
     expect(await contenu()).toEqual([
       { testid: 'entete-titre', texte: 'Backyard Ultra Tracker' },
+      { testid: 'bouton-menu', texte: '' },
+      { testid: 'menu-compte', texte: `Connecté en tant que ${PSEUDO_ADMIN_MASTER} Administration Mon compte Se déconnecter` },
       { testid: 'entete-pseudo', texte: PSEUDO_ADMIN_MASTER },
-      { testid: 'lien-administration', texte: 'Administration' },
-      { testid: 'lien-mon-compte', texte: 'Mon compte' },
+      { testid: 'menu-lien-administration', texte: 'Administration' },
+      { testid: 'menu-lien-mon-compte', texte: 'Mon compte' },
       { testid: 'bouton-deconnexion', texte: 'Se déconnecter' },
     ]);
-    await page.getByTestId('bouton-deconnexion').click();
+    await seDeconnecterParLeMenu(page);
     await expect(page).toHaveURL(/\/connexion$/);
     await expect(bouton(page)).toBeVisible();
     await expect(bouton(page)).toHaveAttribute('aria-expanded', 'false');
@@ -394,14 +399,15 @@ test.describe('Menu burger du visiteur (R.2)', () => {
     await page.getByTestId('bouton-connexion').click();
     await ouvrirMenuVisiteur(page);
     await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
-    await expect(bouton(page)).toHaveCount(0);
+    await expect(page.getByTestId('menu-compte')).toHaveCount(1);
     await expect(panneau(page)).toHaveCount(0);
     await expect(page).toHaveURL(/\/$/);
     await page.unroute('**/api/connexion');
 
     // Session expirée : le cookie disparaît, une action protégée reçoit 401.
     await context.clearCookies({ name: 'JSESSIONID' });
-    await page.getByTestId('lien-mes-inscriptions').click();
+    await ouvrirMenuCompte(page);
+    await page.getByTestId('menu-lien-mes-inscriptions').click();
     await expect(bouton(page)).toBeVisible();
     await expect(bouton(page)).toHaveAttribute('aria-expanded', 'false');
     await expect(panneau(page)).toBeHidden();

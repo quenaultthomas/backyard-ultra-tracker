@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Page, type PlaywrightWorkerArgs, type Request } from '@playwright/test';
-import { ouvrirMenuVisiteur } from './aide-entete';
+import { ouvrirMenuCompte, ouvrirMenuVisiteur, seDeconnecterParLeMenu } from './aide-entete';
 import { MOT_DE_PASSE, creerCompteParApi, ouvrirConnexion, pseudoUnique, saisir, seConnecter } from './aide-connexion';
 import {
   MOT_DE_PASSE_ADMIN_CREE,
@@ -53,7 +53,8 @@ async function ouvrirMonCompte(page: Page, pseudo: string, motDePasse: string): 
   await saisir(page, pseudo, motDePasse);
   await page.getByTestId('bouton-connexion').click();
   await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
-  await page.getByTestId('lien-mon-compte').click();
+  await ouvrirMenuCompte(page);
+  await page.getByTestId('menu-lien-mon-compte').click();
   await expect(page).toHaveURL(/\/mon-compte$/);
   await expect(page.getByTestId('titre-mon-compte')).toBeVisible();
 }
@@ -185,7 +186,8 @@ test.describe('Supprimer son compte coureur', () => {
     await page.getByTestId('bouton-creer-compte').click();
     await expect(page.getByTestId('message-succes')).toContainText(`Compte créé pour ${pseudo}.`);
     await seConnecter(page, pseudo);
-    await page.getByTestId('lien-mes-inscriptions').click();
+    await ouvrirMenuCompte(page);
+    await page.getByTestId('menu-lien-mes-inscriptions').click();
     await expect(page.getByTestId('inscriptions-vide')).toHaveText("Vous n'êtes inscrit à aucune course.");
   });
 
@@ -217,8 +219,9 @@ test.describe('Supprimer son compte coureur', () => {
 
       for (const [p, connecter] of cas) {
         await connecter();
-        await expect(p.getByTestId('lien-mon-compte')).toBeVisible();
-        await p.getByTestId('lien-mon-compte').click();
+        await ouvrirMenuCompte(p);
+        await expect(p.getByTestId('menu-lien-mon-compte')).toBeVisible();
+        await p.getByTestId('menu-lien-mon-compte').click();
         await expect(p).toHaveURL(/\/mon-compte$/);
         await expect(p.getByTestId('titre-mon-compte')).toBeVisible();
         await expect(p.getByTestId('mon-compte-suppression')).toHaveCount(0);
@@ -285,7 +288,8 @@ test.describe('Supprimer son compte coureur', () => {
       await expect(p1).toHaveURL(/\/connexion$/);
       await expect(p1.getByTestId('message-compte-supprime')).toBeVisible();
 
-      await p2.getByTestId('lien-mes-inscriptions').click();
+      await ouvrirMenuCompte(p2);
+      await p2.getByTestId('menu-lien-mes-inscriptions').click();
       await expect(p2).toHaveURL(/\/connexion/);
       await expect(p2.getByTestId('entete-pseudo')).toHaveCount(0);
     } finally {
@@ -301,8 +305,9 @@ test.describe('Supprimer son compte coureur', () => {
 
     const pseudo = await creerCoureur(playwright, 'Ian');
     await seConnecter(page, pseudo);
-    await page.getByTestId('bouton-deconnexion').click();
+    await seDeconnecterParLeMenu(page);
     await expect(page.getByTestId('bouton-menu')).toBeVisible();
+    await expect(page.getByTestId('menu-visiteur')).toHaveCount(1);
     await ouvrirMenuVisiteur(page);
     await page.getByTestId('menu-lien-se-connecter').click();
     await expect(page.getByTestId('titre-connexion')).toBeVisible();

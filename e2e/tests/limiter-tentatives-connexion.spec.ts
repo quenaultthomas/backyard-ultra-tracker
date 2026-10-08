@@ -7,6 +7,7 @@ import {
   saisir,
   seConnecter,
 } from './aide-connexion';
+import { seDeconnecterParLeMenu } from './aide-entete';
 
 const MOT_DE_PASSE_FAUX = 'mauvais-mot-de-passe-1';
 const MESSAGE_ECHEC = 'Pseudo ou mot de passe incorrect.';
@@ -98,7 +99,7 @@ test.describe('Limiter les tentatives de connexion (1.3)', () => {
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
 
-    await page.getByTestId('bouton-deconnexion').click();
+    await seDeconnecterParLeMenu(page);
     await expect(page).toHaveURL(/\/connexion$/);
     await expect(page.getByTestId('message-deconnexion')).toBeVisible();
 

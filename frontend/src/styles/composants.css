@@ -2,14 +2,13 @@
  * Composants partagés de la charte (docs/design.md, section 7).
  * Alias historiques conservés tant que les templates ne sont pas migrés :
  * .ligne__action (secondaire), .ligne__action--danger (danger contour),
- * .ligne__action--danger-plein (danger), .entete__bouton (sur fond sombre),
+ * .ligne__action--danger-plein (danger),
  * .erreur--generale, .succes, .message-succes, .message-info et messages d'erreur locaux.
  */
 
 /* Boutons. */
 .bouton,
-.ligne__action,
-.entete__bouton {
+.ligne__action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -77,22 +76,19 @@
   background-color: var(--couleur-danger-pale);
 }
 
-.bouton--sur-fonce,
-.entete__bouton {
+.bouton--sur-fonce {
   border-color: var(--couleur-creme);
   background-color: transparent;
   color: var(--couleur-creme);
 }
 
-.bouton--sur-fonce:hover:not(:disabled),
-.entete__bouton:hover:not(:disabled) {
+.bouton--sur-fonce:hover:not(:disabled) {
   border-color: var(--couleur-creme);
   background-color: var(--couleur-foret-survol);
 }
 
 .bouton:disabled,
-.ligne__action:disabled,
-.entete__bouton:disabled {
+.ligne__action:disabled {
   border-color: var(--couleur-desactive-fond);
   background-color: var(--couleur-desactive-fond);
   color: var(--couleur-desactive-texte);
