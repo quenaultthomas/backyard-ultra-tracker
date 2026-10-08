@@ -310,6 +310,7 @@ test.describe('Connexion et création de compte sur le décor backyard (R.5)', (
 
   test('CA3 - le texte n\'est que dans la carte, avec les contrastes et la palette de la charte', async ({ page }) => {
     test.setTimeout(120_000);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 1280, height: 800 });
     const autorisees = [...RGB_PALETTE, RGB_TRANSPARENT];
     const noms = ['connexion', 'creation de compte', 'connexion avec erreur affichee', 'creation de compte avec champs invalides'];
