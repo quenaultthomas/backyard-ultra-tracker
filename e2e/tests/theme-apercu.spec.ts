@@ -113,7 +113,8 @@ test('CA13 - docs/design.md contient les 10 sections, toutes les variables, les 
   expect(design).toMatch(/sans police display/i);
   expect(design).toMatch(/courbes de niveau/i);
   expect(design).toMatch(/boucle fermée/i);
-  expect(design).toMatch(/aucun sapin/i);
+  expect(design).toMatch(/les sapins n'existent que dans le décor de la page d'accueil/i);
+  expect(design).toMatch(/jamais dans le motif du `body`/i);
   expect(design).toMatch(/forêt/i);
   expect(design).toMatch(/orange/i);
 

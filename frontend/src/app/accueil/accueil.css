@@ -4,46 +4,28 @@
   flex-direction: column;
 }
 
+/* La marge basse réserve la bande de sapins du décor (.decor-backyard) : jamais de sapin sous le texte. */
 .accueil {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--espace-6);
-  padding: var(--espace-4);
+  gap: var(--espace-4);
+  padding: var(--espace-4) var(--espace-4) calc(var(--decor-hauteur-sapins) + var(--espace-4));
   text-align: center;
 }
 
 .titre {
   margin: 0;
   font-size: clamp(2rem, 6vw, 4rem);
+  overflow-wrap: anywhere;
 }
 
-.etat-api {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--espace-2);
+.accroche {
+  max-width: 32rem;
   margin: 0;
   font-size: var(--taille-grande);
-}
-
-/* Puce d'état : la couleur double le libellé, jamais seule. */
-.pastille {
-  width: 0.875rem;
-  height: 0.875rem;
-  border-radius: 50%;
-  background-color: var(--couleur-encre-douce);
-}
-
-.etat-api--disponible .pastille {
-  background-color: var(--couleur-foret-survol);
-}
-
-.etat-api--indisponible .pastille {
-  background-color: var(--couleur-danger);
-}
-
-.lien {
-  font-size: var(--taille-moyenne);
+  color: var(--couleur-encre);
+  overflow-wrap: anywhere;
 }

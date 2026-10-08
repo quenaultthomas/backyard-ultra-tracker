@@ -16,7 +16,7 @@ function valeurResolue(attendue: string): string {
 
 test('CA1 - les variables de la charte ont les valeurs de la spec et aucun nom anglais n\'est défini', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByTestId('etat-api')).toBeVisible();
+  await expect(page.getByTestId('accroche')).toBeVisible();
 
   const lues = await page.evaluate((noms) => {
     const style = getComputedStyle(document.documentElement);
@@ -53,7 +53,7 @@ test('CA1 - les variables de la charte ont les valeurs de la spec et aucun nom a
 
 test('CA3 - les chiffres sont tabulaires (Inter) et le dossard est affiché en Inter', async ({ page, playwright }) => {
   await page.goto('/');
-  await expect(page.getByTestId('etat-api')).toBeVisible();
+  await expect(page.getByTestId('accroche')).toBeVisible();
   await page.evaluate(() => document.fonts.load('400 16px Inter'));
   await page.evaluate(() => document.fonts.ready);
 

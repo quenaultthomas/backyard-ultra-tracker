@@ -1,17 +1,4 @@
-<main class="accueil">
+<main class="accueil decor-backyard">
   <h1 class="titre" data-testid="titre">Backyard Ultra Tracker</h1>
-  <p
-    class="etat-api"
-    [class]="'etat-api--' + etatApi().toLowerCase()"
-    role="status"
-    aria-live="polite"
-  >
-    <span class="pastille" aria-hidden="true"></span>
-    <span data-testid="etat-api">{{ libelleEtatApi() }}</span>
-  </p>
-  @if (anonyme()) {
-    <nav aria-label="Compte">
-      <a class="lien" routerLink="/creer-compte" data-testid="lien-creer-compte">Créer un compte</a>
-    </nav>
-  }
+  <p class="accroche" data-testid="accroche">Une boucle après l'autre, jusqu'au dernier debout.</p>
 </main>

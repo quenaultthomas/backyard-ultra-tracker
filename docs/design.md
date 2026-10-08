@@ -8,7 +8,7 @@ Univers : une boucle de 6,7 km refaite toutes les heures, en forêt, de jour. D�
 
 1. **Thème clair sur fond crème** : `color-scheme: light`, pas de mode sombre ni de bascule jour/nuit.
 2. **Inter, sans police display** : une seule police sans-serif sobre, Inter, auto-hébergée (SIL OFL 1.1), un seul style (droit), chiffres **tabulaires** pour les dossards, durées, distances et chronomètres.
-3. **Courbes de niveau avec une boucle fermée** : motif de fond discret en SVG, la boucle en pointillés évoque le yard ; **aucun sapin** (réservés à la page d'accueil, R.4).
+3. **Courbes de niveau avec une boucle fermée** : motif de fond discret en SVG, la boucle en pointillés évoque le yard ; les sapins n'existent que dans le décor de la page d'accueil (`.decor-backyard`), jamais dans le motif du `body`.
 4. **Univers forêt** : **vert forêt** profond, **orange** balise / frontale, **crème**.
 5. Aucune dépendance lourde (ni bibliothèque de composants, ni Tailwind, ni Sass) et **aucune requête vers un CDN** : police et motif sont servis par le site.
 6. Téléphone d'abord (360 px, 320 px), contrastes AA (WCAG 2.x), navigation clavier avec un contour de focus visible.
@@ -179,6 +179,49 @@ Source du motif :
 </svg>
 ```
 
+### Décor de la page d'accueil
+
+Décor « backyard » de l'accueil (R.4), plus illustratif que le motif du `body`, qu'il recouvre.
+
+- **Classe partagée** `.decor-backyard`, définie dans `frontend/src/styles/decor.css` (importé par `frontend/src/styles.css` après `composants.css`) : les tuiles pèsent plusieurs ko et ne tiennent pas dans le budget `anyComponentStyle` (4 kB) d'un composant ; la classe est réutilisable par d'autres écrans (connexion et création de compte, R.5). Appliquée au `main` de l'accueil.
+- **Fond opaque** `--couleur-creme` et **deux couches** `background-image` en URI `data:image/svg+xml` (mêmes règles d'encodage que le motif du `body`), de haut en bas :
+  1. **Sapins** : tuile `viewBox="0 0 480 160"` sans couture horizontale (aucune forme ne touche les bords gauche et droit), `repeat-x`, collée au bas de l'élément (`background-position: left bottom`), hauteur affichée de **6rem** (propriété locale `--decor-hauteur-sapins`, en `rem` : la bande suit l'agrandissement du texte). Six silhouettes de quatre tailles, en aplats `#1F5A43` (`--couleur-foret-survol`) et `#14352A` (`--couleur-foret`).
+  2. **Courbes de niveau et boucle** : tuile `viewBox="0 0 640 480"` sans couture, `repeat`, traits `#D9CFB6` (`--couleur-trait`) uniquement, `fill="none"` : 6 courbes ouvertes (traits 1,5 à 2,5) et **exactement une boucle fermée** (chemin terminé par `Z`, trait 2,5, `stroke-dasharray`) entièrement dans la tuile.
+- Chaque tuile pèse **au plus 4 096 octets** décodée ; ni script, ni texte, ni `image`, ni `use`, ni `foreignObject`, ni `href`, ni lien externe, ni police ; toutes ses couleurs appartiennent à la palette (hexadécimaux en dur, exception admise des URI `data:` qui ne peuvent pas utiliser `var()`).
+- **Lisibilité** : l'élément décoré réserve la bande de sapins par un `padding-bottom` d'au moins `var(--decor-hauteur-sapins) + var(--espace-4)` ; le texte ne se pose que sur le crème ou un trait (pires cas : forêt / trait 8,62, encre / trait 9,67).
+- Décoratif : aucun contenu, aucun rôle ARIA, aucune animation. En **contraste forcé** (`forced-colors: active`), `background-image: none`.
+- Les sources lisibles ci-dessous font référence : toute modification se fait ici puis est ré-encodée dans `decor.css` (commentaires et retours à la ligne retirés, guillemets doubles remplacés par des simples, `#`, `<`, `>` et `%` encodés).
+
+Source de la couche sapins :
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 160" width="480" height="160">
+  <!-- Six sapins à trois étages, quatre tailles, deux verts ; aucun ne touche les bords gauche et droit (tuile sans couture en X), tous posés sur y = 160. -->
+  <path fill="#14352A" d="M60 10L88.6 64 74.6 64 101.6 112 83.4 112 112 160 8 160 36.6 112 18.4 112 45.4 64 31.4 64Z"/>
+  <path fill="#1F5A43" d="M150 60L169.8 96 160.1 96 178.8 128 166.2 128 186 160 114 160 133.8 128 121.2 128 139.9 96 130.2 96Z"/>
+  <path fill="#14352A" d="M230 34L254.2 79.4 242.3 79.4 265.2 119.7 249.8 119.7 274 160 186 160 210.2 119.7 194.8 119.7 217.7 79.4 205.8 79.4Z"/>
+  <path fill="#1F5A43" d="M310 70L327.6 102.4 319 102.4 335.6 131.2 324.4 131.2 342 160 278 160 295.6 131.2 284.4 131.2 301 102.4 292.4 102.4Z"/>
+  <path fill="#1F5A43" d="M398 16L425.5 67.8 412 67.8 438 113.9 420.5 113.9 448 160 348 160 375.5 113.9 358 113.9 384 67.8 370.5 67.8Z"/>
+  <path fill="#14352A" d="M460 100L468.8 121.6 464.5 121.6 472.8 140.8 467.2 140.8 476 160 444 160 452.8 140.8 447.2 140.8 455.5 121.6 451.2 121.6Z"/>
+</svg>
+```
+
+Source de la couche courbes de niveau et boucle :
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" width="640" height="480" stroke="#D9CFB6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Courbes de niveau : chacune ressort du bord droit à la même ordonnée et avec la même pente qu'à gauche (tuile sans couture). -->
+  <path fill="none" stroke-width="2" d="M0 40C100 14 210 74 320 50S540 66 640 40"/>
+  <path fill="none" stroke-width="1.5" d="M0 118C90 92 200 150 330 128S550 144 640 118"/>
+  <path fill="none" stroke-width="2" d="M0 214C110 184 220 240 330 206S530 244 640 214"/>
+  <path fill="none" stroke-width="1.5" d="M0 330C100 362 210 300 320 334S540 298 640 330"/>
+  <path fill="none" stroke-width="2.5" d="M0 410C90 432 220 380 330 404S550 388 640 410"/>
+  <path fill="none" stroke-width="1.5" d="M0 456C120 442 220 470 340 458S520 470 640 456"/>
+  <!-- Boucle fermée en pointillés, plus grande et plus épaisse que celle du motif du body : le yard. -->
+  <path fill="none" stroke-width="2.5" stroke-dasharray="10 8" d="M200 250C196 186 262 146 340 150C420 154 466 206 458 266C450 330 388 352 318 346C250 340 204 312 200 250Z"/>
+</svg>
+```
+
 ## 7. Composants
 
 **Base** (`base.css`)
@@ -187,6 +230,7 @@ Source du motif :
 - Liens (`a`) : `--couleur-lien`, soulignés (`text-underline-offset: 0.2em`).
 - Focus : `:focus-visible` = `outline: 3px solid var(--couleur-focus); outline-offset: 2px` ; dans `.entete`, la couleur devient `--couleur-focus-sur-fonce`. Aucun `outline: none`.
 - `::selection` : fond sable. `prefers-reduced-motion: reduce` : aucune transition ni animation. Transitions limitées à `--duree-transition`.
+- Décor backyard (`decor.css`) : `.decor-backyard`, fond crème opaque, bande de sapins de 6rem en bas et courbes de niveau avec boucle (section 6, « Décor de la page d'accueil ») ; masqué en contraste forcé.
 
 **Boutons** (`composants.css`) : `min-height: var(--cible-min)`, `padding: var(--espace-3) var(--espace-5)`, graisse 600, `border-radius: var(--rayon-s)`, bordure 1px.
 
@@ -251,7 +295,7 @@ La capture `docs/images/design-apercu.png` est régénérée par le test E2E de 
 - **Variables uniquement** : aucune couleur, police, taille, espacement, rayon ni ombre en dur hors de `variables.css` ; toujours `var(--…)`. Une nouvelle valeur s'ajoute d'abord à la charte (ce document et `variables.css`), avec son ratio de contraste.
 - **Pas de couleur en dur**, pas de noir ni de blanc purs (seule exception : le QR code, noir sur blanc).
 - **Orange jamais en texte sur fond clair** : `--couleur-orange` sur fond sombre ou en aplat ; sur crème, surface ou sable, utiliser `--couleur-orange-fonce`.
-- **Pas de `svg`, `img` ni `canvas` décoratif dans le DOM** : puces, filets et motifs en CSS (`::before`, `background`) ; seule exception : l'icône du menu burger de l'en-tête (section 7).
+- **Pas de `svg`, `img` ni `canvas` décoratif dans le DOM** : puces, filets et motifs en CSS (`::before`, `background`) ; seule exception : l'icône du menu burger de l'en-tête (section 7). Le décor backyard de l'accueil (`.decor-backyard`) est un fond CSS (`background-image` en URI `data:`), pas un `svg` du DOM : il respecte cette règle.
 - Réutiliser les classes partagées (`.bouton*`, `.message--*`, `.pastille-statut*`, `.carte`, `.champ`) plutôt que de redéfinir un style ; les alias historiques disparaissent quand les templates adoptent ces classes.
 - Cibles tactiles de 44 px minimum, texte de 13 px minimum, contour de focus `3px solid` toujours visible, aucun défilement horizontal à 320 px.
 - La couleur ne porte jamais seule une information : toujours un libellé en texte.
