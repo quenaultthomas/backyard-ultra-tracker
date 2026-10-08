@@ -31,9 +31,11 @@
                     formaterDate(course.date)
                   }}</time>
                   ·
-                  <span data-testid="benevole-course-statut">{{
-                    libellesStatut[course.statut]
-                  }}</span>
+                  <span
+                    [class]="pastillesStatut[course.statut]"
+                    data-testid="benevole-course-statut"
+                    >{{ libellesStatut[course.statut] }}</span
+                  >
                 </span>
               </div>
             </li>

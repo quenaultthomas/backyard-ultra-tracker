@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aperçu de la charte graphique - Backyard Ultra Tracker</title>
+    <!-- Feuilles réelles de l'application : aucune copie du CSS (docs/design.md, section 9). -->
+    <link rel="stylesheet" href="../frontend/src/styles.css" />
+    <link rel="stylesheet" href="../frontend/src/app/entete/entete.css" />
+    <style>
+      /* Mise en page de l'aperçu seulement : jamais embarquée dans l'application. */
+      .apercu {
+        display: flex;
+        flex-direction: column;
+        gap: var(--espace-8);
+        max-width: 72rem;
+        margin: 0 auto;
+        padding: var(--espace-6) var(--espace-4) var(--espace-12);
+      }
+      .apercu h2 {
+        margin: 0 0 var(--espace-3);
+        font-size: var(--taille-grande);
+      }
+      .apercu section {
+        padding: var(--espace-4);
+        border-radius: var(--rayon-m);
+        background-color: var(--couleur-surface);
+        box-shadow: var(--ombre-carte);
+      }
+      .grille {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+        gap: var(--espace-3);
+      }
+      .rangee {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--espace-3);
+        margin-bottom: var(--espace-3);
+      }
+      .couleur {
+        display: flex;
+        align-items: center;
+        gap: var(--espace-3);
+        font-size: var(--taille-secondaire);
+      }
+      .couleur span:first-child {
+        flex: none;
+        width: var(--espace-12);
+        height: var(--espace-12);
+        border: 1px solid var(--couleur-trait);
+        border-radius: var(--rayon-s);
+      }
+      .couleur code {
+        display: block;
+        color: var(--couleur-encre-douce);
+      }
+      .fond-sombre {
+        padding: var(--espace-4);
+        border-radius: var(--rayon-s);
+        background-color: var(--couleur-foret);
+      }
+      .zone-motif {
+        height: 16rem;
+        border: 1px solid var(--couleur-trait);
+        border-radius: var(--rayon-s);
+        /* Fond transparent : laisse voir le motif réel posé sur body par base.css. */
+        background-color: transparent;
+      }
+      .apercu .carte {
+        box-shadow: var(--ombre-carte);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="entete" data-composant="entete">
+      <a class="entete__titre" href="#palette">Backyard Ultra Tracker</a>
+      <div class="entete__compte">
+        <span class="entete__pseudo">Alice</span>
+        <a class="entete__lien" href="#palette">Espace coureur</a>
+        <a class="entete__lien" href="#palette">Mes inscriptions</a>
+        <a class="entete__lien" href="#palette">Mon compte</a>
+        <button type="button" class="entete__bouton">Se déconnecter</button>
+      </div>
+    </header>
+
+    <main class="apercu">
+      <h1>Aperçu de la charte graphique</h1>
+      <p>
+        Chaque composant est rendu avec les feuilles de style réelles de l'application
+        (<code>frontend/src/styles.css</code>). Charte complète : <code>docs/design.md</code>.
+      </p>
+
+      <section id="palette" data-composant="palette" aria-labelledby="titre-palette">
+        <h2 id="titre-palette">Palette</h2>
+        <div class="grille">
+          <div class="couleur"><span style="background-color: var(--couleur-foret)"></span><span>--couleur-foret<code>#14352A</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-foret-survol)"></span><span>--couleur-foret-survol<code>#1F5A43</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-creme)"></span><span>--couleur-creme<code>#F7F1E3</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-surface)"></span><span>--couleur-surface<code>#FFFCF5</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-sable)"></span><span>--couleur-sable<code>#EFE6D0</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-trait)"></span><span>--couleur-trait<code>#D9CFB6</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-encre)"></span><span>--couleur-encre<code>#1B2A22</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-encre-douce)"></span><span>--couleur-encre-douce<code>#4A5A50</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-orange)"></span><span>--couleur-orange<code>#F28C28</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-orange-fonce)"></span><span>--couleur-orange-fonce<code>#A84300</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-orange-pale)"></span><span>--couleur-orange-pale<code>#FBE9CF</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-danger)"></span><span>--couleur-danger<code>#9B1C1C</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-danger-survol)"></span><span>--couleur-danger-survol<code>#7F1D1D</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-danger-pale)"></span><span>--couleur-danger-pale<code>#FBE9E4</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-succes-pale)"></span><span>--couleur-succes-pale<code>#E3EFE6</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-bordure-champ)"></span><span>--couleur-bordure-champ<code>#6F7A6E</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-desactive-fond)"></span><span>--couleur-desactive-fond<code>#DDD6C3</code></span></div>
+          <div class="couleur"><span style="background-color: var(--couleur-desactive-texte)"></span><span>--couleur-desactive-texte<code>#5F6A62</code></span></div>
+        </div>
+      </section>
+
+      <section data-composant="typographie" aria-labelledby="titre-typographie">
+        <h2 id="titre-typographie">Typographie : Inter</h2>
+        <p style="font-weight: var(--poids-normal)">Inter 400 : la boucle de 6,7 km repart à l'heure pile, « en forêt »…</p>
+        <p style="font-weight: var(--poids-moyen)">Inter 500 : Bénévoles affectés, Réintégration, cœur.</p>
+        <p style="font-weight: var(--poids-gras)">Inter 700 : Vainqueur après 42 boucles.</p>
+        <p style="font-size: var(--taille-titre)">Chiffres tabulaires : 0123456789</p>
+        <p style="font-size: var(--taille-titre)">Dossard 111 · Dossard 808</p>
+        <p style="font-size: var(--taille-petite)">Taille minimale de l'interface (13 px).</p>
+      </section>
+
+      <section aria-labelledby="titre-boutons">
+        <h2 id="titre-boutons">Boutons</h2>
+        <div class="rangee" data-composant="bouton">
+          <button type="button" class="bouton">Bouton principal</button>
+          <button type="button" class="bouton" disabled>Principal désactivé</button>
+        </div>
+        <div class="rangee" data-composant="bouton-secondaire">
+          <button type="button" class="bouton bouton--secondaire">Bouton secondaire</button>
+          <button type="button" class="bouton bouton--secondaire" disabled>Secondaire désactivé</button>
+        </div>
+        <div class="rangee" data-composant="bouton-danger">
+          <button type="button" class="bouton bouton--danger">Supprimer définitivement</button>
+          <button type="button" class="bouton bouton--danger" disabled>Danger désactivé</button>
+        </div>
+        <div class="rangee" data-composant="bouton-danger-contour">
+          <button type="button" class="bouton bouton--danger-contour">Supprimer la course</button>
+          <button type="button" class="bouton bouton--danger-contour" disabled>Danger contour désactivé</button>
+        </div>
+        <div class="rangee fond-sombre" data-composant="bouton-sur-fonce">
+          <button type="button" class="bouton bouton--sur-fonce">Se déconnecter</button>
+          <button type="button" class="bouton bouton--sur-fonce" disabled>Sur fond sombre désactivé</button>
+        </div>
+        <div class="rangee" data-composant="bouton-desactive">
+          <button type="button" class="bouton" disabled>Envoi en cours</button>
+        </div>
+      </section>
+
+      <section aria-labelledby="titre-champs">
+        <h2 id="titre-champs">Champs</h2>
+        <div class="grille">
+          <div class="champ" data-composant="champ">
+            <label for="apercu-pseudo">Pseudo</label>
+            <input id="apercu-pseudo" type="text" value="Alice" aria-describedby="apercu-aide" />
+            <p id="apercu-aide" class="aide">Pseudo : 3 à 30 caractères, lettres, chiffres, . _ -</p>
+          </div>
+          <div class="champ" data-composant="champ-invalide">
+            <label for="apercu-mot-de-passe">Mot de passe</label>
+            <input id="apercu-mot-de-passe" type="password" value="court" aria-invalid="true" aria-describedby="apercu-erreur" />
+            <p id="apercu-erreur" class="erreur">Le mot de passe doit contenir au moins 12 caractères.</p>
+          </div>
+          <div class="champ" data-composant="champ-desactive">
+            <label for="apercu-distance">Distance d'une boucle (m)</label>
+            <input id="apercu-distance" type="number" value="6706" disabled />
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="titre-carte">
+        <h2 id="titre-carte">Carte</h2>
+        <div class="carte" data-composant="carte">
+          <h3 class="titre">Se connecter</h3>
+          <p>Une carte masque le motif de fond : fond surface opaque, filet trait, ombre teintée forêt.</p>
+          <a href="#palette">Créer un compte</a>
+        </div>
+      </section>
+
+      <section aria-labelledby="titre-messages">
+        <h2 id="titre-messages">Messages</h2>
+        <div class="grille">
+          <p class="message--erreur" data-composant="message-erreur">Pseudo ou mot de passe incorrect.</p>
+          <p class="message--succes" data-composant="message-succes">Votre mot de passe a été modifié.</p>
+          <p class="message--info" data-composant="message-info">Vous êtes déconnecté.</p>
+          <p class="message--avertissement" data-composant="message-avertissement">La course démarre dans 5 minutes.</p>
+        </div>
+      </section>
+
+      <section aria-labelledby="titre-pastilles">
+        <h2 id="titre-pastilles">Pastilles de statut</h2>
+        <div class="rangee">
+          <span class="pastille-statut pastille-statut--en-preparation" data-composant="pastille-statut-en-preparation">En préparation</span>
+          <span class="pastille-statut pastille-statut--en-cours" data-composant="pastille-statut-en-cours">En cours</span>
+          <span class="pastille-statut pastille-statut--terminee" data-composant="pastille-statut-terminee">Terminée</span>
+        </div>
+        <div class="rangee">
+          <span class="pastille-statut pastille-statut--en-course" data-composant="pastille-statut-en-course">En course</span>
+          <span class="pastille-statut pastille-statut--abandon" data-composant="pastille-statut-abandon">Abandon</span>
+          <span class="pastille-statut pastille-statut--vainqueur" data-composant="pastille-statut-vainqueur">Vainqueur</span>
+        </div>
+      </section>
+
+      <section aria-labelledby="titre-motif">
+        <h2 id="titre-motif">Motif de fond</h2>
+        <div class="zone-motif" data-composant="motif" role="presentation"></div>
+      </section>
+    </main>
+  </body>
+</html>

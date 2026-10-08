@@ -2,15 +2,15 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--couleur-trait);
 }
 
 .ligne {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #e5e7eb;
+  gap: var(--espace-3);
+  padding: var(--espace-3) 0;
+  border-bottom: 1px solid var(--couleur-trait);
 }
 
 /* Logo contenu dans 48 × 48 px, proportions conservées. */
@@ -24,7 +24,7 @@
 .infos {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--espace-1);
   min-width: 0;
 }
 

@@ -7,7 +7,11 @@
           {{ retour.message }}
         </p>
       } @else {
-        <p class="erreur erreur--generale" role="alert" data-testid="inscriptions-erreur-desinscription">
+        <p
+          class="erreur erreur--generale"
+          role="alert"
+          data-testid="inscriptions-erreur-desinscription"
+        >
           {{ retour.message }}
         </p>
       }
@@ -44,18 +48,23 @@
                     data-testid="inscriptions-course-date"
                     >{{ formaterDate(inscription.courseDate) }}</time
                   >
-                  <span data-testid="inscriptions-course-statut">{{
-                    libellesStatutCourse[inscription.courseStatut]
-                  }}</span>
+                  <span
+                    [class]="pastillesStatutCourse[inscription.courseStatut]"
+                    data-testid="inscriptions-course-statut"
+                    >{{ libellesStatutCourse[inscription.courseStatut] }}</span
+                  >
                 </div>
               </div>
               <div class="inscription">
                 <span class="dossard" data-testid="inscriptions-dossard"
                   >Dossard {{ inscription.dossard }}</span
                 >
-                <span class="statut" data-testid="inscriptions-statut">{{
-                  libellesStatutInscription[inscription.statut]
-                }}</span>
+                <span
+                  class="statut"
+                  [class]="pastillesStatutInscription[inscription.statut]"
+                  data-testid="inscriptions-statut"
+                  >{{ libellesStatutInscription[inscription.statut] }}</span
+                >
               </div>
               <app-qr-code [contenu]="inscription.jetonQr" [libelle]="libelleQr(inscription)" />
               <app-desinscription

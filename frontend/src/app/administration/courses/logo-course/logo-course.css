@@ -1,7 +1,7 @@
 :host {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--espace-2);
 }
 
 .logo,
@@ -10,7 +10,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--espace-3);
 }
 
 /* Vignette contenue dans 64 × 64 px, proportions conservées. */
@@ -25,30 +25,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px dashed #6b7280;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
+  border: 1px dashed var(--couleur-bordure-champ);
+  border-radius: var(--rayon-s);
+  font-size: var(--taille-petite);
+  line-height: var(--interligne-titre);
   text-align: center;
-  color: #4b5563;
+  color: var(--couleur-encre-douce);
 }
 
 .apercu {
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-  background: #f3f4f6;
+  padding: var(--espace-3);
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-sable);
 }
 
 .apercu__lecture {
   margin: 0;
-}
-
-.logo__erreur {
-  margin: 0;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  background: #fef2f2;
-  color: #b91c1c;
-  font-weight: 500;
 }
 
 /* Sélecteur natif masqué : ouvert par le bouton « Choisir un logo ». */

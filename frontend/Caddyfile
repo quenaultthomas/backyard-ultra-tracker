@@ -44,7 +44,8 @@
 	# Application Angular : fichiers statiques, repli sur index.html pour le routage.
 	handle {
 		root * /srv
-		@ressourcesVersionnees path_regexp \-[A-Z0-9]{8}\.(js|css)$
+		# Fichiers empreintes par le build (scripts, styles, police ; svg prévu par la charte) : contenu immuable.
+		@ressourcesVersionnees path_regexp \-[A-Z0-9]{8}\.(js|css|woff2|svg)$
 		header @ressourcesVersionnees Cache-Control "public, max-age=31536000, immutable"
 		header ?Cache-Control no-cache
 		try_files {path} /index.html

@@ -7,7 +7,7 @@
 .suppression {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid #e5e7eb;
+  gap: var(--espace-3);
+  padding-top: var(--espace-5);
+  border-top: 1px solid var(--couleur-trait);
 }

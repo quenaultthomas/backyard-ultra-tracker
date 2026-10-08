@@ -9,6 +9,13 @@ export const LIBELLES_STATUT_COURSE: Readonly<Record<StatutCourse, string>> = {
   TERMINEE: 'Terminée',
 };
 
+/** Classes de la pastille de statut d'une Course (affichage seulement, docs/design.md). */
+export const PASTILLES_STATUT_COURSE: Readonly<Record<StatutCourse, string>> = {
+  EN_PREPARATION: 'pastille-statut pastille-statut--en-preparation',
+  EN_COURS: 'pastille-statut pastille-statut--en-cours',
+  TERMINEE: 'pastille-statut pastille-statut--terminee',
+};
+
 /** Corps de `POST /api/administration/courses` ; `date` au format `aaaa-mm-jj`. */
 export interface DeclarerCourseRequete {
   nom: string;

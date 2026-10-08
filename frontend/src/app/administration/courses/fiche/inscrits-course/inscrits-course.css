@@ -1,7 +1,7 @@
 .resume {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 1.5rem;
+  gap: var(--espace-1) var(--espace-6);
 }
 
 .tableau {
@@ -11,19 +11,15 @@
 
 th,
 td {
-  padding: 0.5rem 0.5rem 0.5rem 0;
-  border-bottom: 1px solid #e5e7eb;
+  padding: var(--espace-2) var(--espace-2) var(--espace-2) 0;
+  border-bottom: 1px solid var(--couleur-trait);
   text-align: left;
 }
 
 th {
-  font-size: 0.875rem;
+  font-size: var(--taille-secondaire);
   font-weight: 600;
-  color: #4b5563;
-}
-
-.dossard {
-  font-variant-numeric: tabular-nums;
+  color: var(--couleur-encre-douce);
 }
 
 .pseudo {

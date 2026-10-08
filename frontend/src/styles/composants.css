@@ -1,0 +1,281 @@
+/*
+ * Composants partagés de la charte (docs/design.md, section 7).
+ * Alias historiques conservés tant que les templates ne sont pas migrés :
+ * .ligne__action (secondaire), .ligne__action--danger (danger contour),
+ * .ligne__action--danger-plein (danger), .entete__bouton (sur fond sombre),
+ * .erreur--generale, .succes, .message-succes, .message-info et messages d'erreur locaux.
+ */
+
+/* Boutons. */
+.bouton,
+.ligne__action,
+.entete__bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: var(--cible-min);
+  padding: var(--espace-3) var(--espace-5);
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  border: 1px solid var(--couleur-foret);
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-foret);
+  color: var(--couleur-surface);
+  cursor: pointer;
+  transition-property: background-color, border-color, color;
+  transition-duration: var(--duree-transition);
+}
+
+.bouton:hover:not(:disabled) {
+  border-color: var(--couleur-foret-survol);
+  background-color: var(--couleur-foret-survol);
+}
+
+.bouton--secondaire,
+.ligne__action {
+  border-color: var(--couleur-foret);
+  background-color: var(--couleur-surface);
+  color: var(--couleur-foret);
+}
+
+.bouton--secondaire:hover:not(:disabled),
+.ligne__action:hover:not(:disabled) {
+  border-color: var(--couleur-foret);
+  background-color: var(--couleur-sable);
+}
+
+.ligne__action {
+  align-self: flex-start;
+}
+
+.bouton--danger,
+.ligne__action--danger-plein {
+  border-color: var(--couleur-danger);
+  background-color: var(--couleur-danger);
+  color: var(--couleur-surface);
+}
+
+.bouton--danger:hover:not(:disabled),
+.ligne__action--danger-plein:hover:not(:disabled) {
+  border-color: var(--couleur-danger-survol);
+  background-color: var(--couleur-danger-survol);
+}
+
+.bouton--danger-contour,
+.ligne__action--danger {
+  border-color: var(--couleur-danger);
+  background-color: var(--couleur-surface);
+  color: var(--couleur-danger);
+}
+
+.bouton--danger-contour:hover:not(:disabled),
+.ligne__action--danger:hover:not(:disabled) {
+  border-color: var(--couleur-danger);
+  background-color: var(--couleur-danger-pale);
+}
+
+.bouton--sur-fonce,
+.entete__bouton {
+  border-color: var(--couleur-creme);
+  background-color: transparent;
+  color: var(--couleur-creme);
+}
+
+.bouton--sur-fonce:hover:not(:disabled),
+.entete__bouton:hover:not(:disabled) {
+  border-color: var(--couleur-creme);
+  background-color: var(--couleur-foret-survol);
+}
+
+.bouton:disabled,
+.ligne__action:disabled,
+.entete__bouton:disabled {
+  border-color: var(--couleur-desactive-fond);
+  background-color: var(--couleur-desactive-fond);
+  color: var(--couleur-desactive-texte);
+  cursor: wait;
+}
+
+/* Champs. */
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-1);
+}
+
+input,
+select,
+textarea {
+  border: 1px solid var(--couleur-bordure-champ);
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-surface);
+  color: var(--couleur-encre);
+}
+
+input:not([type='checkbox'], [type='radio']),
+select,
+textarea {
+  box-sizing: border-box;
+  min-height: var(--cible-min);
+  padding: var(--espace-2) var(--espace-3);
+}
+
+.champ > :is(input, select, textarea) {
+  width: 100%;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--couleur-foret);
+}
+
+:is(input, select, textarea)[aria-invalid='true'] {
+  border: 2px solid var(--couleur-danger);
+}
+
+:is(input, select, textarea):disabled {
+  border-color: var(--couleur-desactive-texte);
+  background-color: var(--couleur-desactive-fond);
+  color: var(--couleur-desactive-texte);
+}
+
+label {
+  font-weight: 600;
+  color: var(--couleur-encre);
+}
+
+.aide {
+  margin: 0;
+  font-size: var(--taille-secondaire);
+  color: var(--couleur-encre-douce);
+}
+
+.erreur {
+  margin: 0;
+  color: var(--couleur-danger);
+  font-weight: var(--poids-moyen);
+}
+
+/* Carte : fond opaque, masque le motif. */
+.carte {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--largeur-carte);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-5);
+  padding: var(--espace-6);
+  border: 1px solid var(--couleur-trait);
+  border-radius: var(--rayon-m);
+  background-color: var(--couleur-surface);
+  box-shadow: var(--ombre-carte);
+}
+
+/* Messages : le texte porte toujours l'information, la couleur la renforce. */
+.message--erreur,
+.message--succes,
+.message--info,
+.message--avertissement,
+.erreur--generale,
+.succes,
+.message-succes,
+.message-info,
+.entete__erreur,
+.logo__erreur,
+.suppression__erreur,
+app-qr-code > .erreur {
+  margin: 0;
+  padding: var(--espace-3);
+  border-left: 4px solid currentColor;
+  border-radius: var(--rayon-s);
+}
+
+.message--erreur,
+.erreur--generale,
+.entete__erreur,
+.logo__erreur,
+.suppression__erreur,
+app-qr-code > .erreur {
+  background-color: var(--couleur-danger-pale);
+  color: var(--couleur-danger);
+  font-weight: var(--poids-moyen);
+}
+
+.message--succes,
+.succes,
+.message-succes {
+  background-color: var(--couleur-succes-pale);
+  color: var(--couleur-foret);
+  font-weight: var(--poids-moyen);
+}
+
+.message--info,
+.message-info {
+  background-color: var(--couleur-sable);
+  color: var(--couleur-encre);
+}
+
+.message--avertissement {
+  background-color: var(--couleur-orange-pale);
+  color: var(--couleur-orange-fonce);
+}
+
+/* Pastilles de statut : libellé en texte, puce décorative en CSS. */
+.pastille-statut {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espace-2);
+  padding: 0.125rem 0.625rem;
+  border: 1px solid;
+  border-radius: var(--rayon-pastille);
+  font-size: var(--taille-petite);
+  font-weight: var(--poids-gras);
+}
+
+.pastille-statut::before {
+  content: '';
+  flex: none;
+  width: var(--espace-2);
+  height: var(--espace-2);
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.pastille-statut--en-preparation {
+  border-color: var(--couleur-trait);
+  background-color: var(--couleur-sable);
+  color: var(--couleur-encre-douce);
+}
+
+.pastille-statut--en-cours {
+  border-color: var(--couleur-orange-fonce);
+  background-color: var(--couleur-orange-pale);
+  color: var(--couleur-orange-fonce);
+}
+
+.pastille-statut--terminee {
+  border-color: var(--couleur-foret);
+  background-color: var(--couleur-foret);
+  color: var(--couleur-creme);
+}
+
+.pastille-statut--en-course {
+  border-color: var(--couleur-foret);
+  background-color: var(--couleur-succes-pale);
+  color: var(--couleur-foret);
+}
+
+.pastille-statut--abandon {
+  border-color: var(--couleur-danger);
+  background-color: var(--couleur-danger-pale);
+  color: var(--couleur-danger);
+}
+
+.pastille-statut--vainqueur {
+  border-color: var(--couleur-orange-fonce);
+  background-color: var(--couleur-orange);
+  color: var(--couleur-encre);
+}

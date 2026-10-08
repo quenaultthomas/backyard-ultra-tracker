@@ -2,15 +2,15 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--couleur-trait);
 }
 
 .ligne {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #e5e7eb;
+  gap: var(--espace-2);
+  padding: var(--espace-3) 0;
+  border-bottom: 1px solid var(--couleur-trait);
 }
 
 .ligne__nom {
@@ -21,7 +21,7 @@
 .details {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-  gap: 0.5rem 1rem;
+  gap: var(--espace-2) var(--espace-4);
   margin: 0;
 }
 
@@ -31,8 +31,8 @@
 }
 
 dt {
-  font-size: 0.875rem;
-  color: #4b5563;
+  font-size: var(--taille-secondaire);
+  color: var(--couleur-encre-douce);
 }
 
 dd {
@@ -42,5 +42,5 @@ dd {
 .ligne__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--espace-3);
 }

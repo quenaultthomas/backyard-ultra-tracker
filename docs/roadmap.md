@@ -274,6 +274,6 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 
 ## Décisions en attente
 
-- Direction artistique (palette, motif de fond) à trancher avec l'utilisateur dans la spec de R.1.
+- Aucune pour l'instant. (Direction artistique tranchée pour R.1 : thème clair sur fond crème, Inter auto-hébergée, courbes de niveau et boucle fermée ; voir `docs/specs/increment-R.1.md`.)
 
 Toute nouvelle question est ajoutée ici et tranchée avant l'incrément concerné.

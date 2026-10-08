@@ -1,4 +1,4 @@
-/* Mise en page commune des écrans en carte centrée (comptes, administration, accès refusé). */
+/* Mise en page commune des écrans en carte centrée (carte, messages, champs : styles globaux). */
 :host {
   flex: 1;
   display: flex;
@@ -10,56 +10,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: var(--espace-4);
   box-sizing: border-box;
-}
-
-.carte {
-  width: 100%;
-  max-width: 26rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  padding: 1.5rem;
-  border-radius: 0.75rem;
-  background: #fff;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
 }
 
 .titre {
   margin: 0;
-  font-size: 1.75rem;
-}
-
-.erreur {
-  margin: 0;
-  color: #b91c1c;
-  font-weight: 500;
-}
-
-.erreur--generale {
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-  background: #fef2f2;
-}
-
-.succes {
-  margin: 0;
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-  background: #f0fdf4;
-  color: #166534;
-  font-weight: 500;
+  font-size: var(--taille-titre);
 }
 
 .lien {
   align-self: flex-start;
-  color: #1d4ed8;
-}
-
-.lien:focus-visible {
-  outline: 3px solid #f59e0b;
-  outline-offset: 2px;
 }
 
 .message {

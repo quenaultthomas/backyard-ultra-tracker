@@ -1,0 +1,68 @@
+/* Base : corps de page, titres, liens, focus, sélection, mouvement réduit. */
+html {
+  color: var(--couleur-texte);
+}
+
+body {
+  margin: 0;
+  font-family: var(--police-texte);
+  font-size: var(--taille-base);
+  font-weight: var(--poids-normal);
+  line-height: var(--interligne-texte);
+  /* Chiffres de même largeur : dossards, durées, distances, chronomètres. */
+  font-variant-numeric: tabular-nums;
+  color: var(--couleur-texte);
+  background-color: var(--couleur-fond-page);
+  /*
+   * Motif décoratif : courbes de niveau et boucle du yard, masqué par les cartes.
+   * SVG en URI data: (aucune requête réseau) ; source lisible dans docs/design.md, section 6.
+   */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 480' width='480' height='480' stroke='%23D9CFB6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath fill='none' stroke-width='1.25' d='M0 36C80 16 160 66 240 46S400 56 480 36'/%3E%3Cpath fill='none' stroke-width='1' d='M0 104C90 84 150 134 250 120S390 124 480 104'/%3E%3Cpath fill='none' stroke-width='1.5' d='M0 178C70 150 170 196 240 170S410 206 480 178'/%3E%3Cpath fill='none' stroke-width='1' d='M0 300C80 330 170 280 250 310S400 270 480 300'/%3E%3Cpath fill='none' stroke-width='1.25' d='M0 372C90 392 160 344 240 368S390 352 480 372'/%3E%3Cpath fill='none' stroke-width='1' d='M0 442C70 426 170 466 250 446S410 458 480 442'/%3E%3Cpath fill='none' stroke-width='2' stroke-dasharray='7 6' d='M150 236C148 186 196 152 262 156C326 160 352 204 344 256C336 312 284 338 228 330C176 322 152 290 150 236Z'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+app-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--couleur-foret);
+  font-weight: var(--poids-gras);
+  line-height: var(--interligne-titre);
+}
+
+a {
+  color: var(--couleur-lien);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--couleur-focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background-color: var(--couleur-sable);
+  color: var(--couleur-encre);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0s !important;
+    animation: none !important;
+  }
+}

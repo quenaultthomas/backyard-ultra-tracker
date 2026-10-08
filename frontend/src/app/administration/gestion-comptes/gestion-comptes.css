@@ -7,16 +7,16 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--couleur-trait);
 }
 
 .ligne {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.25rem 1rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #e5e7eb;
+  gap: var(--espace-1) var(--espace-4);
+  padding: var(--espace-2) 0;
+  border-bottom: 1px solid var(--couleur-trait);
 }
 
 .ligne__pseudo {
@@ -25,5 +25,5 @@
 }
 
 .ligne__date {
-  color: #4b5563;
+  color: var(--couleur-encre-douce);
 }

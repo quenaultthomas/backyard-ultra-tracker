@@ -9,7 +9,10 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { formaterDateCourse } from '../../administration/courses/champs-course';
-import { LIBELLES_STATUT_COURSE } from '../../administration/courses/course';
+import {
+  LIBELLES_STATUT_COURSE,
+  PASTILLES_STATUT_COURSE,
+} from '../../administration/courses/course';
 import { RefusAccesService } from '../../comptes/refus-acces.service';
 import { BenevoleApiService } from '../benevole-api.service';
 import { CourseBenevoleReponse } from '../course-benevole';
@@ -29,6 +32,7 @@ export class AccueilBenevole implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly libellesStatut = LIBELLES_STATUT_COURSE;
+  protected readonly pastillesStatut = PASTILLES_STATUT_COURSE;
   protected readonly formaterDate = formaterDateCourse;
   /** `null` tant que la liste n'est pas chargée. */
   protected readonly courses = signal<CourseBenevoleReponse[] | null>(null);

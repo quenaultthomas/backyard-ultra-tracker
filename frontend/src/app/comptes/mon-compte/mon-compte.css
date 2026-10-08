@@ -2,19 +2,19 @@
 .identite {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--espace-2);
   margin: 0;
 }
 
 .identite__ligne {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 0.75rem;
+  gap: var(--espace-1) var(--espace-3);
 }
 
 .identite dt {
   min-width: 4rem;
-  color: #4b5563;
+  color: var(--couleur-encre-douce);
 }
 
 .identite dd {
