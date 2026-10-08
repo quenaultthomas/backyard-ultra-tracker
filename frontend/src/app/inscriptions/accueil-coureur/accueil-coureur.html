@@ -15,47 +15,66 @@
       </p>
     } @else if (courses(); as liste) {
       @if (liste.length === 0) {
-        <p class="message" data-testid="coureur-vide">
-          Aucune course ouverte aux inscriptions pour le moment.
-        </p>
+        <div class="etat-vide">
+          <div class="etat-vide__visuel visuel-substitution" aria-hidden="true"></div>
+          <p class="etat-vide__message" data-testid="coureur-vide">
+            Aucune course ouverte aux inscriptions pour le moment.
+          </p>
+          <p class="aide">Revenez plus tard : les prochaines courses apparaîtront ici.</p>
+        </div>
       } @else {
-        <ul class="liste" aria-label="Courses ouvertes" data-testid="coureur-liste-courses">
+        <ul class="grille-cartes" aria-label="Courses ouvertes" data-testid="coureur-liste-courses">
           @for (course of liste; track course.id) {
-            <li class="ligne" data-testid="coureur-ligne-course">
-              @if (course.logoUrl; as url) {
-                <img
-                  class="logo"
-                  [src]="url"
-                  [alt]="'Logo de ' + course.nom"
-                  data-testid="coureur-course-logo"
-                />
-              }
-              <div class="infos">
-                <span
-                  class="nom"
-                  [id]="'coureur-nom-' + course.id"
-                  data-testid="coureur-course-nom"
-                  >{{ course.nom }}</span
-                >
-                <time [attr.datetime]="course.date" data-testid="coureur-course-date">{{
-                  formaterDate(course.date)
-                }}</time>
-                <span data-testid="coureur-course-parametres">{{ parametres(course) }}</span>
-                <span data-testid="coureur-course-limites">{{ limites(course) }}</span>
+            <li class="carte-liste" data-testid="coureur-ligne-course">
+              <div class="carte-liste__visuel">
+                @if (course.logoUrl; as url) {
+                  <img
+                    [src]="url"
+                    [alt]="'Logo de ' + course.nom"
+                    data-testid="coureur-course-logo"
+                  />
+                } @else {
+                  <div class="visuel-substitution" aria-hidden="true"></div>
+                }
               </div>
+              <div class="course-entete">
+                <time
+                  class="date"
+                  [attr.datetime]="course.date"
+                  data-testid="coureur-course-date"
+                  >{{ formaterDate(course.date) }}</time
+                >
+                <h2 class="nom" [id]="'coureur-nom-' + course.id" data-testid="coureur-course-nom">
+                  {{ course.nom }}
+                </h2>
+              </div>
+              <p class="indicateur indicateur--distance" data-testid="coureur-course-parametres">
+                {{ parametres(course) }}
+              </p>
+              <p class="indicateur indicateur--boucles-max" data-testid="coureur-course-limites">
+                {{ limites(course) }}
+              </p>
               <div class="inscription">
                 @if (course.monInscription; as inscription) {
                   <span class="dossard" data-testid="coureur-dossard"
                     >Dossard {{ inscription.dossard }}</span
                   >
-                  <span class="statut" data-testid="coureur-statut-inscription">Inscrit</span>
+                  <span
+                    class="pastille-statut pastille-statut--en-course"
+                    data-testid="coureur-statut-inscription"
+                    >Inscrit</span
+                  >
                 } @else {
                   @if (course.complete) {
-                    <span class="complete" data-testid="coureur-course-complete">Complète</span>
+                    <span
+                      class="pastille-statut pastille-statut--en-cours"
+                      data-testid="coureur-course-complete"
+                      >Complète</span
+                    >
                   }
                   <button
                     type="button"
-                    class="ligne__action"
+                    class="bouton"
                     [disabled]="course.complete || envoiEnCours() !== null"
                     [attr.aria-busy]="envoiEnCours() === course.id"
                     [attr.aria-describedby]="'coureur-nom-' + course.id"
@@ -67,11 +86,7 @@
                 }
               </div>
               @if (erreurDeLaLigne(course.id); as message) {
-                <p
-                  class="erreur erreur--generale ligne__erreur"
-                  role="alert"
-                  data-testid="coureur-erreur"
-                >
+                <p class="erreur erreur--generale" role="alert" data-testid="coureur-erreur">
                   {{ message }}
                 </p>
               }

@@ -15,7 +15,7 @@ Univers : une boucle de 6,7 km refaite toutes les heures, en forêt, de jour. D�
 
 ## 2. Palette
 
-Le thème n'emploie aucune autre couleur (ni noir pur, ni blanc pur), à une exception près : le QR code d'une Inscription reste noir sur blanc pour la lecture par caméra.
+Le thème n'emploie aucune autre couleur (ni noir pur, ni blanc pur), à une exception près : le QR code d'une Inscription reste noir sur blanc pour la lecture par caméra. Cette exception est maintenue en contraste forcé (`forced-colors: active`) : le QR porte `forced-color-adjust: none`, car un QR recoloré ou inversé ne se scanne plus.
 
 | Variable | Hex | Usage |
 |---|---|---|
@@ -304,6 +304,26 @@ Désactivé (`:disabled`, envoi en cours) : fond `--couleur-desactive-fond`, tex
 - **Écran étroit et texte agrandi** : `main.page` de l'écran est un conteneur de requête (`container: page-gestion-courses / inline-size`) ; sous `15rem` de large (320 ou 360 px avec le texte à 200 %, jamais au texte normal), la carte de la page passe à `padding: var(--espace-3)`, la carte de course à `var(--espace-2)`, le panneau d'aperçu du logo à `var(--espace-2)` et les boutons de la carte et du logo à `padding-inline: var(--espace-3)` : la confirmation de suppression et l'aperçu tiennent dans la carte.
 - **État vide** `div.etat-vide` : centré, `padding: var(--espace-6)`, bordure 1px **pointillée** `--couleur-trait`, `border-radius: var(--rayon-m)`, fond sable ; visuel de substitution réduit (16 / 9, largeur bornée à 12rem), message (graisse 600, encre) puis `.aide`.
 
+**Carte de liste** (R.8a, feuille globale `styles/cartes.css`, partagée par les écrans en cartes : Espace coureur, Mes inscriptions, puis R.8b)
+- **Grille** `ul.grille-cartes` : `display: grid`, `grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--grille-min, 17rem)), 1fr))`, `align-items: stretch`, `gap: var(--espace-4)`, sans puce ni marge ; un écran ajuste la largeur minimale d'une colonne par `--grille-min`. Ordre de l'API (ordre du DOM = ordre de Tab, aucun `order`).
+- **Carte** `li.carte-liste` (jamais `.carte`) : mêmes règles que la carte de course de R.7 (fond surface, bordure 1px trait, `--rayon-m`, `--ombre-carte`, `padding: var(--espace-4)`, colonne flex à `gap: var(--espace-4)`, `min-width: 0` sur la carte et ses enfants, `overflow-wrap: anywhere`, aucun `overflow: hidden`).
+- **Visuel** `.carte-liste__visuel` : zone 16 / 9 pleine largeur, `--rayon-s`, fond sable ; enfant (`img` en `object-fit: contain` ou `div.visuel-substitution` décoratif, `aria-hidden`) en pleine zone.
+- `.carte-liste__action-pleine` (sur l'hôte d'un composant d'action) : son bouton direct `.ligne__action` occupe la largeur utile de la carte.
+- **État vide** `div.etat-vide` (bloc sable en pointillés, visuel réduit `.etat-vide__visuel.visuel-substitution`, message `.etat-vide__message`), même forme que R.7.
+- **Repli étroit** : le `main.page` de l'écran est le conteneur `cartes` (`container: cartes / inline-size`) ; sous `15rem` (320 ou 360 px avec le texte à 200 %), la carte de la page passe à `padding: var(--espace-3)` (règle de l'écran), la carte de liste à `var(--espace-2)` et ses boutons (ainsi que celui de l'état vide) à `padding-inline: var(--espace-3)`. La carte de la page de ces écrans est élargie à `64rem` et porte `overflow-wrap: anywhere` (titre `h1` coupé à 200 %).
+
+**Carte de Course ouverte** (R.8a, Espace coureur : `inscriptions/accueil-coureur/accueil-coureur.css`)
+- `li.carte-liste`, dans l'ordre : visuel (logo ou visuel de substitution), date (`--taille-grande`, graisse 700, forêt) puis nom en `h2` (`--taille-moyenne`, graisse 700, forêt, jamais tronqué), deux lignes `p.indicateur` (paramètres de la Boucle avec `indicateur--distance`, limites avec `indicateur--boucles-max` : pictogramme `::before` de 1.5rem à gauche du texte, encre), zone d'inscription (`margin-top: auto`, alignée au bas des cartes d'une rangée), erreur de la carte.
+- Zone d'inscription : inscrit = mini-dossard « Dossard N » (bordure 2px forêt, `--rayon-s`, `padding: var(--espace-1) var(--espace-3)`, `--taille-grande`, graisse 700, forêt sur surface) et pastille « Inscrit » (`pastille-statut--en-course`) ; non inscrit = pastille « Complète » (`pastille-statut--en-cours`) si la Course est complète, puis bouton principal `.bouton` « S'inscrire » pleine largeur (désactivé : couleurs de désactivation).
+
+**Dossard** (R.8a, Mes inscriptions : `inscriptions/mes-inscriptions/mes-inscriptions.css`, `qr-code/qr-code.css`)
+- `li.carte-liste.dossard-carte` (`--grille-min: 19rem`), bordure **2px solid forêt** ; la carte est un conteneur de taille (`container-type: inline-size`) pour la taille du numéro. Ordre : bande du numéro, en-tête de Course, zone du QR, désinscription.
+- **Bande du numéro** `.dossard-carte__numero` : colonne centrée, fond forêt, texte crème (11,86), `--rayon-s`, `padding: var(--espace-3) var(--espace-4)` (`--espace-2` en ligne dans le repli étroit) ; « Dossard N » graisse 700, interligne titre, centré, `font-size: clamp(var(--taille-grande), 12cqi, calc(var(--taille-titre) * 1.5))` (au plus 42 px ; 33 px dans une colonne de 314 px), `text-wrap: balance`, `overflow-wrap: anywhere` ; puis la pastille de statut de l'Inscription (section 8, couleurs propres).
+- **En-tête de Course** : vignette carrée de 4rem (logo en `contain` sur sable, ou visuel de substitution), à côté de la date, du nom en `h2` et de la pastille de statut de la Course ; passe sous la vignette quand la carte est trop étroite (`flex-wrap`).
+- **Ligne de découpe et zone du QR** `.dossard-carte__qr` : bordure haute 2px **pointillée** trait, `padding-top: var(--espace-4)`, colonne centrée (`gap: var(--espace-3)`) : QR code puis aide « Présentez ce QR code au bénévole à chaque passage. ».
+- **Règles de lecture du QR** : noir `#000` sur blanc `#fff` (21:1, attributs du SVG), fond blanc plein cadre contenant la zone de silence de 4 modules ; sur `.qr` et son hôte, aucun `padding`, `border`, `border-radius`, `clip-path`, `opacity`, `filter`, `transform` ni superposition. Taille `width: min(100%, 15rem)`, `aspect-ratio: 1` (240 px dès que la place le permet, 202 px à 320 px, environ 170 px à 320 px avec le texte à 200 %), centré, `forced-color-adjust: none`. Aucun jeton en texte ni attribut ; `role="img"` et `aria-label` « QR code de l'inscription, dossard N ».
+- **Désinscription** : dernier élément de la carte (`app-desinscription.carte-liste__action-pleine`, rien quand la Course a démarré) ; bouton danger-contour pleine largeur ; confirmation en ligne dans la carte.
+
 Sources des pictogrammes des indicateurs (tuiles d'au plus 1 024 octets décodées, une seule couleur, seul le canal alpha du masque compte) :
 
 ```svg
@@ -349,6 +369,7 @@ La capture `docs/images/design-apercu.png` est régénérée par le test E2E de 
 - **Orange jamais en texte sur fond clair** : `--couleur-orange` sur fond sombre ou en aplat ; sur crème, surface ou sable, utiliser `--couleur-orange-fonce`.
 - **Pas de `svg`, `img` ni `canvas` décoratif dans le DOM** : puces, filets et motifs en CSS (`::before`, `background`) ; seule exception : l'icône du menu burger de l'en-tête (section 7). Le décor backyard de l'accueil (`.decor-backyard`) est un fond CSS (`background-image` en URI `data:`), pas un `svg` du DOM : il respecte cette règle. De même, un **pictogramme décoratif** est un `mask-image` / `background-image` CSS en URI `data:` (jamais un `svg`, `img` ni `canvas` du DOM), déclaré dans une feuille globale (`decor.css`, `pictogrammes.css`) : les tuiles ne tiennent pas dans le budget `anyComponentStyle` d'un composant.
 - Réutiliser les classes partagées (`.bouton*`, `.message--*`, `.pastille-statut*`, `.carte`, `.champ`) plutôt que de redéfinir un style ; les alias historiques disparaissent quand les templates adoptent ces classes.
+- **QR code** : tout composant qui montre un QR code garde son fond blanc plein cadre, sa zone de silence (4 modules) et sa taille minimale (240 px quand la place le permet, jamais moins de 200 px à 320 px au texte normal), noir sur blanc y compris en contraste forcé (`forced-color-adjust: none`).
 - Cibles tactiles de 44 px minimum, texte de 13 px minimum, contour de focus `3px solid` toujours visible, aucun défilement horizontal à 320 px.
 - Tout contenu d'une carte (titre, libellés, aides, messages, boutons, liens, textes saisis par l'utilisateur) doit rester dans la carte à 320 px avec le texte à 200 % : couper les mots trop longs (`overflow-wrap: anywhere`) plutôt que laisser déborder.
 - La couleur ne porte jamais seule une information : toujours un libellé en texte.

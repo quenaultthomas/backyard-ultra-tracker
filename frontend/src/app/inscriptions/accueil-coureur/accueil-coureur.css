@@ -1,66 +1,69 @@
+/* Grille de cartes de Course ouverte (cartes.css) : 3 colonnes sur grand écran. */
 .carte {
-  max-width: 40rem;
-}
-
-.liste {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--couleur-trait);
-}
-
-.ligne {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--espace-3);
-  padding: var(--espace-3) 0;
-  border-bottom: 1px solid var(--couleur-trait);
-}
-
-/* Logo contenu dans 48 × 48 px, proportions conservées. */
-.logo {
-  flex: none;
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-}
-
-.infos {
-  flex: 1 1 12rem;
-  display: flex;
-  flex-direction: column;
-  gap: var(--espace-1);
-  min-width: 0;
-}
-
-.nom {
-  font-weight: 600;
+  max-width: 64rem;
   overflow-wrap: anywhere;
 }
 
-.inscription {
+/* Conteneur de requête : la largeur mesurée en rem suit l'agrandissement du texte. */
+.page {
+  container: cartes / inline-size;
+}
+
+@container cartes (max-width: 15rem) {
+  .carte {
+    padding: var(--espace-3);
+  }
+}
+
+.course-entete {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: var(--espace-1);
 }
 
-.dossard {
+.date {
+  font-size: var(--taille-grande);
   font-weight: var(--poids-gras);
-  font-size: var(--taille-moyenne);
-}
-
-.statut {
   color: var(--couleur-foret);
-  font-weight: var(--poids-moyen);
 }
 
-.complete {
-  color: var(--couleur-orange-fonce);
-  font-weight: 600;
+.nom {
+  margin: 0;
+  font-size: var(--taille-moyenne);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
+  overflow-wrap: anywhere;
 }
 
-.ligne__erreur {
-  flex-basis: 100%;
+/* Pictogramme décoratif (pictogrammes.css) à gauche du texte, qui reste la seule information. */
+.indicateur {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-2);
+  margin: 0;
+  color: var(--couleur-encre);
+}
+
+/* Bas de carte : aligné d'une carte à l'autre dans une même rangée. */
+.inscription {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espace-2) var(--espace-3);
+  margin-top: auto;
+}
+
+.inscription .bouton {
+  flex: 1 1 100%;
+}
+
+/* Mini-dossard. */
+.dossard {
+  padding: var(--espace-1) var(--espace-3);
+  border: 2px solid var(--couleur-foret);
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-surface);
+  font-size: var(--taille-grande);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
 }
