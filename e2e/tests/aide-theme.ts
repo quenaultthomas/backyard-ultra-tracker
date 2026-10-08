@@ -355,6 +355,48 @@ export const ETATS: Scene[] = [
       await expect(page.getByTestId('inscriptions-vide')).toBeVisible();
     },
   },
+  {
+    nom: 'espace benevole vide',
+    route: '/benevole',
+    role: 'benevole',
+    pret: async (page) => {
+      await page.route('**/api/benevole/courses', (route) =>
+        route.request().method() === 'GET'
+          ? route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+          : route.continue(),
+      );
+      await page.reload();
+      await expect(page.getByTestId('accueil-benevole-vide')).toBeVisible();
+    },
+  },
+  {
+    nom: 'gestion des admins vide',
+    route: '/administration/admins',
+    role: 'master',
+    pret: async (page) => {
+      await page.route('**/api/administration/admins', (route) =>
+        route.request().method() === 'GET'
+          ? route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+          : route.continue(),
+      );
+      await page.reload();
+      await expect(page.getByTestId('admins-vide')).toBeVisible();
+    },
+  },
+  {
+    nom: 'gestion des benevoles vide',
+    route: '/administration/benevoles',
+    role: 'master',
+    pret: async (page) => {
+      await page.route('**/api/administration/benevoles', (route) =>
+        route.request().method() === 'GET'
+          ? route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+          : route.continue(),
+      );
+      await page.reload();
+      await expect(page.getByTestId('benevoles-vide')).toBeVisible();
+    },
+  },
 ];
 
 export function cheminDe(scene: Scene, jeu: JeuReference): string {

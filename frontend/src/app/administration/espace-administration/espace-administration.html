@@ -1,4 +1,4 @@
-<main class="page">
+<main class="page page--cartes">
   <section class="carte" aria-labelledby="titre-administration">
     <h1 id="titre-administration" class="titre" data-testid="titre-administration">
       Administration
@@ -15,17 +15,45 @@
       <p class="message" data-testid="administration-vide">
         Aucune fonctionnalité d'administration pour le moment.
       </p>
-      <a class="lien" routerLink="/administration/courses" data-testid="lien-gestion-courses">
-        Gérer les courses
-      </a>
-      <a class="lien" routerLink="/administration/benevoles" data-testid="lien-gestion-benevoles">
-        Gérer les bénévoles
-      </a>
-      @if (peutGererAdmins()) {
-        <a class="lien" routerLink="/administration/admins" data-testid="lien-gestion-admins">
-          Gérer les administrateurs
-        </a>
-      }
+      <ul class="grille-cartes grille-cartes--navigation" aria-label="Administration">
+        <li class="carte-liste">
+          <h2 class="carte-liste__titre">Courses</h2>
+          <p class="carte-liste__texte">
+            Déclarer les courses, les démarrer et suivre les coureurs.
+          </p>
+          <a
+            class="bouton carte-liste__pied"
+            routerLink="/administration/courses"
+            data-testid="lien-gestion-courses"
+          >
+            Gérer les courses
+          </a>
+        </li>
+        <li class="carte-liste">
+          <h2 class="carte-liste__titre">Bénévoles</h2>
+          <p class="carte-liste__texte">Créer les comptes des bénévoles.</p>
+          <a
+            class="bouton carte-liste__pied"
+            routerLink="/administration/benevoles"
+            data-testid="lien-gestion-benevoles"
+          >
+            Gérer les bénévoles
+          </a>
+        </li>
+        @if (peutGererAdmins()) {
+          <li class="carte-liste">
+            <h2 class="carte-liste__titre">Administrateurs</h2>
+            <p class="carte-liste__texte">Créer les comptes des administrateurs.</p>
+            <a
+              class="bouton carte-liste__pied"
+              routerLink="/administration/admins"
+              data-testid="lien-gestion-admins"
+            >
+              Gérer les administrateurs
+            </a>
+          </li>
+        }
+      </ul>
     }
   </section>
 </main>

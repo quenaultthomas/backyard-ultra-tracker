@@ -88,10 +88,50 @@
 }
 
 /*
+ * Variante de page des écrans en cartes (R.8b) : `main.page.page--cartes` est le conteneur `cartes`,
+ * sa carte est élargie (`--carte-largeur`, 64rem par défaut) et coupe les mots trop longs.
+ */
+.page--cartes {
+  container: cartes / inline-size;
+}
+
+.page--cartes > .carte {
+  max-width: var(--carte-largeur, 64rem);
+  overflow-wrap: anywhere;
+}
+
+/* Titre et pied de carte, partagés par les cartes sans feuille propre (carte de navigation). */
+.carte-liste__titre {
+  margin: 0;
+  font-size: var(--taille-moyenne);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
+  overflow-wrap: anywhere;
+}
+
+.carte-liste__texte {
+  margin: 0;
+  color: var(--couleur-encre);
+}
+
+/* Aligné au bas des cartes d'une rangée. */
+.carte-liste__pied {
+  margin-top: auto;
+}
+
+.grille-cartes--navigation {
+  --grille-min: 15rem;
+}
+
+/*
  * Écran étroit et texte agrandi : `.page` de chaque écran est le conteneur `cartes`.
  * Moins de 15rem (320 ou 360 px avec le texte à 200 %, jamais au texte normal) : marges réduites.
  */
 @container cartes (max-width: 15rem) {
+  .page--cartes > .carte {
+    padding: var(--espace-3);
+  }
+
   .carte-liste {
     padding: var(--espace-2);
   }

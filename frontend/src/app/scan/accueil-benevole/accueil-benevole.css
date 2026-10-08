@@ -1,34 +1,17 @@
-.liste {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--couleur-trait);
-}
-
-.ligne {
-  display: flex;
-  align-items: center;
-  gap: var(--espace-3);
-  padding: var(--espace-3) 0;
-  border-bottom: 1px solid var(--couleur-trait);
-}
-
-/* Logo contenu dans 48 × 48 px, proportions conservées. */
-.logo {
-  flex: none;
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-}
-
-.infos {
+/* Grille de cartes de Course (cartes.css, variante .page--cartes) : 3 colonnes sur grand écran. */
+.course-entete {
   display: flex;
   flex-direction: column;
   gap: var(--espace-1);
-  min-width: 0;
 }
 
-.nom {
-  font-weight: 600;
-  overflow-wrap: anywhere;
+.date {
+  font-size: var(--taille-grande);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
+}
+
+/* Pastille de statut au bas de la carte, alignée d'une carte à l'autre. */
+.statut {
+  align-self: flex-start;
 }
