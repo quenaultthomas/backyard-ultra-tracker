@@ -1,29 +1,34 @@
-/* Liste des Comptes gérés, en complément des styles de carte et de formulaire. */
-.carte {
-  max-width: 32rem;
+/* Comptes gérés en cartes (cartes.css, variante .page--cartes) : 2 colonnes dès 514 px de fenêtre. */
+.page {
+  --carte-largeur: 40rem;
 }
 
-.liste {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--couleur-trait);
+.grille-cartes {
+  --grille-min: 13rem;
 }
 
-.ligne {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--espace-1) var(--espace-4);
-  padding: var(--espace-2) 0;
-  border-bottom: 1px solid var(--couleur-trait);
+.compte {
+  gap: var(--espace-1);
+  padding: var(--espace-3);
 }
 
 .ligne__pseudo {
-  font-weight: 600;
+  display: block;
+  font-size: var(--taille-moyenne);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
   overflow-wrap: anywhere;
 }
 
 .ligne__date {
+  font-size: var(--taille-secondaire);
   color: var(--couleur-encre-douce);
+}
+
+/* Formulaire de création en encart sable (contrastes : design.md, section 3). */
+.encart {
+  padding: var(--espace-4);
+  border: 1px solid var(--couleur-trait);
+  border-radius: var(--rayon-m);
+  background-color: var(--couleur-sable);
 }

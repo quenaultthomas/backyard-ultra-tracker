@@ -311,6 +311,20 @@ Désactivé (`:disabled`, envoi en cours) : fond `--couleur-desactive-fond`, tex
 - `.carte-liste__action-pleine` (sur l'hôte d'un composant d'action) : son bouton direct `.ligne__action` occupe la largeur utile de la carte.
 - **État vide** `div.etat-vide` (bloc sable en pointillés, visuel réduit `.etat-vide__visuel.visuel-substitution`, message `.etat-vide__message`), même forme que R.7.
 - **Repli étroit** : le `main.page` de l'écran est le conteneur `cartes` (`container: cartes / inline-size`) ; sous `15rem` (320 ou 360 px avec le texte à 200 %), la carte de la page passe à `padding: var(--espace-3)` (règle de l'écran), la carte de liste à `var(--espace-2)` et ses boutons (ainsi que celui de l'état vide) à `padding-inline: var(--espace-3)`. La carte de la page de ces écrans est élargie à `64rem` et porte `overflow-wrap: anywhere` (titre `h1` coupé à 200 %).
+- **Variante de page `.page--cartes`** (R.8b) : `main.page.page--cartes` est le conteneur `cartes` ; sa carte `> .carte` prend `max-width: var(--carte-largeur, 64rem)` et `overflow-wrap: anywhere`, et passe à `padding: var(--espace-3)` dans le repli étroit. Un écran ajuste la largeur par `--carte-largeur` sur `.page` (Comptes : `40rem`). Utilisée par l'Espace bénévole, la gestion des Comptes et l'accueil Administration ; l'Espace coureur et Mes inscriptions gardent leurs règles propres (dédoublonnage en R.9).
+- **Titre, texte et pied partagés** (cartes sans feuille propre) : `.carte-liste__titre` (`h2`, `margin: 0`, `--taille-moyenne`, graisse 700, forêt, `overflow-wrap: anywhere`), `.carte-liste__texte` (`margin: 0`, encre), `.carte-liste__pied` (`margin-top: auto`, aligné au bas des cartes d'une rangée).
+
+**Carte de Course du bénévole** (R.8b, Espace bénévole : `scan/accueil-benevole/accueil-benevole.css`)
+- `li.carte-liste` (`--grille-min` 17rem par défaut) **sans action** (ni lien, ni bouton, ni focus, ni `cursor: pointer`) : visuel (logo ou visuel de substitution), date (`--taille-grande`, graisse 700, forêt), nom en `h2.carte-liste__titre`, pastille de statut de la Course en `.carte-liste__pied` (`align-self: flex-start`). État vide : `.etat-vide` avec l'aide « Les courses auxquelles un administrateur vous affecte apparaîtront ici. ».
+
+**Carte de Compte** (R.8b, gestion des administrateurs et des bénévoles : `administration/gestion-comptes/gestion-comptes.css`)
+- Page à `--carte-largeur: 40rem`, grille à `--grille-min: 13rem` (2 colonnes dès 514 px de fenêtre) ; `li.carte-liste` resserrée (`gap: var(--espace-1)`, `padding: var(--espace-3)`) : pseudo (`.ligne__pseudo`, bloc, `--taille-moyenne`, graisse 700, forêt, coupé) puis « Créé le jj/mm/aaaa à HH:mm » (`.ligne__date`, `--taille-secondaire`, encre-douce). Aucun titre par carte. État vide : `.etat-vide` avec l'aide « Créez-en un avec le formulaire ci-dessous. ».
+
+**Encart de formulaire** (R.8b, création de Compte)
+- `form.formulaire.encart` : bordure 1px trait, `--rayon-m`, `padding: var(--espace-4)`, fond sable (encre / sable 12,06, encre-douce / sable 5,89) ; champs, messages et bouton principal inchangés, message de succès et erreur générale en tête ; les liens de retour restent hors de l'encart.
+
+**Carte de navigation** (R.8b, accueil Administration, sans feuille de composant)
+- `ul.grille-cartes.grille-cartes--navigation` (`--grille-min: 15rem`) de `li.carte-liste` : `h2.carte-liste__titre`, `p.carte-liste__texte` descriptif, puis `a.bouton.carte-liste__pied` (bouton principal pleine largeur, aligné au bas de la rangée), seul arrêt de Tab de la carte.
 
 **Carte de Course ouverte** (R.8a, Espace coureur : `inscriptions/accueil-coureur/accueil-coureur.css`)
 - `li.carte-liste`, dans l'ordre : visuel (logo ou visuel de substitution), date (`--taille-grande`, graisse 700, forêt) puis nom en `h2` (`--taille-moyenne`, graisse 700, forêt, jamais tronqué), deux lignes `p.indicateur` (paramètres de la Boucle avec `indicateur--distance`, limites avec `indicateur--boucles-max` : pictogramme `::before` de 1.5rem à gauche du texte, encre), zone d'inscription (`margin-top: auto`, alignée au bas des cartes d'une rangée), erreur de la carte.
@@ -373,4 +387,5 @@ La capture `docs/images/design-apercu.png` est régénérée par le test E2E de 
 - Cibles tactiles de 44 px minimum, texte de 13 px minimum, contour de focus `3px solid` toujours visible, aucun défilement horizontal à 320 px.
 - Tout contenu d'une carte (titre, libellés, aides, messages, boutons, liens, textes saisis par l'utilisateur) doit rester dans la carte à 320 px avec le texte à 200 % : couper les mots trop longs (`overflow-wrap: anywhere`) plutôt que laisser déborder.
 - La couleur ne porte jamais seule une information : toujours un libellé en texte.
+- Tout écran en grille de cartes utilise `.page--cartes` et `--carte-largeur` plutôt que de recopier le conteneur de requête et la largeur de la carte de la page.
 - **`[hidden]` ne suffit pas** sur un élément dont une règle d'auteur fixe `display` (par exemple `.formulaire { display: flex }`) : la règle d'auteur l'emporte sur celle du navigateur. Prévoir une règle explicite `[hidden] { display: none }` (ex. `.formulaire[hidden]`, `menu-burger.css`).

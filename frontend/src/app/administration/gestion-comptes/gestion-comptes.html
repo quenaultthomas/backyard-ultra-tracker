@@ -1,7 +1,7 @@
 @let geres = comptesGeres();
 @let p = geres.prefixe;
 @let pp = geres.prefixePluriel;
-<main class="page">
+<main class="page page--cartes">
   <section class="carte" [attr.aria-labelledby]="'titre-' + pp">
     <h1 [id]="'titre-' + pp" class="titre" [attr.data-testid]="'titre-' + pp">
       {{ geres.titre }}
@@ -15,11 +15,17 @@
         </p>
       } @else if (comptes(); as liste) {
         @if (liste.length === 0) {
-          <p class="message" [attr.data-testid]="pp + '-vide'">{{ geres.listeVide }}</p>
+          <div class="etat-vide">
+            <div class="etat-vide__visuel visuel-substitution" aria-hidden="true"></div>
+            <p class="etat-vide__message" [attr.data-testid]="pp + '-vide'">
+              {{ geres.listeVide }}
+            </p>
+            <p class="aide">Créez-en un avec le formulaire ci-dessous.</p>
+          </div>
         } @else {
-          <ul class="liste" [attr.data-testid]="'liste-' + pp">
+          <ul class="grille-cartes" [attr.data-testid]="'liste-' + pp">
             @for (compte of liste; track compte.id) {
-              <li class="ligne" [attr.data-testid]="'ligne-' + p">
+              <li class="carte-liste compte" [attr.data-testid]="'ligne-' + p">
                 <span class="ligne__pseudo">{{ compte.pseudo }}</span>
                 <span class="ligne__date">
                   Créé le
@@ -37,7 +43,7 @@
     </section>
 
     <form
-      class="formulaire"
+      class="formulaire encart"
       [formGroup]="formulaire"
       (ngSubmit)="soumettre()"
       novalidate
