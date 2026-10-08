@@ -326,6 +326,35 @@ export const ETATS: Scene[] = [
       await expect(ligne.getByTestId('inscriptions-confirmation-desinscription')).toBeVisible();
     },
   },
+  {
+    nom: 'courses ouvertes vide',
+    route: '/coureur',
+    role: 'coureur',
+    pret: async (page) => {
+      // La liste est interceptée à `[]` puis la page est rechargée pour que l'état vide soit rendu.
+      await page.route('**/api/coureur/courses', (route) =>
+        route.request().method() === 'GET'
+          ? route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+          : route.continue(),
+      );
+      await page.reload();
+      await expect(page.getByTestId('coureur-vide')).toBeVisible();
+    },
+  },
+  {
+    nom: 'mes inscriptions vide',
+    route: '/coureur/inscriptions',
+    role: 'coureur',
+    pret: async (page) => {
+      await page.route('**/api/coureur/inscriptions', (route) =>
+        route.request().method() === 'GET'
+          ? route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+          : route.continue(),
+      );
+      await page.reload();
+      await expect(page.getByTestId('inscriptions-vide')).toBeVisible();
+    },
+  },
 ];
 
 export function cheminDe(scene: Scene, jeu: JeuReference): string {

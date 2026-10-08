@@ -1,39 +1,80 @@
+/* Grille de dossards (cartes.css) : 3 colonnes dès 1 026 px de fenêtre, 2 dès 706 px. */
 .carte {
-  max-width: 40rem;
+  max-width: 64rem;
+  overflow-wrap: anywhere;
 }
 
-.liste {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--couleur-trait);
+/* Conteneur de requête : la largeur mesurée en rem suit l'agrandissement du texte. */
+.page {
+  container: cartes / inline-size;
 }
 
-.ligne {
+@container cartes (max-width: 15rem) {
+  .carte {
+    padding: var(--espace-3);
+  }
+
+  .dossard-carte__numero {
+    padding-inline: var(--espace-2);
+  }
+}
+
+.grille-cartes {
+  --grille-min: 19rem;
+}
+
+/* Dossard : bordure forêt ; conteneur de la taille du numéro (unités cqi). */
+.dossard-carte {
+  container-type: inline-size;
+  border: 2px solid var(--couleur-foret);
+}
+
+/* Bande du numéro : « Dossard N » en grand et statut de l'Inscription. */
+.dossard-carte__numero {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: var(--espace-3);
-  padding: var(--espace-4) 0;
-  border-bottom: 1px solid var(--couleur-trait);
+  align-items: center;
+  gap: var(--espace-2);
+  padding: var(--espace-3) var(--espace-4);
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-foret);
+  color: var(--couleur-creme);
 }
 
+.dossard {
+  display: block;
+  max-width: 100%;
+  font-size: clamp(var(--taille-grande), 12cqi, calc(var(--taille-titre) * 1.5));
+  font-weight: var(--poids-gras);
+  line-height: var(--interligne-titre);
+  text-align: center;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+/* En-tête de Course : vignette carrée de 4rem à côté (ou, trop étroit, au-dessus) du texte. */
 .course {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: var(--espace-3);
-  min-width: 0;
 }
 
-/* Logo contenu dans 48 × 48 px, proportions conservées. */
-.logo {
+.vignette {
   flex: none;
-  width: 48px;
-  height: 48px;
+  box-sizing: border-box;
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--rayon-s);
+}
+
+.logo {
   object-fit: contain;
+  background-color: var(--couleur-sable);
 }
 
 .infos {
+  flex: 1 1 8rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -41,19 +82,28 @@
   min-width: 0;
 }
 
+.date {
+  font-size: var(--taille-grande);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
+}
+
 .nom {
-  font-weight: 600;
+  margin: 0;
+  max-width: 100%;
+  font-size: var(--taille-moyenne);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
   overflow-wrap: anywhere;
 }
 
-.inscription {
+/* Zone du QR, sous la ligne de découpe du dossard. */
+.dossard-carte__qr {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--espace-1) var(--espace-4);
-}
-
-.dossard {
-  font-size: var(--taille-titre);
-  font-weight: var(--poids-gras);
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espace-3);
+  padding-top: var(--espace-4);
+  border-top: 2px dashed var(--couleur-trait);
+  text-align: center;
 }

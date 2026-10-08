@@ -1,0 +1,104 @@
+/*
+ * Écrans en grille de cartes (Espace coureur, Mes inscriptions ; R.8b : Espace bénévole, comptes).
+ * Sources : docs/design.md, section 7, « Carte de liste ».
+ */
+
+/* Grille : ordre de l'API, de gauche à droite puis ligne par ligne (aucun `order`). */
+.grille-cartes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--grille-min, 17rem)), 1fr));
+  align-items: stretch;
+  gap: var(--espace-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Jamais `.carte` (réservée à la carte de la page), jamais `overflow: hidden` (contour de focus). */
+.carte-liste {
+  box-sizing: border-box;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-4);
+  padding: var(--espace-4);
+  border: 1px solid var(--couleur-trait);
+  border-radius: var(--rayon-m);
+  background-color: var(--couleur-surface);
+  box-shadow: var(--ombre-carte);
+  overflow-wrap: anywhere;
+}
+
+.carte-liste > * {
+  min-width: 0;
+}
+
+/* Visuel 16 / 9 : logo contenu (ni déformé ni recadré) ou visuel de substitution. */
+.carte-liste__visuel {
+  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-sable);
+}
+
+.carte-liste__visuel > * {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.carte-liste__visuel > img {
+  object-fit: contain;
+}
+
+/* Bouton pleine largeur utile de la carte (désinscription). */
+.carte-liste__action-pleine > .ligne__action {
+  align-self: stretch;
+}
+
+/* Liste vide : bloc sable en pointillés, visuel de substitution réduit (décoratif). */
+.etat-vide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espace-3);
+  padding: var(--espace-6);
+  border: 1px dashed var(--couleur-trait);
+  border-radius: var(--rayon-m);
+  background-color: var(--couleur-sable);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.etat-vide__visuel {
+  display: block;
+  width: 100%;
+  max-width: 12rem;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--rayon-s);
+}
+
+.etat-vide__message {
+  margin: 0;
+  font-weight: 600;
+  color: var(--couleur-encre);
+}
+
+/*
+ * Écran étroit et texte agrandi : `.page` de chaque écran est le conteneur `cartes`.
+ * Moins de 15rem (320 ou 360 px avec le texte à 200 %, jamais au texte normal) : marges réduites.
+ */
+@container cartes (max-width: 15rem) {
+  .carte-liste {
+    padding: var(--espace-2);
+  }
+
+  .carte-liste .ligne__action,
+  .carte-liste .bouton,
+  .etat-vide .bouton {
+    padding-inline: var(--espace-3);
+  }
+}

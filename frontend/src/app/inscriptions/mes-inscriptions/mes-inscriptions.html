@@ -22,32 +22,50 @@
       </p>
     } @else if (inscriptions(); as liste) {
       @if (liste.length === 0) {
-        <p class="message" data-testid="inscriptions-vide">Vous n'êtes inscrit à aucune course.</p>
-        <a class="lien" routerLink="/coureur" data-testid="inscriptions-lien-courses-ouvertes">
-          Voir les courses ouvertes
-        </a>
+        <div class="etat-vide">
+          <div class="etat-vide__visuel visuel-substitution" aria-hidden="true"></div>
+          <p class="etat-vide__message" data-testid="inscriptions-vide">
+            Vous n'êtes inscrit à aucune course.
+          </p>
+          <a class="bouton" routerLink="/coureur" data-testid="inscriptions-lien-courses-ouvertes">
+            Voir les courses ouvertes
+          </a>
+        </div>
       } @else {
-        <ul class="liste" aria-label="Mes inscriptions" data-testid="inscriptions-liste">
+        <ul class="grille-cartes" aria-label="Mes inscriptions" data-testid="inscriptions-liste">
           @for (inscription of liste; track inscription.id) {
-            <li class="ligne" data-testid="inscriptions-ligne">
+            <li class="carte-liste dossard-carte" data-testid="inscriptions-ligne">
+              <div class="dossard-carte__numero">
+                <span class="dossard" data-testid="inscriptions-dossard"
+                  >Dossard {{ inscription.dossard }}</span
+                >
+                <span
+                  [class]="pastillesStatutInscription[inscription.statut]"
+                  data-testid="inscriptions-statut"
+                  >{{ libellesStatutInscription[inscription.statut] }}</span
+                >
+              </div>
               <div class="course">
                 @if (inscription.logoUrl; as url) {
                   <img
-                    class="logo"
+                    class="vignette logo"
                     [src]="url"
                     [alt]="'Logo de ' + inscription.courseNom"
                     data-testid="inscriptions-course-logo"
                   />
+                } @else {
+                  <div class="vignette visuel-substitution" aria-hidden="true"></div>
                 }
                 <div class="infos">
-                  <span class="nom" data-testid="inscriptions-course-nom">{{
-                    inscription.courseNom
-                  }}</span>
                   <time
+                    class="date"
                     [attr.datetime]="inscription.courseDate"
                     data-testid="inscriptions-course-date"
                     >{{ formaterDate(inscription.courseDate) }}</time
                   >
+                  <h2 class="nom" data-testid="inscriptions-course-nom">
+                    {{ inscription.courseNom }}
+                  </h2>
                   <span
                     [class]="pastillesStatutCourse[inscription.courseStatut]"
                     data-testid="inscriptions-course-statut"
@@ -55,19 +73,14 @@
                   >
                 </div>
               </div>
-              <div class="inscription">
-                <span class="dossard" data-testid="inscriptions-dossard"
-                  >Dossard {{ inscription.dossard }}</span
-                >
-                <span
-                  class="statut"
-                  [class]="pastillesStatutInscription[inscription.statut]"
-                  data-testid="inscriptions-statut"
-                  >{{ libellesStatutInscription[inscription.statut] }}</span
-                >
+              <div class="dossard-carte__qr">
+                <app-qr-code [contenu]="inscription.jetonQr" [libelle]="libelleQr(inscription)" />
+                <p class="aide" data-testid="inscriptions-aide-qr">
+                  Présentez ce QR code au bénévole à chaque passage.
+                </p>
               </div>
-              <app-qr-code [contenu]="inscription.jetonQr" [libelle]="libelleQr(inscription)" />
               <app-desinscription
+                class="carte-liste__action-pleine"
                 [inscription]="inscription"
                 [ouverte]="desinscriptionOuverte() === inscription.id"
                 (ouvrir)="desinscriptionOuverte.set(inscription.id)"

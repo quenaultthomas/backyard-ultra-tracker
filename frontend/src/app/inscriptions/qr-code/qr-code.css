@@ -1,10 +1,20 @@
 :host {
   display: block;
+  width: 100%;
 }
 
-/* 240 px : lisible par une caméra de téléphone. Exception à la palette : noir sur blanc (attributs du SVG). */
+/*
+ * Lisible par une caméra de téléphone : 240 px (15rem) dès que la place le permet, carré,
+ * réduit sans déborder dans une carte étroite. Exception à la palette : noir sur blanc
+ * (attributs du SVG), fond blanc plein cadre avec la zone de silence de 4 modules ; aucun
+ * padding, bordure, arrondi, filtre ni transformation ne doit l'entamer.
+ * Contraste forcé : un QR recoloré ou inversé ne se scanne plus, il reste noir sur blanc.
+ */
 .qr {
   display: block;
-  width: 240px;
-  height: 240px;
+  width: min(100%, 15rem);
+  height: auto;
+  aspect-ratio: 1;
+  margin-inline: auto;
+  forced-color-adjust: none;
 }

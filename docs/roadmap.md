@@ -169,8 +169,12 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 - **Livré** : liste admin en grille de cartes : visuel avec le logo (ou visuel de substitution au thème à la place de « Aucun logo »), nom, date mise en avant, pastille de statut, indicateurs avec icônes (distance, durée, dénivelé, participants max, boucles max), actions « Fiche » et « Modifier », « Choisir un logo » intégré à la carte. Plusieurs colonnes sur grand écran, une sur téléphone. État vide soigné.
 - **Tu testes** : avec le script de démo, la liste s'affiche en cartes avec toutes les données de l'ancienne liste ; logo, fiche et modification fonctionnent comme avant ; lisible sur téléphone.
 
-### R.8 Thème sur les écrans coureur, bénévole et gestion des comptes
-- **Livré** : Espace coureur, Mes inscriptions (dossard et QR mis en valeur façon dossard), écrans bénévole, gestion des comptes admins et bénévoles au thème : cartes, listes, boutons, messages, états vides.
+### R.8a Thème des écrans coureur
+- **Livré** : Espace coureur en cartes, Mes inscriptions (dossard et QR mis en valeur façon dossard), états vides. Aucun changement de comportement ni de messages.
+- **Tu testes** : parcourir `/coureur` et `/coureur/inscriptions` avec un compte coureur : cohérence visuelle, QR lisible au téléphone, aucune régression.
+
+### R.8b Thème des écrans bénévole et gestion des comptes
+- **Livré** : Espace bénévole en cartes, gestion des comptes admins et bénévoles au thème (liste, formulaire de création, états vides).
 - **Tu testes** : parcourir chaque écran avec le rôle concerné : cohérence visuelle, aucune régression.
 
 ### R.9 Fiche course, formulaires admin et finition
