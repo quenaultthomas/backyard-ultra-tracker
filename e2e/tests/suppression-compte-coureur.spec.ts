@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page, type PlaywrightWorkerArgs, type Request } from '@playwright/test';
+import { ouvrirMenuVisiteur } from './aide-entete';
 import { MOT_DE_PASSE, creerCompteParApi, ouvrirConnexion, pseudoUnique, saisir, seConnecter } from './aide-connexion';
 import {
   MOT_DE_PASSE_ADMIN_CREE,
@@ -301,8 +302,9 @@ test.describe('Supprimer son compte coureur', () => {
     const pseudo = await creerCoureur(playwright, 'Ian');
     await seConnecter(page, pseudo);
     await page.getByTestId('bouton-deconnexion').click();
-    await expect(page.getByTestId('lien-se-connecter')).toBeVisible();
-    await page.getByTestId('lien-se-connecter').click();
+    await expect(page.getByTestId('bouton-menu')).toBeVisible();
+    await ouvrirMenuVisiteur(page);
+    await page.getByTestId('menu-lien-se-connecter').click();
     await expect(page.getByTestId('titre-connexion')).toBeVisible();
     await expect(page.getByTestId('message-compte-supprime')).toHaveCount(0);
   });

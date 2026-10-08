@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ouvrirMenuVisiteur } from './aide-entete';
 import {
   MOT_DE_PASSE,
   creerCompteParApi,
@@ -20,12 +21,12 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
     await expect(page.getByTestId('bouton-deconnexion')).toBeVisible();
-    await expect(page.getByTestId('lien-se-connecter')).toHaveCount(0);
+    await expect(page.getByTestId('bouton-menu')).toHaveCount(0);
 
     await page.reload();
     await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
     await expect(page.getByTestId('bouton-deconnexion')).toBeVisible();
-    await expect(page.getByTestId('lien-se-connecter')).toHaveCount(0);
+    await expect(page.getByTestId('bouton-menu')).toHaveCount(0);
   });
 
   test('1.2 CA28 - la connexion avec le pseudo en majuscules donne le même résultat', async ({ page, request }) => {
@@ -39,7 +40,7 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
     await expect(page.getByTestId('bouton-deconnexion')).toBeVisible();
-    await expect(page.getByTestId('lien-se-connecter')).toHaveCount(0);
+    await expect(page.getByTestId('bouton-menu')).toHaveCount(0);
   });
 
   test('1.2 CA29 - mauvais mot de passe et pseudo inexistant donnent le même message générique', async ({ page, request }) => {
@@ -71,11 +72,11 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
 
     await expect(page).toHaveURL(/\/connexion$/);
     await expect(page.getByTestId('message-deconnexion')).toHaveText('Vous êtes déconnecté.');
-    await expect(page.getByTestId('lien-se-connecter')).toBeVisible();
+    await expect(page.getByTestId('bouton-menu')).toBeVisible();
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
 
     await page.reload();
-    await expect(page.getByTestId('lien-se-connecter')).toBeVisible();
+    await expect(page.getByTestId('bouton-menu')).toBeVisible();
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
     await expect(page.getByTestId('message-deconnexion')).toHaveCount(0);
 
@@ -122,10 +123,11 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     const pseudo = pseudoUnique();
     await page.goto('/');
     await expect(page.getByTestId('entete-titre')).toBeVisible();
-    await expect(page.getByTestId('lien-se-connecter')).toBeVisible();
+    await expect(page.getByTestId('bouton-menu')).toBeVisible();
     await expect(page.getByTestId('lien-creer-compte')).toBeVisible();
 
-    await page.getByTestId('lien-se-connecter').click();
+    await ouvrirMenuVisiteur(page);
+    await page.getByTestId('menu-lien-se-connecter').click();
     await expect(page).toHaveURL(/\/connexion$/);
     await expect(page.getByTestId('titre-connexion')).toBeVisible();
 
@@ -244,7 +246,7 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     await context.clearCookies({ name: 'JSESSIONID' });
     await page.reload();
 
-    await expect(page.getByTestId('lien-se-connecter')).toBeVisible();
+    await expect(page.getByTestId('bouton-menu')).toBeVisible();
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
   });
 
@@ -255,9 +257,10 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     await page.goto('/');
 
     await expect(page.getByTestId('titre')).toHaveText('Backyard Ultra Tracker');
-    await expect(page.getByTestId('lien-se-connecter')).toBeVisible();
+    await expect(page.getByTestId('bouton-menu')).toBeVisible();
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
-    await page.getByTestId('lien-se-connecter').click();
+    await ouvrirMenuVisiteur(page);
+    await page.getByTestId('menu-lien-se-connecter').click();
     await expect(page.getByTestId('titre-connexion')).toBeVisible();
   });
 
@@ -313,14 +316,15 @@ test.describe('Se connecter et se déconnecter (1.2)', () => {
     await page.goto('/');
 
     await expect(page.getByTestId('entete-titre')).toBeVisible();
-    await expect(page.getByTestId('lien-se-connecter')).toHaveCount(0);
+    await expect(page.getByTestId('bouton-menu')).toHaveCount(0);
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
 
-    await expect(page.getByTestId('lien-se-connecter')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('bouton-menu')).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
     await expect(page.getByTestId('titre')).toHaveText('Backyard Ultra Tracker');
 
-    await page.getByTestId('lien-se-connecter').click();
+    await ouvrirMenuVisiteur(page);
+    await page.getByTestId('menu-lien-se-connecter').click();
     await expect(page).toHaveURL(/\/connexion$/);
     await expect(page.getByTestId('titre-connexion')).toBeVisible();
   });

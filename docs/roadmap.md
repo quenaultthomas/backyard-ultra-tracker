@@ -158,7 +158,7 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 - **Tu testes** : http://localhost affiche le décor, plus aucune mention de l'API ; identique une fois connecté ; texte lisible sur le décor, y compris sur téléphone.
 
 ### R.5 Écrans de connexion et de création de compte
-- **Livré** : les deux écrans au nouveau thème (carte centrée sur le décor de fond), sans changement de comportement ni de messages.
+- **Livré** : les deux écrans au nouveau thème (carte centrée sur le décor de fond), sans changement de comportement ni de messages. À reprendre de R.2 (point ouvert 13) : le titre de l'écran de connexion déborde de sa carte avec un texte à 200 % à 320 px ; à corriger ici.
 - **Tu testes** : création de compte → connexion → déconnexion ; erreurs (mauvais mot de passe, pseudo pris, mot de passe trop court) toujours affichées.
 
 ### R.6 Mon compte : changement de mot de passe repliable

@@ -52,11 +52,14 @@ test('CA7 - l\'en-tête administrateur de l\'accueil a la charte et ses data-tes
 test('CA7 - l\'en-tête anonyme de la connexion a la charte et ses data-testid inchangés', async ({ page }) => {
   await ouvrirScene(page, ecran('connexion'), jeu);
   await stylesCommuns(page);
-  await expect(page.getByTestId('lien-se-connecter')).toHaveCSS('color', 'rgb(242, 140, 40)');
+  await expect(page.getByTestId('bouton-menu')).toHaveCSS('border-top-color', 'rgb(247, 241, 227)');
   const contenu = await contenuEntete(page);
   expect(contenu).toEqual([
     { testid: 'entete-titre', texte: 'Backyard Ultra Tracker' },
-    { testid: 'lien-se-connecter', texte: 'Se connecter' },
+    { testid: 'bouton-menu', texte: '' },
+    { testid: 'menu-visiteur', texte: 'Se connecter Créer un compte' },
+    { testid: 'menu-lien-se-connecter', texte: 'Se connecter' },
+    { testid: 'menu-lien-creer-compte', texte: 'Créer un compte' },
   ]);
 });
 

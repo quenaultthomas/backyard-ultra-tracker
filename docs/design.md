@@ -215,6 +215,12 @@ Désactivé (`:disabled`, envoi en cours) : fond `--couleur-desactive-fond`, tex
 
 **En-tête** : fond forêt, texte crème, filet inférieur 3px orange ; titre crème sans soulignement ; liens orange soulignés au survol et au focus ; bouton sur fond sombre.
 
+**Menu burger de l'en-tête** (visiteur non connecté, composant `app-menu-visiteur`, `frontend/src/app/entete/menu-visiteur/`) : affiché à droite du titre, sur la même ligne à toutes les largeurs (l'en-tête porte alors `.entete--visiteur` : pas de retour à la ligne, le titre se coupe si besoin).
+- `.menu-visiteur__bouton` : au moins `--cible-min` x `--cible-min` (44 px), fond transparent, bordure 1px et icône `--couleur-creme`, `border-radius: var(--rayon-s)`, fond `--couleur-foret-survol` au survol et menu ouvert, sans texte visible (nom accessible `aria-label`). Icône « tête » : `svg` inline 24 x 24 px en traits (`stroke="currentColor"`, épaisseur 2, extrémités arrondies), `aria-hidden="true"`, seule exception admise à la règle « pas de `svg` dans le DOM » (section 10), sans fichier ni police d'icônes.
+- `.menu-visiteur__panneau` (`nav`, attribut `hidden` quand il est fermé) : en absolu sous le bouton (`--espace-2`), bord droit sur celui de l'en-tête, fond `--couleur-foret`, `box-shadow: var(--ombre-carte)`, `border-radius: var(--rayon-m)`, largeur minimale 14rem bornée au viewport (`calc(100vw - 2 * var(--espace-4))`), padding vertical `--espace-2`.
+- `.menu-visiteur__lien` : ligne entière cliquable, hauteur `--cible-min`, `padding: var(--espace-3) var(--espace-4)`, texte crème graisse 600 non souligné (crème / forêt 11,86) ; survol et focus clavier : fond forêt-survol et soulignement (crème / forêt-survol 7,17) ; page courante (`aria-current="page"`, `.menu-visiteur__lien--courant`) : graisse 700 et filet gauche 4px `--couleur-orange` (jamais d'orange en texte). Contour de focus de l'en-tête (orange, 5,44 sur forêt, 3,29 sur forêt-survol). Aucune transition ni animation.
+- Pattern **disclosure navigation** (WAI-ARIA Authoring Practices), pas `menu` / `menuitem` : les entrées sont des liens de navigation, pas des commandes ; le pattern `menu` imposerait flèches, type-ahead et focus itinérant, et ferait passer les lecteurs d'écran en mode application là où le Tab est attendu. Le bouton porte `aria-expanded` et `aria-controls`, sans `aria-haspopup`. Fermeture par Échap (focus rendu au bouton), appui extérieur, sortie du focus, sélection d'une entrée ou changement de route ; aucun piège de focus ; à l'ouverture, le focus va sur la première entrée.
+
 ## 8. Pastilles de statut
 
 Classe de base `.pastille-statut` : `inline-flex`, `gap: var(--espace-2)`, `padding: 0.125rem 0.625rem`, `border-radius: var(--rayon-pastille)`, `--taille-petite`, graisse 700, bordure 1px, puce `::before` (cercle de 0,5rem de la couleur du texte, en CSS). Le libellé est toujours affiché en texte.
@@ -243,7 +249,7 @@ La capture `docs/images/design-apercu.png` est régénérée par le test E2E de 
 - **Variables uniquement** : aucune couleur, police, taille, espacement, rayon ni ombre en dur hors de `variables.css` ; toujours `var(--…)`. Une nouvelle valeur s'ajoute d'abord à la charte (ce document et `variables.css`), avec son ratio de contraste.
 - **Pas de couleur en dur**, pas de noir ni de blanc purs (seule exception : le QR code, noir sur blanc).
 - **Orange jamais en texte sur fond clair** : `--couleur-orange` sur fond sombre ou en aplat ; sur crème, surface ou sable, utiliser `--couleur-orange-fonce`.
-- **Pas de `svg`, `img` ni `canvas` décoratif dans le DOM** : puces, filets et motifs en CSS (`::before`, `background`).
+- **Pas de `svg`, `img` ni `canvas` décoratif dans le DOM** : puces, filets et motifs en CSS (`::before`, `background`) ; seule exception : l'icône du menu burger de l'en-tête (section 7).
 - Réutiliser les classes partagées (`.bouton*`, `.message--*`, `.pastille-statut*`, `.carte`, `.champ`) plutôt que de redéfinir un style ; les alias historiques disparaissent quand les templates adoptent ces classes.
 - Cibles tactiles de 44 px minimum, texte de 13 px minimum, contour de focus `3px solid` toujours visible, aucun défilement horizontal à 320 px.
 - La couleur ne porte jamais seule une information : toujours un libellé en texte.
