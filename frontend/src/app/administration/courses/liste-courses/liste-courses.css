@@ -1,33 +1,76 @@
+/* Grille de cartes de Course : ordre de l'API, de gauche à droite puis ligne par ligne. */
 .liste {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  align-items: stretch;
+  gap: var(--espace-4);
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid var(--couleur-trait);
 }
 
-.ligne {
+/* Jamais `.carte` : la carte de la page reste la seule mesurée comme telle. */
+.course-carte {
+  box-sizing: border-box;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--espace-2);
-  padding: var(--espace-3) 0;
-  border-bottom: 1px solid var(--couleur-trait);
-}
-
-.ligne__nom {
-  font-weight: 600;
+  gap: var(--espace-4);
+  padding: var(--espace-4);
+  border: 1px solid var(--couleur-trait);
+  border-radius: var(--rayon-m);
+  background-color: var(--couleur-surface);
+  box-shadow: var(--ombre-carte);
   overflow-wrap: anywhere;
 }
 
-.details {
+.course-carte > * {
+  min-width: 0;
+}
+
+.course-carte__entete {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-2);
+}
+
+.course-carte__repere {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espace-2) var(--espace-3);
+}
+
+.course-carte__date {
+  font-size: var(--taille-grande);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
+}
+
+.course-carte__nom {
+  margin: 0;
+  font-size: var(--taille-moyenne);
+  overflow-wrap: anywhere;
+}
+
+/* Indicateurs : pictogramme (pictogrammes.css) à gauche du libellé et de la valeur. */
+.indicateurs {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-  gap: var(--espace-2) var(--espace-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr));
+  gap: var(--espace-3) var(--espace-4);
   margin: 0;
 }
 
-.detail {
-  display: flex;
-  flex-direction: column;
+.indicateur {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--espace-2);
+  min-width: 0;
+}
+
+.indicateur::before {
+  grid-row: span 2;
 }
 
 dt {
@@ -37,10 +80,25 @@ dt {
 
 dd {
   margin: 0;
+  font-weight: 600;
+  color: var(--couleur-encre);
 }
 
-.ligne__actions {
+/* Actions au bas de la carte : alignées d'une carte à l'autre dans une même rangée. */
+.course-carte__actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--espace-3);
+  margin-top: auto;
+}
+
+/* Écran étroit et texte agrandi (conteneur défini par gestion-courses.css). */
+@container page-gestion-courses (max-width: 15rem) {
+  .course-carte {
+    padding: var(--espace-2);
+  }
+
+  .ligne__action {
+    padding-inline: var(--espace-3);
+  }
 }

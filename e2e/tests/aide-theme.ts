@@ -283,6 +283,21 @@ export const ETATS: Scene[] = [
     },
   },
   {
+    nom: 'gestion des courses vide',
+    route: '/administration/courses',
+    role: 'master',
+    pret: async (page) => {
+      // La liste est interceptée à `[]` puis la page est rechargée pour que l'état vide soit rendu.
+      await page.route('**/api/administration/courses', (route) =>
+        route.request().method() === 'GET'
+          ? route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+          : route.continue(),
+      );
+      await page.reload();
+      await expect(page.getByTestId('courses-vide')).toBeVisible();
+    },
+  },
+  {
     nom: 'mon compte avec confirmation de suppression',
     route: '/mon-compte',
     role: 'coureur',
