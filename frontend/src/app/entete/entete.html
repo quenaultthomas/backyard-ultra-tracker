@@ -1,49 +1,25 @@
-<header class="entete" [class.entete--visiteur]="session.etat() === 'ANONYME'">
+<header class="entete" [class.entete--menu]="session.etat() !== 'INCONNU'">
   <a class="entete__titre" routerLink="/" data-testid="entete-titre">Backyard Ultra Tracker</a>
 
+  <!-- Une instance par état : un changement de session détruit le menu et le recrée fermé. -->
   <div class="entete__compte">
     @switch (session.etat()) {
       @case ('ANONYME') {
-        <app-menu-visiteur />
+        <app-menu-burger
+          nomPanneau="Menu visiteur"
+          testidPanneau="menu-visiteur"
+          [entrees]="entreesVisiteur"
+        />
       }
       @case ('CONNECTE') {
-        <span class="entete__pseudo" data-testid="entete-pseudo">{{
-          session.compte()?.pseudo
-        }}</span>
-        @if (session.estAdministrateur()) {
-          <a class="entete__lien" routerLink="/administration" data-testid="lien-administration">
-            Administration
-          </a>
-        }
-        @if (session.estBenevole()) {
-          <a class="entete__lien" routerLink="/benevole" data-testid="lien-espace-benevole">
-            Espace bénévole
-          </a>
-        }
-        @if (session.estCoureur()) {
-          <a class="entete__lien" routerLink="/coureur" data-testid="lien-espace-coureur">
-            Espace coureur
-          </a>
-          <a
-            class="entete__lien"
-            routerLink="/coureur/inscriptions"
-            data-testid="lien-mes-inscriptions"
-          >
-            Mes inscriptions
-          </a>
-        }
-        <a class="entete__lien" routerLink="/mon-compte" data-testid="lien-mon-compte">
-          Mon compte
-        </a>
-        <button
-          type="button"
-          class="entete__bouton"
-          [disabled]="envoiEnCours()"
-          (click)="seDeconnecter()"
-          data-testid="bouton-deconnexion"
-        >
-          Se déconnecter
-        </button>
+        <app-menu-burger
+          nomPanneau="Menu utilisateur"
+          testidPanneau="menu-compte"
+          [pseudo]="session.compte()?.pseudo ?? null"
+          [entrees]="entreesCompte()"
+          [actionEnCours]="envoiEnCours()"
+          (action)="executer($event)"
+        />
       }
     }
   </div>

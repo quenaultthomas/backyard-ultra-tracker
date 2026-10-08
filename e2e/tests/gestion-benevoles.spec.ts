@@ -13,6 +13,7 @@ import {
   pseudoAdminUnique,
   pseudoBenevoleUnique,
 } from './aide-admin';
+import { fermerMenuCompte, ouvrirMenuCompte } from './aide-entete';
 
 test.beforeAll(() => {
   exigerIdentifiantsAdminMaster();
@@ -243,7 +244,9 @@ test.describe('Accueil bénévole', () => {
     await expect(page.getByTestId('accueil-benevole-titre')).toHaveText('Espace bénévole');
     await expect(page.getByTestId('accueil-benevole-vide')).toHaveText('Aucune course à scanner pour le moment.');
     await expect(page.getByTestId('entete-pseudo')).toHaveText(benevole);
-    await expect(page.getByTestId('lien-espace-benevole')).toBeVisible();
+    await ouvrirMenuCompte(page);
+    await expect(page.getByTestId('menu-lien-espace-benevole')).toBeVisible();
+    await fermerMenuCompte(page);
     await expect(page.getByRole('link', { name: 'Administration', exact: true })).toHaveCount(0);
 
     await page.reload();

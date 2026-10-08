@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { MOT_DE_PASSE, ouvrirConnexion, saisir } from './aide-connexion';
 import { connecterParApi } from './aide-admin';
+import { ouvrirMenuCompte } from './aide-entete';
 
 export interface Inscription {
   id: string;
@@ -31,7 +32,8 @@ export async function connecterCoureur(page: Page, pseudo: string, motDePasse = 
   await page.getByTestId('bouton-connexion').click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
-  await page.getByTestId('lien-espace-coureur').click();
+  await ouvrirMenuCompte(page);
+  await page.getByTestId('menu-lien-espace-coureur').click();
   await expect(page).toHaveURL(/\/coureur$/);
   await expect(page.getByTestId('coureur-titre')).toBeVisible();
 }

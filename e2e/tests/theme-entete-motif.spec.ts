@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { exigerIdentifiantsAdminMaster } from './aide-admin';
+import { ouvrirMenuCompte } from './aide-entete';
 import { BASE_URL, ECRANS, ouvrirScene, preparerJeuReference, type JeuReference } from './aide-theme';
 
 test.beforeAll(() => {
@@ -36,17 +37,24 @@ async function stylesCommuns(page: Page): Promise<void> {
   expect(fond.includes('data:image/svg+xml')).toBe(true);
 }
 
-test('CA7 - l\'en-tête administrateur de l\'accueil a la charte et ses data-testid inchangés', async ({ page }) => {
+test('CA7 - l\'en-tête administrateur de l\'accueil a la charte et ses data-testid', async ({ page }) => {
   await ouvrirScene(page, { ...ecran('accueil'), role: 'master' }, jeu);
-  await expect(page.getByTestId('lien-administration')).toBeVisible();
+  await ouvrirMenuCompte(page);
+  await expect(page.getByTestId('menu-lien-administration')).toBeVisible();
   await stylesCommuns(page);
-  await expect(page.getByTestId('lien-administration')).toHaveCSS('color', 'rgb(242, 140, 40)');
+  await expect(page.getByTestId('menu-lien-administration')).toHaveCSS('color', 'rgb(247, 241, 227)');
+  const pseudo = (await page.getByTestId('entete-pseudo').textContent()) ?? '';
+  expect(pseudo).not.toBe('');
   const contenu = await contenuEntete(page);
-  expect(contenu.map((c) => c.testid)).toEqual(['entete-titre', 'entete-pseudo', 'lien-administration', 'lien-mon-compte', 'bouton-deconnexion']);
-  expect(contenu.find((c) => c.testid === 'entete-titre')?.texte).toBe('Backyard Ultra Tracker');
-  expect(contenu.find((c) => c.testid === 'lien-administration')?.texte).toBe('Administration');
-  expect(contenu.find((c) => c.testid === 'lien-mon-compte')?.texte).toBe('Mon compte');
-  expect(contenu.find((c) => c.testid === 'bouton-deconnexion')?.texte).toBe('Se déconnecter');
+  expect(contenu).toEqual([
+    { testid: 'entete-titre', texte: 'Backyard Ultra Tracker' },
+    { testid: 'bouton-menu', texte: '' },
+    { testid: 'menu-compte', texte: `Connecté en tant que ${pseudo} Administration Mon compte Se déconnecter` },
+    { testid: 'entete-pseudo', texte: pseudo },
+    { testid: 'menu-lien-administration', texte: 'Administration' },
+    { testid: 'menu-lien-mon-compte', texte: 'Mon compte' },
+    { testid: 'bouton-deconnexion', texte: 'Se déconnecter' },
+  ]);
 });
 
 test('CA7 - l\'en-tête anonyme de la connexion a la charte et ses data-testid inchangés', async ({ page }) => {
@@ -63,15 +71,22 @@ test('CA7 - l\'en-tête anonyme de la connexion a la charte et ses data-testid i
   ]);
 });
 
-test('CA7 - l\'en-tête coureur de « Mes inscriptions » a la charte et ses data-testid inchangés', async ({ page }) => {
+test('CA7 - l\'en-tête coureur de « Mes inscriptions » a la charte et ses data-testid', async ({ page }) => {
   await ouvrirScene(page, ecran('mes inscriptions'), jeu);
+  await ouvrirMenuCompte(page);
   await stylesCommuns(page);
-  await expect(page.getByTestId('lien-mes-inscriptions')).toHaveCSS('color', 'rgb(242, 140, 40)');
+  await expect(page.getByTestId('menu-lien-mes-inscriptions')).toHaveCSS('color', 'rgb(247, 241, 227)');
   const contenu = await contenuEntete(page);
-  expect(contenu.map((c) => c.testid)).toEqual(['entete-titre', 'entete-pseudo', 'lien-espace-coureur', 'lien-mes-inscriptions', 'lien-mon-compte', 'bouton-deconnexion']);
-  expect(contenu.find((c) => c.testid === 'entete-pseudo')?.texte).toBe(jeu.coureur);
-  expect(contenu.find((c) => c.testid === 'lien-espace-coureur')?.texte).toBe('Espace coureur');
-  expect(contenu.find((c) => c.testid === 'lien-mes-inscriptions')?.texte).toBe('Mes inscriptions');
+  expect(contenu).toEqual([
+    { testid: 'entete-titre', texte: 'Backyard Ultra Tracker' },
+    { testid: 'bouton-menu', texte: '' },
+    { testid: 'menu-compte', texte: `Connecté en tant que ${jeu.coureur} Espace coureur Mes inscriptions Mon compte Se déconnecter` },
+    { testid: 'entete-pseudo', texte: jeu.coureur },
+    { testid: 'menu-lien-espace-coureur', texte: 'Espace coureur' },
+    { testid: 'menu-lien-mes-inscriptions', texte: 'Mes inscriptions' },
+    { testid: 'menu-lien-mon-compte', texte: 'Mon compte' },
+    { testid: 'bouton-deconnexion', texte: 'Se déconnecter' },
+  ]);
 });
 
 test('CA8 - le motif de fond est une tuile SVG conforme (courbes de niveau et une boucle fermée)', async ({ page, request }) => {

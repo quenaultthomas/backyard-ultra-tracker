@@ -20,7 +20,8 @@ for (const nom of ['connexion', 'gestion des courses', 'mes inscriptions']) {
     await ouvrirScene(page, ecran(nom), jeu);
     await page.mouse.move(0, 0);
     const arrets = await parcourirAuTab(page, 40);
-    expect(arrets.length).toBeGreaterThan(3);
+    // R.3 : connecté, l'en-tête ne compte plus qu'un arrêt (menu fermé) au lieu de quatre liens alignés.
+    expect(arrets.length).toBeGreaterThan(nom === 'mes inscriptions' ? 2 : 3);
     // Ordre : 0, 1, 2… dans l'ordre du DOM.
     expect(arrets.map((a) => a.index)).toEqual(arrets.map((_a, i) => i));
     expect(arrets.some((a) => a.dansEntete), 'au moins un arrêt dans l\'en-tête').toBe(true);

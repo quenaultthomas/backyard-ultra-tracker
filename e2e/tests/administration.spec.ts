@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { creerCompteParApi, MOT_DE_PASSE, ouvrirConnexion, pseudoUnique, saisir, seConnecter } from './aide-connexion';
+import { fermerMenuCompte, ouvrirMenuCompte, seDeconnecterParLeMenu } from './aide-entete';
 
 const PSEUDO_ADMIN = process.env.E2E_ADMIN_MASTER_PSEUDO ?? '';
 const MOT_DE_PASSE_ADMIN = process.env.E2E_ADMIN_MASTER_MOT_DE_PASSE ?? '';
@@ -29,7 +30,9 @@ test.describe('Espace d\'administration', () => {
     await expect(page.getByTestId('administration-role')).toHaveText('Administrateur master');
     await expect(page.getByTestId('administration-vide')).toBeVisible();
     await expect(page.getByTestId('entete-pseudo')).toHaveText(PSEUDO_ADMIN);
-    await expect(page.getByTestId('lien-administration')).toBeVisible();
+    await ouvrirMenuCompte(page);
+    await expect(page.getByTestId('menu-lien-administration')).toBeVisible();
+    await fermerMenuCompte(page);
 
     const acces = await page.request.get('/api/administration/acces');
     expect(acces.status()).toBe(204);
@@ -39,7 +42,7 @@ test.describe('Espace d\'administration', () => {
     const pseudo = pseudoUnique();
     await creerCompteParApi(request, pseudo);
     await seConnecter(page, pseudo);
-    await expect(page.getByTestId('lien-administration')).toHaveCount(0);
+    await expect(page.getByTestId('menu-lien-administration')).toHaveCount(0);
 
     await page.goto('/administration');
     await expect(page).toHaveURL(/\/acces-refuse$/);
@@ -70,7 +73,7 @@ test.describe('Espace d\'administration', () => {
     await page.getByTestId('bouton-connexion').click();
     await expect(page).toHaveURL(/\/administration$/);
     await expect(page.getByTestId('titre-administration')).toBeVisible();
-    await page.getByTestId('bouton-deconnexion').click();
+    await seDeconnecterParLeMenu(page);
     await expect(page.getByTestId('message-deconnexion')).toBeVisible();
 
     const pseudo = pseudoUnique();
@@ -80,7 +83,7 @@ test.describe('Espace d\'administration', () => {
     await page.getByTestId('bouton-connexion').click();
     await expect(page).toHaveURL(/\/acces-refuse$/);
     await page.goto('/');
-    await page.getByTestId('bouton-deconnexion').click();
+    await seDeconnecterParLeMenu(page);
     await expect(page.getByTestId('message-deconnexion')).toBeVisible();
 
     await ouvrirConnexion(page, '/connexion?retour=//exemple.org');
@@ -100,8 +103,9 @@ test.describe('Espace d\'administration', () => {
 
     await page.goto('/');
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByTestId('lien-administration')).toBeVisible();
-    await page.getByTestId('lien-administration').click();
+    await ouvrirMenuCompte(page);
+    await expect(page.getByTestId('menu-lien-administration')).toBeVisible();
+    await page.getByTestId('menu-lien-administration').click();
     await expect(page).toHaveURL(/\/administration$/);
     await expect(page.getByTestId('titre-administration')).toBeVisible();
   });
@@ -135,7 +139,7 @@ test.describe('Espace d\'administration', () => {
   test('1.4 CA29 - la déconnexion de l\'admin ferme l\'espace d\'administration', async ({ page }) => {
     await connecterAdmin(page);
 
-    await page.getByTestId('bouton-deconnexion').click();
+    await seDeconnecterParLeMenu(page);
     await expect(page).toHaveURL(/\/connexion$/);
     await expect(page.getByTestId('message-deconnexion')).toHaveText('Vous êtes déconnecté.');
 

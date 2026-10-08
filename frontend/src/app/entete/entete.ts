@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -10,12 +17,13 @@ import {
   MESSAGE_SERVICE_INDISPONIBLE,
   lireProbleme,
 } from '../partage/probleme';
-import { MenuVisiteur } from './menu-visiteur/menu-visiteur';
+import { ACTION_DECONNEXION, entreesMenu } from './entrees-menu';
+import { MenuBurger } from './menu-burger/menu-burger';
 
-/** En-tête global : nom de l'application et état de connexion. */
+/** En-tête global : nom de l'application et menu burger selon l'état de connexion. */
 @Component({
   selector: 'app-entete',
-  imports: [MenuVisiteur, RouterLink],
+  imports: [MenuBurger, RouterLink],
   templateUrl: './entete.html',
   styleUrl: './entete.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,8 +36,19 @@ export class Entete {
 
   protected readonly envoiEnCours = signal(false);
   protected readonly erreur = signal<string | null>(null);
+  protected readonly entreesVisiteur = entreesMenu(null);
+  protected readonly entreesCompte = computed(() => {
+    const compte = this.session.compte();
+    return compte ? entreesMenu(compte.role) : [];
+  });
 
-  protected seDeconnecter(): void {
+  protected executer(action: string): void {
+    if (action === ACTION_DECONNEXION) {
+      this.seDeconnecter();
+    }
+  }
+
+  private seDeconnecter(): void {
     if (this.envoiEnCours()) {
       return;
     }
