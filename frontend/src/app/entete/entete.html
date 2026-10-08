@@ -1,12 +1,10 @@
-<header class="entete">
+<header class="entete" [class.entete--visiteur]="session.etat() === 'ANONYME'">
   <a class="entete__titre" routerLink="/" data-testid="entete-titre">Backyard Ultra Tracker</a>
 
   <div class="entete__compte">
     @switch (session.etat()) {
       @case ('ANONYME') {
-        <a class="entete__lien" routerLink="/connexion" data-testid="lien-se-connecter">
-          Se connecter
-        </a>
+        <app-menu-visiteur />
       }
       @case ('CONNECTE') {
         <span class="entete__pseudo" data-testid="entete-pseudo">{{

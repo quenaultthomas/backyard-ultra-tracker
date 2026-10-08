@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Browser, type Locator, type Page, type PlaywrightWorkerArgs, type Request } from '@playwright/test';
+import { ouvrirMenuVisiteur } from './aide-entete';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import jsQR from 'jsqr';
@@ -304,7 +305,7 @@ test.describe('Mes inscriptions', () => {
 
     // Anonyme : pas de lien, redirection puis retour sur l'écran après connexion.
     await page.goto('/');
-    await expect(page.getByTestId('lien-se-connecter')).toBeVisible();
+    await expect(page.getByTestId('bouton-menu')).toBeVisible();
     await expect(page.getByTestId('lien-mes-inscriptions')).toHaveCount(0);
     await page.goto('/coureur/inscriptions');
     await expect(page).toHaveURL(RETOUR);

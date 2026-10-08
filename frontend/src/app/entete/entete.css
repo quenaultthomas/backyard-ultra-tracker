@@ -48,6 +48,21 @@
   outline-color: var(--couleur-focus-sur-fonce);
 }
 
+/* Visiteur : le bouton du menu reste à droite du titre, qui passe à la ligne si besoin. */
+.entete--visiteur {
+  flex-wrap: nowrap;
+}
+
+.entete--visiteur .entete__titre {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.entete--visiteur .entete__compte {
+  flex: none;
+  margin-left: auto;
+}
+
 .entete__erreur {
   flex-basis: 100%;
 }

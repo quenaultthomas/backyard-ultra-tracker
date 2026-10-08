@@ -1,0 +1,84 @@
+/* Menu burger du visiteur : bouton à icône et panneau ancré au bord droit de l'en-tête. */
+:host {
+  position: relative;
+  display: flex;
+  flex: none;
+}
+
+.menu-visiteur__bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: var(--cible-min);
+  min-height: var(--cible-min);
+  padding: 0;
+  border: 1px solid var(--couleur-creme);
+  border-radius: var(--rayon-s);
+  background-color: transparent;
+  color: var(--couleur-creme);
+  cursor: pointer;
+}
+
+.menu-visiteur__bouton:hover,
+.menu-visiteur__bouton[aria-expanded='true'] {
+  background-color: var(--couleur-foret-survol);
+}
+
+.menu-visiteur__bouton svg {
+  flex: none;
+}
+
+/* Bord droit sur celui de l'en-tête (son padding horizontal est --espace-4). */
+.menu-visiteur__panneau {
+  position: absolute;
+  top: calc(100% + var(--espace-2));
+  right: calc(-1 * var(--espace-4));
+  z-index: 10;
+  box-sizing: border-box;
+  min-width: min(14rem, calc(100vw - 2 * var(--espace-4)));
+  max-width: calc(100vw - 2 * var(--espace-4));
+  padding: var(--espace-2) 0;
+  border-radius: var(--rayon-m);
+  background-color: var(--couleur-foret);
+  box-shadow: var(--ombre-carte);
+}
+
+.menu-visiteur__panneau[hidden] {
+  display: none;
+}
+
+.menu-visiteur__liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menu-visiteur__lien {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: var(--cible-min);
+  padding: var(--espace-3) var(--espace-4);
+  color: var(--couleur-creme);
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.menu-visiteur__lien:hover,
+.menu-visiteur__lien:focus-visible {
+  background-color: var(--couleur-foret-survol);
+  text-decoration: underline;
+}
+
+.menu-visiteur__lien--courant {
+  font-weight: var(--poids-gras);
+  border-left: 4px solid var(--couleur-orange);
+}
+
+/* Le contour orange de l'en-tête (entete.css) ne traverse pas l'encapsulation des styles. */
+.menu-visiteur__bouton:focus-visible,
+.menu-visiteur__lien:focus-visible {
+  outline-color: var(--couleur-focus-sur-fonce);
+}

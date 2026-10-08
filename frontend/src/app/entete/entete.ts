@@ -10,11 +10,12 @@ import {
   MESSAGE_SERVICE_INDISPONIBLE,
   lireProbleme,
 } from '../partage/probleme';
+import { MenuVisiteur } from './menu-visiteur/menu-visiteur';
 
 /** En-tête global : nom de l'application et état de connexion. */
 @Component({
   selector: 'app-entete',
-  imports: [RouterLink],
+  imports: [MenuVisiteur, RouterLink],
   templateUrl: './entete.html',
   styleUrl: './entete.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
