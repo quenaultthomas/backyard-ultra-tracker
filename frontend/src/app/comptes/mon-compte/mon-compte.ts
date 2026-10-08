@@ -2,10 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  Injector,
   OnInit,
+  afterNextRender,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -44,8 +48,8 @@ const ERREURS_SPECIFIQUES: ErreursSpecifiques<ChampMotDePasse> = {
 };
 
 /**
- * Écran « Mon compte » de tout Compte connecté : identité, changement du mot de passe et, pour un
- * coureur, suppression du Compte.
+ * Écran « Mon compte » de tout Compte connecté : identité, changement du mot de passe (section
+ * repliable, repliée à l'arrivée) et, pour un coureur, suppression du Compte.
  */
 @Component({
   selector: 'app-mon-compte',
@@ -59,6 +63,9 @@ export class MonCompte implements OnInit {
   private readonly csrf = inject(CsrfService);
   private readonly refusAcces = inject(RefusAccesService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
+  private readonly boutonSection =
+    viewChild.required<ElementRef<HTMLButtonElement>>('boutonSection');
 
   protected readonly compte = this.session.compte;
   /** Simple aide d'affichage : l'API refuse la suppression aux autres rôles (403). */
@@ -80,6 +87,7 @@ export class MonCompte implements OnInit {
     { validators: confirmationIdentiqueA('nouveauMotDePasse') },
   );
 
+  protected readonly deplie = signal(false);
   protected readonly envoiEnCours = signal(false);
   protected readonly soumis = signal(false);
   protected readonly succes = signal(false);
@@ -87,6 +95,18 @@ export class MonCompte implements OnInit {
 
   ngOnInit(): void {
     this.demanderJeton();
+  }
+
+  /** Bascule la section, sans appel réseau ; le focus reste sur le bouton de section. */
+  protected basculer(): void {
+    if (this.deplie()) {
+      this.viderFormulaire();
+      this.erreursServeur.set({});
+      this.deplie.set(false);
+    } else {
+      this.succes.set(false);
+      this.deplie.set(true);
+    }
   }
 
   protected soumettre(): void {
@@ -108,7 +128,7 @@ export class MonCompte implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: () => this.succes.set(true),
+        next: () => this.replierApresSucces(),
         error: (erreur: unknown) => this.traiterErreur(erreur),
       });
   }
@@ -148,11 +168,28 @@ export class MonCompte implements OnInit {
     }
   }
 
+  /**
+   * Le bouton « Changer le mot de passe » disparaît avec le panneau : le focus va sur le bouton de
+   * section, une fois celui-ci réactivé par la fin de l'envoi.
+   */
+  private replierApresSucces(): void {
+    this.succes.set(true);
+    this.deplie.set(false);
+    afterNextRender(() => this.boutonSection().nativeElement.focus(), {
+      injector: this.injector,
+    });
+  }
+
   /** Les mots de passe ne sont jamais conservés après un envoi, quel qu'en soit le résultat. */
   private terminerEnvoi(): void {
+    this.viderFormulaire();
+    this.envoiEnCours.set(false);
+  }
+
+  /** Vide les champs : aucun mot de passe n'est conservé dans un panneau replié. */
+  private viderFormulaire(): void {
     this.formulaire.reset();
     this.soumis.set(false);
-    this.envoiEnCours.set(false);
   }
 
   private demanderJeton(): void {
