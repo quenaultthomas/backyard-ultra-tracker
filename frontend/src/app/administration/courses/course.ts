@@ -49,10 +49,15 @@ export interface CourseReponse {
   logoUrl: string | null;
 }
 
-/** Fiche renvoyée par `GET /api/administration/courses/{id}` et `PUT .../{id}/benevoles` (200). */
+/**
+ * Fiche renvoyée par `GET /api/administration/courses/{id}`, `PUT .../{id}/benevoles` et
+ * `POST .../{id}/demarrage` (200).
+ */
 export interface FicheCourseReponse extends CourseReponse {
   /** Identifiants des Comptes `BENEVOLE` affectés, triés par l'API, `[]` si aucun. */
   benevoleIds: string[];
+  /** Heure de départ (instant ISO-8601 UTC, à la seconde), `null` sans heure enregistrée. */
+  demarreeLe: string | null;
 }
 
 /** Ligne de `InscritsCourseReponse` : jamais de jeton QR ni d'identifiant de Compte. */

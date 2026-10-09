@@ -48,11 +48,11 @@ class CourseDeclarationTest {
     }
 
     @Test
-    @DisplayName("CA1 - la Course n'expose ni logo, ni bénévoles, ni démarréeLe en 2.1a")
-    void doit_ne_pas_exposer_logo_benevoles_ni_demarree_le() {
+    @DisplayName("CA1 - la Course n'expose ni logo, ni bénévoles en 2.1a")
+    void doit_ne_pas_exposer_logo_ni_benevoles() {
         List<String> accesseurs = Arrays.stream(Course.class.getMethods()).map(Method::getName).toList();
 
-        assertThat(accesseurs).doesNotContain("logo", "benevoles", "demarreeLe");
+        assertThat(accesseurs).doesNotContain("logo", "benevoles");
     }
 
     // ---------- CA2 ----------

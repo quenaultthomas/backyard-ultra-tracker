@@ -663,7 +663,8 @@ class ModificationCourseIntegrationTest {
                 ACCES_REFUSE_DETAIL);
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                "0006-affectation-benevole", "0007-inscription");
+                "0006-affectation-benevole", "0007-inscription",
+                "0008-demarrage-course");
     }
 
     // ---------------------------------------------------------------- utilitaires

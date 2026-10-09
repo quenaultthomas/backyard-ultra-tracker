@@ -64,7 +64,8 @@ class DesinscriptionIntegrationTest {
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final List<String> CHANGESETS = List.of("0002-compte", "0003-admin-master-unique", "0004-course",
-            "0005-logo-course", "0006-affectation-benevole", "0007-inscription");
+            "0005-logo-course", "0006-affectation-benevole", "0007-inscription",
+                "0008-demarrage-course");
     static final String INTROUVABLE_DETAIL = "L'inscription est introuvable.";
     static final String IMPOSSIBLE_DETAIL = "La course n'est plus en préparation : la désinscription est impossible.";
 
@@ -461,7 +462,7 @@ class DesinscriptionIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA11 : aucun nouveau changeset (0002 à 0007), ddl-auto=validate ; logo, /api/sante, /api/csrf publics ; administration et bénévole gardent leurs rôles")
+    @DisplayName("CA11 : aucun nouveau changeset (0002 à 0008), ddl-auto=validate ; logo, /api/sante, /api/csrf publics ; administration et bénévole gardent leurs rôles")
     void ca11_aucune_migration_et_non_regression() throws Exception {
         Scenario s = scenarioXY();
         assertThat(supprimer(alice, idInscription(s.x, idAlice)).statusCode()).isEqualTo(204);

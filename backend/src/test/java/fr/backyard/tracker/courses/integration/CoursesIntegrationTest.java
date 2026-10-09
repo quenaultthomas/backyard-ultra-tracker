@@ -624,7 +624,8 @@ class CoursesIntegrationTest {
     void ca18_changesets_et_absence_de_cle_etrangere() {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                "0006-affectation-benevole", "0007-inscription");
+                "0006-affectation-benevole", "0007-inscription",
+                "0008-demarrage-course");
         assertThat(environnement.getProperty("spring.jpa.hibernate.ddl-auto")).isEqualTo("validate");
         assertThat(jdbc.queryForObject("select count(*) from information_schema.table_constraints "
                 + "where constraint_type = 'FOREIGN KEY' and table_name in ('course', 'compte')", Integer.class))
@@ -642,7 +643,7 @@ class CoursesIntegrationTest {
                 + "is_nullable from information_schema.columns where table_name = 'course' order by column_name");
         assertThat(colonnes).extracting(c -> c.get("column_name")).containsExactlyInAnyOrder("id", "nom",
                 "date_course", "statut", "distance_boucle_metres", "duree_boucle_minutes",
-                "denivele_positif_boucle_metres", "nombre_max_participants", "nombre_max_boucles");
+                "denivele_positif_boucle_metres", "nombre_max_participants", "nombre_max_boucles", "demarree_le");
         Map<String, Map<String, Object>> parNom = new java.util.HashMap<>();
         colonnes.forEach(c -> parNom.put((String) c.get("column_name"), c));
         assertThat(parNom.get("id").get("data_type")).isEqualTo("uuid");
@@ -655,7 +656,11 @@ class CoursesIntegrationTest {
                 "denivele_positif_boucle_metres", "nombre_max_participants", "nombre_max_boucles")) {
             assertThat(parNom.get(entier).get("data_type")).isEqualTo("integer");
         }
-        colonnes.forEach(c -> assertThat(c.get("is_nullable")).as(c.get("column_name").toString()).isEqualTo("NO"));
+        // 4.1 RG16 : demarree_le (0008) est la seule colonne nullable.
+        assertThat(parNom.get("demarree_le").get("data_type")).isEqualTo("timestamp with time zone");
+        assertThat(parNom.get("demarree_le").get("is_nullable")).isEqualTo("YES");
+        colonnes.stream().filter(c -> !"demarree_le".equals(c.get("column_name")))
+                .forEach(c -> assertThat(c.get("is_nullable")).as(c.get("column_name").toString()).isEqualTo("NO"));
         assertThat(jdbc.queryForList("select conname from pg_constraint where conrelid = 'course'::regclass "
                 + "order by conname", String.class)).containsExactlyInAnyOrder("pk_course", "ck_course_statut",
                 "ck_course_distance_boucle_metres", "ck_course_duree_boucle_minutes",

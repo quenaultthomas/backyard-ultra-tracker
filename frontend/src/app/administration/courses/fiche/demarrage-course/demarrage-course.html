@@ -1,0 +1,72 @@
+@if (visible()) {
+  @let c = fiche();
+  <section class="formulaire" aria-labelledby="titre-demarrage">
+    <h2 id="titre-demarrage" class="sous-titre">Démarrage</h2>
+
+    @if (messageSucces(); as message) {
+      <p class="message--succes" role="status" data-testid="fiche-message-demarrage">
+        {{ message }}
+      </p>
+    }
+
+    @if (demarrable()) {
+      <p class="aide" data-testid="fiche-aide-demarrage">
+        Le démarrage n'est possible que le jour de la course et si au moins un coureur est inscrit.
+        Il lance la première boucle immédiatement.
+      </p>
+      <button
+        #boutonDemarrer
+        type="button"
+        class="bouton"
+        [disabled]="envoiEnCours()"
+        [attr.aria-expanded]="confirmationOuverte()"
+        (click)="ouvrirConfirmation()"
+        data-testid="fiche-bouton-demarrer"
+      >
+        Démarrer la course
+      </button>
+    }
+
+    @if (erreur(); as message) {
+      <p class="message--erreur" role="alert" data-testid="fiche-erreur-demarrage">
+        {{ message }}
+      </p>
+    }
+
+    @if (demarrable() && confirmationOuverte()) {
+      <div
+        class="encart confirmation"
+        role="group"
+        aria-labelledby="confirmation-demarrage-texte"
+        data-testid="fiche-confirmation-demarrage"
+      >
+        <p id="confirmation-demarrage-texte" class="confirmation__texte">
+          Démarrer la course {{ c.nom }} maintenant ? Le départ de la première boucle est immédiat.
+          Les inscriptions et les désinscriptions seront fermées et les paramètres de la course ne
+          pourront plus être modifiés. Cette action est irréversible.
+        </p>
+        <div class="confirmation__actions">
+          <button
+            type="button"
+            class="bouton"
+            [disabled]="envoiEnCours()"
+            (click)="confirmer()"
+            data-testid="fiche-bouton-confirmer-demarrage"
+          >
+            Démarrer maintenant
+          </button>
+          <button
+            #boutonAnnuler
+            type="button"
+            class="bouton bouton--secondaire"
+            [disabled]="envoiEnCours()"
+            (click)="annuler()"
+            data-testid="fiche-bouton-annuler-demarrage"
+          >
+            Annuler
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+}

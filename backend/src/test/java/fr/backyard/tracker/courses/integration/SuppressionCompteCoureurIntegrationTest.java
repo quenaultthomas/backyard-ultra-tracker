@@ -67,7 +67,8 @@ class SuppressionCompteCoureurIntegrationTest {
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final List<String> CHANGESETS = List.of("0002-compte", "0003-admin-master-unique", "0004-course",
-            "0005-logo-course", "0006-affectation-benevole", "0007-inscription");
+            "0005-logo-course", "0006-affectation-benevole", "0007-inscription",
+                "0008-demarrage-course");
     static final String NOM_P1 = "Backyard Quartz Premier";
     static final String NOM_P2 = "Backyard Quartz Second";
     static final String NOM_C = "Backyard Quartz Courant";
@@ -589,7 +590,7 @@ class SuppressionCompteCoureurIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA12 : aucune migration ajoutée (databasechangelog 0002 à 0007), schéma valide")
+    @DisplayName("CA12 : aucune migration ajoutée (databasechangelog 0002 à 0008), schéma valide")
     void ca12_aucune_migration() {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .isEqualTo(CHANGESETS);

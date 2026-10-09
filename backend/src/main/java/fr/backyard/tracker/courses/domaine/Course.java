@@ -1,17 +1,21 @@
 package fr.backyard.tracker.courses.domaine;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 /**
  * Racine d'agrégat : une édition de backyard. Une Course ne se crée que par {@link #declarer} et ne change que par
  * {@link #modifier}, qui appliquent les mêmes règles de saisie : aucune Course invalide n'existe en mémoire.
- * Les bénévoles affectés (identifiants de Comptes) ne changent que par {@link #affecterBenevoles}.
+ * Les bénévoles affectés (identifiants de Comptes) ne changent que par {@link #affecterBenevoles}. Le passage à
+ * EN_COURS et l'heure de départ ne viennent que de {@link #demarrer}.
  */
 public final class Course {
 
@@ -27,10 +31,12 @@ public final class Course {
     private final ParametresBoucle parametresBoucle;
     private final int nombreMaxParticipants;
     private final int nombreMaxBoucles;
+    private final Instant demarreeLe;
     private Set<UUID> benevolesAffectes;
 
     private Course(UUID id, String nom, LocalDate date, StatutCourse statut, ParametresBoucle parametresBoucle,
-                   int nombreMaxParticipants, int nombreMaxBoucles, Collection<UUID> benevolesAffectes) {
+                   int nombreMaxParticipants, int nombreMaxBoucles, Collection<UUID> benevolesAffectes,
+                   Instant demarreeLe) {
         this.id = id;
         this.nom = nom;
         this.date = date;
@@ -39,6 +45,7 @@ public final class Course {
         this.nombreMaxParticipants = nombreMaxParticipants;
         this.nombreMaxBoucles = nombreMaxBoucles;
         this.benevolesAffectes = ensembleNonModifiable(benevolesAffectes);
+        this.demarreeLe = demarreeLe;
     }
 
     /**
@@ -56,7 +63,7 @@ public final class Course {
                 denivelePositifBoucleMetres, nombreMaxParticipants, nombreMaxBoucles);
         return new Course(UUID.randomUUID(), nomSaisi, date, StatutCourse.EN_PREPARATION,
                 new ParametresBoucle(distanceBoucleMetres, dureeBoucleMinutes, denivelePositifBoucleMetres),
-                nombreMaxParticipants, nombreMaxBoucles, Set.of());
+                nombreMaxParticipants, nombreMaxBoucles, Set.of(), null);
     }
 
     /**
@@ -79,7 +86,33 @@ public final class Course {
                 denivelePositifBoucleMetres, nombreMaxParticipants, nombreMaxBoucles);
         return new Course(id, nomSaisi, date, statut,
                 new ParametresBoucle(distanceBoucleMetres, dureeBoucleMinutes, denivelePositifBoucleMetres),
-                nombreMaxParticipants, nombreMaxBoucles, benevolesAffectes);
+                nombreMaxParticipants, nombreMaxBoucles, benevolesAffectes, demarreeLe);
+    }
+
+    /**
+     * Démarre une Course EN_PREPARATION le jour de sa date et avec au moins une Inscription : la Course renvoyée est
+     * EN_COURS, partie à {@code maintenant} tronqué à la seconde (départ de la Boucle 1) ; celle-ci n'est pas
+     * affectée. Contrôles dans l'ordre : statut, date, inscrits. Unique définition de cette règle.
+     *
+     * @param maintenant instant du démarrage, lu une seule fois sur l'horloge par l'appelant
+     * @param aujourdhui date du jour des Courses, calculée par l'appelant à partir du même instant
+     * @param nombreInscriptions nombre d'Inscriptions de la Course, tous statuts confondus
+     * @throws CourseNonDemarrableException la Course n'est plus EN_PREPARATION
+     * @throws CourseHorsDateException la date de la Course n'est pas celle du jour
+     * @throws CourseSansInscritException la Course n'a aucune Inscription
+     */
+    public Course demarrer(Instant maintenant, LocalDate aujourdhui, int nombreInscriptions) {
+        if (statut != StatutCourse.EN_PREPARATION) {
+            throw new CourseNonDemarrableException(id);
+        }
+        if (!date.equals(aujourdhui)) {
+            throw new CourseHorsDateException(id);
+        }
+        if (nombreInscriptions <= 0) {
+            throw new CourseSansInscritException(id);
+        }
+        return new Course(id, nom, date, StatutCourse.EN_COURS, parametresBoucle, nombreMaxParticipants,
+                nombreMaxBoucles, benevolesAffectes, maintenant.truncatedTo(ChronoUnit.SECONDS));
     }
 
     /**
@@ -217,8 +250,22 @@ public final class Course {
     public static Course reconstituer(UUID id, String nom, LocalDate date, StatutCourse statut,
                                       ParametresBoucle parametresBoucle, int nombreMaxParticipants,
                                       int nombreMaxBoucles, Collection<UUID> benevolesAffectes) {
+        return reconstituer(id, nom, date, statut, parametresBoucle, nombreMaxParticipants, nombreMaxBoucles,
+                benevolesAffectes, null);
+    }
+
+    /**
+     * Reconstitue une Course déjà enregistrée avec ses bénévoles affectés et son heure de départ, sans revalider la
+     * saisie.
+     *
+     * @param demarreeLe heure de départ, null si la Course n'a pas démarré ou n'a pas d'heure enregistrée
+     */
+    public static Course reconstituer(UUID id, String nom, LocalDate date, StatutCourse statut,
+                                      ParametresBoucle parametresBoucle, int nombreMaxParticipants,
+                                      int nombreMaxBoucles, Collection<UUID> benevolesAffectes,
+                                      Instant demarreeLe) {
         return new Course(id, nom, date, statut, parametresBoucle, nombreMaxParticipants, nombreMaxBoucles,
-                benevolesAffectes);
+                benevolesAffectes, demarreeLe);
     }
 
     public UUID id() {
@@ -247,6 +294,11 @@ public final class Course {
 
     public int nombreMaxBoucles() {
         return nombreMaxBoucles;
+    }
+
+    /** Heure de départ de la Boucle 1, à la seconde ; vide si la Course n'a pas démarré ou n'a pas d'heure. */
+    public Optional<Instant> demarreeLe() {
+        return Optional.ofNullable(demarreeLe);
     }
 
     /** Identifiants des Comptes bénévoles affectés, sans doublon ni ordre significatif ; non modifiable. */

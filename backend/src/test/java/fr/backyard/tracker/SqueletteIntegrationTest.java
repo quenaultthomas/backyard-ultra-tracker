@@ -52,7 +52,8 @@ class SqueletteIntegrationTest {
 
         List<String> changesets = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
         assertThat(changesets).containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                "0006-affectation-benevole", "0007-inscription");
+                "0006-affectation-benevole", "0007-inscription",
+                "0008-demarrage-course");
 
         List<String> tables = jdbc.queryForList(
                 "select table_name from information_schema.tables where table_schema = 'public'", String.class);

@@ -2,10 +2,13 @@ package fr.backyard.tracker.courses.exposition;
 
 import fr.backyard.tracker.courses.domaine.BenevoleInconnuException;
 import fr.backyard.tracker.courses.domaine.CourseCompleteException;
+import fr.backyard.tracker.courses.domaine.CourseHorsDateException;
 import fr.backyard.tracker.courses.domaine.CourseIntrouvableException;
+import fr.backyard.tracker.courses.domaine.CourseNonDemarrableException;
 import fr.backyard.tracker.courses.domaine.CourseNonModifiableException;
 import fr.backyard.tracker.courses.domaine.CourseNonOuverteException;
 import fr.backyard.tracker.courses.domaine.CourseNonSupprimableException;
+import fr.backyard.tracker.courses.domaine.CourseSansInscritException;
 import fr.backyard.tracker.courses.domaine.CourseTermineeException;
 import fr.backyard.tracker.courses.domaine.DesinscriptionImpossibleException;
 import fr.backyard.tracker.courses.domaine.DonneesCourseInvalidesException;
@@ -74,6 +77,24 @@ public class GestionnaireErreursCourses {
     ProblemDetail courseNonSupprimable() {
         return probleme(HttpStatus.CONFLICT, "Conflit",
                 "La course n'est plus en préparation : elle ne peut plus être supprimée.", "COURSE_NON_SUPPRIMABLE");
+    }
+
+    @ExceptionHandler(CourseNonDemarrableException.class)
+    ProblemDetail courseNonDemarrable() {
+        return probleme(HttpStatus.CONFLICT, "Conflit",
+                "La course n'est plus en préparation : elle ne peut plus être démarrée.", "COURSE_NON_DEMARRABLE");
+    }
+
+    @ExceptionHandler(CourseHorsDateException.class)
+    ProblemDetail courseHorsDate() {
+        return probleme(HttpStatus.CONFLICT, "Conflit", "La course ne peut être démarrée que le jour de sa date.",
+                "COURSE_HORS_DATE");
+    }
+
+    @ExceptionHandler(CourseSansInscritException.class)
+    ProblemDetail courseSansInscrit() {
+        return probleme(HttpStatus.CONFLICT, "Conflit",
+                "La course ne peut pas être démarrée : aucun coureur n'est inscrit.", "COURSE_SANS_INSCRIT");
     }
 
     @ExceptionHandler(InscriptionDejaExistanteException.class)

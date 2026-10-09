@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
@@ -27,6 +28,7 @@ import {
   ETAT_MESSAGE_ERREUR,
   MESSAGE_COURSE_INTROUVABLE,
 } from '../erreurs-course';
+import { DemarrageCourse } from './demarrage-course/demarrage-course';
 import { InscritsCourse } from './inscrits-course/inscrits-course';
 
 const ERREURS_AFFECTATION: ErreursSpecifiques<never> = {
@@ -49,7 +51,7 @@ interface LigneBenevole {
 /** Fiche d'une Course (admins et admin master) : rappel de la Course et bénévoles affectés. */
 @Component({
   selector: 'app-fiche-course',
-  imports: [RouterLink, InscritsCourse],
+  imports: [RouterLink, DatePipe, DemarrageCourse, InscritsCourse],
   templateUrl: './fiche-course.html',
   styleUrls: [
     '../../../partage/page-carte.css',
@@ -162,7 +164,12 @@ export class FicheCourse implements OnInit {
       });
   }
 
-  private chargerFiche(): void {
+  /** Fiche renvoyée par le démarrage : mise à jour en place, cases non enregistrées conservées. */
+  protected afficherDemarrage(fiche: FicheCourseReponse): void {
+    this.fiche.set(fiche);
+  }
+
+  protected chargerFiche(): void {
     this.administrationApi
       .lireFicheCourse(this.id())
       .pipe(takeUntilDestroyed(this.destroyRef))

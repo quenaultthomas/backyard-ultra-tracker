@@ -60,7 +60,8 @@ class InscritsCourseAdminIntegrationTest {
     static final String INSERTION_INSCRIPTION = "insert into inscription (id, course_id, compte_id, dossard, "
             + "jeton_qr, statut) values (?, ?, ?, ?, ?, ?)";
     static final List<String> CHANGESETS = List.of("0002-compte", "0003-admin-master-unique", "0004-course",
-            "0005-logo-course", "0006-affectation-benevole", "0007-inscription");
+            "0005-logo-course", "0006-affectation-benevole", "0007-inscription",
+                "0008-demarrage-course");
 
     @Container
     @ServiceConnection
@@ -403,7 +404,7 @@ class InscritsCourseAdminIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA9 : aucun nouveau changeset (0002 à 0007 exactement), ddl-auto=validate, fiche inchangée")
+    @DisplayName("CA9 : aucun nouveau changeset (0002 à 0008 exactement), ddl-auto=validate, fiche inchangée")
     void ca9_aucune_migration_et_fiche_inchangee() throws Exception {
         String x = creerCourse("Backyard des Crêtes", 3);
         inscrireDansLOrdre(x, alice, bruno);

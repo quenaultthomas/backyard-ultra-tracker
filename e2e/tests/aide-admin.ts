@@ -78,9 +78,13 @@ export function nomCourseUnique(prefixe = 'Course E2E'): string {
   return `${prefixe} ${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 }
 
-/** Date `aaaa-mm-jj` à `jours` jours d'aujourd'hui (calcul UTC, sans effet de fuseau à J+30). */
+/**
+ * Date `aaaa-mm-jj` à `jours` jours d'aujourd'hui, calculée dans le fuseau `Europe/Paris`
+ * (celui de l'API pour déclarer et démarrer une Course, incrément 4.1 RG4), quel que soit le fuseau du poste de test.
+ */
 export function dateDansJours(jours: number): string {
-  const d = new Date();
+  const aujourdhui = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date());
+  const d = new Date(`${aujourdhui}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + jours);
   return d.toISOString().slice(0, 10);
 }
@@ -163,4 +167,21 @@ export async function supprimerCourseParApi(request: APIRequestContext, courseId
     headers: { 'X-XSRF-TOKEN': await jetonCsrf(request) },
   });
   return reponse.status();
+}
+
+/**
+ * Démarre une course par l'API avec la session de l'admin donné (contexte isolé, CSRF relu).
+ * Sans pseudo : admin master. Renvoie la fiche (200 attendu).
+ */
+export async function demarrerCourseParApi(
+  request: APIRequestContext,
+  courseId: string,
+  admin: { pseudo: string; motDePasse: string } = { pseudo: PSEUDO_ADMIN_MASTER, motDePasse: MOT_DE_PASSE_ADMIN_MASTER },
+): Promise<Record<string, unknown>> {
+  await connecterParApi(request, admin.pseudo, admin.motDePasse);
+  const reponse = await request.post(`/api/administration/courses/${courseId}/demarrage`, {
+    headers: { 'X-XSRF-TOKEN': await jetonCsrf(request) },
+  });
+  expect(reponse.status()).toBe(200);
+  return (await reponse.json()) as Record<string, unknown>;
 }

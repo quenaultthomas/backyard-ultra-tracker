@@ -39,6 +39,17 @@
             }}</span>
           </dd>
         </div>
+        @if (c.demarreeLe; as demarreeLe) {
+          <div>
+            <dt class="masque">Départ</dt>
+            <dd data-testid="fiche-demarree-le">
+              Démarrée le
+              <time [attr.datetime]="demarreeLe">{{
+                demarreeLe | date: "dd/MM/yyyy 'à' HH:mm"
+              }}</time>
+            </dd>
+          </div>
+        }
       </dl>
 
       <dl class="indicateurs">
@@ -49,6 +60,12 @@
           </div>
         }
       </dl>
+
+      <app-demarrage-course
+        [fiche]="c"
+        (demarree)="afficherDemarrage($event)"
+        (relire)="chargerFiche()"
+      />
 
       <section class="formulaire" aria-labelledby="titre-benevoles">
         <h2 id="titre-benevoles" class="sous-titre">Bénévoles</h2>

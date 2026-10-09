@@ -105,7 +105,8 @@ class LogoCourseSchemaRedemarrageIntegrationTest {
     private void verifierSchema(JdbcTemplate jdbc) {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                "0006-affectation-benevole", "0007-inscription");
+                "0006-affectation-benevole", "0007-inscription",
+                "0008-demarrage-course");
         List<Map<String, Object>> colonnes = jdbc.queryForList("select column_name, data_type, "
                 + "character_maximum_length, is_nullable from information_schema.columns "
                 + "where table_name = 'logo_course' order by column_name");
