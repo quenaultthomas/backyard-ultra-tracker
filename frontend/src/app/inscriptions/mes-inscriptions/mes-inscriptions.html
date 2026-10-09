@@ -1,14 +1,14 @@
-<main class="page">
+<main class="page page--cartes">
   <section class="carte" aria-labelledby="inscriptions-titre">
     <h1 id="inscriptions-titre" class="titre" data-testid="inscriptions-titre">Mes inscriptions</h1>
     @if (retourDesinscription(); as retour) {
       @if (retour.succes) {
-        <p class="succes" role="status" data-testid="inscriptions-message-desinscription">
+        <p class="message--succes" role="status" data-testid="inscriptions-message-desinscription">
           {{ retour.message }}
         </p>
       } @else {
         <p
-          class="erreur erreur--generale"
+          class="message--erreur"
           role="alert"
           data-testid="inscriptions-erreur-desinscription"
         >
@@ -17,7 +17,7 @@
       }
     }
     @if (erreurChargement()) {
-      <p class="erreur erreur--generale" role="alert" data-testid="inscriptions-erreur-chargement">
+      <p class="message--erreur" role="alert" data-testid="inscriptions-erreur-chargement">
         Impossible de charger vos inscriptions. Réessayez plus tard.
       </p>
     } @else if (inscriptions(); as liste) {
@@ -58,12 +58,12 @@
                 }
                 <div class="infos">
                   <time
-                    class="date"
+                    class="carte-liste__date"
                     [attr.datetime]="inscription.courseDate"
                     data-testid="inscriptions-course-date"
                     >{{ formaterDate(inscription.courseDate) }}</time
                   >
-                  <h2 class="nom" data-testid="inscriptions-course-nom">
+                  <h2 class="carte-liste__titre" data-testid="inscriptions-course-nom">
                     {{ inscription.courseNom }}
                   </h2>
                   <span

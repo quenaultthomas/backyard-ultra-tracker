@@ -1,17 +1,7 @@
-/* Grille de cartes de Course (cartes.css, variante .page--cartes) : 3 colonnes sur grand écran. */
-.course-entete {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espace-1);
-}
-
-.date {
-  font-size: var(--taille-grande);
-  font-weight: var(--poids-gras);
-  color: var(--couleur-foret);
-}
-
-/* Pastille de statut au bas de la carte, alignée d'une carte à l'autre. */
+/*
+ * Grille de cartes de Course (cartes.css, variante .page--cartes) : 3 colonnes sur grand écran.
+ * Pastille de statut au bas de la carte, alignée d'une carte à l'autre.
+ */
 .statut {
   align-self: flex-start;
 }

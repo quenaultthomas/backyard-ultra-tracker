@@ -32,7 +32,7 @@
       data-testid="mon-compte-confirmation-suppression"
     >
       @if (erreursServeur().generale; as erreurGenerale) {
-        <p class="erreur erreur--generale" role="alert" data-testid="mon-compte-erreur-suppression">
+        <p class="message--erreur" role="alert" data-testid="mon-compte-erreur-suppression">
           {{ erreurGenerale }}
         </p>
       }

@@ -2,8 +2,7 @@
  * Composants partagés de la charte (docs/design.md, section 7).
  * Alias historiques conservés tant que les templates ne sont pas migrés :
  * .ligne__action (secondaire), .ligne__action--danger (danger contour),
- * .ligne__action--danger-plein (danger),
- * .erreur--generale, .succes, .message-succes, .message-info et messages d'erreur locaux.
+ * .ligne__action--danger-plein (danger) et messages d'erreur locaux.
  */
 
 /* Boutons. */
@@ -175,10 +174,6 @@ label {
 .message--succes,
 .message--info,
 .message--avertissement,
-.erreur--generale,
-.succes,
-.message-succes,
-.message-info,
 .entete__erreur,
 .logo__erreur,
 .suppression__erreur,
@@ -190,7 +185,6 @@ app-qr-code > .erreur {
 }
 
 .message--erreur,
-.erreur--generale,
 .entete__erreur,
 .logo__erreur,
 .suppression__erreur,
@@ -200,16 +194,13 @@ app-qr-code > .erreur {
   font-weight: var(--poids-moyen);
 }
 
-.message--succes,
-.succes,
-.message-succes {
+.message--succes {
   background-color: var(--couleur-succes-pale);
   color: var(--couleur-foret);
   font-weight: var(--poids-moyen);
 }
 
-.message--info,
-.message-info {
+.message--info {
   background-color: var(--couleur-sable);
   color: var(--couleur-encre);
 }

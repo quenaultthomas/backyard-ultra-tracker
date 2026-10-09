@@ -1,39 +1,4 @@
-/* Grille de cartes de Course ouverte (cartes.css) : 3 colonnes sur grand écran. */
-.carte {
-  max-width: 64rem;
-  overflow-wrap: anywhere;
-}
-
-/* Conteneur de requête : la largeur mesurée en rem suit l'agrandissement du texte. */
-.page {
-  container: cartes / inline-size;
-}
-
-@container cartes (max-width: 15rem) {
-  .carte {
-    padding: var(--espace-3);
-  }
-}
-
-.course-entete {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espace-1);
-}
-
-.date {
-  font-size: var(--taille-grande);
-  font-weight: var(--poids-gras);
-  color: var(--couleur-foret);
-}
-
-.nom {
-  margin: 0;
-  font-size: var(--taille-moyenne);
-  font-weight: var(--poids-gras);
-  color: var(--couleur-foret);
-  overflow-wrap: anywhere;
-}
+/* Grille de cartes de Course ouverte (cartes.css, variante .page--cartes) : 3 colonnes sur grand écran. */
 
 /* Pictogramme décoratif (pictogrammes.css) à gauche du texte, qui reste la seule information. */
 .indicateur {

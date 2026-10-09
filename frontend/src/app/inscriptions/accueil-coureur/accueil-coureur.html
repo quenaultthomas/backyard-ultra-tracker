@@ -1,16 +1,16 @@
-<main class="page">
+<main class="page page--cartes">
   <section class="carte" aria-labelledby="coureur-titre">
     <h1 id="coureur-titre" class="titre" data-testid="coureur-titre">Courses ouvertes</h1>
     @if (messageInscription(); as message) {
-      <p class="succes" role="status" data-testid="coureur-message-inscription">{{ message }}</p>
+      <p class="message--succes" role="status" data-testid="coureur-message-inscription">{{ message }}</p>
     }
     @if (erreurHorsListe(); as message) {
-      <p class="erreur erreur--generale" role="alert" data-testid="coureur-erreur">
+      <p class="message--erreur" role="alert" data-testid="coureur-erreur">
         {{ message }}
       </p>
     }
     @if (erreurChargement()) {
-      <p class="erreur erreur--generale" role="alert" data-testid="coureur-erreur-chargement">
+      <p class="message--erreur" role="alert" data-testid="coureur-erreur-chargement">
         Impossible de charger les courses. Réessayez plus tard.
       </p>
     } @else if (courses(); as liste) {
@@ -37,14 +37,14 @@
                   <div class="visuel-substitution" aria-hidden="true"></div>
                 }
               </div>
-              <div class="course-entete">
+              <div class="carte-liste__entete">
                 <time
-                  class="date"
+                  class="carte-liste__date"
                   [attr.datetime]="course.date"
                   data-testid="coureur-course-date"
                   >{{ formaterDate(course.date) }}</time
                 >
-                <h2 class="nom" [id]="'coureur-nom-' + course.id" data-testid="coureur-course-nom">
+                <h2 class="carte-liste__titre" [id]="'coureur-nom-' + course.id" data-testid="coureur-course-nom">
                   {{ course.nom }}
                 </h2>
               </div>
@@ -86,7 +86,7 @@
                 }
               </div>
               @if (erreurDeLaLigne(course.id); as message) {
-                <p class="erreur erreur--generale" role="alert" data-testid="coureur-erreur">
+                <p class="message--erreur" role="alert" data-testid="coureur-erreur">
                   {{ message }}
                 </p>
               }

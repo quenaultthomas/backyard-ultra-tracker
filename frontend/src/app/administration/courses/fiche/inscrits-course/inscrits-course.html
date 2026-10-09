@@ -2,7 +2,7 @@
   <h2 id="titre-inscrits" class="sous-titre">Inscrits</h2>
 
   @if (erreur()) {
-    <p class="erreur erreur--generale" role="alert" data-testid="fiche-inscrits-erreur">
+    <p class="message--erreur" role="alert" data-testid="fiche-inscrits-erreur">
       Impossible de charger les inscrits. Réessayez plus tard.
     </p>
   } @else if (inscrits(); as reponse) {

@@ -1,19 +1,19 @@
 @let e = erreurs();
 @let enEdition = courseEditee() !== null;
-<main class="page">
+<main class="page page--cartes">
   <section class="carte" aria-labelledby="titre-courses">
     <h1 id="titre-courses" class="titre" data-testid="titre-courses">Gestion des courses</h1>
 
     <section class="formulaire" aria-labelledby="titre-liste-courses">
       <h2 id="titre-liste-courses" class="sous-titre">Courses</h2>
       @if (messageErreur(); as message) {
-        <p class="erreur erreur--generale" role="alert" data-testid="courses-message-erreur">
+        <p class="message--erreur" role="alert" data-testid="courses-message-erreur">
           {{ message }}
         </p>
       }
       @if (messageSuppression(); as suppression) {
         <p
-          [class]="suppression.succes ? 'message-succes' : 'message-info'"
+          [class]="suppression.succes ? 'message--succes' : 'message--info'"
           role="status"
           data-testid="course-message-suppression"
         >
@@ -21,7 +21,7 @@
         </p>
       }
       @if (erreurChargement()) {
-        <p class="erreur erreur--generale" role="alert" data-testid="courses-erreur">
+        <p class="message--erreur" role="alert" data-testid="courses-erreur">
           Impossible de charger la liste des courses. Réessayez plus tard.
         </p>
       } @else if (courses(); as liste) {
@@ -59,12 +59,12 @@
       </h2>
 
       @if (messageSucces(); as message) {
-        <p class="message-succes" role="status" data-testid="course-message-succes">
+        <p class="message--succes" role="status" data-testid="course-message-succes">
           {{ message }}
         </p>
       }
       @if (e.generale; as erreurGenerale) {
-        <p class="erreur erreur--generale" role="alert" data-testid="course-erreur-generale">
+        <p class="message--erreur" role="alert" data-testid="course-erreur-generale">
           {{ erreurGenerale }}
         </p>
       }

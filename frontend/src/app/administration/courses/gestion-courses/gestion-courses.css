@@ -1,20 +1,9 @@
-/* Écran plus large que les écrans de compte : grille de cartes de Course (3 colonnes sur grand écran). */
-.carte {
-  max-width: 64rem;
-}
-
 /*
- * Conteneur de requête : la largeur de l'écran mesurée en rem suit l'agrandissement du texte.
- * Moins de 15rem (320 ou 360 px avec le texte à 200 %) : marges internes réduites pour que
- * les boutons des cartes de course (confirmation, aperçu de logo) et les champs de l'encart
- * tiennent dans la carte.
+ * Écran en cartes (cartes.css, variante .page--cartes) : grille de cartes de Course, 3 colonnes sur grand écran.
+ * Moins de 15rem de conteneur `cartes` (320 ou 360 px avec le texte à 200 %) : la carte de la page est
+ * réduite par cartes.css ; ici, marges de l'encart et des boutons du formulaire pour qu'ils tiennent.
  */
-.page {
-  container: page-gestion-courses / inline-size;
-}
-
-@container page-gestion-courses (max-width: 15rem) {
-  .carte,
+@container cartes (max-width: 15rem) {
   .encart {
     padding: var(--espace-3);
   }

@@ -3,7 +3,7 @@
     <h1 id="titre-creer-compte" class="titre" data-testid="titre-creer-compte">Créer un compte</h1>
 
     @if (etat() === 'SUCCES') {
-      <p class="message-succes" role="status" data-testid="message-succes">
+      <p class="message--succes" role="status" data-testid="message-succes">
         Compte créé pour {{ pseudoCree() }}. Vous pouvez maintenant vous connecter.
       </p>
       <a class="lien" routerLink="/connexion" data-testid="lien-se-connecter-succes"
@@ -12,7 +12,7 @@
     } @else {
       <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
         @if (erreursServeur().generale; as erreurGenerale) {
-          <p class="erreur erreur--generale" role="alert" data-testid="erreur-generale">
+          <p class="message--erreur" role="alert" data-testid="erreur-generale">
             {{ erreurGenerale }}
           </p>
         }
