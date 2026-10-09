@@ -16,9 +16,10 @@ import {
   exigerIdentifiantsAdminMaster,
   type DonneesCourse,
 } from './aide-admin';
+import { ouvrirConnexion, saisir } from './aide-connexion';
 
 /*
- * Scénarios du script scripts/donnees-demo.sh (incrément 2.1b).
+ * Scénarios du script scripts/donnees-demo.sh (incrément 2.1b, complété en 3.5 et 4.1 CA19).
  * Un compte ne se supprime pas et une course ne se supprime qu'à partir de 2.5 : les scénarios qui supposent
  * « rien n'existe » exigent une base neuve. Trois états de départ, choisis par DEMO_SCENARIO (une base neuve chacun) :
  *   neuve (défaut) : CA1 puis CA2 (relance), plus CA3 et CA4 qui n'en dépendent pas ;
@@ -39,15 +40,18 @@ const COMPTES = [
   { pseudo: 'Sophie', motDePasse: 'un-mot-de-passe-12', role: 'COUREUR' },
   { pseudo: 'Tom', motDePasse: 'un-mot-de-passe-12', role: 'COUREUR' },
 ];
-const NOMS_COURSES = ['Backyard de démo', 'Backyard express', 'Backyard mini'];
+const NOMS_COURSES = ['Backyard de démo', 'Backyard express', 'Backyard mini', 'Backyard du jour'];
 const ELEMENTS = ['Nadia', 'Léo', 'Marc', 'Alice', 'Karim', 'Sophie', 'Tom', ...NOMS_COURSES];
-/** Inscriptions de démonstration (3.5, CA13) : pseudo et course, dans l'ordre de création. */
+/** Inscriptions de démonstration (3.5 CA13, 4.1 CA19) : pseudo et course, dans l'ordre de création. */
 const INSCRIPTIONS: Array<[string, string]> = [
   ['Karim', 'Backyard de démo'],
   ['Sophie', 'Backyard de démo'],
   ['Tom', 'Backyard de démo'],
   ['Karim', 'Backyard express'],
   ['Sophie', 'Backyard express'],
+  ['Karim', 'Backyard du jour'],
+  ['Sophie', 'Backyard du jour'],
+  ['Tom', 'Backyard du jour'],
 ];
 const MOTS_DE_PASSE_CONNUS = [...COMPTES.map((c) => c.motDePasse)];
 
@@ -107,12 +111,12 @@ function verifierAucunSecret(r: Resultat): void {
 
 function verifierSeptElements(r: Resultat, etat: 'créé' | 'déjà présent'): void {
   const lignesEtat = lignes(r.sortie, `${etat} : `);
-  // 16 lignes (CA13) : 7 comptes, 3 courses, l'affectation de Léo à « Backyard de démo » (2.4) et 5 inscriptions (3.5)
-  expect(lignesEtat).toHaveLength(16);
+  // 20 lignes (4.1 CA19) : 7 comptes, 4 courses, l'affectation de Léo à « Backyard de démo » (2.4) et 8 inscriptions
+  expect(lignesEtat).toHaveLength(20);
   for (const [pseudo, course] of INSCRIPTIONS) {
     expect(lignesEtat.filter((l) => l === `${etat} : ${pseudo} (inscription à ${course})`), `${pseudo} / ${course}`).toHaveLength(1);
   }
-  expect(lignesEtat.filter((l) => l.includes('(inscription à '))).toHaveLength(5);
+  expect(lignesEtat.filter((l) => l.includes('(inscription à '))).toHaveLength(8);
   expect(lignesEtat.filter((l) => l.includes('Alice') && l.includes('inscription'))).toHaveLength(0);
   expect(lignesEtat.filter((l) => l.includes('inscription à Backyard mini'))).toHaveLength(0);
   expect(lignesEtat.filter((l) => l.includes('Léo affecté à Backyard de démo'))).toHaveLength(1);
@@ -121,11 +125,12 @@ function verifierSeptElements(r: Resultat, etat: 'créé' | 'déjà présent'): 
   }
 }
 
+/** Date du jour + N jours à Paris, comme le script (TZ=Europe/Paris) et l'API (4.1 RG4). */
 function jourPlus(jours: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + jours);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  const aujourdhui = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date());
+  const d = new Date(`${aujourdhui}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + jours);
+  return d.toISOString().slice(0, 10);
 }
 
 async function coursesParApi(request: Parameters<typeof connecterParApi>[0]): Promise<Array<Record<string, unknown>>> {
@@ -174,6 +179,7 @@ async function verifierInscriptionsDemo(request: Parameters<typeof connecterParA
     'Backyard de démo': { pseudos: ['Karim', 'Sophie', 'Tom'], places: 47 },
     'Backyard express': { pseudos: ['Karim', 'Sophie'], places: 8 },
     'Backyard mini': { pseudos: [], places: 2 },
+    'Backyard du jour': { pseudos: ['Karim', 'Sophie', 'Tom'], places: 7 },
   };
   for (const [nom, { pseudos, places }] of Object.entries(attendu)) {
     const course = courses.find((c) => c['nom'] === nom);
@@ -209,7 +215,7 @@ test.describe('Données de démonstration, base neuve', () => {
   test.skip(SCENARIO !== 'neuve', 'scénario réservé à une base neuve (DEMO_SCENARIO=neuve)');
   test.describe.configure({ mode: 'serial' });
 
-  test('CA1 et CA13 - le premier lancement crée seize éléments, les comptes se connectent et les courses sont listées', async ({ page, request, playwright }) => {
+  test('CA1 et CA13 - le premier lancement crée vingt éléments, les comptes se connectent et les courses sont listées', async ({ page, request, playwright }) => {
     const r = await lancerScript({ env: envAdminMaster() });
     expect(r.code, `sortie : ${r.sortie}\nerreur : ${r.erreur}`).toBe(0);
     verifierSeptElements(r, 'créé');
@@ -224,6 +230,7 @@ test.describe('Données de démonstration, base neuve', () => {
       'Backyard de démo': { nom: 'Backyard de démo', date: jourPlus(30), distanceBoucleMetres: 6706, dureeBoucleMinutes: 60, denivelePositifBoucleMetres: 120, nombreMaxParticipants: 50, nombreMaxBoucles: 24 },
       'Backyard express': { nom: 'Backyard express', date: jourPlus(7), distanceBoucleMetres: 400, dureeBoucleMinutes: 1, denivelePositifBoucleMetres: 5, nombreMaxParticipants: 10, nombreMaxBoucles: 5 },
       'Backyard mini': { nom: 'Backyard mini', date: jourPlus(14), distanceBoucleMetres: 1000, dureeBoucleMinutes: 2, denivelePositifBoucleMetres: 10, nombreMaxParticipants: 2, nombreMaxBoucles: 2 },
+      'Backyard du jour': { nom: 'Backyard du jour', date: jourPlus(0), distanceBoucleMetres: 400, dureeBoucleMinutes: 1, denivelePositifBoucleMetres: 5, nombreMaxParticipants: 10, nombreMaxBoucles: 5 },
     };
     for (const [nom, attendue] of Object.entries(attendues)) {
       const trouvees = courses.filter((c) => c['nom'] === nom);
@@ -242,11 +249,13 @@ test.describe('Données de démonstration, base neuve', () => {
     positions.forEach((p, i) => expect(p, NOMS_COURSES[i]).toBeGreaterThanOrEqual(0));
     expect(noms.indexOf('Backyard de démo')).toBeLessThan(noms.indexOf('Backyard mini'));
     expect(noms.indexOf('Backyard mini')).toBeLessThan(noms.indexOf('Backyard express'));
+    expect(noms.indexOf('Backyard express')).toBeLessThan(noms.indexOf('Backyard du jour'));
 
     const ecran: Array<[string, number, number, number, number, number, number]> = [
       ['Backyard de démo', 30, 6706, 60, 120, 50, 24],
       ['Backyard mini', 14, 1000, 2, 10, 2, 2],
       ['Backyard express', 7, 400, 1, 5, 10, 5],
+      ['Backyard du jour', 0, 400, 1, 5, 10, 5],
     ];
     for (const [nom, jours, distance, duree, denivele, participants, boucles] of ecran) {
       expect(await lireLigneCourse(page, nom), nom).toEqual({
@@ -261,7 +270,7 @@ test.describe('Données de démonstration, base neuve', () => {
     }
   });
 
-  test('CA2 et CA13 - la relance ne crée rien : seize éléments déjà présents et une seule course de chaque nom', async ({ request }) => {
+  test('CA2 et CA13 - la relance ne crée rien : vingt éléments déjà présents et une seule course de chaque nom', async ({ request }) => {
     const r = await lancerScript({ env: envAdminMaster() });
     expect(r.code, `sortie : ${r.sortie}\nerreur : ${r.erreur}`).toBe(0);
     verifierSeptElements(r, 'déjà présent');
@@ -273,12 +282,52 @@ test.describe('Données de démonstration, base neuve', () => {
       expect(courses.filter((c) => c['nom'] === nom), nom).toHaveLength(1);
     }
   });
+
+  // Dernier test de la série : démarrer « Backyard du jour » est irréversible (le script échouerait ensuite sur ses inscriptions).
+  test('CA19 - Nadia démarre « Backyard du jour » (3 inscrits) et se voit refuser le démarrage de « Backyard express » et « Backyard mini »', async ({ page }) => {
+    await ouvrirConnexion(page);
+    await saisir(page, 'Nadia', 'mot-de-passe-admin-1');
+    await page.getByTestId('bouton-connexion').click();
+    await expect(page).toHaveURL(/\/administration$/);
+
+    const ouvrirFiche = async (nom: string) => {
+      await page.goto('/administration/courses');
+      const ligne = page.getByTestId('ligne-course').filter({ has: page.getByTestId('course-nom').getByText(nom, { exact: true }) });
+      await expect(ligne).toHaveCount(1);
+      await ligne.getByTestId('course-lien-fiche').click();
+      await expect(page.getByTestId('fiche-titre')).toHaveText(nom);
+    };
+    const demarrer = async () => {
+      await page.getByTestId('fiche-bouton-demarrer').click();
+      await page.getByTestId('fiche-bouton-confirmer-demarrage').click();
+    };
+
+    // refus de date : express (J+7) et mini (J+14, aussi sans inscrit : le message de date prime)
+    for (const nom of ['Backyard express', 'Backyard mini']) {
+      await ouvrirFiche(nom);
+      await expect(page.getByTestId('fiche-statut')).toHaveText('En préparation');
+      await demarrer();
+      await expect(page.getByTestId('fiche-erreur-demarrage'), nom).toHaveText('La course ne peut être démarrée que le jour de sa date.');
+      await expect(page.getByTestId('fiche-statut'), nom).toHaveText('En préparation');
+      await expect(page.getByTestId('fiche-bouton-demarrer'), nom).toBeEnabled();
+    }
+
+    // la Course du jour : 3 inscrits, démarrage accepté
+    await ouvrirFiche('Backyard du jour');
+    await expect(page.getByTestId('fiche-statut')).toHaveText('En préparation');
+    await expect(page.getByTestId('fiche-inscrits-compteur')).toHaveText('3 inscrits sur 10');
+    await demarrer();
+    await expect(page.getByTestId('fiche-statut')).toHaveText('En cours');
+    await expect(page.getByTestId('fiche-message-demarrage')).toHaveText('La course Backyard du jour a été démarrée.');
+    await expect(page.getByTestId('fiche-demarree-le')).toBeVisible();
+    await expect(page.getByTestId('fiche-inscrits-compteur')).toHaveText('3 inscrits sur 10');
+  });
 });
 
 test.describe('Données de démonstration, lancement partiel', () => {
   test.skip(SCENARIO !== 'partiel', 'scénario réservé à une base neuve (DEMO_SCENARIO=partiel)');
 
-  test('CA2 et CA13 - avec Nadia et Backyard express déjà présents, deux éléments déjà présents et quatorze créés', async ({ playwright }) => {
+  test('CA2 et CA13 - avec Nadia et Backyard express déjà présents, deux éléments déjà présents et dix-huit créés', async ({ playwright }) => {
     await avecContexte(playwright, (ctx) => creerAdminParApi(ctx, 'Nadia', 'mot-de-passe-admin-1'));
     await avecContexte(playwright, (ctx) => creerCourseParApi(ctx, {
       nom: 'Backyard express', date: jourPlus(7), distanceBoucleMetres: 400, dureeBoucleMinutes: 1,
@@ -290,10 +339,10 @@ test.describe('Données de démonstration, lancement partiel', () => {
     const presents = lignes(r.sortie, 'déjà présent : ');
     const crees = lignes(r.sortie, 'créé : ');
     expect(presents).toHaveLength(2);
-    expect(crees).toHaveLength(14);
+    expect(crees).toHaveLength(18);
     expect(presents.join('\n')).toContain('Nadia');
     expect(presents.join('\n')).toContain('Backyard express');
-    for (const nom of ['Léo', 'Marc', 'Alice', 'Karim', 'Sophie', 'Tom', 'Backyard de démo', 'Backyard mini', 'Léo affecté à Backyard de démo']) {
+    for (const nom of ['Léo', 'Marc', 'Alice', 'Karim', 'Sophie', 'Tom', 'Backyard de démo', 'Backyard mini', 'Backyard du jour', 'Léo affecté à Backyard de démo']) {
       expect(crees.join('\n')).toContain(nom);
     }
     verifierAucunSecret(r);
@@ -314,7 +363,7 @@ test.describe('Données de démonstration, course de même nom', () => {
     const presents = lignes(r.sortie, 'déjà présent : ');
     expect(presents).toHaveLength(1);
     expect(presents[0]).toContain('Backyard mini');
-    expect(lignes(r.sortie, 'créé : ')).toHaveLength(15);
+    expect(lignes(r.sortie, 'créé : ')).toHaveLength(19);
 
     const mini = (await coursesParApi(request)).filter((c) => c['nom'] === 'Backyard mini');
     expect(mini).toHaveLength(1);
@@ -439,6 +488,11 @@ test.describe('Données de démonstration, documentation', () => {
     expect(entete).toMatch(/autre rôle/);
     expect(entete).toMatch(/Course est « déjà présente » si une Course du même nom existe/);
     expect(entete).toMatch(/ni comparée ni modifiée/);
+    // 4.1 CA19 : la Course du jour et sa limite (date figée à la première création)
+    expect(entete).toContain('Backyard du jour');
+    expect(entete).toMatch(/date du jour à Paris/);
+    expect(entete).toMatch(/n'est plus démarrable/);
+    expect(entete).toMatch(/20 éléments/);
   });
 
   test('CA4 - docs/deploiement.md porte la mention « à ne pas utiliser en production »', () => {

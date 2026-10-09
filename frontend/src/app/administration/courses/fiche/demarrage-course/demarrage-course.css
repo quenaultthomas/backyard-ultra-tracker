@@ -1,0 +1,44 @@
+/* Section « Démarrage » de la fiche de Course : filet haut comme les sections Bénévoles et Inscrits. */
+:host {
+  display: block;
+}
+
+/* Course démarrée sans résultat à afficher : aucun espace réservé dans la carte (gap de la carte). */
+:host:empty {
+  display: none;
+}
+
+.formulaire {
+  padding-top: var(--espace-4);
+  border-top: 1px solid var(--couleur-trait);
+}
+
+/* Confirmation en ligne dans un encart sable (action irréversible mais non destructive). */
+.confirmation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+}
+
+.confirmation__texte {
+  margin: 0;
+  color: var(--couleur-encre);
+  overflow-wrap: anywhere;
+}
+
+.confirmation__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-3);
+}
+
+/* Repli étroit (320 px, texte à 200 %) : l'encart et ses boutons tiennent dans la carte. */
+@container cartes (max-width: 15rem) {
+  .confirmation {
+    padding: var(--espace-3);
+  }
+
+  .bouton {
+    padding-inline: var(--espace-3);
+  }
+}

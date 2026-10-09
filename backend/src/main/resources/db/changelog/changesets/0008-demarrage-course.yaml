@@ -1,0 +1,17 @@
+# Increment 4.1 : heure de depart d'une course (instant UTC du demarrage, depart de la boucle 1). Nullable, sans
+# valeur par defaut ni contrainte : les courses existantes et celles non demarrees n'ont pas d'heure de depart.
+databaseChangeLog:
+  - changeSet:
+      id: 0008-demarrage-course
+      author: backyard-ultra-tracker
+      changes:
+        - addColumn:
+            tableName: course
+            columns:
+              - column:
+                  name: demarree_le
+                  type: timestamptz
+      rollback:
+        - dropColumn:
+            tableName: course
+            columnName: demarree_le

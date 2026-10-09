@@ -67,7 +67,8 @@ class MesInscriptionsIntegrationTest {
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final List<String> CHANGESETS = List.of("0002-compte", "0003-admin-master-unique", "0004-course",
-            "0005-logo-course", "0006-affectation-benevole", "0007-inscription");
+            "0005-logo-course", "0006-affectation-benevole", "0007-inscription",
+                "0008-demarrage-course");
 
     @Container
     @ServiceConnection
@@ -359,7 +360,7 @@ class MesInscriptionsIntegrationTest {
     // ---------------------------------------------------------------- CA7
 
     @Test
-    @DisplayName("CA7 : aucun nouveau changeset (0002 à 0007 exactement), ddl-auto=validate, aucune écriture par la lecture")
+    @DisplayName("CA7 : aucun nouveau changeset (0002 à 0008 exactement), ddl-auto=validate, aucune écriture par la lecture")
     void ca7_aucune_migration_et_lecture_seule() throws Exception {
         scenarioAliceXYZ();
         List<Map<String, Object>> avant = jdbc.queryForList("select * from inscription order by id");

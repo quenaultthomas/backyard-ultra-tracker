@@ -75,7 +75,7 @@ class AffectationBenevolesIntegrationTest {
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final List<String> CHAMPS_FICHE = List.of("id", "nom", "date", "statut", "distanceBoucleMetres",
             "dureeBoucleMinutes", "denivelePositifBoucleMetres", "nombreMaxParticipants", "nombreMaxBoucles", "logoUrl",
-            "benevoleIds");
+            "benevoleIds", "demarreeLe");
     static final List<String> CHAMPS_COURSE = CHAMPS_FICHE.subList(0, 10);
     static final List<String> CHAMPS_COURSE_BENEVOLE = List.of("id", "nom", "date", "statut", "logoUrl");
 
@@ -637,7 +637,8 @@ class AffectationBenevolesIntegrationTest {
         assertThat(lireMesCourses(leo).statusCode()).isEqualTo(200);
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                        "0006-affectation-benevole", "0007-inscription");
+                        "0006-affectation-benevole", "0007-inscription",
+                "0008-demarrage-course");
         assertThat(jdbc.queryForList("select table_name from information_schema.tables where table_schema = 'public'",
                 String.class)).containsExactlyInAnyOrder("databasechangelog", "databasechangeloglock", "compte",
                 "course", "logo_course", "affectation_benevole", "inscription");

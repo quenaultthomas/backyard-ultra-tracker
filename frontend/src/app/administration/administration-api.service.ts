@@ -72,6 +72,11 @@ export class AdministrationApiService {
     return this.http.put<FicheCourseReponse>(`${urlCourse(id)}/benevoles`, requete);
   }
 
+  /** Démarre une Course `EN_PREPARATION` (sans corps) ; renvoie la fiche de la Course démarrée. */
+  demarrerCourse(id: string): Observable<FicheCourseReponse> {
+    return this.http.post<FicheCourseReponse>(`${urlCourse(id)}/demarrage`, null);
+  }
+
   /** Remplace les champs modifiables d'une Course `EN_PREPARATION` (admins et admin master). */
   modifierCourse(id: string, requete: ModifierCourseRequete): Observable<CourseReponse> {
     return this.http.put<CourseReponse>(urlCourse(id), requete);

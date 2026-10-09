@@ -70,7 +70,8 @@ class SuppressionCourseIntegrationTest {
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final List<String> CHANGESETS = List.of("0002-compte", "0003-admin-master-unique", "0004-course",
-            "0005-logo-course", "0006-affectation-benevole", "0007-inscription");
+            "0005-logo-course", "0006-affectation-benevole", "0007-inscription",
+                "0008-demarrage-course");
 
     @Container
     @ServiceConnection

@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
-# Données de démonstration pour le test manuel (incréments 2.1b, 2.4 et 3.5). À NE PAS UTILISER EN PRODUCTION.
+# Données de démonstration pour le test manuel (incréments 2.1b, 2.4, 3.5 et 4.1). À NE PAS UTILISER EN PRODUCTION.
 #
 # Crée par l'API de l'application lancée (jamais d'accès direct à la base), dans cet ordre :
 #   - admin Nadia, bénévoles Léo et Marc (session de l'admin master) ;
-#   - Courses « Backyard de démo » (J+30), « Backyard express » (J+7), « Backyard mini » (J+14) ;
+#   - Courses « Backyard de démo » (J+30), « Backyard express » (J+7), « Backyard mini » (J+14) et
+#     « Backyard du jour » (date du jour à Paris, 400 m, 1 min, 5 m, 10 participants, 5 Boucles max), seule
+#     démarrable le jour même (4.1) ; les dates sont calculées dans le fuseau Europe/Paris, celui de l'API ;
 #   - affectation du bénévole Léo à « Backyard de démo » (les autres bénévoles déjà affectés sont conservés) ;
 #   - coureurs Alice, Karim, Sophie et Tom (session anonyme) ;
 #   - Inscriptions, chacune dans la session de son coureur et dans cet ordre : Karim, Sophie, Tom à
-#     « Backyard de démo » ; Karim, Sophie à « Backyard express ». Alice et « Backyard mini » n'en reçoivent aucune.
+#     « Backyard de démo » ; Karim, Sophie à « Backyard express » ; Karim, Sophie, Tom (dossards 1, 2, 3) à
+#     « Backyard du jour ». Alice et « Backyard mini » n'en reçoivent aucune.
+# Soit 20 éléments : 7 Comptes, 4 Courses, 1 affectation, 8 Inscriptions.
 # Mots de passe connus : Nadia mot-de-passe-admin-1, Léo et Marc mot-de-passe-benevole-1,
 #   Alice, Karim, Sophie et Tom un-mot-de-passe-12.
 #
@@ -26,7 +30,10 @@
 #   - une Course est « déjà présente » si une Course du même nom existe ; elle n'est ni comparée ni modifiée ;
 #   - Léo déjà affecté à « Backyard de démo » : rien n'est envoyé ;
 #   - une Inscription déjà existante (409 INSCRIPTION_DEJA_EXISTANTE) est « déjà présente » ; une Course qui n'est
-#     plus ouverte aux inscriptions (EN_COURS, TERMINEE) fait échouer le script.
+#     plus ouverte aux inscriptions (EN_COURS, TERMINEE) fait échouer le script ;
+#   - « Backyard du jour » garde la date de sa première création : un autre jour, elle n'est plus démarrable
+#     (repartir d'une base neuve par docker compose down -v, ou changer sa date par « Modifier ») ; une fois
+#     démarrée, la relance du script échoue sur ses inscriptions.
 # Aucun mot de passe n'est affiché ni écrit sur disque ; les cookies vont dans un répertoire temporaire
 # supprimé en sortie. Prérequis : bash, curl, date GNU (Linux) ou BSD (macOS).
 set -euo pipefail
@@ -69,8 +76,9 @@ echapper_json() {
   printf '%s' "${texte//\"/\\\"}"
 }
 
+# jour_plus N : date du jour + N jours à Paris (fuseau des Courses côté API), quel que soit le fuseau de l'hôte.
 jour_plus() {
-  date -d "+$1 days" +%F 2>/dev/null || date -v "+$1d" +%F
+  TZ=Europe/Paris date -d "+$1 days" +%F 2>/dev/null || TZ=Europe/Paris date -v "+$1d" +%F
 }
 
 # requete METHODE CHEMIN [corps sur l'entrée standard] : écrit le statut HTTP, le corps dans $REPONSE.
@@ -135,6 +143,7 @@ declarer_courses() {
   declarer_course "Backyard de démo" 30 6706 60 120 50 24
   declarer_course "Backyard express" 7 400 1 5 10 5
   declarer_course "Backyard mini" 14 1000 2 10 2 2
+  declarer_course "Backyard du jour" 0 400 1 5 10 5
 }
 
 # identifiant FICHIER CHAMP VALEUR : id du premier objet (plat) du tableau JSON dont CHAMP vaut VALEUR.
@@ -214,6 +223,6 @@ for coureur in Alice Karim Sophie Tom; do
   creer_compte /api/comptes "$coureur" "$MOT_DE_PASSE_COUREUR" COUREUR
 done
 
-inscrire Karim "Backyard de démo" "Backyard express"
-inscrire Sophie "Backyard de démo" "Backyard express"
-inscrire Tom "Backyard de démo"
+inscrire Karim "Backyard de démo" "Backyard express" "Backyard du jour"
+inscrire Sophie "Backyard de démo" "Backyard express" "Backyard du jour"
+inscrire Tom "Backyard de démo" "Backyard du jour"

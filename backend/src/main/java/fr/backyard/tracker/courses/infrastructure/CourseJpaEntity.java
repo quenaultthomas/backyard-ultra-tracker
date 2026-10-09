@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashSet;
@@ -52,6 +53,10 @@ public class CourseJpaEntity {
     @Column(name = "nombre_max_boucles", nullable = false)
     private int nombreMaxBoucles;
 
+    /** Heure de départ, nulle tant que la Course n'a pas démarré par l'API. */
+    @Column(name = "demarree_le")
+    private Instant demarreeLe;
+
     /** Identifiants de Comptes, sans clé étrangère vers compte (contextes séparés). */
     @ElementCollection
     @CollectionTable(name = "affectation_benevole", joinColumns = @JoinColumn(name = "course_id"))
@@ -64,7 +69,7 @@ public class CourseJpaEntity {
 
     CourseJpaEntity(UUID id, String nom, LocalDate date, StatutCourse statut, int distanceBoucleMetres,
                     int dureeBoucleMinutes, int denivelePositifBoucleMetres, int nombreMaxParticipants,
-                    int nombreMaxBoucles, Collection<UUID> benevolesAffectes) {
+                    int nombreMaxBoucles, Collection<UUID> benevolesAffectes, Instant demarreeLe) {
         this.id = id;
         this.nom = nom;
         this.date = date;
@@ -75,6 +80,7 @@ public class CourseJpaEntity {
         this.nombreMaxParticipants = nombreMaxParticipants;
         this.nombreMaxBoucles = nombreMaxBoucles;
         this.benevolesAffectes.addAll(benevolesAffectes);
+        this.demarreeLe = demarreeLe;
     }
 
     /** Mise à jour de la ligne avec les valeurs d'une autre représentation de la même Course (l'id est conservé). */
@@ -87,6 +93,7 @@ public class CourseJpaEntity {
         this.denivelePositifBoucleMetres = source.denivelePositifBoucleMetres;
         this.nombreMaxParticipants = source.nombreMaxParticipants;
         this.nombreMaxBoucles = source.nombreMaxBoucles;
+        this.demarreeLe = source.demarreeLe;
         remplacerBenevolesAffectes(source.benevolesAffectes);
     }
 
@@ -130,6 +137,10 @@ public class CourseJpaEntity {
 
     int nombreMaxBoucles() {
         return nombreMaxBoucles;
+    }
+
+    Instant demarreeLe() {
+        return demarreeLe;
     }
 
     Set<UUID> benevolesAffectes() {

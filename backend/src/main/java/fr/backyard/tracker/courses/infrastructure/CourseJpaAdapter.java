@@ -99,13 +99,15 @@ public class CourseJpaAdapter implements DepotCourses {
         ParametresBoucle boucle = course.parametresBoucle();
         return new CourseJpaEntity(course.id(), course.nom(), course.date(), course.statut(),
                 boucle.distanceMetres(), boucle.dureeMinutes(), boucle.denivelePositifMetres(),
-                course.nombreMaxParticipants(), course.nombreMaxBoucles(), course.benevolesAffectes());
+                course.nombreMaxParticipants(), course.nombreMaxBoucles(), course.benevolesAffectes(),
+                course.demarreeLe().orElse(null));
     }
 
     private static Course versDomaine(CourseJpaEntity entite) {
         return Course.reconstituer(entite.id(), entite.nom(), entite.date(), entite.statut(),
                 new ParametresBoucle(entite.distanceBoucleMetres(), entite.dureeBoucleMinutes(),
                         entite.denivelePositifBoucleMetres()),
-                entite.nombreMaxParticipants(), entite.nombreMaxBoucles(), entite.benevolesAffectes());
+                entite.nombreMaxParticipants(), entite.nombreMaxBoucles(), entite.benevolesAffectes(),
+                entite.demarreeLe());
     }
 }

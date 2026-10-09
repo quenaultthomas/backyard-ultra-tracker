@@ -76,7 +76,8 @@ class InscriptionCourseIntegrationTest {
     static final String INSERTION_INSCRIPTION = "insert into inscription (id, course_id, compte_id, dossard, "
             + "jeton_qr, statut) values (?, ?, ?, ?, ?, ?)";
     static final List<String> CHANGESETS = List.of("0002-compte", "0003-admin-master-unique", "0004-course",
-            "0005-logo-course", "0006-affectation-benevole", "0007-inscription");
+            "0005-logo-course", "0006-affectation-benevole", "0007-inscription",
+                "0008-demarrage-course");
 
     @Container
     @ServiceConnection
@@ -440,7 +441,7 @@ class InscriptionCourseIntegrationTest {
     // ---------------------------------------------------------------- CA8
 
     @Test
-    @DisplayName("CA8 : databasechangelog contient exactement 0002 à 0007 ; la table inscription a colonnes, contraintes et index de RG11 ; aucune clé étrangère vers compte ; ddl-auto=validate")
+    @DisplayName("CA8 : databasechangelog contient exactement 0002 à 0008 ; la table inscription a colonnes, contraintes et index de RG11 ; aucune clé étrangère vers compte ; ddl-auto=validate")
     void ca8_schema_de_la_table_inscription() {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactlyElementsOf(CHANGESETS);
@@ -580,7 +581,7 @@ class InscriptionCourseIntegrationTest {
                 "Authentification requise", "Vous devez être connecté.");
         assertThat(lister(alice).statusCode()).isEqualTo(200);
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
-                .hasSize(6).containsExactlyElementsOf(CHANGESETS);
+                .hasSize(7).containsExactlyElementsOf(CHANGESETS);
     }
 
     // ---------------------------------------------------------------- utilitaires
