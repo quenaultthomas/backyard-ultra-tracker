@@ -46,16 +46,6 @@
   margin: 0;
 }
 
-/* Masqué visuellement : sélecteur natif (ouvert par « Choisir un logo ») et libellé « Aucun logo ». */
-.masque {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /* Écran étroit et texte agrandi (conteneur défini par gestion-courses.css). */
 @container page-gestion-courses (max-width: 15rem) {
   .apercu {

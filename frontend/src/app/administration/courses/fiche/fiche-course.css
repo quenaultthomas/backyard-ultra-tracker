@@ -1,65 +1,106 @@
-.carte {
-  max-width: 44rem;
+/* Fiche de Course (docs/design.md, section 7) : carte de la page `.page--cartes` de 44rem. */
+.page {
+  --carte-largeur: 44rem;
 }
 
-.entete {
+/* En-tête : visuel 16 / 9 à gauche du nom, qui passe dessous quand la place manque. */
+.fiche-entete {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--espace-4);
 }
 
+.fiche-visuel {
+  flex: none;
+  width: min(100%, 12rem);
+  aspect-ratio: 16 / 9;
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-sable);
+}
+
+.fiche-visuel > * {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.logo {
+  object-fit: contain;
+}
+
 .titre {
   overflow-wrap: anywhere;
 }
 
-/* Logo contenu dans 80 × 80 px, proportions conservées. */
-.logo {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
+.fiche-entete > .titre {
+  flex: 1 1 12rem;
+  min-width: 0;
 }
 
-.details {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-  gap: var(--espace-2) var(--espace-4);
-  margin: 0;
-}
-
-.detail {
+/* Repères : date en grand puis pastille de statut (libellés `dt` : styles/cartes.css). */
+.fiche-reperes {
   display: flex;
-  flex-direction: column;
-}
-
-dt {
-  font-size: var(--taille-secondaire);
-  color: var(--couleur-encre-douce);
-}
-
-dd {
+  flex-wrap: wrap;
+  gap: var(--espace-2) var(--espace-6);
   margin: 0;
 }
 
+.fiche-reperes dd {
+  margin: 0;
+}
+
+.fiche-date {
+  font-size: var(--taille-grande);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
+}
+
+/* Sections Bénévoles et Inscrits, séparées de ce qui précède par un filet. */
+.formulaire,
+app-inscrits-course {
+  padding-top: var(--espace-4);
+  border-top: 1px solid var(--couleur-trait);
+}
+
+app-inscrits-course {
+  display: block;
+}
+
+/* Bénévoles en tuiles cochables : toute la tuile (libellé étiré) est une cible de 44 px. */
 .benevoles {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+  gap: var(--espace-3);
+  min-width: 0;
   margin: 0;
   padding: 0;
   border: none;
-  border-top: 1px solid var(--couleur-trait);
 }
 
 .benevole {
   display: flex;
   align-items: center;
   gap: var(--espace-3);
-  padding: var(--espace-2) 0;
-  border-bottom: 1px solid var(--couleur-trait);
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: var(--cible-min);
+  padding-inline: var(--espace-3);
+  border: 1px solid var(--couleur-trait);
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-surface);
 }
 
-/* Case agrandie : cible tactile confortable sur téléphone. */
+/* Cochée : la case native porte l'état, la couleur le renforce. */
+.benevole:has(input:checked) {
+  border-color: var(--couleur-foret);
+  background-color: var(--couleur-succes-pale);
+}
+
 .benevole input {
+  flex: none;
   width: 1.25rem;
   height: 1.25rem;
   margin: 0;
@@ -67,15 +108,12 @@ dd {
 }
 
 .benevole label {
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-block: var(--espace-2);
   font-weight: var(--poids-normal);
   overflow-wrap: anywhere;
-}
-
-.masque {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }

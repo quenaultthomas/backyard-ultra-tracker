@@ -1,7 +1,15 @@
+/* Section « Inscrits » de la fiche de Course (docs/design.md, section 7, « Fiche de Course »). */
 .resume {
   display: flex;
   flex-wrap: wrap;
   gap: var(--espace-1) var(--espace-6);
+  padding: var(--espace-3);
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-sable);
+}
+
+.resume__compteur {
+  font-weight: 600;
 }
 
 .tableau {
@@ -14,6 +22,7 @@ td {
   padding: var(--espace-2) var(--espace-2) var(--espace-2) 0;
   border-bottom: 1px solid var(--couleur-trait);
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 th {
@@ -22,6 +31,8 @@ th {
   color: var(--couleur-encre-douce);
 }
 
-.pseudo {
-  overflow-wrap: anywhere;
+.dossard {
+  font-size: var(--taille-moyenne);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
 }

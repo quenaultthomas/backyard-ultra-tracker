@@ -53,36 +53,7 @@
   overflow-wrap: anywhere;
 }
 
-/* Indicateurs : pictogramme (pictogrammes.css) à gauche du libellé et de la valeur. */
-.indicateurs {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr));
-  gap: var(--espace-3) var(--espace-4);
-  margin: 0;
-}
-
-.indicateur {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  column-gap: var(--espace-2);
-  min-width: 0;
-}
-
-.indicateur::before {
-  grid-row: span 2;
-}
-
-dt {
-  font-size: var(--taille-secondaire);
-  color: var(--couleur-encre-douce);
-}
-
-dd {
-  margin: 0;
-  font-weight: 600;
-  color: var(--couleur-encre);
-}
+/* Indicateurs `dl.indicateurs` : règles partagées de styles/cartes.css. */
 
 /* Actions au bas de la carte : alignées d'une carte à l'autre dans une même rangée. */
 .course-carte__actions {

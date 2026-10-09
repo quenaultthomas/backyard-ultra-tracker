@@ -1,4 +1,4 @@
-<main class="page">
+<main class="page page--cartes">
   <section class="carte" aria-labelledby="fiche-titre">
     @if (introuvable()) {
       <h1 id="fiche-titre" class="titre">Fiche de la course</h1>
@@ -11,28 +11,39 @@
         Impossible de charger la course. Réessayez plus tard.
       </p>
     } @else if (fiche(); as c) {
-      <div class="entete">
-        @if (c.logoUrl; as url) {
-          <img class="logo" [src]="url" [alt]="'Logo de ' + c.nom" data-testid="fiche-logo" />
-        }
-        <h1 id="fiche-titre" class="titre" data-testid="fiche-titre">{{ c.nom }}</h1>
-      </div>
-
-      <dl class="details">
-        <div class="detail">
-          <dt>Statut</dt>
-          <dd data-testid="fiche-statut">{{ libellesStatut[c.statut] }}</dd>
+      <header class="fiche-entete">
+        <div class="fiche-visuel">
+          @if (c.logoUrl; as url) {
+            <img class="logo" [src]="url" [alt]="'Logo de ' + c.nom" data-testid="fiche-logo" />
+          } @else {
+            <div class="visuel-substitution" aria-hidden="true"></div>
+          }
         </div>
-        <div class="detail">
+        <h1 id="fiche-titre" class="titre" data-testid="fiche-titre">{{ c.nom }}</h1>
+      </header>
+
+      <dl class="fiche-reperes">
+        <div>
           <dt>Date</dt>
           <dd>
-            <time [attr.datetime]="c.date" data-testid="fiche-date">{{
+            <time class="fiche-date" [attr.datetime]="c.date" data-testid="fiche-date">{{
               formaterDate(c.date)
             }}</time>
           </dd>
         </div>
+        <div>
+          <dt>Statut</dt>
+          <dd>
+            <span [class]="pastillesStatut[c.statut]" data-testid="fiche-statut">{{
+              libellesStatut[c.statut]
+            }}</span>
+          </dd>
+        </div>
+      </dl>
+
+      <dl class="indicateurs">
         @for (champ of champsNombre; track champ.cle) {
-          <div class="detail">
+          <div class="indicateur" [class]="'indicateur--' + champ.suffixe">
             <dt>{{ champ.libelleCourt }}</dt>
             <dd [attr.data-testid]="'fiche-' + champ.suffixe">{{ c[champ.cle] + champ.unite }}</dd>
           </div>
@@ -65,16 +76,19 @@
           </p>
         } @else if (benevoles(); as liste) {
           @if (liste.length === 0) {
-            <p class="message" data-testid="fiche-benevoles-vide">
-              Aucun bénévole n'existe encore.
-            </p>
-            <a
-              class="lien"
-              routerLink="/administration/benevoles"
-              data-testid="fiche-lien-benevoles"
-            >
-              Gérer les bénévoles
-            </a>
+            <div class="etat-vide">
+              <span class="etat-vide__visuel visuel-substitution" aria-hidden="true"></span>
+              <p class="etat-vide__message" data-testid="fiche-benevoles-vide">
+                Aucun bénévole n'existe encore.
+              </p>
+              <a
+                class="bouton bouton--secondaire"
+                routerLink="/administration/benevoles"
+                data-testid="fiche-lien-benevoles"
+              >
+                Gérer les bénévoles
+              </a>
+            </div>
           }
           @if (lignes().length > 0) {
             <fieldset class="benevoles">

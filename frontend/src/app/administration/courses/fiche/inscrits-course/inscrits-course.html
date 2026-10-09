@@ -7,12 +7,17 @@
     </p>
   } @else if (inscrits(); as reponse) {
     <p class="message resume">
-      <span data-testid="fiche-inscrits-compteur">{{ compteur() }}</span>
+      <span class="resume__compteur" data-testid="fiche-inscrits-compteur">{{ compteur() }}</span>
       <span data-testid="fiche-inscrits-places">{{ places() }}</span>
     </p>
 
     @if (reponse.inscrits.length === 0) {
-      <p class="message" data-testid="fiche-inscrits-vide">Aucun inscrit pour le moment.</p>
+      <div class="etat-vide">
+        <span class="etat-vide__visuel visuel-substitution" aria-hidden="true"></span>
+        <p class="etat-vide__message" data-testid="fiche-inscrits-vide">
+          Aucun inscrit pour le moment.
+        </p>
+      </div>
     } @else {
       <table class="tableau" aria-labelledby="titre-inscrits">
         <thead>

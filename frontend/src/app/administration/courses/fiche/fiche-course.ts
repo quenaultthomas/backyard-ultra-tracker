@@ -21,6 +21,7 @@ import { MESSAGE_SERVICE_INDISPONIBLE, lireProbleme } from '../../../partage/pro
 import { AdministrationApiService } from '../../administration-api.service';
 import { CHAMPS_NOMBRE, formaterDateCourse } from '../champs-course';
 import { FicheCourseReponse, InscritsCourseReponse, LIBELLES_STATUT_COURSE } from '../course';
+import { PASTILLES_STATUT_COURSE } from '../course';
 import {
   ECRAN_GESTION_COURSES,
   ETAT_MESSAGE_ERREUR,
@@ -69,6 +70,7 @@ export class FicheCourse implements OnInit {
 
   protected readonly champsNombre = CHAMPS_NOMBRE;
   protected readonly libellesStatut = LIBELLES_STATUT_COURSE;
+  protected readonly pastillesStatut = PASTILLES_STATUT_COURSE;
   protected readonly formaterDate = formaterDateCourse;
 
   /** `null` tant que la fiche n'est pas chargée. */
