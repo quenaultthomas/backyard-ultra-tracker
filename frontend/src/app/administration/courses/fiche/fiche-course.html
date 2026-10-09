@@ -2,12 +2,12 @@
   <section class="carte" aria-labelledby="fiche-titre">
     @if (introuvable()) {
       <h1 id="fiche-titre" class="titre">Fiche de la course</h1>
-      <p class="erreur erreur--generale" role="alert" data-testid="fiche-erreur-introuvable">
+      <p class="message--erreur" role="alert" data-testid="fiche-erreur-introuvable">
         Cette course n'existe plus.
       </p>
     } @else if (erreurChargement()) {
       <h1 id="fiche-titre" class="titre">Fiche de la course</h1>
-      <p class="erreur erreur--generale" role="alert" data-testid="fiche-erreur-chargement">
+      <p class="message--erreur" role="alert" data-testid="fiche-erreur-chargement">
         Impossible de charger la course. Réessayez plus tard.
       </p>
     } @else if (fiche(); as c) {
@@ -55,23 +55,23 @@
         <p class="message" role="status" data-testid="fiche-benevoles-compteur">{{ compteur() }}</p>
 
         @if (messageSucces(); as message) {
-          <p class="message-succes" role="status" data-testid="fiche-message-succes">
+          <p class="message--succes" role="status" data-testid="fiche-message-succes">
             {{ message }}
           </p>
         }
         @if (erreur(); as message) {
-          <p class="erreur erreur--generale" role="alert" data-testid="fiche-erreur">
+          <p class="message--erreur" role="alert" data-testid="fiche-erreur">
             {{ message }}
           </p>
         }
         @if (verrouillee()) {
-          <p class="message-info" data-testid="fiche-benevoles-verrouille">
+          <p class="message--info" data-testid="fiche-benevoles-verrouille">
             La course est terminée : les bénévoles ne peuvent plus être modifiés.
           </p>
         }
 
         @if (erreurBenevoles()) {
-          <p class="erreur erreur--generale" role="alert" data-testid="fiche-benevoles-erreur">
+          <p class="message--erreur" role="alert" data-testid="fiche-benevoles-erreur">
             Impossible de charger la liste des bénévoles. Réessayez plus tard.
           </p>
         } @else if (benevoles(); as liste) {

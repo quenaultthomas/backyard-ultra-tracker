@@ -107,6 +107,20 @@
   font-weight: var(--poids-gras);
   color: var(--couleur-foret);
   overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+/* En-tête de carte de Course (R.9b) : date en grand au-dessus du titre (Espace coureur, Mes inscriptions, Espace bénévole). */
+.carte-liste__entete {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-1);
+}
+
+.carte-liste__date {
+  font-size: var(--taille-grande);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
 }
 
 .carte-liste__texte {

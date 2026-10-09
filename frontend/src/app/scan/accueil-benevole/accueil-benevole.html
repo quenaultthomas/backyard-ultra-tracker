@@ -4,7 +4,7 @@
       Espace bénévole
     </h1>
     @if (erreurChargement()) {
-      <p class="erreur erreur--generale" role="alert" data-testid="accueil-benevole-erreur">
+      <p class="message--erreur" role="alert" data-testid="accueil-benevole-erreur">
         Impossible de charger vos courses. Réessayez plus tard.
       </p>
     } @else if (courses(); as liste) {
@@ -33,9 +33,9 @@
                   <div class="visuel-substitution" aria-hidden="true"></div>
                 }
               </div>
-              <div class="course-entete">
+              <div class="carte-liste__entete">
                 <time
-                  class="date"
+                  class="carte-liste__date"
                   [attr.datetime]="course.date"
                   data-testid="benevole-course-date"
                   >{{ formaterDate(course.date) }}</time

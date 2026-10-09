@@ -10,7 +10,7 @@
     <section class="formulaire" [attr.aria-labelledby]="'titre-liste-' + pp">
       <h2 [id]="'titre-liste-' + pp" class="sous-titre">{{ geres.titreListe }}</h2>
       @if (erreurChargement()) {
-        <p class="erreur erreur--generale" role="alert" [attr.data-testid]="pp + '-erreur'">
+        <p class="message--erreur" role="alert" [attr.data-testid]="pp + '-erreur'">
           {{ geres.erreurChargement }}
         </p>
       } @else if (comptes(); as liste) {
@@ -52,12 +52,12 @@
       <h2 [id]="'titre-creer-' + p" class="sous-titre">{{ geres.titreCreation }}</h2>
 
       @if (pseudoCree(); as pseudo) {
-        <p class="message-succes" role="status" [attr.data-testid]="p + '-message-succes'">
+        <p class="message--succes" role="status" [attr.data-testid]="p + '-message-succes'">
           {{ geres.succes(pseudo) }}
         </p>
       }
       @if (erreursServeur().generale; as erreurGenerale) {
-        <p class="erreur erreur--generale" role="alert" [attr.data-testid]="p + '-erreur-generale'">
+        <p class="message--erreur" role="alert" [attr.data-testid]="p + '-erreur-generale'">
           {{ erreurGenerale }}
         </p>
       }

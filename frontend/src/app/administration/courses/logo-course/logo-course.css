@@ -46,8 +46,8 @@
   margin: 0;
 }
 
-/* Écran étroit et texte agrandi (conteneur défini par gestion-courses.css). */
-@container page-gestion-courses (max-width: 15rem) {
+/* Écran étroit et texte agrandi (conteneur `cartes` de la variante .page--cartes, cartes.css). */
+@container cartes (max-width: 15rem) {
   .apercu {
     padding: var(--espace-2);
   }

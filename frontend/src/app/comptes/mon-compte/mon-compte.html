@@ -30,7 +30,7 @@
       </h2>
 
       @if (succes()) {
-        <p class="message-succes" role="status" data-testid="mon-compte-message-succes">
+        <p class="message--succes" role="status" data-testid="mon-compte-message-succes">
           Votre mot de passe a été modifié.
         </p>
       }
@@ -46,7 +46,7 @@
         data-testid="mon-compte-panneau-mot-de-passe"
       >
         @if (erreursServeur().generale; as erreurGenerale) {
-          <p class="erreur erreur--generale" role="alert" data-testid="mon-compte-erreur-generale">
+          <p class="message--erreur" role="alert" data-testid="mon-compte-erreur-generale">
             {{ erreurGenerale }}
           </p>
         }
