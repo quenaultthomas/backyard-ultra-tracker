@@ -275,3 +275,13 @@ app-qr-code > .erreur {
   background-color: var(--couleur-orange);
   color: var(--couleur-encre);
 }
+
+/* Texte masqué visuellement : lu par les lecteurs d'écran, jamais affiché. */
+.masque {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

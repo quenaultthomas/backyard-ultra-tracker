@@ -6,51 +6,29 @@
 /*
  * Conteneur de requête : la largeur de l'écran mesurée en rem suit l'agrandissement du texte.
  * Moins de 15rem (320 ou 360 px avec le texte à 200 %) : marges internes réduites pour que
- * les boutons des cartes de course (confirmation, aperçu de logo) tiennent dans la carte.
+ * les boutons des cartes de course (confirmation, aperçu de logo) et les champs de l'encart
+ * tiennent dans la carte.
  */
 .page {
   container: page-gestion-courses / inline-size;
 }
 
 @container page-gestion-courses (max-width: 15rem) {
-  .carte {
+  .carte,
+  .encart {
     padding: var(--espace-3);
+  }
+
+  .formulaire--saisie .bouton {
+    padding-inline: var(--espace-3);
   }
 }
 
-/* Formulaire borné : des champs de largeur raisonnable sous une grille large. */
+/* Formulaire borné en encart (cartes.css) : des champs de largeur raisonnable sous une grille large. */
 .formulaire--saisie {
   box-sizing: border-box;
   width: 100%;
   max-width: 40rem;
-}
-
-/* Aucune Course : bloc sable en pointillés, visuel de substitution réduit (décoratif). */
-.etat-vide {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--espace-3);
-  padding: var(--espace-6);
-  border: 1px dashed var(--couleur-trait);
-  border-radius: var(--rayon-m);
-  background-color: var(--couleur-sable);
-  text-align: center;
-  overflow-wrap: anywhere;
-}
-
-.etat-vide__visuel {
-  display: block;
-  width: 100%;
-  max-width: 12rem;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--rayon-s);
-}
-
-.etat-vide__message {
-  margin: 0;
-  font-weight: 600;
-  color: var(--couleur-encre);
 }
 
 .champs-nombre {
@@ -67,4 +45,15 @@
 
 .actions .bouton {
   flex: 1 1 12rem;
+}
+
+/*
+ * Boutons du formulaire : ils ne dépassent jamais de l'encart, même quand leur plus long mot
+ * (« modifications ») est plus large que la place disponible (320 px, texte à 200 %).
+ */
+.formulaire--saisie .bouton {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }

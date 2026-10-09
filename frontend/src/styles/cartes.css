@@ -142,3 +142,51 @@
     padding-inline: var(--espace-3);
   }
 }
+
+/* Encart de formulaire (R.8b, R.9a) : bloc sable bordé ; `--edition` cerne de forêt un formulaire en modification. */
+.encart {
+  padding: var(--espace-4);
+  border: 1px solid var(--couleur-trait);
+  border-radius: var(--rayon-m);
+  background-color: var(--couleur-sable);
+}
+
+.encart--edition {
+  border-color: var(--couleur-foret);
+  box-shadow: 0 0 0 1px var(--couleur-foret);
+}
+
+/*
+ * Indicateurs de Course (carte de la liste R.7, fiche R.9a) : pictogramme (pictogrammes.css)
+ * sur deux lignes, à gauche du libellé et de la valeur. Sélecteur enfant : jamais `p.indicateur`.
+ */
+.indicateurs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr));
+  gap: var(--espace-3) var(--espace-4);
+  margin: 0;
+}
+
+.indicateurs > .indicateur {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--espace-2);
+  min-width: 0;
+}
+
+.indicateurs > .indicateur::before {
+  grid-row: span 2;
+}
+
+.indicateurs dt,
+.fiche-reperes dt {
+  font-size: var(--taille-secondaire);
+  color: var(--couleur-encre-douce);
+}
+
+.indicateurs dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--couleur-encre);
+}

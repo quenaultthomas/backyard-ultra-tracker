@@ -397,6 +397,49 @@ export const ETATS: Scene[] = [
       await expect(page.getByTestId('benevoles-vide')).toBeVisible();
     },
   },
+  {
+    nom: 'fiche de course sans benevole',
+    route: (j) => `/administration/courses/${j.courseA.id}`,
+    role: 'master',
+    pret: async (page) => {
+      await page.route('**/api/administration/benevoles', (route) =>
+        route.request().method() === 'GET'
+          ? route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+          : route.continue(),
+      );
+      await page.reload();
+      await expect(page.getByTestId('fiche-benevoles-vide')).toBeVisible();
+    },
+  },
+  {
+    nom: 'fiche de course sans inscrit',
+    route: (j) => `/administration/courses/${j.courseA.id}`,
+    role: 'master',
+    pret: async (page) => {
+      await page.route('**/api/administration/courses/*/inscriptions', (route) =>
+        route.request().method() === 'GET'
+          ? route.fulfill({
+              status: 200,
+              contentType: 'application/json',
+              body: JSON.stringify({ nombreInscrits: 0, nombreMaxParticipants: 50, placesRestantes: 50, complete: false, inscrits: [] }),
+            })
+          : route.continue(),
+      );
+      await page.reload();
+      await expect(page.getByTestId('fiche-inscrits-vide')).toBeVisible();
+    },
+  },
+  {
+    nom: 'gestion des courses en modification',
+    route: '/administration/courses',
+    role: 'master',
+    pret: async (page, jeu) => {
+      await ECRANS.find((e) => e.nom === 'gestion des courses')!.pret(page, jeu);
+      const ligne = page.getByTestId('ligne-course').filter({ has: page.getByTestId('course-nom').getByText(jeu.courseA.nom, { exact: true }) });
+      await ligne.getByTestId('course-bouton-modifier').click();
+      await expect(page.getByTestId('course-formulaire-titre')).toHaveText('Modifier la course');
+    },
+  },
 ];
 
 export function cheminDe(scene: Scene, jeu: JeuReference): string {

@@ -24,11 +24,3 @@
   font-size: var(--taille-secondaire);
   color: var(--couleur-encre-douce);
 }
-
-/* Formulaire de création en encart sable (contrastes : design.md, section 3). */
-.encart {
-  padding: var(--espace-4);
-  border: 1px solid var(--couleur-trait);
-  border-radius: var(--rayon-m);
-  background-color: var(--couleur-sable);
-}

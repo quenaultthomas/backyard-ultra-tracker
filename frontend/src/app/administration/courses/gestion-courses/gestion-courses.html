@@ -47,7 +47,8 @@
     </section>
 
     <form
-      class="formulaire formulaire--saisie"
+      class="formulaire formulaire--saisie encart"
+      [class.encart--edition]="enEdition"
       [formGroup]="formulaire"
       (ngSubmit)="soumettre()"
       novalidate

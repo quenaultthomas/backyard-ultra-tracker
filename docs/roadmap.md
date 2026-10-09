@@ -177,9 +177,13 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 - **Livré** : Espace bénévole en cartes, gestion des comptes admins et bénévoles au thème (liste, formulaire de création, états vides).
 - **Tu testes** : parcourir chaque écran avec le rôle concerné : cohérence visuelle, aucune régression.
 
-### R.9 Fiche course, formulaires admin et finition
-- **Livré** : fiche de course (identité visuelle, statut, bénévoles affectés, inscrits) et formulaires de création et de modification au thème ; passe de cohérence globale (espacements, titres, focus clavier, contrastes, écrans étroits) ; `docs/design.md` complété avec les règles à suivre pour les écrans des jalons 4 à 6 (pilotage, scan, suivi public, y compris grand format projeté).
-- **Tu testes** : parcours admin complet (créer, modifier, fiche, logo, bénévoles) ; revue visuelle de tous les écrans sur ordinateur et téléphone ; `docs/design.md` à jour.
+### R.9a Thème de la fiche de course et du formulaire de course
+- **Livré** : fiche de course (identité visuelle, statut en pastille, bénévoles affectés, inscrits) et formulaire de déclaration et de modification au thème ; factorisation des styles partagés (`.encart`, `.indicateurs`, `.masque`, `.etat-vide`).
+- **Tu testes** : parcours admin complet (créer, modifier, fiche, logo, bénévoles) sur ordinateur et téléphone.
+
+### R.9b Finition et charte pour les jalons 4 à 6
+- **Livré** : passe de cohérence globale (espacements, titres, focus clavier, contrastes, écrans étroits), dédoublonnage des feuilles R.8a et R.8b ; `docs/design.md` complété avec les règles à suivre pour les écrans des jalons 4 à 6 (pilotage, scan, suivi public, y compris grand format projeté).
+- **Tu testes** : revue visuelle de tous les écrans sur ordinateur et téléphone ; `docs/design.md` à jour.
 
 ---
 
