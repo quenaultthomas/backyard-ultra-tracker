@@ -354,6 +354,8 @@ test.describe('Mon compte - changement de mot de passe repliable', () => {
     for (let i = 0; i < 5; i++) {
       await remplir(page, FAUX, NOUVEAU);
       await t(page, 'mon-compte-bouton-changer').click();
+      // Champs vidés à la réponse : le message seul peut être celui de la tentative précédente.
+      await champsVides(page);
       await expect(t(page, 'mon-compte-erreur-actuel')).toHaveText('Le mot de passe actuel est incorrect.');
     }
     await remplir(page, MOT_DE_PASSE, NOUVEAU);

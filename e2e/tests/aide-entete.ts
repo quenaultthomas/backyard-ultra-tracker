@@ -7,8 +7,13 @@ export async function ouvrirMenuVisiteur(page: Page): Promise<void> {
   await expect(page.getByTestId('menu-visiteur')).toBeVisible();
 }
 
-/** Ouvre le menu burger de l'utilisateur connecté et attend qu'il soit déployé et visible. */
+/**
+ * Ouvre le menu burger de l'utilisateur connecté et attend qu'il soit déployé et visible.
+ * Attend d'abord la fin de la connexion : un clic sur le menu visiteur serait perdu quand
+ * l'en-tête recrée le menu fermé au passage à l'état connecté.
+ */
 export async function ouvrirMenuCompte(page: Page): Promise<void> {
+  await expect(page.getByTestId('menu-compte')).toHaveCount(1);
   await page.getByTestId('bouton-menu').click();
   await expect(page.getByTestId('bouton-menu')).toHaveAttribute('aria-expanded', 'true');
   await expect(page.getByTestId('menu-compte')).toBeVisible();

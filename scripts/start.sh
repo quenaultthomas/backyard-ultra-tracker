@@ -24,7 +24,7 @@ done
 [[ -f .env ]] || { echo "start : .env absent (cp .env.example .env, puis renseigner l'admin master)." >&2; exit 1; }
 
 echo "==> Démarrage de la stack (attente que tous les services soient sains)"
-docker compose up -d --wait "${options[@]}"
+docker compose up -d --wait ${options[@]+"${options[@]}"}
 
 if [[ "$demo" == "oui" ]]; then
   echo "==> Peuplement des données de démonstration"

@@ -16,5 +16,5 @@ for argument in "$@"; do
   esac
 done
 
-docker compose down "${options[@]}"
+docker compose down ${options[@]+"${options[@]}"}
 echo "==> Application arrêtée."
