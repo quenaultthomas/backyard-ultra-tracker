@@ -692,7 +692,7 @@ class SuppressionCompteCoureurIntegrationTest {
         List<String> messages = new ArrayList<>();
         for (ILoggingEvent e : journal.list) {
             messages.add(e.getFormattedMessage());
-            if (e.getThrowableProxy() != null) {
+            if (e.getThrowableProxy() != null && e.getThrowableProxy().getMessage() != null) {
                 messages.add(e.getThrowableProxy().getMessage());
             }
         }

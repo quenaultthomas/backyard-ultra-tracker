@@ -74,8 +74,13 @@ export interface DonneesCourse {
   nombreMaxBoucles: number;
 }
 
+/**
+ * Suffixe sans la suite « qr » : la page des courses ouvertes affiche les logos (`alt` « Logo de … ») et
+ * `inscription-course` CA11 y interdit tout `img[alt*="QR" i]`.
+ */
 export function nomCourseUnique(prefixe = 'Course E2E'): string {
-  return `${prefixe} ${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+  const suffixe = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`.replace(/qr/gi, 'q9');
+  return `${prefixe} ${suffixe}`;
 }
 
 /**
