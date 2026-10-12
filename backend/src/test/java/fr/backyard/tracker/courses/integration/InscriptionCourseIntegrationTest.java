@@ -77,7 +77,7 @@ class InscriptionCourseIntegrationTest {
             + "jeton_qr, statut) values (?, ?, ?, ?, ?, ?)";
     static final List<String> CHANGESETS = List.of("0002-compte", "0003-admin-master-unique", "0004-course",
             "0005-logo-course", "0006-affectation-benevole", "0007-inscription",
-                "0008-demarrage-course");
+                "0008-demarrage-course", "0009-passage");
 
     @Container
     @ServiceConnection
@@ -441,7 +441,7 @@ class InscriptionCourseIntegrationTest {
     // ---------------------------------------------------------------- CA8
 
     @Test
-    @DisplayName("CA8 : databasechangelog contient exactement 0002 à 0008 ; la table inscription a colonnes, contraintes et index de RG11 ; aucune clé étrangère vers compte ; ddl-auto=validate")
+    @DisplayName("CA8 : databasechangelog contient exactement 0002 à 0009 (0001 à 0008 inchangés) ; la table inscription a colonnes, contraintes et index de RG11 ; aucune clé étrangère vers compte ; ddl-auto=validate")
     void ca8_schema_de_la_table_inscription() {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactlyElementsOf(CHANGESETS);
@@ -566,7 +566,7 @@ class InscriptionCourseIntegrationTest {
     // ---------------------------------------------------------------- CA10
 
     @Test
-    @DisplayName("CA10 : /api/administration/** et /api/benevole/** gardent leurs rôles malgré la règle /api/coureur/** ; sept changesets au total")
+    @DisplayName("CA10 : /api/administration/** et /api/benevole/** gardent leurs rôles malgré la règle /api/coureur/** ; huit changesets au total")
     void ca10_non_regression_des_roles() throws Exception {
         assertThat(api.requete("GET", CHEMIN_ADMIN, nadia.enteteLecture(), null, null).statusCode()).isEqualTo(200);
         assertErreur(api.requete("GET", CHEMIN_ADMIN, alice.enteteLecture(), null, null), 403, "ACCES_REFUSE",
@@ -581,7 +581,7 @@ class InscriptionCourseIntegrationTest {
                 "Authentification requise", "Vous devez être connecté.");
         assertThat(lister(alice).statusCode()).isEqualTo(200);
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
-                .hasSize(7).containsExactlyElementsOf(CHANGESETS);
+                .hasSize(8).containsExactlyElementsOf(CHANGESETS);
     }
 
     // ---------------------------------------------------------------- utilitaires

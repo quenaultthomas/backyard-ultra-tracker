@@ -463,12 +463,12 @@ class PilotageCourseIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA12 : aucun changeset ajouté : databasechangelog se termine par 0008-demarrage-course")
+    @DisplayName("CA12 : aucun changeset ajouté : databasechangelog se termine par 0009-passage (les changesets jusqu à 0008 inchangés)")
     void ca12_aucune_migration() {
         List<String> ids = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
 
         assertThat(ids).isNotEmpty();
-        assertThat(ids.get(ids.size() - 1)).isEqualTo("0008-demarrage-course");
+        assertThat(ids.get(ids.size() - 1)).isEqualTo("0009-passage");
     }
 
     // ---------------------------------------------------------------- utilitaires

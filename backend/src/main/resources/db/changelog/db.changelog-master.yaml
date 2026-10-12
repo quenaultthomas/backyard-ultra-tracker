@@ -23,3 +23,6 @@ databaseChangeLog:
   - include:
       file: changesets/0008-demarrage-course.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changesets/0009-passage.yaml
+      relativeToChangelogFile: true

@@ -3,6 +3,7 @@ package fr.backyard.tracker.courses.domaine;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.IntPredicate;
 
 /**
  * Participation d'un Compte coureur à une Course, l'une et l'autre référencées par leur identifiant. Le dossard est
@@ -75,6 +76,34 @@ public final class Inscription {
     /** L'Inscription est encore en course : ni en abandon, ni vainqueur. */
     public boolean estEnCourse() {
         return statut == StatutInscription.EN_COURSE;
+    }
+
+    /**
+     * Seule une Inscription EN_COURSE obtient un Passage ; le scan ne change jamais son statut.
+     *
+     * @throws InscriptionNonEnCourseException l'Inscription est en abandon ou vainqueur
+     */
+    public void autoriserPassage() {
+        if (!estEnCourse()) {
+            throw new InscriptionNonEnCourseException(statut);
+        }
+    }
+
+    /**
+     * Unicité et continuité des Boucles : au plus un Passage par Boucle, et un Passage de la Boucle N > 1 exige un
+     * Passage (de toute origine) sur la Boucle N - 1. Unique définition de ces règles.
+     *
+     * @param aUnPassageSur indique si cette Inscription a un Passage sur une Boucle donnée
+     * @throws PassageDejaEnregistreException l'Inscription a déjà un Passage sur cette Boucle (contrôlé en premier)
+     * @throws PassagePrecedentManquantException l'Inscription n'a pas de Passage sur la Boucle précédente
+     */
+    public void verifierBouclePassable(int numeroBoucle, IntPredicate aUnPassageSur) {
+        if (aUnPassageSur.test(numeroBoucle)) {
+            throw new PassageDejaEnregistreException(numeroBoucle);
+        }
+        if (numeroBoucle > 1 && !aUnPassageSur.test(numeroBoucle - 1)) {
+            throw new PassagePrecedentManquantException(numeroBoucle);
+        }
     }
 
     /** Identifiant uniquement : ni Compte ni jeton dans les journaux. */

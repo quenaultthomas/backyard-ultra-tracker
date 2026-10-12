@@ -31,6 +31,9 @@ public interface DepotInscriptions {
     /** Inscription de cet identifiant si elle appartient au Compte, vide sinon (inconnue ou d'un autre Compte). */
     Optional<Inscription> parIdEtCompte(UUID inscriptionId, UUID compteId);
 
+    /** Inscription de la Course qui a exactement ce jeton, vide sinon (jeton inconnu ou d'une autre Course). */
+    Optional<Inscription> parCourseEtJeton(UUID courseId, JetonQr jeton);
+
     /** Supprime définitivement l'Inscription ; une Inscription déjà absente ne supprime rien. */
     void supprimer(UUID inscriptionId);
 }

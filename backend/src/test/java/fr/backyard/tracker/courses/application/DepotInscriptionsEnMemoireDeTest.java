@@ -2,6 +2,7 @@ package fr.backyard.tracker.courses.application;
 
 import fr.backyard.tracker.courses.domaine.DepotInscriptions;
 import fr.backyard.tracker.courses.domaine.Inscription;
+import fr.backyard.tracker.courses.domaine.JetonQr;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -56,5 +57,13 @@ final class DepotInscriptionsEnMemoireDeTest implements DepotInscriptions {
     @Override
     public List<Inscription> parCourse(UUID courseId) {
         return inscriptions.stream().filter(i -> i.courseId().equals(courseId)).toList();
+    }
+
+    /** 4.4a RG3 : recherche du jeton dans la seule Course demandée ; le jeton d'une autre Course est inconnu. */
+    @Override
+    public Optional<Inscription> parCourseEtJeton(UUID courseId, JetonQr jeton) {
+        return inscriptions.stream()
+                .filter(i -> i.courseId().equals(courseId) && i.jetonQr().equals(jeton))
+                .findFirst();
     }
 }

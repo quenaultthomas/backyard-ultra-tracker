@@ -73,7 +73,7 @@ class InscriptionsRefuseesIntegrationTest {
             + "jeton_qr, statut) values (?, ?, ?, ?, ?, ?)";
     static final List<String> CHANGESETS = List.of("0002-compte", "0003-admin-master-unique", "0004-course",
             "0005-logo-course", "0006-affectation-benevole", "0007-inscription",
-                "0008-demarrage-course");
+                "0008-demarrage-course", "0009-passage");
 
     @Container
     @ServiceConnection
@@ -477,7 +477,7 @@ class InscriptionsRefuseesIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA9 : databasechangelog contient exactement 0002 à 0008 (aucun nouveau changeset) et ddl-auto=validate")
+    @DisplayName("CA9 : databasechangelog contient exactement 0002 à 0009 (0001 à 0008 inchangés) (aucun nouveau changeset) et ddl-auto=validate")
     void ca9_aucune_migration() {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactlyElementsOf(CHANGESETS);
