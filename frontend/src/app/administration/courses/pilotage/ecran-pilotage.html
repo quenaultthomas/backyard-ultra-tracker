@@ -1,0 +1,141 @@
+<main class="page page--cartes">
+  <section class="carte" aria-labelledby="pilotage-titre">
+    @if (nonDemarree()) {
+      <h1 id="pilotage-titre" class="titre">Pilotage de la course</h1>
+      <p class="message--info" data-testid="pilotage-message-non-demarree">
+        La course n'est pas démarrée.
+      </p>
+    } @else if (pilotage(); as p) {
+      <header class="fiche-entete">
+        <div class="fiche-visuel" data-testid="pilotage-logo">
+          @if (p.logoUrl; as url) {
+            <img class="logo" [src]="url" [alt]="'Logo de ' + p.nom" />
+          } @else {
+            <div class="visuel-substitution" aria-hidden="true"></div>
+          }
+        </div>
+        <div class="pilotage-nom">
+          <h1 id="pilotage-titre" class="titre" data-testid="pilotage-titre">{{ p.nom }}</h1>
+          <span [class]="pastillesStatut[p.statut]" data-testid="pilotage-statut">{{
+            libellesStatut[p.statut]
+          }}</span>
+        </div>
+      </header>
+
+      @if (rafraichissement.echec()) {
+        <p
+          class="message--avertissement"
+          role="alert"
+          data-testid="pilotage-avertissement-actualisation"
+        >
+          L'actualisation a échoué : les valeurs affichées peuvent être en retard. Nouvelle
+          tentative en cours.
+        </p>
+      }
+
+      @if (p.statut === 'TERMINEE') {
+        <p class="message--info" data-testid="pilotage-message-terminee">La course est terminée.</p>
+      } @else if (p.boucleCourante === null) {
+        <p class="message--info" data-testid="pilotage-message-sans-depart">
+          Heure de départ inconnue : le pilotage chronométré n'est pas disponible.
+        </p>
+      } @else {
+        <section class="chronometrage" aria-label="Chronométrage">
+          <p class="chronometrage__boucle" data-testid="pilotage-boucle-courante">
+            Boucle {{ p.boucleCourante }} sur {{ p.nombreMaxBoucles }}
+          </p>
+          <dl class="chronometrage__durees">
+            <div>
+              <dt data-testid="pilotage-libelle-compte-a-rebours">
+                {{ p.derniereBoucle ? 'Fin de la dernière boucle dans' : 'Prochain départ dans' }}
+              </dt>
+              <dd class="chronometrage__valeur" data-testid="pilotage-compte-a-rebours">
+                {{ compteARebours() }}
+              </dd>
+            </div>
+            <div>
+              <dt>Durée écoulée</dt>
+              <dd class="chronometrage__valeur" data-testid="pilotage-duree-ecoulee">
+                {{ dureeEcoulee() }}
+              </dd>
+            </div>
+          </dl>
+          @if (p.demarreeLe; as demarreeLe) {
+            <p class="chronometrage__depart" data-testid="pilotage-depart">
+              Départ à <time [attr.datetime]="demarreeLe">{{ demarreeLe | date: 'HH:mm:ss' }}</time>
+            </p>
+          }
+        </section>
+
+        @if (p.boucleMaxTerminee) {
+          <p class="message--avertissement" data-testid="pilotage-message-boucle-max-terminee">
+            Le temps de la dernière boucle est écoulé. La fin de course sera constatée
+            automatiquement.
+          </p>
+        } @else if (p.derniereBoucle) {
+          <p class="message--info" data-testid="pilotage-message-derniere-boucle">
+            Dernière boucle autorisée.
+          </p>
+        }
+      }
+
+      <section class="formulaire inscrits" aria-labelledby="titre-coureurs">
+        <h2 id="titre-coureurs" class="sous-titre">Coureurs en course</h2>
+        <p class="message resume">
+          <span class="resume__compteur" data-testid="pilotage-compteur">{{ compteur() }}</span>
+        </p>
+        @if (p.inscritsEnCourse.length === 0) {
+          <div class="etat-vide">
+            <span class="etat-vide__visuel visuel-substitution" aria-hidden="true"></span>
+            <p class="etat-vide__message" data-testid="pilotage-inscrits-vide">
+              Aucun coureur en course.
+            </p>
+          </div>
+        } @else {
+          <table class="tableau" aria-labelledby="titre-coureurs" data-testid="pilotage-inscrits">
+            <thead>
+              <tr>
+                <th scope="col">Dossard</th>
+                <th scope="col">Coureur</th>
+                <th scope="col">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (inscrit of p.inscritsEnCourse; track inscrit.inscriptionId) {
+                <tr data-testid="pilotage-inscrit">
+                  <td class="dossard" data-testid="pilotage-inscrit-dossard">
+                    {{ inscrit.dossard }}
+                  </td>
+                  <td data-testid="pilotage-inscrit-pseudo">{{ inscrit.pseudo }}</td>
+                  <td>
+                    <span
+                      [class]="pastillesInscription[inscrit.statut]"
+                      data-testid="pilotage-inscrit-statut"
+                      >{{ libellesInscription[inscrit.statut] }}</span
+                    >
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+    } @else if (rafraichissement.echec()) {
+      <h1 id="pilotage-titre" class="titre">Pilotage de la course</h1>
+      <p class="message--erreur" role="alert" data-testid="pilotage-erreur">
+        {{ messageIndisponible }}
+      </p>
+    } @else {
+      <h1 id="pilotage-titre" class="titre">Pilotage de la course</h1>
+      <p class="message" role="status">Chargement du pilotage…</p>
+    }
+
+    <p class="masque" role="status" data-testid="pilotage-annonce-boucle">
+      {{ rafraichissement.annonce() }}
+    </p>
+
+    <a class="lien" [routerLink]="ficheCourse()" data-testid="pilotage-retour">
+      Retour à la fiche de la course
+    </a>
+  </section>
+</main>

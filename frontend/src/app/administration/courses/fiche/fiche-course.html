@@ -67,6 +67,19 @@
         (relire)="chargerFiche()"
       />
 
+      @if (pilotable()) {
+        <section class="formulaire" aria-labelledby="titre-pilotage">
+          <h2 id="titre-pilotage" class="sous-titre">Pilotage</h2>
+          <a
+            class="bouton"
+            [routerLink]="['/administration/courses', c.id, 'pilotage']"
+            data-testid="fiche-lien-pilotage"
+          >
+            Ouvrir le pilotage
+          </a>
+        </section>
+      }
+
       <section class="formulaire" aria-labelledby="titre-benevoles">
         <h2 id="titre-benevoles" class="sous-titre">Bénévoles</h2>
         <p class="message" role="status" data-testid="fiche-benevoles-compteur">{{ compteur() }}</p>

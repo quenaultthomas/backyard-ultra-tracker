@@ -17,6 +17,10 @@ public record InscritsCourseReponse(UUID courseId, int nombreMaxParticipants, in
         public String toString() {
             return "InscritReponse[inscriptionId=" + inscriptionId + ", dossard=" + dossard + "]";
         }
+
+        static InscritReponse depuis(ListerInscritsCourse.Inscrit inscrit) {
+            return new InscritReponse(inscrit.inscriptionId(), inscrit.dossard(), inscrit.pseudo(), inscrit.statut());
+        }
     }
 
     /** Identifiant de la Course et nombre d'inscrits uniquement : jamais de pseudo dans le journal. */
@@ -27,7 +31,7 @@ public record InscritsCourseReponse(UUID courseId, int nombreMaxParticipants, in
 
     static InscritsCourseReponse depuis(ListerInscritsCourse.InscritsCourse inscritsCourse) {
         List<InscritReponse> inscrits = inscritsCourse.inscrits().stream()
-                .map(i -> new InscritReponse(i.inscriptionId(), i.dossard(), i.pseudo(), i.statut())).toList();
+                .map(InscritReponse::depuis).toList();
         return new InscritsCourseReponse(inscritsCourse.course().id(),
                 inscritsCourse.course().nombreMaxParticipants(), inscritsCourse.nombreInscrits(),
                 inscritsCourse.placesRestantes(), inscritsCourse.complete(), inscrits);

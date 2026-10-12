@@ -60,15 +60,24 @@ public class ListerInscritsCourse {
     @Transactional(readOnly = true)
     public InscritsCourse executer(UUID courseId) {
         Course course = depotCourses.parId(courseId).orElseThrow(CourseIntrouvableException::new);
-        List<Inscription> inscriptions = depotInscriptions.parCourse(courseId).stream()
-                .sorted(Comparator.comparingInt(Inscription::dossard)).toList();
-        Map<UUID, String> pseudos = pseudosDe(inscriptions);
-        List<Inscrit> inscrits = inscriptions.stream().map(inscription -> inscrit(inscription, pseudos)).toList();
+        List<Inscrit> inscrits = inscritsParDossard(depotInscriptions.parCourse(courseId), annuairePseudos);
         return new InscritsCourse(course, inscrits, course.placesRestantes(inscrits.size()),
                 course.estComplete(inscrits.size()));
     }
 
-    private Map<UUID, String> pseudosDe(List<Inscription> inscriptions) {
+    /**
+     * Lignes des Inscriptions données, triées par dossard, avec les pseudos obtenus en une seule recherche dans
+     * l'annuaire (aucune recherche sans Inscription) ; « Compte inconnu » pour un pseudo non résolu. Partagé par les
+     * lectures d'administration des inscrits (liste et pilotage).
+     */
+    static List<Inscrit> inscritsParDossard(List<Inscription> inscriptions, AnnuairePseudos annuairePseudos) {
+        List<Inscription> triees = inscriptions.stream().sorted(Comparator.comparingInt(Inscription::dossard))
+                .toList();
+        Map<UUID, String> pseudos = pseudosDe(triees, annuairePseudos);
+        return triees.stream().map(inscription -> inscrit(inscription, pseudos)).toList();
+    }
+
+    private static Map<UUID, String> pseudosDe(List<Inscription> inscriptions, AnnuairePseudos annuairePseudos) {
         if (inscriptions.isEmpty()) {
             return Map.of();
         }

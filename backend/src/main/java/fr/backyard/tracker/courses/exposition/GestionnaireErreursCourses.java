@@ -5,6 +5,7 @@ import fr.backyard.tracker.courses.domaine.CourseCompleteException;
 import fr.backyard.tracker.courses.domaine.CourseHorsDateException;
 import fr.backyard.tracker.courses.domaine.CourseIntrouvableException;
 import fr.backyard.tracker.courses.domaine.CourseNonDemarrableException;
+import fr.backyard.tracker.courses.domaine.CourseNonDemarreeException;
 import fr.backyard.tracker.courses.domaine.CourseNonModifiableException;
 import fr.backyard.tracker.courses.domaine.CourseNonOuverteException;
 import fr.backyard.tracker.courses.domaine.CourseNonSupprimableException;
@@ -83,6 +84,11 @@ public class GestionnaireErreursCourses {
     ProblemDetail courseNonDemarrable() {
         return probleme(HttpStatus.CONFLICT, "Conflit",
                 "La course n'est plus en préparation : elle ne peut plus être démarrée.", "COURSE_NON_DEMARRABLE");
+    }
+
+    @ExceptionHandler(CourseNonDemarreeException.class)
+    ProblemDetail courseNonDemarree() {
+        return probleme(HttpStatus.CONFLICT, "Conflit", "La course n'est pas démarrée.", "COURSE_NON_DEMARREE");
     }
 
     @ExceptionHandler(CourseHorsDateException.class)
