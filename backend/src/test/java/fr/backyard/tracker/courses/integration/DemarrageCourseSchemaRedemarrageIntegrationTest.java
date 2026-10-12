@@ -51,7 +51,7 @@ class DemarrageCourseSchemaRedemarrageIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA4 : base vierge migrée (0002 à 0008), demarree_le timestamptz nullable, Courses existantes à null, aucune contrainte liée au statut, ddl-auto=validate ; Course démarrée relue avec le même demarreeLe après redémarrage")
+    @DisplayName("CA4 : base vierge migrée (0002 à 0009 (0001 à 0008 inchangés)), demarree_le timestamptz nullable, Courses existantes à null, aucune contrainte liée au statut, ddl-auto=validate ; Course démarrée relue avec le même demarreeLe après redémarrage")
     void ca4_schema_et_redemarrage() throws Exception {
         JsonMapper json = JsonMapper.builder().build();
         String idCourse;
@@ -104,7 +104,7 @@ class DemarrageCourseSchemaRedemarrageIntegrationTest {
     private void verifierSchema(JdbcTemplate jdbc) {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                        "0006-affectation-benevole", "0007-inscription", "0008-demarrage-course");
+                        "0006-affectation-benevole", "0007-inscription", "0008-demarrage-course", "0009-passage");
         Map<String, Object> colonne = jdbc.queryForMap("select data_type, is_nullable, column_default "
                 + "from information_schema.columns where table_name = 'course' and column_name = 'demarree_le'");
         assertThat(colonne.get("data_type")).isEqualTo("timestamp with time zone");

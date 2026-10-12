@@ -29,6 +29,24 @@ public record JetonQr(String valeur) {
         return new JetonQr(ENCODAGE.encodeToString(octets));
     }
 
+    /**
+     * Jeton lu ou saisi par un bénévole : tous les caractères d'espacement sont retirés, y compris à l'intérieur
+     * (jeton collé sur deux lignes) et les espaces insécables. La casse est conservée. Unique règle de normalisation.
+     *
+     * @throws NullPointerException saisie absente
+     * @throws IllegalArgumentException saisie vide après nettoyage
+     */
+    public static JetonQr depuisSaisie(String saisie) {
+        Objects.requireNonNull(saisie, "Le jeton QR est obligatoire");
+        StringBuilder nettoye = new StringBuilder(saisie.length());
+        saisie.codePoints().filter(caractere -> !estEspacement(caractere)).forEach(nettoye::appendCodePoint);
+        return new JetonQr(nettoye.toString());
+    }
+
+    private static boolean estEspacement(int caractere) {
+        return Character.isWhitespace(caractere) || Character.isSpaceChar(caractere);
+    }
+
     @Override
     public String toString() {
         return "JetonQr[masqué]";

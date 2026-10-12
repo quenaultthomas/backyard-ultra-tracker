@@ -1,6 +1,17 @@
 package fr.backyard.tracker.courses.exposition;
 
 import fr.backyard.tracker.courses.domaine.BenevoleInconnuException;
+import fr.backyard.tracker.courses.domaine.BenevoleNonAffecteException;
+import fr.backyard.tracker.courses.domaine.CourseTermineePourPassageException;
+import fr.backyard.tracker.courses.domaine.HeureDeDepartInconnueException;
+import fr.backyard.tracker.courses.domaine.IdentifiantScanDejaUtiliseException;
+import fr.backyard.tracker.courses.domaine.InscriptionNonEnCourseException;
+import fr.backyard.tracker.courses.domaine.JetonInconnuException;
+import fr.backyard.tracker.courses.domaine.PassageDejaEnregistreException;
+import fr.backyard.tracker.courses.domaine.PassagePrecedentManquantException;
+import fr.backyard.tracker.courses.domaine.RefusPassageCoureurException;
+import fr.backyard.tracker.courses.domaine.ScanAnterieurAuDepartException;
+import fr.backyard.tracker.courses.domaine.TempsDeCourseEcouleException;
 import fr.backyard.tracker.courses.domaine.CourseCompleteException;
 import fr.backyard.tracker.courses.domaine.CourseHorsDateException;
 import fr.backyard.tracker.courses.domaine.CourseIntrouvableException;
@@ -32,7 +43,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @RestControllerAdvice(assignableTypes = {CourseController.class, LogoCourseController.class,
         FicheCourseController.class, CoursesDuBenevoleController.class, InscriptionsCoureurController.class,
-        MesInscriptionsController.class})
+        MesInscriptionsController.class, PassageController.class})
 @Order(0)
 public class GestionnaireErreursCourses {
 
@@ -130,6 +141,82 @@ public class GestionnaireErreursCourses {
     ProblemDetail desinscriptionImpossible() {
         return probleme(HttpStatus.CONFLICT, "Conflit",
                 "La course n'est plus en préparation : la désinscription est impossible.", "DESINSCRIPTION_IMPOSSIBLE");
+    }
+
+    /** Même réponse pour un bénévole non affecté et une Course inconnue : rien ne révèle l'existence d'une Course. */
+    @ExceptionHandler(BenevoleNonAffecteException.class)
+    ProblemDetail benevoleNonAffecte() {
+        return probleme(HttpStatus.FORBIDDEN, "Accès refusé", "Vous n'êtes pas affecté à cette course.",
+                "BENEVOLE_NON_AFFECTE");
+    }
+
+    @ExceptionHandler(JetonInconnuException.class)
+    ProblemDetail jetonInconnu() {
+        return probleme(HttpStatus.NOT_FOUND, "Introuvable", "Jeton inconnu pour cette course.", "JETON_INCONNU");
+    }
+
+    /** Aucune donnée du Passage existant n'est divulguée. */
+    @ExceptionHandler(IdentifiantScanDejaUtiliseException.class)
+    ProblemDetail identifiantScanDejaUtilise() {
+        return conflit("Cet identifiant de scan correspond à un autre passage.", "IDENTIFIANT_SCAN_DEJA_UTILISE");
+    }
+
+    @ExceptionHandler(CourseTermineePourPassageException.class)
+    ProblemDetail courseTermineePourPassage() {
+        return conflit("La course est terminée.", "COURSE_TERMINEE");
+    }
+
+    @ExceptionHandler(HeureDeDepartInconnueException.class)
+    ProblemDetail heureDeDepartInconnue() {
+        return conflit("L'heure de départ de la course est inconnue : le passage ne peut pas être placé sur une "
+                + "boucle.", "HEURE_DE_DEPART_INCONNUE");
+    }
+
+    @ExceptionHandler(ScanAnterieurAuDepartException.class)
+    ProblemDetail scanAnterieurAuDepart() {
+        return conflit("Le scan est antérieur au départ de la course.", "SCAN_ANTERIEUR_AU_DEPART");
+    }
+
+    @ExceptionHandler(InscriptionNonEnCourseException.class)
+    ProblemDetail inscriptionNonEnCourse(InscriptionNonEnCourseException refus) {
+        ProblemDetail probleme = refusCoureur(refus, "Ce coureur n'est plus en course.", "INSCRIPTION_NON_EN_COURSE");
+        probleme.setProperty("statut", refus.statut());
+        return probleme;
+    }
+
+    @ExceptionHandler(TempsDeCourseEcouleException.class)
+    ProblemDetail tempsDeCourseEcoule(TempsDeCourseEcouleException refus) {
+        return refusCoureur(refus, "Le temps de la dernière boucle est écoulé.", "TEMPS_DE_COURSE_ECOULE");
+    }
+
+    @ExceptionHandler(PassageDejaEnregistreException.class)
+    ProblemDetail passageDejaEnregistre(PassageDejaEnregistreException refus) {
+        ProblemDetail probleme = refusCoureur(refus,
+                "Ce coureur a déjà un passage sur la boucle " + refus.numeroBoucle() + ".", "PASSAGE_DEJA_ENREGISTRE");
+        probleme.setProperty("numeroBoucle", refus.numeroBoucle());
+        return probleme;
+    }
+
+    @ExceptionHandler(PassagePrecedentManquantException.class)
+    ProblemDetail passagePrecedentManquant(PassagePrecedentManquantException refus) {
+        ProblemDetail probleme = refusCoureur(refus, "Ce coureur n'a pas de passage sur la boucle précédente.",
+                "PASSAGE_PRECEDENT_MANQUANT");
+        probleme.setProperty("numeroBoucle", refus.numeroBoucle());
+        return probleme;
+    }
+
+    /** Conflit lié à un coureur connu : dossard et pseudo en propriétés, visibles du seul bénévole qui le scanne. */
+    private static ProblemDetail refusCoureur(RefusPassageCoureurException refus, String detail, String code) {
+        ProblemDetail probleme = conflit(detail, code);
+        refus.coureur().ifPresent(coureur -> {
+            probleme.setProperty("dossard", coureur.dossard());
+            probleme.setProperty("pseudo", coureur.pseudo());
+        });
+        return probleme;
+    }
+
+    private static ProblemDetail conflit(String detail, String code) {
+        return probleme(HttpStatus.CONFLICT, "Conflit", detail, code);
     }
 
     /** ProblemDetail au format de l'API : type about:blank, titre, détail et code stable. */

@@ -1,0 +1,57 @@
+# Increment 4.4a : passages des coureurs, donnee brute immuable (aucune colonne derivee). L'identifiant est celui
+# du scan, tire par le client (idempotence). Au plus un passage par inscription et par boucle, garanti en base :
+# deux scans simultanes du meme coureur produisent un seul passage. Un passage SCAN a un instant de scan, un
+# passage CORRECTION (reintegration) n'en a pas. La suppression d'une inscription supprime ses passages.
+databaseChangeLog:
+  - changeSet:
+      id: 0009-passage
+      author: backyard-ultra-tracker
+      changes:
+        - createTable:
+            tableName: passage
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_passage
+              - column:
+                  name: inscription_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: numero_boucle
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: scanne_le
+                  type: timestamptz
+              - column:
+                  name: origine
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            constraintName: fk_passage_inscription
+            baseTableName: passage
+            baseColumnNames: inscription_id
+            referencedTableName: inscription
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            constraintName: uq_passage_inscription_boucle
+            tableName: passage
+            columnNames: inscription_id, numero_boucle
+        - sql:
+            sql: >-
+              alter table passage
+              add constraint ck_passage_numero_boucle check (numero_boucle > 0),
+              add constraint ck_passage_origine check (origine in ('SCAN', 'CORRECTION')),
+              add constraint ck_passage_scanne_le check (
+              (origine = 'SCAN' and scanne_le is not null) or (origine = 'CORRECTION' and scanne_le is null))
+      rollback:
+        - dropTable:
+            tableName: passage

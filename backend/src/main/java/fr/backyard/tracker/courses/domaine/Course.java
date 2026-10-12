@@ -196,6 +196,58 @@ public final class Course {
                 debutBoucle, finBoucle, tempsAvantFin, dureeEcoulee));
     }
 
+    /**
+     * Seuls les bénévoles affectés à la Course y scannent des Passages ; l'affectation est relue à chaque scan.
+     *
+     * @throws BenevoleNonAffecteException le Compte n'est pas un bénévole affecté à cette Course
+     */
+    public void autoriserScanPar(UUID benevoleId) {
+        if (!benevolesAffectes.contains(benevoleId)) {
+            throw new BenevoleNonAffecteException();
+        }
+    }
+
+    /**
+     * Seule une Course EN_COURS avec une heure de départ accepte un Passage. Unique contrôle de cette règle.
+     *
+     * @throws CourseTermineePourPassageException la Course est TERMINEE
+     * @throws CourseNonDemarreeException la Course est EN_PREPARATION
+     * @throws HeureDeDepartInconnueException la Course est EN_COURS sans heure de départ
+     */
+    public void autoriserPassage() {
+        if (statut == StatutCourse.TERMINEE) {
+            throw new CourseTermineePourPassageException(id);
+        }
+        if (statut == StatutCourse.EN_PREPARATION) {
+            throw new CourseNonDemarreeException(id);
+        }
+        if (demarreeLe == null) {
+            throw new HeureDeDepartInconnueException(id);
+        }
+    }
+
+    /**
+     * Boucle d'un Passage scanné à {@code instantDuScan} : la Boucle courante à cet instant (le coureur qui franchit
+     * la ligne pendant la Boucle N termine la Boucle N), d'après {@link #chronometrage}. Une fois le temps de la
+     * dernière Boucle écoulé, aucune Boucle n'est calculable. Unique définition de cette règle.
+     *
+     * @throws ScanAnterieurAuDepartException le scan précède le départ de la Course
+     * @throws TempsDeCourseEcouleException le temps de la dernière Boucle autorisée est écoulé
+     * @see #autoriserPassage() pour les autres refus, contrôlés en premier
+     */
+    public int boucleDePassage(Instant instantDuScan) {
+        autoriserPassage();
+        Instant scan = instantDuScan.truncatedTo(ChronoUnit.MILLIS);
+        if (scan.isBefore(demarreeLe)) {
+            throw new ScanAnterieurAuDepartException(id);
+        }
+        Chronometrage chrono = chronometrage(scan).orElseThrow();
+        if (chrono.boucleMaxTerminee()) {
+            throw new TempsDeCourseEcouleException();
+        }
+        return chrono.boucleCourante();
+    }
+
     /** Instant à la milliseconde, ramené au départ s'il le précède (anomalie d'horloge) : jamais de durée négative. */
     private Instant instantCompte(Instant maintenant) {
         Instant aLaMilliseconde = maintenant.truncatedTo(ChronoUnit.MILLIS);

@@ -201,16 +201,20 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 - **Livré** : dans un profil Spring `e2e` uniquement, une horloge pilotable et un endpoint `/api/test/horloge` (admin master) pour avancer le temps ; tous les cas d'usage lisent l'heure via ce `Clock`. Hors profil `e2e`, l'endpoint n'existe pas (vérifié par un test d'intégration) et l'horloge est l'horloge système. Un fichier `docker-compose.e2e.yml` active le profil pour les tests Playwright ; `api` refuse de démarrer si le profil `e2e` est combiné à la production.
 - **Tu testes** : lancer la stack avec le profil `e2e`, démarrer une course de 60 min, avancer l'horloge de 60 min → l'écran de pilotage passe à la boucle 2. Sur la stack normale, `/api/test/horloge` répond 404 à l'admin master (401 ou 403 aux autres, comme toute route inconnue).
 
-### 4.4 Scanner un passage (saisie du jeton)
-- **Livré** : écran de scan bénévole avec choix de la course, saisie du jeton au clavier, enregistrement du passage pour la boucle courante, retour visuel vert avec dossard et pseudo.
-- **Tu testes** : copier le jeton d'un coureur, le saisir → passage accepté, visible côté pilotage.
+### 4.4a API de passage
+- **Livré** : passage (migration, unicité par inscription et boucle), endpoint de scan réservé aux bénévoles affectés, boucle calculée côté serveur, idempotence par identifiant de scan, tous les refus métier (contrat définitif, réutilisé par 4.6 et 5.1), continuité des boucles.
+- **Tu testes** : en bénévole affecté, envoyer le jeton d'un coureur à l'API (jeton lu en base ou via `/api/coureur/inscriptions`) → passage créé en base sur la boucle courante ; renvoyer le même scan → rejeu sans doublon ; nouveau scan du même coureur → refusé « déjà enregistré ».
+
+### 4.4b Écran de scan (saisie du jeton)
+- **Livré** : bouton « Scanner » sur les courses en cours de l'accueil bénévole, écran de scan avec saisie du jeton au clavier, retour visuel vert avec dossard et pseudo, message d'erreur générique en cas de refus ; Léo affecté à « Backyard du jour » dans les données de démo.
+- **Tu testes** : saisir le jeton d'un coureur → vert avec dossard et pseudo ; le ressaisir → refus. Les passages apparaissent au pilotage en 4.7.
 
 ### 4.5 Scanner à la caméra
 - **Livré** : lecture du QR code à la caméra sur l'écran de scan.
 - **Tu testes** : sur ton ordinateur avec webcam (http://localhost est accepté par le navigateur), présenter le QR affiché sur ton téléphone. Pour un test sur téléphone, passer par la configuration HTTPS de 0.4.
 
 ### 4.6 Scans refusés
-- **Livré** : refus avec retour visuel rouge et motif : passage déjà enregistré pour cette boucle, coureur en abandon, course non démarrée, bénévole non affecté, jeton inconnu.
+- **Livré** : à l'écran, refus avec retour visuel rouge et motif (les refus existent dans l'API depuis 4.4a) : passage déjà enregistré pour cette boucle, coureur en abandon, course non démarrée, bénévole non affecté, jeton inconnu. Anti-doublon : délai minimal entre deux passages d'un même coureur (valeur à fixer), contre un re-scan accidentel juste après un départ.
 - **Tu testes** : scanner deux fois le même coureur sur la même boucle → « déjà passé ». Scanner pour une course où le bénévole n'est pas affecté → refusé.
 
 ### 4.7 Passages sur l'écran de pilotage
@@ -276,6 +280,7 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 | Sujet | Décision | Incrément |
 |---|---|---|
 | Maîtrise du temps pour les tests E2E | Horloge pilotable activée uniquement dans le profil `e2e`. Les vrais essais en temps réel se font en recette sur le terrain. | 4.3 |
+| Continuité des boucles au scan | Un passage sur la boucle N exige un passage valide (scan ou correction) sur la boucle N-1 ; anti-doublon (délai minimal entre deux passages) reporté à 4.6. | 4.4a |
 | Horloge pilotable : accès et garde-fous | Endpoint réservé à l'admin master (session + CSRF) ; `BACKYARD_ENVIRONNEMENT=production` fixé par `docker-compose.prod.yml` interdit le profil `e2e` en production ; toute la suite Playwright tourne sur la stack `e2e`. | 4.3 |
 | Suppression d'un compte ayant couru | Anonymisation : le compte ne peut plus se connecter, son pseudo est remplacé, ses résultats sont conservés. | 3.6 |
 | Suppression d'une course | Par l'admin master uniquement, tant que la course est `EN_PREPARATION`. | 2.5 |

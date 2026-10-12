@@ -102,6 +102,18 @@ public class InscriptionJpaAdapter implements DepotInscriptions {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Optional<Inscription> parCourseEtJeton(UUID courseId, JetonQr jeton) {
+        return entityManager.createQuery("select i from InscriptionJpaEntity i "
+                        + "where i.courseId = :courseId and i.jetonQr = :jeton", InscriptionJpaEntity.class)
+                .setParameter("courseId", courseId)
+                .setParameter("jeton", jeton.valeur())
+                .getResultStream()
+                .findFirst()
+                .map(InscriptionJpaAdapter::versDomaine);
+    }
+
+    @Override
     @Transactional
     public void supprimer(UUID inscriptionId) {
         entityManager.createQuery("delete from InscriptionJpaEntity i where i.id = :id")
