@@ -8,10 +8,11 @@ Toute l'application tourne dans Docker : aucune installation de Java, Node ou Po
 | `api` | Spring Boot, migrations Liquibase appliquées au démarrage | aucune (réseau interne uniquement) |
 | `web` | Caddy : front Angular, relais `/api` vers `api`, HTTPS automatique | 80/tcp, 443/tcp, 443/udp |
 
-- Dev / E2E : `docker compose up -d --build` (HTTP sur http://localhost, API aussi publiée sur le port 8080).
+- Dev : `docker compose up -d --build` (HTTP sur http://localhost, API aussi publiée sur le port 8080).
+- Tests E2E : `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build` (voir « Tests E2E et profil `e2e` »).
 - Production : `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`.
 
-`docker-compose.prod.yml` ne contient que des surcharges : seul `web` publie des ports, `restart: unless-stopped` sur les trois services, HTTPS par Caddy, volumes des certificats `donnees-caddy` et `config-caddy`, variables `BASE_MOT_DE_PASSE`, `DOMAINE`, `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE` obligatoires.
+`docker-compose.prod.yml` ne contient que des surcharges : seul `web` publie des ports, `restart: unless-stopped` sur les trois services, HTTPS par Caddy, volumes des certificats `donnees-caddy` et `config-caddy`, variables `BASE_MOT_DE_PASSE`, `DOMAINE`, `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE` obligatoires, variable fixe `BACKYARD_ENVIRONNEMENT=production` (garde-fou, jamais lue dans `.env`).
 
 Dans la suite, sur le VPS :
 
@@ -219,6 +220,32 @@ docker compose up -d --build     # stack de dev, .env avec ADMIN_MASTER_PSEUDO e
 - Codes de sortie : 0 succès, 1 variable manquante ou réponse inattendue de l'API (statut HTTP affiché, `000` si l'API est injoignable), 2 cible refusée.
 - Pour repartir d'une base neuve : `docker compose down -v` puis `docker compose up -d --build`.
 
+## Tests E2E et profil `e2e`
+
+**Jamais en production ni sur le VPS.** Toute la suite Playwright tourne sur la stack `e2e` : la stack normale plus le profil Spring `e2e` sur `api`, activé par `docker-compose.e2e.yml` (seule source de `SPRING_PROFILES_ACTIVE`, jamais lue dans `.env`). Ce profil remplace l'horloge de l'application par une horloge pilotable (heure système plus un décalage) et expose `/api/test/horloge` (lecture, avance, réinitialisation), réservé à l'admin master, avec session et CSRF. Le décalage est en mémoire : un redémarrage de `api` le remet à zéro.
+
+```sh
+E2E="docker compose -f docker-compose.yml -f docker-compose.e2e.yml"
+$E2E up -d --build
+$E2E ps                                  # 3 services healthy
+docker compose logs api | grep "Profil e2e"   # une ligne WARN « Profil e2e actif : horloge pilotable… »
+# ... tests Playwright (voir e2e/README.md) ...
+$E2E down                                # puis docker compose up -d --build pour revenir à la stack de dev
+```
+
+Le profil `e2e` est conservé tant que les conteneurs ne sont pas recréés : relancer la stack de dev avec `docker compose up -d --build` (sans le fichier e2e) recrée `api` sans le profil.
+
+**Garde-fou.** `docker-compose.prod.yml` fixe `BACKYARD_ENVIRONNEMENT=production` sur `api`. Si le profil `e2e` y est combiné (par exemple `-f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.e2e.yml`), `api` refuse de démarrer, ne devient jamais `healthy`, et ses logs contiennent « Le profil e2e est interdit en production (horloge pilotable). ». Ne pas définir `BACKYARD_ENVIRONNEMENT` à la main. Un VPS lancé sans `docker-compose.prod.yml` n'est pas protégé par ce garde-fou : toujours utiliser la commande `$PROD` ci-dessus.
+
+**Vérifier qu'un déploiement n'a pas le profil** :
+
+```sh
+$PROD logs api | grep -i "profil e2e"     # aucune ligne attendue
+$PROD exec api printenv SPRING_PROFILES_ACTIVE   # aucune sortie attendue (code de sortie 1)
+```
+
+Connecté en admin master, `https://<domaine>/api/test/horloge` doit répondre 404 (401 sans session, 403 pour un autre rôle).
+
 ## Notes développeur
 
 - `./mvnw verify` (dans `backend/`) nécessite un **démon Docker accessible** : les tests d'intégration lancent PostgreSQL par Testcontainers. Sous WSL, activer l'intégration WSL de Docker Desktop (Settings > Resources > WSL integration) ou lancer le démon Docker dans la distribution.
@@ -227,4 +254,4 @@ docker compose up -d --build     # stack de dev, .env avec ADMIN_MASTER_PSEUDO e
   sudo npx playwright install-deps chromium
   ```
   Sous nvm, `sudo` ne voit pas `npx` : `sudo env "PATH=$PATH" npx playwright install-deps chromium`.
-- Les tests E2E tournent sur la stack de dev (`docker compose up -d --build`, `BASE_URL=http://localhost`). Depuis 1.4, ils supposent un admin master : renseigner `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE` dans `.env` avant le démarrage, et les mêmes valeurs dans `E2E_ADMIN_MASTER_PSEUDO` et `E2E_ADMIN_MASTER_MOT_DE_PASSE` pour Playwright.
+- Les tests E2E tournent sur la stack `e2e` (`docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build`, `BASE_URL=http://localhost`, voir « Tests E2E et profil `e2e` »). Depuis 1.4, ils supposent un admin master : renseigner `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE` dans `.env` avant le démarrage, et les mêmes valeurs dans `E2E_ADMIN_MASTER_PSEUDO` et `E2E_ADMIN_MASTER_MOT_DE_PASSE` pour Playwright.

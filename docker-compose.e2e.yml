@@ -1,0 +1,9 @@
+# Surcharge réservée aux tests E2E (Playwright) : active le profil Spring e2e (horloge pilotable /api/test/horloge).
+# À combiner uniquement avec docker-compose.yml, JAMAIS avec docker-compose.prod.yml ni sur le VPS :
+#   docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build
+# Garde-fou : api refuse de démarrer si ce profil est combiné à la production (voir docs/deploiement.md).
+
+services:
+  api:
+    environment:
+      SPRING_PROFILES_ACTIVE: e2e
