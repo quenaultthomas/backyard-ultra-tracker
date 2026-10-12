@@ -198,8 +198,8 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 - **Tu testes** : course à boucles de 1 min → la boucle courante change à chaque minute, le compte à rebours repart.
 
 ### 4.3 Horloge pilotable en test
-- **Livré** : dans un profil Spring `e2e` uniquement, une horloge pilotable et un endpoint `/api/test/horloge` pour avancer le temps ; le planificateur d'abandon s'appuie sur cette horloge. Hors profil `e2e`, l'endpoint n'existe pas (vérifié par un test d'intégration) et l'horloge est l'horloge système. Un fichier `docker-compose.e2e.yml` active le profil pour les tests Playwright.
-- **Tu testes** : lancer la stack avec le profil `e2e`, démarrer une course de 60 min, avancer l'horloge de 60 min → l'écran de pilotage passe à la boucle 2. Sur la stack normale, `/api/test/horloge` répond 404.
+- **Livré** : dans un profil Spring `e2e` uniquement, une horloge pilotable et un endpoint `/api/test/horloge` (admin master) pour avancer le temps ; tous les cas d'usage lisent l'heure via ce `Clock`. Hors profil `e2e`, l'endpoint n'existe pas (vérifié par un test d'intégration) et l'horloge est l'horloge système. Un fichier `docker-compose.e2e.yml` active le profil pour les tests Playwright ; `api` refuse de démarrer si le profil `e2e` est combiné à la production.
+- **Tu testes** : lancer la stack avec le profil `e2e`, démarrer une course de 60 min, avancer l'horloge de 60 min → l'écran de pilotage passe à la boucle 2. Sur la stack normale, `/api/test/horloge` répond 404 à l'admin master (401 ou 403 aux autres, comme toute route inconnue).
 
 ### 4.4 Scanner un passage (saisie du jeton)
 - **Livré** : écran de scan bénévole avec choix de la course, saisie du jeton au clavier, enregistrement du passage pour la boucle courante, retour visuel vert avec dossard et pseudo.
@@ -218,7 +218,7 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 - **Tu testes** : scanner deux coureurs sur trois → le troisième apparaît « en boucle ».
 
 ### 4.8 Abandon automatique
-- **Livré** : au départ de chaque boucle, les inscriptions sans passage sur la boucle précédente passent en `ABANDON` (`HORS_DELAI`). Planificateur côté serveur, indépendant par course.
+- **Livré** : au départ de chaque boucle, les inscriptions sans passage sur la boucle précédente passent en `ABANDON` (`HORS_DELAI`). Planificateur côté serveur, indépendant par course, qui décide sur l'horloge applicative (`Clock`, pilotable en profil `e2e` depuis 4.3).
 - **Tu testes** : course à 1 min, scanner un coureur sur deux → au départ suivant, l'autre passe en abandon avec la boucle d'abandon.
 
 ### 4.9 Vainqueur unique
@@ -276,6 +276,7 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 | Sujet | Décision | Incrément |
 |---|---|---|
 | Maîtrise du temps pour les tests E2E | Horloge pilotable activée uniquement dans le profil `e2e`. Les vrais essais en temps réel se font en recette sur le terrain. | 4.3 |
+| Horloge pilotable : accès et garde-fous | Endpoint réservé à l'admin master (session + CSRF) ; `BACKYARD_ENVIRONNEMENT=production` fixé par `docker-compose.prod.yml` interdit le profil `e2e` en production ; toute la suite Playwright tourne sur la stack `e2e`. | 4.3 |
 | Suppression d'un compte ayant couru | Anonymisation : le compte ne peut plus se connecter, son pseudo est remplacé, ses résultats sont conservés. | 3.6 |
 | Suppression d'une course | Par l'admin master uniquement, tant que la course est `EN_PREPARATION`. | 2.5 |
 | Thème graphique | Charte `docs/design.md` appliquée à tous les écrans, y compris ceux des jalons 4 à 6 | R.1 |
