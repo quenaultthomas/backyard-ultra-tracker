@@ -3,43 +3,6 @@
   --carte-largeur: 44rem;
 }
 
-/* En-tête : visuel 16 / 9 à gauche du nom, qui passe dessous quand la place manque. */
-.fiche-entete {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--espace-4);
-}
-
-.fiche-visuel {
-  flex: none;
-  width: min(100%, 12rem);
-  aspect-ratio: 16 / 9;
-  border-radius: var(--rayon-s);
-  background-color: var(--couleur-sable);
-}
-
-.fiche-visuel > * {
-  display: block;
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-}
-
-.logo {
-  object-fit: contain;
-}
-
-.titre {
-  overflow-wrap: anywhere;
-}
-
-.fiche-entete > .titre {
-  flex: 1 1 12rem;
-  min-width: 0;
-}
-
 /* Repères : date en grand puis pastille de statut (libellés `dt` : styles/cartes.css). */
 .fiche-reperes {
   display: flex;

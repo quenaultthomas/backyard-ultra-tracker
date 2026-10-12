@@ -72,6 +72,11 @@ public final class Inscription {
         return statut;
     }
 
+    /** L'Inscription est encore en course : ni en abandon, ni vainqueur. */
+    public boolean estEnCourse() {
+        return statut == StatutInscription.EN_COURSE;
+    }
+
     /** Identifiant uniquement : ni Compte ni jeton dans les journaux. */
     @Override
     public String toString() {

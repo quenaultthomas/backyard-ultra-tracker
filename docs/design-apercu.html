@@ -7,6 +7,11 @@
     <!-- Feuilles réelles de l'application : aucune copie du CSS (docs/design.md, section 9). -->
     <link rel="stylesheet" href="../frontend/src/styles.css" />
     <link rel="stylesheet" href="../frontend/src/app/entete/entete.css" />
+    <!-- Pilotage (4.2) : feuilles réelles de l'écran, sans copie. -->
+    <link rel="stylesheet" href="../frontend/src/app/comptes/formulaire-compte.css" />
+    <link rel="stylesheet" href="../frontend/src/app/administration/courses/entete-course.css" />
+    <link rel="stylesheet" href="../frontend/src/app/administration/courses/fiche/inscrits-course/inscrits-course.css" />
+    <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/ecran-pilotage.css" />
     <style>
       /* Mise en page de l'aperçu seulement : jamais embarquée dans l'application. */
       .apercu {
@@ -203,6 +208,41 @@
           <span class="pastille-statut pastille-statut--en-course" data-composant="pastille-statut-en-course">En course</span>
           <span class="pastille-statut pastille-statut--abandon" data-composant="pastille-statut-abandon">Abandon</span>
           <span class="pastille-statut pastille-statut--vainqueur" data-composant="pastille-statut-vainqueur">Vainqueur</span>
+        </div>
+      </section>
+
+      <section aria-labelledby="titre-pilotage">
+        <h2 id="titre-pilotage">Pilotage</h2>
+        <div class="carte" style="max-width: 44rem">
+          <header class="fiche-entete" data-composant="pilotage-entete">
+            <div class="fiche-visuel"><div class="visuel-substitution" aria-hidden="true"></div></div>
+            <div class="pilotage-nom">
+              <h3 class="titre">Backyard des Crêtes</h3>
+              <span class="pastille-statut pastille-statut--en-cours">En cours</span>
+            </div>
+          </header>
+          <div class="chronometrage" data-composant="pilotage-chronometrage">
+            <p class="chronometrage__boucle">Boucle 3 sur 24</p>
+            <dl class="chronometrage__durees">
+              <div><dt>Prochain départ dans</dt><dd class="chronometrage__valeur">00:42:17</dd></div>
+              <div><dt>Durée écoulée</dt><dd class="chronometrage__valeur">02:17:43</dd></div>
+            </dl>
+            <p class="chronometrage__depart">Départ à <time datetime="2026-10-09T07:00:00Z">09:00:00</time></p>
+          </div>
+          <p class="message--info" data-composant="pilotage-message-derniere-boucle">Dernière boucle autorisée.</p>
+          <p class="message--avertissement" data-composant="pilotage-avertissement-actualisation">L'actualisation a échoué : les valeurs affichées peuvent être en retard. Nouvelle tentative en cours.</p>
+          <div class="formulaire inscrits" data-composant="pilotage-inscrits">
+            <h3 class="sous-titre">Coureurs en course</h3>
+            <p class="message resume"><span class="resume__compteur">2 coureurs en course sur 3 inscrits</span></p>
+            <table class="tableau">
+              <thead><tr><th scope="col">Dossard</th><th scope="col">Coureur</th><th scope="col">Statut</th></tr></thead>
+              <tbody>
+                <tr><td class="dossard">1</td><td>Bruno</td><td><span class="pastille-statut pastille-statut--en-course">En course</span></td></tr>
+                <tr><td class="dossard">2</td><td>Coureur anonyme</td><td><span class="pastille-statut pastille-statut--en-course">En course</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <a href="#titre-pilotage">Retour à la fiche de la course</a>
         </div>
       </section>
 

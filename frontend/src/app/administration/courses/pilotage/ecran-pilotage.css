@@ -1,0 +1,79 @@
+/* Pilotage d'une Course (docs/design.md, section 11 « Pilotage ») : carte de la page de 44rem. */
+.page {
+  --carte-largeur: 44rem;
+}
+
+/* Nom puis pastille de statut, à droite du visuel (dessous quand la place manque). */
+.pilotage-nom {
+  flex: 1 1 12rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espace-2);
+}
+
+/* Chronométrage : valeurs remplacées en place, largeur réservée (aucun saut de mise en page). */
+.chronometrage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  padding: var(--espace-4);
+  border: 1px solid var(--couleur-trait);
+  border-radius: var(--rayon-m);
+  background-color: var(--couleur-sable);
+}
+
+.chronometrage p {
+  margin: 0;
+}
+
+.chronometrage__boucle,
+.chronometrage__valeur {
+  font-size: var(--taille-titre);
+  font-weight: var(--poids-gras);
+  line-height: var(--interligne-titre);
+  color: var(--couleur-foret);
+  font-variant-numeric: tabular-nums;
+}
+
+.chronometrage__durees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-3) var(--espace-6);
+  margin: 0;
+}
+
+.chronometrage__durees dt {
+  font-size: var(--taille-secondaire);
+  color: var(--couleur-encre-douce);
+}
+
+.chronometrage__valeur {
+  min-width: 9ch;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.chronometrage__depart {
+  color: var(--couleur-encre);
+}
+
+/* Section des coureurs, séparée du chronométrage par un filet. */
+.inscrits {
+  padding-top: var(--espace-4);
+  border-top: 1px solid var(--couleur-trait);
+}
+
+/* Repli étroit (320 px, texte à 200 %) : le bloc et le tableau tiennent dans la carte. */
+@container cartes (max-width: 15rem) {
+  .chronometrage {
+    padding: var(--espace-2);
+  }
+
+  .chronometrage__valeur {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

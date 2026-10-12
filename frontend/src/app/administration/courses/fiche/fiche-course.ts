@@ -56,6 +56,7 @@ interface LigneBenevole {
   styleUrls: [
     '../../../partage/page-carte.css',
     '../../../comptes/formulaire-compte.css',
+    '../entete-course.css',
     './fiche-course.css',
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -94,6 +95,11 @@ export class FicheCourse implements OnInit {
 
   /** Le statut renvoyé par l'API décide de l'affichage (l'API reste la référence). */
   protected readonly verrouillee = computed(() => this.fiche()?.statut === 'TERMINEE');
+  /** Course démarrée (`EN_COURS` ou `TERMINEE`) : lien vers l'écran de pilotage. */
+  protected readonly pilotable = computed(() => {
+    const statut = this.fiche()?.statut;
+    return statut === 'EN_COURS' || statut === 'TERMINEE';
+  });
 
   /** Bénévoles dans l'ordre de l'API, puis identifiants affectés absents de cette liste. */
   protected readonly lignes = computed<LigneBenevole[]>(() => {

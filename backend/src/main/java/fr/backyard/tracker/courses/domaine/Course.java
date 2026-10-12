@@ -1,5 +1,6 @@
 package fr.backyard.tracker.courses.domaine;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -156,6 +157,49 @@ public final class Course {
         if (statut != StatutCourse.EN_PREPARATION) {
             throw new CourseNonSupprimableException(id);
         }
+    }
+
+    /**
+     * Seule une Course démarrée (EN_COURS ou TERMINEE) se pilote. Unique contrôle de cette règle.
+     *
+     * @throws CourseNonDemarreeException la Course est EN_PREPARATION
+     */
+    public void autoriserPilotage() {
+        if (statut == StatutCourse.EN_PREPARATION) {
+            throw new CourseNonDemarreeException(id);
+        }
+    }
+
+    /**
+     * Chronométrage de la Course à {@code maintenant}, à la milliseconde. La Boucle N commence à
+     * {@code demarreeLe + (N - 1) x durée} ; à une frontière exacte, la nouvelle Boucle est courante. La Boucle
+     * courante est plafonnée au nombre maximum de Boucles ; un instant antérieur au départ compte comme le départ.
+     * Unique définition de ces calculs.
+     *
+     * @param maintenant instant lu une seule fois sur l'horloge par l'appelant
+     * @return vide pour une Course qui n'est pas EN_COURS ou sans heure de départ
+     */
+    public Optional<Chronometrage> chronometrage(Instant maintenant) {
+        if (statut != StatutCourse.EN_COURS || demarreeLe == null) {
+            return Optional.empty();
+        }
+        Duration dureeBoucle = Duration.ofMinutes(parametresBoucle.dureeMinutes());
+        Instant instantCompte = instantCompte(maintenant);
+        Duration dureeEcoulee = Duration.between(demarreeLe, instantCompte);
+        int boucleCourante = (int) Math.min(dureeEcoulee.dividedBy(dureeBoucle) + 1, nombreMaxBoucles);
+        Instant debutBoucle = demarreeLe.plus(dureeBoucle.multipliedBy(boucleCourante - 1L));
+        Instant finBoucle = debutBoucle.plus(dureeBoucle);
+        Duration tempsAvantFin = finBoucle.isAfter(instantCompte) ? Duration.between(instantCompte, finBoucle)
+                : Duration.ZERO;
+        boolean boucleMaxTerminee = dureeEcoulee.compareTo(dureeBoucle.multipliedBy(nombreMaxBoucles)) >= 0;
+        return Optional.of(new Chronometrage(boucleCourante, boucleCourante == nombreMaxBoucles, boucleMaxTerminee,
+                debutBoucle, finBoucle, tempsAvantFin, dureeEcoulee));
+    }
+
+    /** Instant à la milliseconde, ramené au départ s'il le précède (anomalie d'horloge) : jamais de durée négative. */
+    private Instant instantCompte(Instant maintenant) {
+        Instant aLaMilliseconde = maintenant.truncatedTo(ChronoUnit.MILLIS);
+        return aLaMilliseconde.isBefore(demarreeLe) ? demarreeLe : aLaMilliseconde;
     }
 
     /**

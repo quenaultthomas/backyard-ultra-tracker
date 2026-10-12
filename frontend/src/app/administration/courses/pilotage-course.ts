@@ -1,0 +1,41 @@
+import { StatutInscription } from '../../inscriptions/course-ouverte';
+import { StatutCourse } from './course';
+
+/** Ligne de `PilotageCourse.inscritsEnCourse` : jamais de jeton QR ni d'identifiant de Compte. */
+export interface InscritEnCourse {
+  inscriptionId: string;
+  dossard: number;
+  /** Pseudo tel que renvoyé par l'API (« Coureur anonyme », « Compte inconnu ») : affiché en texte. */
+  pseudo: string;
+  /** Toujours `EN_COURSE`. */
+  statut: StatutInscription;
+}
+
+/**
+ * Instantané de `GET /api/administration/courses/{id}/pilotage`, calculé par le serveur.
+ * Les champs de chronométrage sont `null` pour une Course `TERMINEE` ou sans heure de départ.
+ */
+export interface PilotageCourse {
+  courseId: string;
+  nom: string;
+  logoUrl: string | null;
+  /** `EN_PREPARATION` n'est jamais renvoyé (409 `COURSE_NON_DEMARREE`). */
+  statut: Exclude<StatutCourse, 'EN_PREPARATION'>;
+  /** Instant du serveur (ISO-8601 UTC, millisecondes) ; jamais comparé à l'heure du navigateur. */
+  heureServeur: string;
+  /** Départ de la Boucle 1 (ISO-8601 UTC, à la seconde), `null` sans heure de départ. */
+  demarreeLe: string | null;
+  dureeBoucleMinutes: number;
+  nombreMaxBoucles: number;
+  boucleCourante: number | null;
+  derniereBoucle: boolean;
+  boucleMaxTerminee: boolean;
+  debutBoucleCourante: string | null;
+  finBoucleCourante: string | null;
+  tempsAvantFinBoucleMillisecondes: number | null;
+  dureeEcouleeMillisecondes: number | null;
+  /** Toutes les Inscriptions de la Course, tous statuts. */
+  nombreInscrits: number;
+  /** Inscriptions `EN_COURSE`, triées par dossard par l'API. */
+  inscritsEnCourse: InscritEnCourse[];
+}
