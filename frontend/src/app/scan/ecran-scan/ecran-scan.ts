@@ -23,6 +23,7 @@ import { RefusAccesService } from '../../comptes/refus-acces.service';
 import { CsrfService } from '../../partage/csrf.service';
 import { MESSAGE_SERVICE_INDISPONIBLE, lireProbleme } from '../../partage/probleme';
 import { BenevoleApiService } from '../benevole-api.service';
+import { CameraScan } from '../camera-scan/camera-scan';
 import { CourseBenevoleReponse } from '../course-benevole';
 import { tirerIdentifiantScan } from '../identifiant-scan';
 import { ErreurScan, PassageReponse } from '../passage';
@@ -32,6 +33,9 @@ const MESSAGE_INJOIGNABLE =
 const MESSAGE_SAISIE_VIDE = 'Saisissez le jeton du coureur.';
 /** Au-delà, l'envoi est considéré comme perdu (même traitement qu'une coupure réseau). */
 const DELAI_ENVOI_MILLISECONDES = 15_000;
+
+/** Un jeton lu à la caméra ne touche pas au champ (pas de clavier virtuel qui s'ouvre). */
+type OrigineJeton = 'saisie' | 'camera';
 
 type ResultatScan =
   { type: 'succes'; passage: PassageReponse } | { type: 'erreur'; message: string };
@@ -43,12 +47,12 @@ interface TentativeEnAttente {
 }
 
 /**
- * Scan d'un passage par un bénévole : saisie du jeton QR d'un coureur et retour du serveur.
+ * Scan d'un passage par un bénévole : jeton QR d'un coureur saisi ou lu à la caméra, et retour du serveur.
  * Le serveur décide de tout (Boucle, refus) ; le statut lu au chargement ne sert qu'à l'affichage.
  */
 @Component({
   selector: 'app-ecran-scan',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, CameraScan],
   templateUrl: './ecran-scan.html',
   styleUrls: [
     '../../partage/page-carte.css',
@@ -113,6 +117,17 @@ export class EcranScan implements OnInit {
       this.champ()?.nativeElement.focus();
       return;
     }
+    this.envoyer(saisie, jetonNettoye, 'saisie');
+  }
+
+  /** Jeton lu à la caméra : même envoi que la saisie ; le résultat précédent reste jusqu'au suivant. */
+  protected scannerJeton(jeton: string): void {
+    if (!this.envoiEnCours()) {
+      this.envoyer(jeton, jeton, 'camera');
+    }
+  }
+
+  private envoyer(jetonQr: string, jetonNettoye: string, origine: OrigineJeton): void {
     const identifiantScan = this.identifiantPour(jetonNettoye);
     this.envoiEnCours.set(true);
     this.csrf
@@ -120,7 +135,7 @@ export class EcranScan implements OnInit {
       .pipe(
         switchMap(() =>
           this.benevoleApi.enregistrerPassage(this.courseId(), {
-            jetonQr: saisie,
+            jetonQr,
             identifiantScan,
           }),
         ),
@@ -129,8 +144,8 @@ export class EcranScan implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (passage) => this.afficherSucces(passage),
-        error: (erreur: unknown) => this.afficherErreur(erreur),
+        next: (passage) => this.afficherSucces(passage, origine),
+        error: (erreur: unknown) => this.afficherErreur(erreur, origine),
       });
   }
 
@@ -142,16 +157,18 @@ export class EcranScan implements OnInit {
     return this.tentative.identifiantScan;
   }
 
-  private afficherSucces(passage: PassageReponse): void {
+  private afficherSucces(passage: PassageReponse, origine: OrigineJeton): void {
     this.tentative = null;
-    this.formulaire.reset();
     this.resultat.set({ type: 'succes', passage });
-    this.champ()?.nativeElement.focus();
+    if (origine === 'saisie') {
+      this.formulaire.reset();
+      this.champ()?.nativeElement.focus();
+    }
   }
 
-  private afficherErreur(erreur: unknown): void {
+  private afficherErreur(erreur: unknown, origine: OrigineJeton): void {
     if (estSansReponseDefinitive(erreur)) {
-      this.afficherMessageErreur(MESSAGE_INJOIGNABLE);
+      this.afficherMessageErreur(MESSAGE_INJOIGNABLE, origine);
       return;
     }
     this.tentative = null;
@@ -162,12 +179,15 @@ export class EcranScan implements OnInit {
     ) {
       return;
     }
-    this.afficherMessageErreur(probleme?.detail ?? MESSAGE_SERVICE_INDISPONIBLE);
+    this.afficherMessageErreur(probleme?.detail ?? MESSAGE_SERVICE_INDISPONIBLE, origine);
   }
 
-  /** Le jeton reste dans le champ, sélectionné, pour être corrigé ou validé de nouveau. */
-  private afficherMessageErreur(message: string): void {
+  /** Saisie : le jeton reste dans le champ, sélectionné, pour être corrigé ou validé de nouveau. */
+  private afficherMessageErreur(message: string, origine: OrigineJeton): void {
     this.resultat.set({ type: 'erreur', message });
+    if (origine === 'camera') {
+      return;
+    }
     const champ = this.champ()?.nativeElement;
     champ?.focus();
     champ?.select();

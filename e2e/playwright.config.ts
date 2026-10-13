@@ -13,11 +13,21 @@ export default defineConfig({
   },
   projects: [
     // Les tests qui avancent l'horloge (globale) sont isolés dans le projet `horloge` (RG11).
-    { name: 'chromium', testIgnore: /.*\.horloge\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    // Ceux qui exigent la caméra factice du navigateur (4.5 CA13) sont isolés dans le projet `camera`.
+    { name: 'chromium', testIgnore: [/.*\.horloge\.spec\.ts/, /.*\.camera\.spec\.ts/], use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'camera',
+      testMatch: /.*\.camera\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        permissions: ['camera'],
+        launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] },
+      },
+    },
     {
       name: 'horloge',
       testMatch: /.*\.horloge\.spec\.ts/,
-      dependencies: ['chromium'],
+      dependencies: ['chromium', 'camera'],
       fullyParallel: false,
       use: { ...devices['Desktop Chrome'] },
     },

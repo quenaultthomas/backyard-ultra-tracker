@@ -14,6 +14,8 @@
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/ecran-pilotage.css" />
     <!-- Scan (4.4b) : feuille réelle de l'écran, sans copie. -->
     <link rel="stylesheet" href="../frontend/src/app/scan/ecran-scan/ecran-scan.css" />
+    <!-- Scan à la caméra (4.5) : feuille réelle du composant, sans copie. -->
+    <link rel="stylesheet" href="../frontend/src/app/scan/camera-scan/camera-scan.css" />
     <style>
       /* Mise en page de l'aperçu seulement : jamais embarquée dans l'application. */
       .apercu {
@@ -274,6 +276,26 @@
             <p>Boucle 1</p>
           </div>
           <p class="message--erreur resultat" data-composant="scan-resultat-erreur">Ce coureur a déjà un passage sur la boucle 1.</p>
+          <section class="camera" data-composant="scan-camera-arretee">
+            <p class="camera__etat">Caméra arrêtée</p>
+            <p class="message--erreur">L'accès à la caméra est refusé. Autorisez-la dans les réglages du navigateur, ou saisissez le jeton ci-dessous.</p>
+            <div class="camera__actions">
+              <button type="button" class="bouton">Réessayer</button>
+              <button type="button" class="bouton">Activer la caméra</button>
+            </div>
+          </section>
+          <section class="camera" data-composant="scan-camera-active">
+            <p class="camera__etat camera__etat--active">Caméra active</p>
+            <div class="camera__apercu">
+              <div class="camera__viseur" aria-hidden="true"></div>
+            </div>
+            <p class="camera__legende">Placez le QR code dans le cadre</p>
+            <p class="message--info">Ce QR code n'est pas un dossard.</p>
+            <div class="camera__actions">
+              <button type="button" class="bouton">Arrêter la caméra</button>
+              <button type="button" class="bouton bouton--secondaire">Changer de caméra</button>
+            </div>
+          </section>
           <form class="formulaire" data-composant="scan-formulaire" onsubmit="return false">
             <div class="champ">
               <label for="apercu-jeton">Jeton du coureur</label>

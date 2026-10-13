@@ -22,10 +22,11 @@ Toute la suite tourne sur la stack lancée avec `docker-compose.e2e.yml` (profil
 
 ## Projets Playwright et `npm test`
 
-- `chromium` : tous les tests, en parallèle, sauf les fichiers `*.horloge.spec.ts`. Aucun ne doit avancer l'horloge.
+- `chromium` : tous les tests, en parallèle, sauf les fichiers `*.horloge.spec.ts` et `*.camera.spec.ts`. Aucun ne doit avancer l'horloge. La caméra y est simulée par script (`tests/aide-camera.ts`, canevas `captureStream` + QR généré par la dépendance `qrcode`).
+- `camera` : les fichiers `*.camera.spec.ts` (4.5 CA13), Chromium lancé avec la caméra factice (`--use-fake-device-for-media-stream`, `--use-fake-ui-for-media-stream`) et la permission `camera` : vraie chaîne de capture, sans simulation de script.
 - `horloge` : les fichiers `*.horloge.spec.ts`, qui avancent l'horloge applicative (`aide-horloge.ts`). Le décalage étant **global à toute l'application**, ce projet s'exécute après `chromium`, avec un seul worker et des fichiers en mode `serial` ; une fixture automatique remet l'horloge à zéro avant et après chaque test (échec « horloge non réinitialisée : tests concurrents ? » sinon). Ne jamais lancer deux suites en même temps sur la même stack.
 
-`npm test` lance `chromium` (sans le scénario « base neuve », voir ci-dessous) puis `horloge --workers=1`. Pour un seul projet : `npx playwright test --project=chromium` ou `npx playwright test --project=horloge --no-deps --workers=1`.
+`npm test` lance `chromium` et `camera` (sans le scénario « base neuve », voir ci-dessous) puis `horloge --workers=1`. Pour un seul projet : `npx playwright test --project=chromium` ou `npx playwright test --project=horloge --no-deps --workers=1`.
 
 ## Base neuve
 
