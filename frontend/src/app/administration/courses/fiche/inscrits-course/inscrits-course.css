@@ -36,3 +36,10 @@ th {
   font-weight: var(--poids-gras);
   color: var(--couleur-foret);
 }
+
+/* Lien vers le dossard imprimable : cible tactile de 44 px. */
+.lien-dossard {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cible-min);
+}

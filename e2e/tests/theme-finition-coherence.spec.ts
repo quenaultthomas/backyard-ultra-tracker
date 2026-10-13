@@ -716,18 +716,21 @@ test.describe('Modes d\'affichage', () => {
       await ouvrir(page, identifiants[ecran.chemin], ecran.chemin, ecran.titre);
       const lignes = page.getByTestId(cartes[ecran.chemin]);
       await expect(lignes.first()).toBeVisible();
-      for (const ligne of await lignes.all()) {
-        expect(parseFloat(await css(ligne, 'borderTopWidth')), `${ecran.nom} : bordure de carte`).toBeGreaterThanOrEqual(1);
-        expect(await css(ligne, 'borderTopStyle')).not.toBe('none');
+      // Une seule évaluation dans la page (le nombre de cartes croît avec les données de la base).
+      const bordures = await lignes.evaluateAll((els) => els.map((el) => ({ largeur: getComputedStyle(el).borderTopWidth, style: getComputedStyle(el).borderTopStyle })));
+      for (const b of bordures) {
+        expect(parseFloat(b.largeur), `${ecran.nom} : bordure de carte`).toBeGreaterThanOrEqual(1);
+        expect(b.style).not.toBe('none');
       }
       for (const id of statuts[ecran.chemin]) {
         const textes = await page.getByTestId(id).allInnerTexts();
         expect(textes.length, `${ecran.nom} : ${id}`).toBeGreaterThan(0);
         for (const t of textes) expect(t.trim().length).toBeGreaterThan(0);
       }
-      for (const visuel of await page.locator('.visuel-substitution').all()) {
-        if (await visuel.isVisible()) expect(await css(visuel, 'backgroundImage'), `${ecran.nom} : visuel de substitution`).toBe('none');
-      }
+      const fondsVisuels = await page
+        .locator('.visuel-substitution')
+        .evaluateAll((els) => els.filter((el) => el.checkVisibility()).map((el) => getComputedStyle(el).backgroundImage));
+      for (const fond of fondsVisuels) expect(fond, `${ecran.nom} : visuel de substitution`).toBe('none');
       if (ecran.chemin === '/administration/courses') {
         const encart = page.locator('form.encart');
         expect(parseFloat(await css(encart, 'borderTopWidth'))).toBeGreaterThanOrEqual(1);

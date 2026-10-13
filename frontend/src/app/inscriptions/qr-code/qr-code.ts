@@ -24,6 +24,8 @@ export class QrCode {
   readonly contenu = input.required<string>();
   /** Texte alternatif du QR code. */
   readonly libelle = input.required<string>();
+  /** Préfixe des `data-testid` du dessin (`<préfixe>-qr`) et du message d'échec (`<préfixe>-erreur-qr`). */
+  readonly prefixeTestid = input('inscriptions');
 
   protected readonly dessin = computed(() => dessiner(this.contenu()));
 }

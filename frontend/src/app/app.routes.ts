@@ -81,6 +81,13 @@ export const routes: Routes = [
     title: 'Pilotage de la course - Backyard Ultra Tracker',
   },
   {
+    path: 'administration/courses/:id/inscriptions/:inscriptionId/dossard',
+    canActivate: [reserveAuxAdministrateurs],
+    loadComponent: () =>
+      import('./administration/courses/dossard/ecran-dossard').then((m) => m.EcranDossard),
+    title: 'Dossard - Backyard Ultra Tracker',
+  },
+  {
     path: 'benevole',
     canActivate: [reserveAuxBenevoles],
     loadComponent: () =>

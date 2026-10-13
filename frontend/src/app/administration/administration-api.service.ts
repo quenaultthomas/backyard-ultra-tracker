@@ -7,6 +7,7 @@ import {
   AffecterBenevolesRequete,
   CourseReponse,
   DeclarerCourseRequete,
+  DossardReponse,
   FicheCourseReponse,
   InscritsCourseReponse,
   ModifierCourseRequete,
@@ -66,6 +67,13 @@ export class AdministrationApiService {
   /** Inscrits d'une Course triés par dossard, avec les nombres calculés par l'API (tous statuts). */
   listerInscrits(id: string): Observable<InscritsCourseReponse> {
     return this.http.get<InscritsCourseReponse>(`${urlCourse(id)}/inscriptions`);
+  }
+
+  /** Dossard d'une Inscription de la Course, avec son jeton QR (lu à la demande, jamais conservé). */
+  lireDossard(id: string, inscriptionId: string): Observable<DossardReponse> {
+    return this.http.get<DossardReponse>(
+      `${urlCourse(id)}/inscriptions/${encodeURIComponent(inscriptionId)}/dossard`,
+    );
   }
 
   /** Remplace l'ensemble des bénévoles affectés à une Course ; renvoie la fiche enregistrée. */

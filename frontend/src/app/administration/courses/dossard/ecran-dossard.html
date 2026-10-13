@@ -1,0 +1,49 @@
+<main class="page page--cartes">
+  <section class="carte" aria-labelledby="dossard-titre">
+    <h1 id="dossard-titre" class="titre" data-testid="dossard-titre">Dossard</h1>
+
+    @if (erreur(); as cause) {
+      <p class="message--erreur" role="alert" data-testid="dossard-erreur">
+        {{ messagesErreur[cause] }}
+      </p>
+      @if (cause === 'INDISPONIBLE') {
+        <button
+          type="button"
+          class="bouton"
+          (click)="charger()"
+          data-testid="dossard-bouton-reessayer"
+        >
+          Réessayer
+        </button>
+      }
+    } @else if (dossard(); as d) {
+      @if (avertissement(); as message) {
+        <p class="message--avertissement" data-testid="dossard-avertissement">{{ message }}</p>
+      }
+      <div class="dossard-feuille" data-testid="dossard-feuille">
+        <p class="dossard-feuille__numero" data-testid="dossard-numero">{{ d.dossard }}</p>
+        <p class="dossard-feuille__pseudo" data-testid="dossard-pseudo">{{ d.pseudo }}</p>
+        <p class="dossard-feuille__course" data-testid="dossard-course-nom">{{ d.courseNom }}</p>
+        <app-qr-code
+          [contenu]="d.jetonQr"
+          [libelle]="'QR code du dossard ' + d.dossard"
+          prefixeTestid="dossard"
+        />
+      </div>
+      <button
+        type="button"
+        class="bouton"
+        (click)="imprimer()"
+        data-testid="dossard-bouton-imprimer"
+      >
+        Imprimer le dossard
+      </button>
+    } @else {
+      <p class="message" role="status">Chargement du dossard…</p>
+    }
+
+    <a class="lien" [routerLink]="retour().lien" data-testid="dossard-lien-retour">
+      {{ retour().libelle }}
+    </a>
+  </section>
+</main>

@@ -5,14 +5,15 @@
 
 /*
  * Lisible par une caméra de téléphone : 240 px (15rem) dès que la place le permet, carré,
- * réduit sans déborder dans une carte étroite. Exception à la palette : noir sur blanc
+ * réduit sans déborder dans une carte étroite. `--qr-taille` (posée par l'écran parent)
+ * remplace ces 240 px, par exemple pour la feuille imprimée du dossard. Exception à la palette : noir sur blanc
  * (attributs du SVG), fond blanc plein cadre avec la zone de silence de 4 modules ; aucun
  * padding, bordure, arrondi, filtre ni transformation ne doit l'entamer.
  * Contraste forcé : un QR recoloré ou inversé ne se scanne plus, il reste noir sur blanc.
  */
 .qr {
   display: block;
-  width: min(100%, 15rem);
+  width: min(100%, var(--qr-taille, 15rem));
   height: auto;
   aspect-ratio: 1;
   margin-inline: auto;

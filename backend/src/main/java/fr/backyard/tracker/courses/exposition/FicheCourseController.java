@@ -3,10 +3,12 @@ package fr.backyard.tracker.courses.exposition;
 import fr.backyard.tracker.courses.application.AffecterBenevoles;
 import fr.backyard.tracker.courses.application.ConsulterPilotage;
 import fr.backyard.tracker.courses.application.DemarrerCourse;
+import fr.backyard.tracker.courses.application.LireDossard;
 import fr.backyard.tracker.courses.application.LireFicheCourse;
 import fr.backyard.tracker.courses.application.ListerInscritsCourse;
 import fr.backyard.tracker.courses.application.ListerCourses;
 import fr.backyard.tracker.courses.domaine.Course;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.CacheControl;
@@ -30,22 +32,27 @@ public class FicheCourseController {
 
     private static final Logger JOURNAL = LoggerFactory.getLogger(FicheCourseController.class);
 
+    private static final UUID AUCUNE_INSCRIPTION = new UUID(0L, 0L);
+
     private final LireFicheCourse lireFicheCourse;
     private final AffecterBenevoles affecterBenevoles;
     private final ListerCourses listerCourses;
     private final ListerInscritsCourse listerInscritsCourse;
     private final DemarrerCourse demarrerCourse;
     private final ConsulterPilotage consulterPilotage;
+    private final LireDossard lireDossard;
 
     public FicheCourseController(LireFicheCourse lireFicheCourse, AffecterBenevoles affecterBenevoles,
                                  ListerCourses listerCourses, ListerInscritsCourse listerInscritsCourse,
-                                 DemarrerCourse demarrerCourse, ConsulterPilotage consulterPilotage) {
+                                 DemarrerCourse demarrerCourse, ConsulterPilotage consulterPilotage,
+                                 LireDossard lireDossard) {
         this.lireFicheCourse = lireFicheCourse;
         this.affecterBenevoles = affecterBenevoles;
         this.listerCourses = listerCourses;
         this.listerInscritsCourse = listerInscritsCourse;
         this.demarrerCourse = demarrerCourse;
         this.consulterPilotage = consulterPilotage;
+        this.lireDossard = lireDossard;
     }
 
     @GetMapping
@@ -70,6 +77,18 @@ public class FicheCourseController {
                 .body(PilotageCourseReponse.depuis(pilotage, listerCourses.avecEmpreinteLogo(pilotage.course())));
     }
 
+    /**
+     * Dossard imprimable d'une Inscription, avec son jeton QR : jamais mis en cache. L'identifiant de Course est lu
+     * avant celui de l'Inscription (404 COURSE_INTROUVABLE d'abord). Le journal est tenu par le cas d'usage.
+     */
+    @GetMapping("/inscriptions/{inscriptionId}/dossard")
+    public ResponseEntity<DossardReponse> lireDossard(@PathVariable("id") String id,
+                                                      @PathVariable("inscriptionId") String inscriptionId) {
+        UUID courseId = IdentifiantCourse.deCourse(id);
+        LireDossard.Dossard dossard = lireDossard.executer(courseId, identifiantInscription(inscriptionId));
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(DossardReponse.depuis(dossard));
+    }
+
     /** Le corps et son format sont contrôlés avant l'identifiant : 400 même pour une Course inexistante. */
     @PutMapping(path = "/benevoles", consumes = MediaType.APPLICATION_JSON_VALUE)
     public FicheCourseReponse affecterBenevoles(@PathVariable("id") String id,
@@ -86,6 +105,15 @@ public class FicheCourseController {
         Course course = demarrerCourse.executer(IdentifiantCourse.deCourse(id));
         JOURNAL.info("Course démarrée (course {})", course.id());
         return reponse(LireFicheCourse.Fiche.de(course));
+    }
+
+    /**
+     * Un identifiant d'Inscription qui n'est pas un UUID devient l'UUID nul, que les Inscriptions (UUID aléatoires
+     * de version 4) ne portent jamais : le cas d'usage contrôle ainsi la Course avant de répondre
+     * INSCRIPTION_INTROUVABLE (RG8).
+     */
+    private static UUID identifiantInscription(String inscriptionId) {
+        return IdentifiantCourse.lire(inscriptionId).orElse(AUCUNE_INSCRIPTION);
     }
 
     private FicheCourseReponse reponse(LireFicheCourse.Fiche fiche) {
