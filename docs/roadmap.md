@@ -213,6 +213,10 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 - **Livré** : lecture du QR code à la caméra sur l'écran de scan.
 - **Tu testes** : sur ton ordinateur avec webcam (http://localhost est accepté par le navigateur), présenter le QR affiché sur ton téléphone. Pour un test sur téléphone, passer par la configuration HTTPS de 0.4.
 
+### 4.5b Dossard imprimable (admin)
+- **Livré** : depuis la liste des inscrits d'une course (fiche), l'admin ouvre le dossard d'un coureur (numéro, pseudo, nom de la course, QR code), prêt à imprimer ou à montrer sur téléphone, pour redonner son dossard à un coureur qui l'a oublié. Décision à trancher avec le `fonctionnel` : exposition du jeton QR à l'admin (réservé `ADMIN_MASTER` et `ADMIN`, jamais dans le DOM de la liste, relu à la demande).
+- **Tu testes** : en admin, fiche d'une course > inscrits > « Dossard » d'un coureur → page imprimable avec QR code ; le scanner à la caméra (4.5) enregistre le passage de ce coureur.
+
 ### 4.6 Scans refusés
 - **Livré** : à l'écran, refus avec retour visuel rouge et motif (les refus existent dans l'API depuis 4.4a) : passage déjà enregistré pour cette boucle, coureur en abandon, course non démarrée, bénévole non affecté, jeton inconnu. Anti-doublon : délai minimal entre deux passages d'un même coureur (valeur à fixer), contre un re-scan accidentel juste après un départ.
 - **Tu testes** : scanner deux fois le même coureur sur la même boucle → « déjà passé ». Scanner pour une course où le bénévole n'est pas affecté → refusé.
