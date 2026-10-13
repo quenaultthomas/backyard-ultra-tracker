@@ -79,6 +79,16 @@ export const AUTRES_VARIABLES: Record<string, string> = {
   '--cible-min': '2.75rem',
   '--largeur-carte': '26rem',
   '--duree-transition': '150ms',
+  // Incrément 4.5b : dossard imprimable (docs/design.md section 11).
+  '--taille-dossard': '3rem',
+  '--couleur-encre-impression': '#000',
+  '--couleur-papier-impression': '#fff',
+  '--impression-largeur-feuille': '128mm',
+  '--impression-hauteur-feuille': '190mm',
+  '--impression-taille-qr': '75mm',
+  '--impression-taille-dossard': '72pt',
+  '--impression-taille-pseudo': '24pt',
+  '--impression-taille-texte': '16pt',
 };
 
 export function hexVersRgb(hex: string): string {

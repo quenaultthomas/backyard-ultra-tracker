@@ -80,6 +80,24 @@ export interface InscritsCourseReponse {
   inscrits: InscritReponse[];
 }
 
+/** Réponse de `GET /api/administration/courses/{id}/inscriptions/{inscriptionId}/dossard`. */
+export interface DossardReponse {
+  inscriptionId: string;
+  courseId: string;
+  /** Nom de la Course : affiché en texte, jamais interprété. */
+  courseNom: string;
+  courseStatut: StatutCourse;
+  dossard: number;
+  /** Pseudo du coureur, « Compte inconnu » ou « Coureur anonyme » : affiché tel quel, en texte. */
+  pseudo: string;
+  statut: StatutInscription;
+  /**
+   * Jeton opaque, uniquement pour dessiner le QR code : jamais affiché en texte, ni placé dans
+   * un attribut, une URL, l'état de navigation ou le stockage du navigateur, ni journalisé.
+   */
+  jetonQr: string;
+}
+
 /** Corps de `PUT /api/administration/courses/{id}/benevoles` : ensemble complet souhaité. */
 export interface AffecterBenevolesRequete {
   benevoleIds: string[];

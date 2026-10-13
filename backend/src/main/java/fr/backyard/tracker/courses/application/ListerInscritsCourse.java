@@ -77,6 +77,11 @@ public class ListerInscritsCourse {
         return triees.stream().map(inscription -> inscrit(inscription, pseudos)).toList();
     }
 
+    /** Pseudo d'une seule Inscription, par la même logique que la liste (une recherche, « Compte inconnu »). */
+    static String pseudoDe(Inscription inscription, AnnuairePseudos annuairePseudos) {
+        return inscritsParDossard(List.of(inscription), annuairePseudos).getFirst().pseudo();
+    }
+
     private static Map<UUID, String> pseudosDe(List<Inscription> inscriptions, AnnuairePseudos annuairePseudos) {
         if (inscriptions.isEmpty()) {
             return Map.of();

@@ -15,7 +15,7 @@ Univers : une boucle de 6,7 km refaite toutes les heures, en forêt, de jour. D�
 
 ## 2. Palette
 
-Le thème n'emploie aucune autre couleur (ni noir pur, ni blanc pur), à une exception près : le QR code d'une Inscription reste noir sur blanc pour la lecture par caméra. Cette exception est maintenue en contraste forcé (`forced-colors: active`) : le QR porte `forced-color-adjust: none`, car un QR recoloré ou inversé ne se scanne plus.
+Le thème n'emploie aucune autre couleur (ni noir pur, ni blanc pur), à une exception près : le QR code d'une Inscription reste noir sur blanc pour la lecture par caméra. La feuille imprimée du dossard (section 11, « Dossard ») emploie aussi le noir et le blanc, par deux jetons d'impression dédiés, jamais à l'écran. Cette exception est maintenue en contraste forcé (`forced-colors: active`) : le QR porte `forced-color-adjust: none`, car un QR recoloré ou inversé ne se scanne plus.
 
 | Variable | Hex | Usage |
 |---|---|---|
@@ -393,7 +393,7 @@ La capture `docs/images/design-apercu.png` est régénérée par le test E2E de 
 ## 10. Règles d'usage pour les incréments suivants
 
 - **Variables uniquement** : aucune couleur, police, taille, espacement, rayon ni ombre en dur hors de `variables.css` ; toujours `var(--…)`. Une nouvelle valeur s'ajoute d'abord à la charte (ce document et `variables.css`), avec son ratio de contraste.
-- **Pas de couleur en dur**, pas de noir ni de blanc purs (seule exception : le QR code, noir sur blanc).
+- **Pas de couleur en dur**, pas de noir ni de blanc purs (exceptions : le QR code, noir sur blanc, et la feuille imprimée du dossard, par les jetons `--couleur-encre-impression` et `--couleur-papier-impression` en `@media print` seulement).
 - **Orange jamais en texte sur fond clair** : `--couleur-orange` sur fond sombre ou en aplat ; sur crème, surface ou sable, utiliser `--couleur-orange-fonce`.
 - **Pas de `svg`, `img` ni `canvas` décoratif dans le DOM** : puces, filets et motifs en CSS (`::before`, `background`) ; seule exception : l'icône du menu burger de l'en-tête (section 7). Le décor backyard de l'accueil (`.decor-backyard`) est un fond CSS (`background-image` en URI `data:`), pas un `svg` du DOM : il respecte cette règle. De même, un **pictogramme décoratif** est un `mask-image` / `background-image` CSS en URI `data:` (jamais un `svg`, `img` ni `canvas` du DOM), déclaré dans une feuille globale (`decor.css`, `pictogrammes.css`) : les tuiles ne tiennent pas dans le budget `anyComponentStyle` d'un composant.
 - Réutiliser les classes partagées (`.bouton*`, `.message--*`, `.pastille-statut*`, `.carte`, `.carte-liste__*`, `.champ`) plutôt que de redéfinir un style. Messages : utiliser `.message--erreur`, `.message--succes`, `.message--info`, `.message--avertissement`, jamais d'alias (les alias `.ligne__action*` des boutons et les erreurs de composants locaux restent tolérés, ils ne se multiplient pas).
@@ -447,6 +447,28 @@ Règles générales de l'écran (refus plein cadre par motif en 4.6, compteur ho
 - Le flux caméra est un `video` fonctionnel (même statut d'exception que le QR code à la règle « pas de `svg`, `img` ni `canvas` décoratif »), jamais un décor.
 - Boutons principaux pleine largeur, hauteur de 44 px au moins (`--cible-min`).
 - Aucune animation autre que le changement de couleur de fond (et aucune en `prefers-reduced-motion: reduce`).
+
+### Dossard
+
+Écran admin `/administration/courses/:id/inscriptions/:inscriptionId/dossard` (4.5b) : numéro, pseudo, nom de la Course et QR code d'une Inscription, lisible sur téléphone et prêt à imprimer. Livré par `administration/courses/dossard/ecran-dossard.css` et `styles/impression.css`. Recommandations à confirmer après un essai d'impression réel.
+
+| Variable | Valeur | Usage |
+|---|---|---|
+| `--taille-dossard` | `3rem` | numéro du dossard à l'écran (48 px, au-dessus de `--taille-titre`) |
+| `--couleur-encre-impression` | `#000` | texte de la feuille imprimée (`@media print` seulement) |
+| `--couleur-papier-impression` | `#fff` | fond de la page imprimée (`@media print` seulement) ; encre / papier : 21, AAA |
+| `--impression-largeur-feuille` | `128mm` | largeur maximale de la feuille (A5 portrait, 148 mm moins les marges) |
+| `--impression-hauteur-feuille` | `190mm` | hauteur maximale de la feuille (une seule page en A5 comme en A4) |
+| `--impression-taille-qr` | `75mm` | côté du QR imprimé (70 mm au moins) |
+| `--impression-taille-dossard` | `72pt` | numéro imprimé (60 pt au moins) |
+| `--impression-taille-pseudo` | `24pt` | pseudo imprimé |
+| `--impression-taille-texte` | `16pt` | nom de la Course imprimé |
+
+- **À l'écran** (téléphone d'abord) : page `main.page.page--cartes`, `--carte-largeur: 30rem` ; `h1.titre` « Dossard », puis l'avertissement éventuel (`.message--avertissement`), la feuille `.dossard-feuille`, le bouton « Imprimer le dossard » (`.bouton`, pleine largeur, `--cible-min`) et le lien de retour.
+- **Feuille** `.dossard-feuille` : colonne centrée à `gap: var(--espace-1)`, entre deux lignes de découpe (`2px dashed` trait, `padding-block: var(--espace-3)`), sans marge horizontale pour garder le QR à 200 px au moins à 320 px avec le texte à 200 % ; numéro en `--taille-dossard` gras forêt (chiffres tabulaires de `body`), pseudo en `--taille-grande` gras, nom de la Course en encre-douce, mots coupés (`overflow-wrap: anywhere`) ; QR (`app-qr-code`) de 240 px quand la place le permet. À 375 × 667, numéro et QR tiennent sous l'en-tête sans défiler, avertissement compris.
+- **QR** : `app-qr-code` lit la propriété `--qr-taille` (240 px par défaut), que la feuille fixe à `--impression-taille-qr` à l'impression ; fond blanc, zone de silence et noir sur blanc inchangés (section 10).
+- **À l'impression** (`@media print`) : en-tête du site, motif de fond, titre, avertissement, bouton et lien masqués ; seule la feuille reste, noire sur papier blanc, sans fond, bordure ni ombre, en haut de la page et centrée (`break-inside: avoid`, `print-color-adjust: exact`). Taille de page laissée au choix (A4 ou A5) : `@page { margin: 10mm }`, seule valeur en dur de la charte (`@page` ne voit pas les variables de `:root`). Aucune URL ni jeton imprimés.
+- **Lien d'accès** : dans la section « Inscrits » de la fiche, lien texte « Dossard » par ligne (`.lien-dossard`, hauteur `--cible-min`), dans une colonne d'en-tête masqué « Actions ».
 
 ### Suivi public et grand format projeté
 

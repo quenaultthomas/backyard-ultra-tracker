@@ -103,6 +103,18 @@ public class InscriptionJpaAdapter implements DepotInscriptions {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<Inscription> parIdEtCourse(UUID inscriptionId, UUID courseId) {
+        return entityManager.createQuery("select i from InscriptionJpaEntity i "
+                        + "where i.id = :id and i.courseId = :courseId", InscriptionJpaEntity.class)
+                .setParameter("id", inscriptionId)
+                .setParameter("courseId", courseId)
+                .getResultStream()
+                .findFirst()
+                .map(InscriptionJpaAdapter::versDomaine);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<Inscription> parCourseEtJeton(UUID courseId, JetonQr jeton) {
         return entityManager.createQuery("select i from InscriptionJpaEntity i "
                         + "where i.courseId = :courseId and i.jetonQr = :jeton", InscriptionJpaEntity.class)

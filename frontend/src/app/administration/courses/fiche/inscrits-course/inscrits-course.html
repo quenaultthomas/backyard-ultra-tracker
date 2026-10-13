@@ -25,6 +25,7 @@
             <th scope="col">Dossard</th>
             <th scope="col">Coureur</th>
             <th scope="col">Statut</th>
+            <th scope="col"><span class="masque">Actions</span></th>
           </tr>
         </thead>
         <tbody>
@@ -33,6 +34,15 @@
               <td class="dossard" data-testid="fiche-inscrit-dossard">{{ inscrit.dossard }}</td>
               <td class="pseudo" data-testid="fiche-inscrit-pseudo">{{ inscrit.pseudo }}</td>
               <td data-testid="fiche-inscrit-statut">{{ libellesStatut[inscrit.statut] }}</td>
+              <td>
+                <a
+                  class="lien-dossard"
+                  [routerLink]="['inscriptions', inscrit.inscriptionId, 'dossard']"
+                  [attr.aria-label]="'Dossard du coureur ' + inscrit.pseudo"
+                  data-testid="fiche-inscrit-lien-dossard"
+                  >Dossard</a
+                >
+              </td>
             </tr>
           }
         </tbody>

@@ -1,11 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { LIBELLES_STATUT_INSCRIPTION } from '../../../../inscriptions/mon-inscription';
 import { InscritsCourseReponse } from '../../course';
 
-/** Section « Inscrits » de la fiche d'une Course : lecture seule, valeurs telles que renvoyées par l'API. */
+/**
+ * Section « Inscrits » de la fiche d'une Course : lecture seule, valeurs telles que renvoyées par
+ * l'API, et lien vers le dossard imprimable de chaque Inscription (jamais de jeton dans la liste).
+ */
 @Component({
   selector: 'app-inscrits-course',
+  imports: [RouterLink],
   templateUrl: './inscrits-course.html',
   styleUrls: [
     '../../../../partage/page-carte.css',

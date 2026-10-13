@@ -1,0 +1,24 @@
+/*
+ * Impression (docs/design.md, section 11, « Dossard ») : taille de page laissée au choix de
+ * l'utilisateur (A4 ou A5). `@page` ne voit pas les variables de `:root` : marge en dur, seule
+ * exception à la règle des jetons.
+ */
+@page {
+  margin: 10mm;
+}
+
+/* Page du dossard : ni en-tête du site, ni motif de fond ; papier blanc, une seule feuille. */
+@media print {
+  body:has(.dossard-feuille) {
+    background: var(--couleur-papier-impression);
+    color: var(--couleur-encre-impression);
+  }
+
+  body:has(.dossard-feuille) app-root {
+    min-height: 0;
+  }
+
+  body:has(.dossard-feuille) app-entete {
+    display: none;
+  }
+}

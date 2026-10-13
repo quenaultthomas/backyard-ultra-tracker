@@ -66,4 +66,11 @@ final class DepotInscriptionsEnMemoireDeTest implements DepotInscriptions {
                 .filter(i -> i.courseId().equals(courseId) && i.jetonQr().equals(jeton))
                 .findFirst();
     }
+
+    /** 4.5b RG1 : recherche par (identifiant, Course) ; l'Inscription d'une autre Course n'est jamais renvoyée. */
+    @Override
+    public Optional<Inscription> parIdEtCourse(UUID inscriptionId, UUID courseId) {
+        return inscriptions.stream().filter(i -> i.id().equals(inscriptionId) && i.courseId().equals(courseId))
+                .findFirst();
+    }
 }

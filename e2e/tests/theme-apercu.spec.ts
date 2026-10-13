@@ -64,7 +64,9 @@ test('CA12 - l\'aperçu de la charte montre chaque composant avec le CSS réel, 
 /* ------------------------------------------------------------------ CA13 */
 
 function ligneDe(design: string, nom: string): string | undefined {
-  return design.split('\n').find((l) => l.includes(`\`${nom}\``));
+  // Ligne du tableau en priorité : une variable peut aussi être citée dans la prose d'une règle.
+  const lignes = design.split('\n').filter((l) => l.includes(`\`${nom}\``));
+  return lignes.find((l) => l.startsWith('|')) ?? lignes[0];
 }
 
 test('CA13 - docs/design.md contient les 10 sections, toutes les variables, les pastilles, la licence et des contrastes exacts', () => {

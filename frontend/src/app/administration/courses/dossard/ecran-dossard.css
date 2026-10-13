@@ -1,0 +1,85 @@
+/* Dossard imprimable (docs/design.md, section 11, « Dossard ») : téléphone d'abord, puis impression. */
+.page {
+  --carte-largeur: 30rem;
+}
+
+/* Feuille : numéro, pseudo, Course et QR centrés, entre deux lignes de découpe. */
+.dossard-feuille {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espace-1);
+  padding-block: var(--espace-3);
+  border-block: 2px dashed var(--couleur-trait);
+  text-align: center;
+  overflow-wrap: anywhere;
+  break-inside: avoid;
+}
+
+.dossard-feuille > * {
+  max-width: 100%;
+  margin: 0;
+}
+
+.dossard-feuille__numero {
+  font-size: var(--taille-dossard);
+  font-weight: var(--poids-gras);
+  line-height: var(--interligne-titre);
+  color: var(--couleur-foret);
+}
+
+.dossard-feuille__pseudo {
+  font-size: var(--taille-grande);
+  font-weight: var(--poids-gras);
+}
+
+.dossard-feuille__course {
+  color: var(--couleur-encre-douce);
+}
+
+/* À l'impression : la feuille seule, noir sur blanc, en haut de la page et centrée. */
+@media print {
+  .page {
+    align-items: flex-start;
+    padding: 0;
+  }
+
+  .carte {
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+  }
+
+  .carte > :not(.dossard-feuille) {
+    display: none;
+  }
+
+  .dossard-feuille {
+    --qr-taille: var(--impression-taille-qr);
+
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--impression-largeur-feuille);
+    max-height: var(--impression-hauteur-feuille);
+    margin-inline: auto;
+    padding: 0;
+    border: none;
+    color: var(--couleur-encre-impression);
+    font-size: var(--impression-taille-texte);
+    print-color-adjust: exact;
+  }
+
+  .dossard-feuille__numero {
+    font-size: var(--impression-taille-dossard);
+  }
+
+  .dossard-feuille__pseudo {
+    font-size: var(--impression-taille-pseudo);
+  }
+
+  .dossard-feuille__numero,
+  .dossard-feuille__course {
+    color: var(--couleur-encre-impression);
+  }
+}
