@@ -1,0 +1,95 @@
+/* Scan à la caméra (docs/design.md, section 11 « Scan ») : téléphone d'abord, aucune animation. */
+.camera {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.camera > p {
+  margin: 0;
+}
+
+/* État : libellé + pictogramme (cercle plein actif, cercle vide arrêté), jamais la couleur seule. */
+.camera__etat {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-2);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-encre-douce);
+}
+
+.camera__etat::before {
+  content: '';
+  flex: none;
+  box-sizing: border-box;
+  width: var(--espace-3);
+  height: var(--espace-3);
+  border: calc(var(--espace-1) / 2) solid currentColor;
+  border-radius: var(--rayon-pastille);
+}
+
+.camera__etat--active {
+  color: var(--couleur-foret);
+}
+
+.camera__etat--active::before {
+  background-color: currentColor;
+}
+
+/* Aperçu : rapport d'aspect réservé, la vidéo remplit le cadre sans saut de mise en page. */
+.camera__apercu {
+  position: relative;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--rayon-m);
+  background-color: var(--couleur-foret);
+}
+
+.camera__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Viseur : quatre coins en aplat orange, dessinés en CSS. */
+.camera__viseur {
+  --coin: linear-gradient(var(--couleur-orange) 0 0);
+  --longueur: var(--espace-8);
+  --epaisseur: var(--espace-1);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 60%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  background:
+    var(--coin) top left / var(--longueur) var(--epaisseur),
+    var(--coin) top left / var(--epaisseur) var(--longueur),
+    var(--coin) top right / var(--longueur) var(--epaisseur),
+    var(--coin) top right / var(--epaisseur) var(--longueur),
+    var(--coin) bottom left / var(--longueur) var(--epaisseur),
+    var(--coin) bottom left / var(--epaisseur) var(--longueur),
+    var(--coin) bottom right / var(--longueur) var(--epaisseur),
+    var(--coin) bottom right / var(--epaisseur) var(--longueur);
+  background-repeat: no-repeat;
+  forced-color-adjust: none;
+}
+
+.camera__legende {
+  text-align: center;
+  color: var(--couleur-encre-douce);
+}
+
+.camera__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+}
+
+.camera__actions > .bouton {
+  width: 100%;
+}

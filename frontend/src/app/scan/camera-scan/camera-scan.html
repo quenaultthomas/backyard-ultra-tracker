@@ -1,0 +1,86 @@
+<section class="camera" aria-labelledby="scan-camera-titre" data-testid="scan-camera">
+  <h2 id="scan-camera-titre" class="masque">Caméra</h2>
+  @if (!disponible) {
+    <p class="message--info" role="status" data-testid="scan-camera-message">
+      La caméra n'est disponible qu'en HTTPS. Saisissez le jeton ci-dessous.
+    </p>
+  } @else {
+    <p
+      class="camera__etat"
+      [class.camera__etat--active]="etat() === 'active'"
+      data-testid="scan-camera-etat"
+    >
+      {{ etat() === 'active' ? 'Caméra active' : 'Caméra arrêtée' }}
+    </p>
+
+    @if (flux(); as f) {
+      <div class="camera__apercu">
+        <video
+          #video
+          class="camera__video"
+          [srcObject]="f"
+          [muted]="true"
+          autoplay
+          muted
+          playsinline
+          aria-label="Aperçu de la caméra"
+          data-testid="scan-camera-video"
+        ></video>
+        <div class="camera__viseur" aria-hidden="true"></div>
+      </div>
+      <p class="camera__legende">Placez le QR code dans le cadre</p>
+    }
+
+    @if (message(); as m) {
+      <p
+        [class]="m.role === 'alert' ? 'message--erreur' : 'message--info'"
+        [attr.role]="m.role"
+        data-testid="scan-camera-message"
+      >
+        {{ m.texte }}
+      </p>
+    }
+
+    <div class="camera__actions">
+      @if (etat() === 'active') {
+        <button
+          type="button"
+          class="bouton"
+          (click)="arreterManuellement()"
+          data-testid="scan-camera-arreter"
+        >
+          Arrêter la caméra
+        </button>
+        @if (plusieursCameras()) {
+          <button
+            type="button"
+            class="bouton bouton--secondaire"
+            (click)="basculer()"
+            data-testid="scan-camera-basculer"
+          >
+            Changer de caméra
+          </button>
+        }
+      } @else if (message()?.role === 'alert') {
+        <button
+          type="button"
+          class="bouton"
+          (click)="activer()"
+          data-testid="scan-camera-reessayer"
+        >
+          Réessayer
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="bouton"
+          [disabled]="etat() === 'activation'"
+          (click)="activer()"
+          data-testid="scan-camera-activer"
+        >
+          {{ etat() === 'activation' ? 'Activation…' : 'Activer la caméra' }}
+        </button>
+      }
+    </div>
+  }
+</section>

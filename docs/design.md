@@ -428,11 +428,16 @@ Règles normatives des écrans de pilotage (jalon 4), de scan (jalons 4 et 5) et
 
 ### Scan
 
-Écran bénévole sur téléphone (jalons 4 et 5). Livré en 4.4b par `scan/ecran-scan/ecran-scan.css` (saisie au clavier ; caméra en 4.5, retour de refus par motif en 4.6, file hors ligne en 5.1) :
+Écran bénévole sur téléphone (jalons 4 et 5). Livré en 4.4b par `scan/ecran-scan/ecran-scan.css` (saisie au clavier) et en 4.5 par `scan/camera-scan/camera-scan.css` (caméra) ; retour de refus par motif en 4.6, file hors ligne en 5.1 :
 - Page `main.page.page--cartes`, `--carte-largeur: 30rem` ; dans la carte : en-tête `header.scan-entete` (flex, retour à la ligne : nom de la Course en `h1.titre` sur toute la ligne, coupé, puis pastille de statut de la section 8 et lien « Changer de course » poussé à droite, cible de 44 px), retour du serveur, formulaire (`.formulaire`).
 - Champ « Jeton du coureur » (`type=text`, `autocomplete`, `autocapitalize`, `autocorrect` à `off`, `spellcheck=false`, `enterkeyhint=send`) et bouton principal « Enregistrer le passage » (« Envoi… » désactivé pendant l'envoi), tous deux pleine largeur et `--cible-min`.
 - **Retour** `.resultat` : grille pictogramme (2rem, `mask` teinté `currentColor`, `CanvasText` en contraste forcé) + texte, `padding: var(--espace-4)`, `--taille-moyenne`, coupé. Accepté : `.message--succes.resultat` (`role="status"`, coche) « Passage enregistré » en gras, « Dossard N » en `--taille-titre` gras, pseudo, « Boucle B ». Refusé : `.message--erreur.resultat` (`role="alert"`, croix) avec le `detail` de l'API. Un seul retour à la fois, effacé à la saisie suivante.
 - États sans formulaire (non affecté, non démarrée, terminée) : `.message--info` ; échec de chargement : `.message--erreur`.
+- **Caméra** (4.5, Course `EN_COURS` seulement) : section `.camera` entre le retour du serveur et le formulaire (le retour reste visible sans défiler à 375 px), colonne à `gap: var(--espace-3)`, mots coupés.
+  - État `.camera__etat` en gras : libellé « Caméra arrêtée » (encre-douce, pictogramme cercle vide) ou « Caméra active » (forêt, `.camera__etat--active`, cercle plein) ; la forme du pictogramme et le libellé portent l'information, jamais la couleur seule.
+  - Aperçu `.camera__apercu` : `video` muet en ligne, nom accessible « Aperçu de la caméra », rapport d'aspect réservé `4 / 3`, `max-width: 100%`, fond forêt, `--rayon-m`, image en `object-fit: cover`. Viseur `.camera__viseur` : carré de 60 % de la largeur, centré, quatre coins en aplat orange (`--espace-8` de long, `--espace-1` d'épaisseur, `forced-color-adjust: none`), jamais seul : légende centrée « Placez le QR code dans le cadre » (encre-douce). Aucune animation.
+  - Boutons `.camera__actions` en colonne, pleine largeur, `--cible-min` : « Activer la caméra » (« Activation… » désactivé pendant la demande) ou « Réessayer » après un échec ou un arrêt automatique en `.bouton` ; « Arrêter la caméra » en `.bouton` et « Changer de caméra » (au moins deux caméras) en `.bouton--secondaire`.
+  - Messages : échec ou arrêt automatique en `.message--erreur` (`role="alert"`) ; QR non reconnu en `.message--info` (`role="status"`, effacé au bout de 3 s) ; contexte non sécurisé (HTTP) en `.message--info`, sans bouton.
 
 Règles générales de l'écran (refus plein cadre par motif en 4.6, compteur hors ligne en 5.1) :
 - **Retour visuel plein cadre et immédiat**, toujours **couleur + libellé + pictogramme CSS** (jamais la couleur seule) :

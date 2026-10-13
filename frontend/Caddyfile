@@ -15,7 +15,8 @@
 		X-Content-Type-Options nosniff
 		X-Frame-Options DENY
 		Referrer-Policy strict-origin-when-cross-origin
-		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# Caméra pour l'origine seule (scan des QR, 4.5) ; micro et géolocalisation interdits.
+		Permissions-Policy "camera=(self), microphone=(), geolocation=()"
 		Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 		-Server
 	}

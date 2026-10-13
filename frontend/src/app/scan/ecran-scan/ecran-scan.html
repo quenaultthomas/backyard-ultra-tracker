@@ -50,6 +50,8 @@
             }
           }
 
+          <app-camera-scan [envoiEnCours]="envoiEnCours()" (jetonLu)="scannerJeton($event)" />
+
           <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
             <div class="champ">
               <label for="scan-jeton">Jeton du coureur</label>
