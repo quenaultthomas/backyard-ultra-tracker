@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
-# Données de démonstration pour le test manuel (incréments 2.1b, 2.4, 3.5 et 4.1). À NE PAS UTILISER EN PRODUCTION.
+# Données de démonstration pour le test manuel (incréments 2.1b, 2.4, 3.5, 4.1 et 4.4b). À NE PAS UTILISER EN PRODUCTION.
 #
 # Crée par l'API de l'application lancée (jamais d'accès direct à la base), dans cet ordre :
 #   - admin Nadia, bénévoles Léo et Marc (session de l'admin master) ;
 #   - Courses « Backyard de démo » (J+30), « Backyard express » (J+7), « Backyard mini » (J+14) et
 #     « Backyard du jour » (date du jour à Paris, 400 m, 1 min, 5 m, 10 participants, 5 Boucles max), seule
 #     démarrable le jour même (4.1) ; les dates sont calculées dans le fuseau Europe/Paris, celui de l'API ;
-#   - affectation du bénévole Léo à « Backyard de démo » (les autres bénévoles déjà affectés sont conservés) ;
+#   - affectations du bénévole Léo à « Backyard de démo » et à « Backyard du jour » (les autres bénévoles
+#     déjà affectés sont conservés) ;
 #   - coureurs Alice, Karim, Sophie et Tom (session anonyme) ;
 #   - Inscriptions, chacune dans la session de son coureur et dans cet ordre : Karim, Sophie, Tom à
 #     « Backyard de démo » ; Karim, Sophie à « Backyard express » ; Karim, Sophie, Tom (dossards 1, 2, 3) à
 #     « Backyard du jour ». Alice et « Backyard mini » n'en reçoivent aucune.
-# Soit 20 éléments : 7 Comptes, 4 Courses, 1 affectation, 8 Inscriptions.
+# Soit 21 éléments : 7 Comptes, 4 Courses, 2 affectations, 8 Inscriptions.
 # Mots de passe connus : Nadia mot-de-passe-admin-1, Léo et Marc mot-de-passe-benevole-1,
 #   Alice, Karim, Sophie et Tom un-mot-de-passe-12.
 #
@@ -28,7 +29,7 @@
 #   - un Compte dont le pseudo est déjà pris (409 PSEUDO_DEJA_UTILISE) est « déjà présent », même s'il
 #     a un autre rôle (non détecté) ;
 #   - une Course est « déjà présente » si une Course du même nom existe ; elle n'est ni comparée ni modifiée ;
-#   - Léo déjà affecté à « Backyard de démo » : rien n'est envoyé ;
+#   - Léo déjà affecté à une Course : rien n'est envoyé pour cette Course ;
 #   - une Inscription déjà existante (409 INSCRIPTION_DEJA_EXISTANTE) est « déjà présente » ; une Course qui n'est
 #     plus ouverte aux inscriptions (EN_COURS, TERMINEE) fait échouer le script ;
 #   - « Backyard du jour » garde la date de sa première création : un autre jour, elle n'est plus démarrable
@@ -215,6 +216,7 @@ creer_compte /api/administration/benevoles "Léo" mot-de-passe-benevole-1 BENEVO
 creer_compte /api/administration/benevoles Marc mot-de-passe-benevole-1 BENEVOLE
 declarer_courses
 affecter_benevole "Léo" "Backyard de démo"
+affecter_benevole "Léo" "Backyard du jour"
 
 COOKIES="$TEMPORAIRE/cookies-anonyme"
 : > "$COOKIES"

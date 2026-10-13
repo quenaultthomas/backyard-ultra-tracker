@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 
 import { formaterDateCourse } from '../../administration/courses/champs-course';
 import {
@@ -19,9 +20,10 @@ import { CourseBenevoleReponse } from '../course-benevole';
 
 const ECRAN_ACCUEIL_BENEVOLE = '/benevole';
 
-/** Accueil d'un bénévole : Courses auxquelles il est affecté (aucune action avant le scan). */
+/** Accueil d'un bénévole : Courses auxquelles il est affecté, action « Scanner » sur celles en cours. */
 @Component({
   selector: 'app-accueil-benevole',
+  imports: [RouterLink],
   templateUrl: './accueil-benevole.html',
   styleUrls: ['../../partage/page-carte.css', './accueil-benevole.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

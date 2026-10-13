@@ -1,0 +1,99 @@
+<main class="page page--cartes">
+  <section class="carte" aria-labelledby="scan-titre">
+    <header class="scan-entete">
+      @if (course(); as c) {
+        <h1 id="scan-titre" class="titre" data-testid="scan-course-nom">{{ c.nom }}</h1>
+        <span [class]="pastillesStatut[c.statut]" data-testid="scan-course-statut">{{
+          libellesStatut[c.statut]
+        }}</span>
+      } @else {
+        <h1 id="scan-titre" class="titre">Scan d'un passage</h1>
+      }
+      <a routerLink="/benevole" class="scan-lien" data-testid="scan-lien-changer"
+        >Changer de course</a
+      >
+    </header>
+
+    @if (erreurChargement()) {
+      <p class="message--erreur" role="alert" data-testid="scan-erreur-chargement">
+        Impossible de charger la course. Réessayez plus tard.
+      </p>
+    } @else if (course() === undefined) {
+      <p class="message" role="status" data-testid="scan-chargement">Chargement…</p>
+    } @else if (course(); as c) {
+      @switch (c.statut) {
+        @case ('EN_PREPARATION') {
+          <p class="message--info" data-testid="scan-message-etat">La course n'est pas démarrée.</p>
+        }
+        @case ('TERMINEE') {
+          <p class="message--info" data-testid="scan-message-etat">La course est terminée.</p>
+        }
+        @default {
+          @if (resultat(); as r) {
+            @if (r.type === 'succes') {
+              <div
+                class="message--succes resultat"
+                role="status"
+                data-testid="scan-resultat-succes"
+              >
+                <p class="resultat__libelle">Passage enregistré</p>
+                <p class="resultat__dossard" data-testid="scan-resultat-dossard">
+                  Dossard {{ r.passage.dossard }}
+                </p>
+                <p data-testid="scan-resultat-pseudo">{{ r.passage.pseudo }}</p>
+                <p data-testid="scan-resultat-boucle">Boucle {{ r.passage.numeroBoucle }}</p>
+              </div>
+            } @else {
+              <p class="message--erreur resultat" role="alert" data-testid="scan-resultat-erreur">
+                {{ r.message }}
+              </p>
+            }
+          }
+
+          <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
+            <div class="champ">
+              <label for="scan-jeton">Jeton du coureur</label>
+              <input
+                #champJeton
+                id="scan-jeton"
+                type="text"
+                formControlName="jeton"
+                (input)="effacerResultat()"
+                autocomplete="off"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+                enterkeyhint="send"
+                aria-describedby="scan-erreur-saisie"
+                [attr.aria-invalid]="erreurSaisie() ? true : null"
+                data-testid="scan-champ-jeton"
+              />
+              @if (erreurSaisie(); as message) {
+                <p
+                  id="scan-erreur-saisie"
+                  class="erreur"
+                  role="alert"
+                  data-testid="scan-erreur-saisie"
+                >
+                  {{ message }}
+                </p>
+              }
+            </div>
+            <button
+              type="submit"
+              class="bouton"
+              [disabled]="envoiEnCours()"
+              data-testid="scan-bouton-enregistrer"
+            >
+              {{ envoiEnCours() ? 'Envoi…' : 'Enregistrer le passage' }}
+            </button>
+          </form>
+        }
+      }
+    } @else {
+      <p class="message--info" data-testid="scan-message-etat">
+        Vous n'êtes pas affecté à cette course.
+      </p>
+    }
+  </section>
+</main>

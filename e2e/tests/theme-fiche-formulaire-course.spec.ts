@@ -745,7 +745,7 @@ test('CA9 - la fiche et le formulaire se parcourent au clavier dans l\'ordre du 
   const idsDom = await page.getByTestId('fiche-benevole-case').evaluateAll((els) => els.map((e) => e.id));
   expect(idsDom.length).toBeGreaterThanOrEqual(2);
   expect(idsDom).toContain(`fiche-benevole-${await idDe(page, b1)}`);
-  const arrets = (await tabulerJusqua(page, 120, (a) => a.testid === 'fiche-lien-retour')).filter((a) => !a.dansEntete);
+  const arrets = (await tabulerJusqua(page, 600, (a) => a.testid === 'fiche-lien-retour')).filter((a) => !a.dansEntete);
   // 4.1 : la section « Démarrage » (course en préparation) précède les cases des bénévoles dans l'ordre du DOM.
   expect(arrets.map((a) => a.testid)).toEqual(['fiche-bouton-demarrer', ...idsDom.map(() => 'fiche-benevole-case'), 'fiche-bouton-enregistrer', 'fiche-lien-retour']);
   expect(arrets.slice(1, idsDom.length + 1).map((a) => a.id)).toEqual(idsDom);

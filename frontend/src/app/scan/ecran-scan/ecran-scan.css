@@ -1,0 +1,75 @@
+/* Scan d'un passage (docs/design.md, section 11 « Scan ») : téléphone d'abord. */
+.page {
+  --carte-largeur: 30rem;
+}
+
+.scan-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espace-2) var(--espace-3);
+}
+
+.scan-entete > .titre {
+  flex: 1 1 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.scan-lien {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--cible-min);
+  margin-left: auto;
+}
+
+/* Retour du serveur : couleur + libellé + pictogramme, sans animation. */
+.resultat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--espace-3);
+  padding: var(--espace-4);
+  font-size: var(--taille-moyenne);
+  overflow-wrap: anywhere;
+}
+
+.resultat > * {
+  grid-column: 2;
+  margin: 0;
+}
+
+.resultat::before {
+  content: '';
+  grid-row: 1 / span 4;
+  width: 2rem;
+  height: 2rem;
+  background-color: currentColor;
+  -webkit-mask: var(--pictogramme) center / contain no-repeat;
+  mask: var(--pictogramme) center / contain no-repeat;
+}
+
+.message--succes.resultat {
+  --pictogramme: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314352A' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5 9.5 18 20 6'/%3E%3C/svg%3E");
+}
+
+.message--erreur.resultat {
+  --pictogramme: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314352A' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E");
+}
+
+.resultat__libelle {
+  font-weight: var(--poids-gras);
+}
+
+.resultat__dossard {
+  font-size: var(--taille-titre);
+  font-weight: var(--poids-gras);
+  line-height: var(--interligne-titre);
+}
+
+@media (forced-colors: active) {
+  .resultat::before {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}
