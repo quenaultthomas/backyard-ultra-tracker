@@ -246,6 +246,45 @@ $PROD exec api printenv SPRING_PROFILES_ACTIVE   # aucune sortie attendue (code 
 
 Connecté en admin master, `https://<domaine>/api/test/horloge` doit répondre 404 (401 sans session, 403 pour un autre rôle).
 
+## Intégration continue
+
+Le workflow `.github/workflows/ci.yml` vérifie la définition de « fini » sur chaque pull request et à chaque push sur `main`. Il ne requiert aucun secret : les identifiants de l'admin master du job `e2e` sont des valeurs de test écrites dans le workflow. Les exécutions obsolètes d'une même PR sont annulées (`concurrency`).
+
+| Job | Ce qu'il fait |
+|---|---|
+| `back` | `./mvnw verify` dans `backend/` (JDK 25, cache Maven) : tests unitaires, tests d'intégration Testcontainers, règles ArchUnit, seuil JaCoCo de 85 % (lignes et branches). |
+| `front` | `npm ci` puis build Angular de production dans `frontend/` (Node 24, cache npm). |
+| `e2e` | Démarre la stack `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait` (tous les services sains), puis lance `npm test` dans `e2e/` (projets `chromium`, `camera`, puis `horloge`, voir `e2e/README.md`). La stack est arrêtée par `docker compose down -v`, succès ou échec. |
+
+Le dépôt étant public, aucun job d'analyse de secrets n'est ajouté. S'il devenait privé, ajouter un job gitleaks.
+
+**Lire un échec.** Onglet *Actions* de la PR, ouvrir le job rouge puis l'étape en échec.
+- `back` : les tests en échec sont listés en fin de log (`Tests run: … Failures: …`). Un seuil JaCoCo non atteint s'affiche par « Rule violated ». Ne jamais abaisser le seuil.
+- `front` : l'erreur de compilation Angular est dans le log de l'étape de build.
+- `e2e` : le log de l'étape Playwright liste le scénario en échec. Les artefacts ci-dessous donnent le détail.
+
+**Artefacts** (en bas de la page de l'exécution, conservés 14 jours, publiés uniquement si `e2e` échoue) :
+- `playwright-report` : rapport HTML et traces (`npx playwright show-report <dossier>` ou `npx playwright show-trace <trace.zip>`).
+- `docker-compose-logs` : sortie de `docker compose logs` (base, api, web).
+
+Pour rejouer en local : `cd backend && ./mvnw verify`, `cd frontend && npm ci && npm run build -- --configuration production`, et la procédure de `e2e/README.md`.
+
+**Mises à jour de dépendances.** `.github/dependabot.yml` ouvre chaque semaine une PR groupée par écosystème : Maven (`backend/`), npm (`frontend/` et `e2e/`), Docker (`backend/` et `frontend/`) et GitHub Actions. Les actions tierces sont épinglées par SHA de commit (version en commentaire) : Dependabot met les deux à jour.
+
+### Réglages manuels GitHub
+
+À faire une fois, dans *Settings* du dépôt (les rulesets ne sont pas versionnés dans le dépôt) :
+
+- [ ] *Rules > Rulesets > New branch ruleset* ciblant `main`, statut *Active* :
+  - [ ] *Require a pull request before merging*
+  - [ ] *Require status checks to pass* avec les checks `back`, `front` et `e2e`
+  - [ ] *Require linear history*
+  - [ ] *Block force pushes*
+- [ ] *General > Pull Requests* : ne laisser que *Allow squash merging* (décocher merge commit et rebase merge).
+- [ ] *General > Pull Requests* : cocher *Automatically delete head branches*.
+
+Les rulesets et la protection de branche sur un **dépôt privé** exigent un compte GitHub Pro (ou une organisation payante). Sur un dépôt public, ils sont gratuits.
+
 ## Notes développeur
 
 - `./mvnw verify` (dans `backend/`) nécessite un **démon Docker accessible** : les tests d'intégration lancent PostgreSQL par Testcontainers. Sous WSL, activer l'intégration WSL de Docker Desktop (Settings > Resources > WSL integration) ou lancer le démon Docker dans la distribution.
