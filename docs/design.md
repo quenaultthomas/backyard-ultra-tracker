@@ -319,7 +319,7 @@ Tous les gabarits emploient directement `.message--*` (R.9b) : les anciens alias
 - **Titre, texte, en-tête et pied partagés** : `.carte-liste__titre` (`h2`, `margin: 0`, `max-width: 100%`, `--taille-moyenne`, graisse 700, forêt, `overflow-wrap: anywhere`), `.carte-liste__texte` (`margin: 0`, encre), `.carte-liste__pied` (`margin-top: auto`, aligné au bas des cartes d'une rangée) ; depuis R.9b, `.carte-liste__entete` (colonne flex, `gap: var(--espace-1)` : date au-dessus du titre) et `.carte-liste__date` (`time`, `--taille-grande`, graisse 700, forêt), employés par l'Espace coureur, Mes inscriptions et l'Espace bénévole (aucune copie locale de `.date`, `.nom` ni `.course-entete`).
 
 **Carte de Course du bénévole** (R.8b, Espace bénévole : `scan/accueil-benevole/accueil-benevole.css`)
-- `li.carte-liste` (`--grille-min` 17rem par défaut) **sans action** (ni lien, ni bouton, ni focus, ni `cursor: pointer`) : visuel (logo ou visuel de substitution), `div.carte-liste__entete` avec la date `time.carte-liste__date` et le nom en `h2.carte-liste__titre`, pastille de statut de la Course en `.carte-liste__pied` (`align-self: flex-start`). État vide : `.etat-vide` avec l'aide « Les courses auxquelles un administrateur vous affecte apparaîtront ici. ».
+- `li.carte-liste` (`--grille-min` 17rem par défaut) : visuel (logo ou visuel de substitution), `div.carte-liste__entete` avec la date `time.carte-liste__date` et le nom en `h2.carte-liste__titre`, pastille de statut de la Course en `.carte-liste__pied` (`align-self: flex-start`). **Action Scanner** (4.4b) : sur une Course `EN_COURS` seulement, lien `a.bouton` « Scanner » sous la pastille, pleine largeur de la carte (colonne flex), hauteur `--cible-min`, vers `/benevole/courses/<id>/scan` ; les cartes `EN_PREPARATION` et `TERMINEE` restent sans action (ni lien, ni bouton, ni focus, ni `cursor: pointer`). État vide : `.etat-vide` avec l'aide « Les courses auxquelles un administrateur vous affecte apparaîtront ici. ».
 
 **Carte de Compte** (R.8b, gestion des administrateurs et des bénévoles : `administration/gestion-comptes/gestion-comptes.css`)
 - Page à `--carte-largeur: 40rem`, grille à `--grille-min: 13rem` (2 colonnes dès 514 px de fenêtre) ; `li.carte-liste` resserrée (`gap: var(--espace-1)`, `padding: var(--espace-3)`) : pseudo (`.ligne__pseudo`, bloc, `--taille-moyenne`, graisse 700, forêt, coupé) puis « Créé le jj/mm/aaaa à HH:mm » (`.ligne__date`, `--taille-secondaire`, encre-douce). Aucun titre par carte. État vide : `.etat-vide` avec l'aide « Créez-en un avec le formulaire ci-dessous. ».
@@ -428,7 +428,13 @@ Règles normatives des écrans de pilotage (jalon 4), de scan (jalons 4 et 5) et
 
 ### Scan
 
-Écran bénévole sur téléphone (jalons 4 et 5).
+Écran bénévole sur téléphone (jalons 4 et 5). Livré en 4.4b par `scan/ecran-scan/ecran-scan.css` (saisie au clavier ; caméra en 4.5, retour de refus par motif en 4.6, file hors ligne en 5.1) :
+- Page `main.page.page--cartes`, `--carte-largeur: 30rem` ; dans la carte : en-tête `header.scan-entete` (flex, retour à la ligne : nom de la Course en `h1.titre` sur toute la ligne, coupé, puis pastille de statut de la section 8 et lien « Changer de course » poussé à droite, cible de 44 px), retour du serveur, formulaire (`.formulaire`).
+- Champ « Jeton du coureur » (`type=text`, `autocomplete`, `autocapitalize`, `autocorrect` à `off`, `spellcheck=false`, `enterkeyhint=send`) et bouton principal « Enregistrer le passage » (« Envoi… » désactivé pendant l'envoi), tous deux pleine largeur et `--cible-min`.
+- **Retour** `.resultat` : grille pictogramme (2rem, `mask` teinté `currentColor`, `CanvasText` en contraste forcé) + texte, `padding: var(--espace-4)`, `--taille-moyenne`, coupé. Accepté : `.message--succes.resultat` (`role="status"`, coche) « Passage enregistré » en gras, « Dossard N » en `--taille-titre` gras, pseudo, « Boucle B ». Refusé : `.message--erreur.resultat` (`role="alert"`, croix) avec le `detail` de l'API. Un seul retour à la fois, effacé à la saisie suivante.
+- États sans formulaire (non affecté, non démarrée, terminée) : `.message--info` ; échec de chargement : `.message--erreur`.
+
+Règles générales de l'écran (refus plein cadre par motif en 4.6, compteur hors ligne en 5.1) :
 - **Retour visuel plein cadre et immédiat**, toujours **couleur + libellé + pictogramme CSS** (jamais la couleur seule) :
   - accepté : `.message--succes` agrandi, dossard en `--taille-titre`, pseudo du coureur ;
   - refusé : `.message--erreur` et motif du refus en clair ;

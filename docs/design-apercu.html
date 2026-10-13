@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/entete-course.css" />
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/fiche/inscrits-course/inscrits-course.css" />
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/ecran-pilotage.css" />
+    <!-- Scan (4.4b) : feuille réelle de l'écran, sans copie. -->
+    <link rel="stylesheet" href="../frontend/src/app/scan/ecran-scan/ecran-scan.css" />
     <style>
       /* Mise en page de l'aperçu seulement : jamais embarquée dans l'application. */
       .apercu {
@@ -243,6 +245,43 @@
             </table>
           </div>
           <a href="#titre-pilotage">Retour à la fiche de la course</a>
+        </div>
+      </section>
+
+      <section aria-labelledby="titre-scan">
+        <h2 id="titre-scan">Scan</h2>
+        <div class="grille">
+          <div class="carte-liste" data-composant="carte-benevole-scanner">
+            <div class="carte-liste__visuel"><div class="visuel-substitution" aria-hidden="true"></div></div>
+            <div class="carte-liste__entete">
+              <time class="carte-liste__date" datetime="2026-10-12">12/10/2026</time>
+              <h3 class="carte-liste__titre">Backyard du jour</h3>
+            </div>
+            <span class="carte-liste__pied pastille-statut pastille-statut--en-cours" style="align-self: flex-start">En cours</span>
+            <a class="bouton" href="#titre-scan">Scanner</a>
+          </div>
+        </div>
+        <div class="carte" style="max-width: 30rem">
+          <header class="scan-entete" data-composant="scan-entete">
+            <h3 class="titre">Backyard du jour</h3>
+            <span class="pastille-statut pastille-statut--en-cours">En cours</span>
+            <a class="scan-lien" href="#titre-scan">Changer de course</a>
+          </header>
+          <div class="message--succes resultat" data-composant="scan-resultat-succes">
+            <p class="resultat__libelle">Passage enregistré</p>
+            <p class="resultat__dossard">Dossard 1</p>
+            <p>Karim</p>
+            <p>Boucle 1</p>
+          </div>
+          <p class="message--erreur resultat" data-composant="scan-resultat-erreur">Ce coureur a déjà un passage sur la boucle 1.</p>
+          <form class="formulaire" data-composant="scan-formulaire" onsubmit="return false">
+            <div class="champ">
+              <label for="apercu-jeton">Jeton du coureur</label>
+              <input id="apercu-jeton" type="text" autocomplete="off" spellcheck="false" />
+            </div>
+            <button type="submit" class="bouton">Enregistrer le passage</button>
+            <button type="button" class="bouton" disabled>Envoi…</button>
+          </form>
         </div>
       </section>
 

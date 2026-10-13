@@ -88,6 +88,12 @@ export const routes: Routes = [
     title: 'Espace bénévole - Backyard Ultra Tracker',
   },
   {
+    path: 'benevole/courses/:courseId/scan',
+    canActivate: [reserveAuxBenevoles],
+    loadComponent: () => import('./scan/ecran-scan/ecran-scan').then((m) => m.EcranScan),
+    title: "Scan d'un passage - Backyard Ultra Tracker",
+  },
+  {
     path: 'coureur',
     canActivate: [reserveAuxCoureurs],
     loadComponent: () =>

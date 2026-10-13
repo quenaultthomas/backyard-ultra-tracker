@@ -111,8 +111,8 @@ function verifierAucunSecret(r: Resultat): void {
 
 function verifierSeptElements(r: Resultat, etat: 'créé' | 'déjà présent'): void {
   const lignesEtat = lignes(r.sortie, `${etat} : `);
-  // 20 lignes (4.1 CA19) : 7 comptes, 4 courses, l'affectation de Léo à « Backyard de démo » (2.4) et 8 inscriptions
-  expect(lignesEtat).toHaveLength(20);
+  // 21 lignes (4.4b CA22) : 7 comptes, 4 courses, les 2 affectations de Léo (2.4, 4.4b) et 8 inscriptions
+  expect(lignesEtat).toHaveLength(21);
   for (const [pseudo, course] of INSCRIPTIONS) {
     expect(lignesEtat.filter((l) => l === `${etat} : ${pseudo} (inscription à ${course})`), `${pseudo} / ${course}`).toHaveLength(1);
   }
@@ -120,6 +120,8 @@ function verifierSeptElements(r: Resultat, etat: 'créé' | 'déjà présent'): 
   expect(lignesEtat.filter((l) => l.includes('Alice') && l.includes('inscription'))).toHaveLength(0);
   expect(lignesEtat.filter((l) => l.includes('inscription à Backyard mini'))).toHaveLength(0);
   expect(lignesEtat.filter((l) => l.includes('Léo affecté à Backyard de démo'))).toHaveLength(1);
+  expect(lignesEtat.filter((l) => l.includes('Léo affecté à Backyard du jour'))).toHaveLength(1);
+  expect(lignesEtat.filter((l) => l.includes('affecté à '))).toHaveLength(2);
   for (const element of ELEMENTS) {
     expect(lignesEtat.filter((l) => l.includes(element))).not.toHaveLength(0);
   }
@@ -215,7 +217,7 @@ test.describe('Données de démonstration, base neuve', () => {
   test.skip(SCENARIO !== 'neuve', 'scénario réservé à une base neuve (DEMO_SCENARIO=neuve)');
   test.describe.configure({ mode: 'serial' });
 
-  test('CA1 et CA13 - le premier lancement crée vingt éléments, les comptes se connectent et les courses sont listées', async ({ page, request, playwright }) => {
+  test('CA1 et CA13 - le premier lancement crée vingt et un éléments, les comptes se connectent et les courses sont listées', async ({ page, request, playwright }) => {
     const r = await lancerScript({ env: envAdminMaster() });
     expect(r.code, `sortie : ${r.sortie}\nerreur : ${r.erreur}`).toBe(0);
     verifierSeptElements(r, 'créé');
@@ -270,7 +272,7 @@ test.describe('Données de démonstration, base neuve', () => {
     }
   });
 
-  test('CA2 et CA13 - la relance ne crée rien : vingt éléments déjà présents et une seule course de chaque nom', async ({ request }) => {
+  test('CA2 et CA13 - la relance ne crée rien : vingt et un éléments déjà présents et une seule course de chaque nom', async ({ request }) => {
     const r = await lancerScript({ env: envAdminMaster() });
     expect(r.code, `sortie : ${r.sortie}\nerreur : ${r.erreur}`).toBe(0);
     verifierSeptElements(r, 'déjà présent');
@@ -280,6 +282,29 @@ test.describe('Données de démonstration, base neuve', () => {
     const courses = await coursesParApi(request);
     for (const nom of NOMS_COURSES) {
       expect(courses.filter((c) => c['nom'] === nom), nom).toHaveLength(1);
+    }
+  });
+
+  test('CA22 - Léo voit « Backyard de démo » et « Backyard du jour » à l\'accueil bénévole, Marc n\'en voit aucune', async ({ page, browser }) => {
+    await ouvrirConnexion(page);
+    await saisir(page, 'Léo', 'mot-de-passe-benevole-1');
+    await page.getByTestId('bouton-connexion').click();
+    await expect(page).toHaveURL(/\/benevole$/);
+    await expect(page.getByTestId('benevole-ligne-course')).toHaveCount(2);
+    const noms = (await page.getByTestId('benevole-course-nom').allTextContents()).map((n) => n.trim());
+    expect([...noms].sort()).toEqual(['Backyard de démo', 'Backyard du jour']);
+
+    const contexte = await browser.newContext();
+    try {
+      const pageMarc = await contexte.newPage();
+      await ouvrirConnexion(pageMarc);
+      await saisir(pageMarc, 'Marc', 'mot-de-passe-benevole-1');
+      await pageMarc.getByTestId('bouton-connexion').click();
+      await expect(pageMarc).toHaveURL(/\/benevole$/);
+      await expect(pageMarc.getByTestId('accueil-benevole-vide')).toBeVisible();
+      await expect(pageMarc.getByTestId('benevole-ligne-course')).toHaveCount(0);
+    } finally {
+      await contexte.close();
     }
   });
 
@@ -327,7 +352,7 @@ test.describe('Données de démonstration, base neuve', () => {
 test.describe('Données de démonstration, lancement partiel', () => {
   test.skip(SCENARIO !== 'partiel', 'scénario réservé à une base neuve (DEMO_SCENARIO=partiel)');
 
-  test('CA2 et CA13 - avec Nadia et Backyard express déjà présents, deux éléments déjà présents et dix-huit créés', async ({ playwright }) => {
+  test('CA2 et CA13 - avec Nadia et Backyard express déjà présents, deux éléments déjà présents et dix-neuf créés', async ({ playwright }) => {
     await avecContexte(playwright, (ctx) => creerAdminParApi(ctx, 'Nadia', 'mot-de-passe-admin-1'));
     await avecContexte(playwright, (ctx) => creerCourseParApi(ctx, {
       nom: 'Backyard express', date: jourPlus(7), distanceBoucleMetres: 400, dureeBoucleMinutes: 1,
@@ -339,10 +364,10 @@ test.describe('Données de démonstration, lancement partiel', () => {
     const presents = lignes(r.sortie, 'déjà présent : ');
     const crees = lignes(r.sortie, 'créé : ');
     expect(presents).toHaveLength(2);
-    expect(crees).toHaveLength(18);
+    expect(crees).toHaveLength(19);
     expect(presents.join('\n')).toContain('Nadia');
     expect(presents.join('\n')).toContain('Backyard express');
-    for (const nom of ['Léo', 'Marc', 'Alice', 'Karim', 'Sophie', 'Tom', 'Backyard de démo', 'Backyard mini', 'Backyard du jour', 'Léo affecté à Backyard de démo']) {
+    for (const nom of ['Léo', 'Marc', 'Alice', 'Karim', 'Sophie', 'Tom', 'Backyard de démo', 'Backyard mini', 'Backyard du jour', 'Léo affecté à Backyard de démo', 'Léo affecté à Backyard du jour']) {
       expect(crees.join('\n')).toContain(nom);
     }
     verifierAucunSecret(r);
@@ -363,7 +388,7 @@ test.describe('Données de démonstration, course de même nom', () => {
     const presents = lignes(r.sortie, 'déjà présent : ');
     expect(presents).toHaveLength(1);
     expect(presents[0]).toContain('Backyard mini');
-    expect(lignes(r.sortie, 'créé : ')).toHaveLength(19);
+    expect(lignes(r.sortie, 'créé : ')).toHaveLength(20);
 
     const mini = (await coursesParApi(request)).filter((c) => c['nom'] === 'Backyard mini');
     expect(mini).toHaveLength(1);
@@ -492,7 +517,7 @@ test.describe('Données de démonstration, documentation', () => {
     expect(entete).toContain('Backyard du jour');
     expect(entete).toMatch(/date du jour à Paris/);
     expect(entete).toMatch(/n'est plus démarrable/);
-    expect(entete).toMatch(/20 éléments/);
+    expect(entete).toMatch(/21 éléments/);
   });
 
   test('CA4 - docs/deploiement.md porte la mention « à ne pas utiliser en production »', () => {

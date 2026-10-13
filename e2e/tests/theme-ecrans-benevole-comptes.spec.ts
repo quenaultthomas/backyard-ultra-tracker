@@ -282,8 +282,12 @@ test.describe('Espace bénévole en cartes', () => {
       expect(await css(ligne, 'borderTopColor')).toBe(TRAIT);
       expect(await css(ligne, 'borderTopLeftRadius')).toBe('12px');
       expect(await css(ligne, 'boxShadow')).not.toBe('none');
-      await expect(ligne.locator('a, button, input, select, textarea, [tabindex]')).toHaveCount(0);
     }
+    // 4.4b RG14 : seule la carte d'une Course EN_COURS porte une action (le lien « Scanner ») ; les autres restent passives.
+    const interactifs = 'a, button, input, select, textarea, [tabindex]';
+    await expect(ligneCourse(page, a.nom).locator(interactifs)).toHaveCount(0);
+    await expect(ligneCourse(page, b.nom).locator(interactifs)).toHaveCount(1);
+    await expect(ligneCourse(page, b.nom).locator(interactifs)).toHaveAttribute('data-testid', 'benevole-lien-scanner');
 
     const ligneA = ligneCourse(page, a.nom);
     const ligneB = ligneCourse(page, b.nom);

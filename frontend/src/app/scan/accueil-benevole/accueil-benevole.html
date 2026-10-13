@@ -50,6 +50,14 @@
                 data-testid="benevole-course-statut"
                 >{{ libellesStatut[course.statut] }}</span
               >
+              @if (course.statut === 'EN_COURS') {
+                <a
+                  class="bouton"
+                  [routerLink]="['/benevole/courses', course.id, 'scan']"
+                  data-testid="benevole-lien-scanner"
+                  >Scanner</a
+                >
+              }
             </li>
           }
         </ul>

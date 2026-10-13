@@ -1,0 +1,132 @@
+# Increment 4.4b : Écran de scan
+
+Un Bénévole affecté à une Course `EN_COURS` ouvre l'écran de scan (`/benevole/courses/:courseId/scan`) depuis un bouton « Scanner » de l'accueil bénévole, saisit au clavier le **jeton QR** d'un coureur et enregistre son **Passage** pour la Boucle courante. Retour visuel vert avec le dossard et le pseudo ; message d'erreur générique pour tous les refus (le retour rouge plein cadre est en 4.6). L'incrément ne contient **aucun changement d'API** : il consomme l'endpoint livré par **4.4a** (`increment-4.4a.md`, à lire pour le contrat complet, les règles de Boucle, de continuité et d'idempotence). Il fait évoluer `scripts/donnees-demo.sh` (Léo affecté aussi à « Backyard du jour »). Cette spec découpe l'ancienne spec `increment-4.4.md` ; la numérotation des RG et des CA est conservée (RG14 à RG18, RG19 partie écran, RG21 partie démo ; CA15 à CA22).
+
+## Ce qui est déjà livré, donc non respécifié
+
+- **4.4a** : `POST /api/benevole/courses/{courseId}/passages` et tous ses refus, table `passage`.
+- Front : `/benevole` (`AccueilBenevole`, cartes de Courses affectées, **sans action** depuis R.8b), `reserveAuxBenevoles`, `BenevoleApiService.listerMesCourses` (`GET /api/benevole/courses` : `id`, `nom`, `date`, `statut`, `logoUrl`), `RefusAccesService`, charte `docs/design.md` (§8, §11 « Scan »), `PASTILLES_STATUT_COURSE`.
+- E2E : stack `e2e`, projet `horloge`, helpers `aide-horloge.ts`, `aide-admin.ts` (`creerCourseParApi`, `affecterBenevolesParApi`, `demarrerCourseParApi`, `creerBenevoleParApi`), `aide-coureur.ts` (`lireJetonQrEnBase`, `placerStatutInscriptionEnBase`, `placerStatutCourseEnBase`, `sinscrireParApi`).
+- `scripts/donnees-demo.sh` : Léo n'est affecté qu'à « Backyard de démo » ; Marc n'est affecté à aucune Course.
+
+Le **delta** de 4.4b : écran de scan Angular, action « Scanner » sur l'accueil bénévole, méthode `BenevoleApiService.enregistrerPassage`, types front, route, feuille de style, mise à jour de `docs/design.md` et `docs/design-apercu.html`, une affectation de plus dans `scripts/donnees-demo.sh` et `donnees-demo.spec.ts`.
+
+**Taille estimée (production hors tests) : ~240 lignes** (écran ~190, service et types ~35, accueil ~15) plus ~5 lignes de script. Sous la cible de 400. Aucun back, aucune migration, aucune variable d'environnement.
+
+## 1. Périmètre
+
+**Inclus**
+- Écran `/benevole/courses/:courseId/scan` : saisie du jeton, retour vert, message d'erreur générique (RG15 à RG18).
+- Action « Scanner » sur les cartes de Courses `EN_COURS` de l'accueil bénévole (RG14).
+- Données de démo : Léo affecté aussi à « Backyard du jour » (RG21).
+
+**Exclu**
+- Toute modification de l'API, du domaine ou de la base : **4.4a**.
+- Lecture caméra du QR : **4.5** (le champ de saisie reste, c'est le repli permanent).
+- Retour visuel de refus plein cadre rouge avec pictogramme, libellés propres à chaque motif, dossard et pseudo du coureur refusé mis en avant, E2E par motif, **anti-doublon** (délai minimal entre deux passages d'un même coureur) : **4.6**.
+- Passages visibles au pilotage : **4.7**. Le pilotage n'est pas modifié.
+- File hors ligne, nouvelles tentatives automatiques, compteur « en attente » : **5.1** (4.4b réessaie à la main avec le même `identifiantScan`, RG16). Application installable : **5.2**.
+- Boucle courante et compte à rebours sur l'écran bénévole, mémorisation du choix de Course : exclus (le choix est un clic sur l'accueil).
+
+## 2. Règles de gestion
+
+Règles du back (RG1 à RG13, RG20) : voir 4.4a. Les RG de ce fichier en dépendent.
+
+- **RG14** : accueil bénévole (`/benevole`). Chaque carte de Course `EN_COURS` gagne une action `a.bouton` « Scanner » (`benevole-lien-scanner`) vers `/benevole/courses/:id/scan` ; les cartes `EN_PREPARATION` et `TERMINEE` restent sans action. La liste (et l'ordre) vient de `GET /api/benevole/courses` inchangé. Il n'y a pas de mémorisation du choix : un bénévole affecté à plusieurs Courses en cours choisit sur la liste, et l'écran de scan propose « Changer de course » (`scan-lien-changer`, retour à `/benevole`).
+- **RG15** : accès et états de l'écran. Au chargement, l'écran lit `GET /api/benevole/courses` et retrouve la Course du chemin : (a) absente de la liste (non affectée, inconnue, non UUID) : `scan-message-etat` « Vous n'êtes pas affecté à cette course. » sans champ de saisie ; (b) `EN_PREPARATION` : « La course n'est pas démarrée. » sans champ ; (c) `TERMINEE` : « La course est terminée. » sans champ ; (d) `EN_COURS` : formulaire. Chargement : « Chargement… » (`scan-chargement`). Échec réseau ou 5xx au chargement : `scan-erreur-chargement` « Impossible de charger la course. Réessayez plus tard. ». 401 : `/connexion?retour=%2Fbenevole%2Fcourses%2F<id>%2Fscan` ; 403 `ACCES_REFUSE` : `/acces-refuse` (`RefusAccesService`). Un coureur ou un admin qui tape l'URL est redirigé vers `/acces-refuse` (garde `reserveAuxBenevoles`), un anonyme vers `/connexion?retour=...`. Le statut lu au chargement n'est pas un contrôle : le serveur reste maître (une Course démarrée ou terminée entre-temps est refusée par l'API, RG17).
+- **RG16** : saisie et retour vert. Un formulaire : champ `scan-champ-jeton` (étiquette « Jeton du coureur », `type=text`, `autocomplete=off`, `autocapitalize=off`, `autocorrect=off`, `spellcheck=false`, `enterkeyhint=send` ; jamais `type=password`) et bouton `scan-bouton-enregistrer` « Enregistrer le passage » ; la touche Entrée soumet. Champ vide (après suppression des espaces) : `scan-erreur-saisie` « Saisissez le jeton du coureur. », aucune requête. À l'envoi : bouton désactivé et libellé « Envoi… » (aucun double envoi : une seconde soumission pendant l'envoi est ignorée). Le front envoie le jeton tel que saisi (le nettoyage est une règle du back, 4.4a RG2) et tire un `identifiantScan` (UUID v4 aléatoire, y compris hors contexte sécurisé) par saisie, **le conserve pour une nouvelle tentative du même jeton (espaces retirés) tant qu'aucune réponse n'a été reçue** (coupure réseau, 5xx), et en tire un nouveau après toute réponse définitive (2xx, 4xx, 409) ou changement de jeton. Il n'envoie pas `ageDuScanMillisecondes` (scan en direct). 201 ou 200 : `scan-resultat-succes` (`.message--succes` agrandi, `role="status"`) : « Passage enregistré », `scan-resultat-dossard` « Dossard N » en `--taille-titre`, `scan-resultat-pseudo`, `scan-resultat-boucle` « Boucle B » ; le champ est **vidé** et le **focus est remis dans le champ** (enchaînement des saisies au clavier) ; le jeton n'est conservé nulle part (ni URL, ni stockage navigateur, ni historique du champ, ni élément du DOM une fois vidé). Le résultat affiché est effacé dès la saisie suivante ; un nouveau résultat remplace le précédent (un seul résultat à la fois).
+- **RG17** : erreurs de l'écran (frontière avec 4.6). Toute réponse d'erreur de l'API (400 hors format, 403 `BENEVOLE_NON_AFFECTE`, 404, 409) est affichée par **un seul mécanisme générique** : `scan-resultat-erreur` (`.message--erreur`, `role="alert"`) avec le `detail` du `ProblemDetail` tel quel (les textes de 4.4a §4 sont déjà exploitables) ; le champ garde sa valeur, sélectionnée, et reprend le focus (correction d'une faute de frappe). Réseau coupé, délai dépassé ou 5xx : `scan-resultat-erreur` « Le serveur est injoignable. Le passage n'est peut-être pas enregistré : validez de nouveau avec le même jeton. » (le même `identifiantScan` est réutilisé, donc aucun doublon, 4.4a RG9). 401 : redirection connexion ; 403 `ACCES_REFUSE` : `/acces-refuse`. **Livré par 4.6, pas ici** : retour plein cadre rouge avec pictogramme, libellé de motif propre à chaque code, dossard et pseudo du coureur refusé mis en avant (les extensions `dossard`, `pseudo`, `numeroBoucle` du `ProblemDetail` sont déjà disponibles), scénarios E2E par motif.
+- **RG18** : charte (`docs/design.md` §11 « Scan », recommandations à confirmer). `main.page.page--cartes` ; mobile d'abord (pas de défilement horizontal à 320 px, y compris texte à 200 %) ; en-tête : nom de la Course (`h1.titre`, `scan-course-nom`) et pastille de statut (§8, `scan-course-statut`), lien `scan-lien-changer` ; champ et bouton pleine largeur, hauteur 44 px au moins (`--cible-min`) ; retour **couleur + libellé + pictogramme CSS** (jamais la couleur seule), aucune animation hors changement de couleur de fond (aucune en `prefers-reduced-motion`) ; contour de focus visible ; aucune couleur en dur ; `docs/design.md` (§7 « Carte de Course du bénévole » qui devient « avec action Scanner pour `EN_COURS` », §11 « Scan ») et `docs/design-apercu.html` mis à jour.
+- **RG19** (partie écran) : plusieurs Courses en parallèle. L'écran ne concerne que la Course de son chemin ; un bénévole affecté à deux Courses en cours les scanne indépendamment (deux onglets, deux boutons « Scanner »). Le pilotage, la fiche et les listes sont **inchangés**.
+- **RG21** (partie démo et non-régression) : `scripts/donnees-demo.sh` affecte aussi Léo à « Backyard du jour » (même fonction `affecter_benevole`, idempotente) : **21 éléments** (7 Comptes, 4 Courses, 2 affectations, 8 Inscriptions) ; `e2e/tests/donnees-demo.spec.ts` et l'en-tête du script sont mis à jour en conséquence. Comportements de 1.x à 4.4a et R.x inchangés. `.env.example` et `docker-compose*.yml` inchangés.
+
+## 3. Cas limites
+
+- **Instants de bascule, dernière Boucle, `boucleMaxTerminee`, abandon, vainqueur, passage `CORRECTION`, aucun passage sur une Boucle, coureur réintégré, inscription sans passage** : règles de 4.4a (RG4 à RG8) ; l'écran n'ajoute que l'affichage du `detail` renvoyé (RG17).
+- **Course non démarrée, terminée, bénévole non affecté** : états de l'écran RG15 (lus au chargement) et refus de l'API (RG17) si l'état change après le chargement.
+- **Course démarrée après l'ouverture de l'écran** : l'écran ne propose pas le formulaire tant que la page n'est pas rechargée (statut lu au chargement) ; recharger ou revenir à l'accueil.
+- **Course terminée après l'ouverture** : le formulaire reste, le scan suivant affiche « La course est terminée. » (le serveur est maître).
+- **Jeton collé avec espaces, retour à la ligne, coupé en deux** : accepté (nettoyage côté API). Jeton en minuscules alors qu'il contient des majuscules : « Jeton inconnu pour cette course. ». Jeton d'une autre Course : même message.
+- **Coupure réseau pendant l'envoi** : message RG17 ; l'état réel est inconnu ; la nouvelle validation avec le même `identifiantScan` tranche (succès vert si 201 ou 200, « déjà un passage » si un autre bénévole a scanné entre-temps).
+- **Double validation rapide** (Entrée deux fois) : une seule requête (RG16).
+- **Deux onglets du même bénévole** : indépendants, chacun avec ses `identifiantScan`.
+- **Pseudo très long** : coupé dans la carte, sans débordement à 320 px (RG18).
+- **Rôle insuffisant** : coureur et admin redirigés vers `/acces-refuse` ; anonyme vers la connexion (RG15).
+
+## 4. Contrat d'API
+
+**Aucun nouvel endpoint, aucun changement de contrat.** Le contrat complet (corps, réponses, codes, textes, ordre d'évaluation) est dans `increment-4.4a.md` §4 ; il ne change pas en 4.4b. Rappel des éléments utiles au front :
+
+- `POST /api/benevole/courses/{courseId}/passages`, CSRF (`X-XSRF-TOKEN`, cookie `XSRF-TOKEN` géré par le client HTTP existant).
+- Requête `PassageRequete` : `jetonQr` (texte), `identifiantScan` (UUID texte) ; `ageDuScanMillisecondes` non envoyé.
+- Réponse 201 ou 200 `PassageReponse` : `passageId`, `inscriptionId`, `dossard`, `pseudo`, `numeroBoucle`, `scanneLe`, `origine`. L'écran utilise `dossard`, `pseudo`, `numeroBoucle`.
+- Erreurs : `ProblemDetail` `{ title, status, detail, code }` (+ extensions `dossard`, `pseudo`, `numeroBoucle`, `statut` sur certains 409). L'écran affiche `detail` tel quel ; 401 et 403 `ACCES_REFUSE` sont traités par redirection (RG15, RG17) ; 403 `BENEVOLE_NON_AFFECTE`, 404 `JETON_INCONNU` et 409 (`IDENTIFIANT_SCAN_DEJA_UTILISE`, `COURSE_NON_DEMARREE`, `COURSE_TERMINEE`, `HEURE_DE_DEPART_INCONNUE`, `INSCRIPTION_NON_EN_COURSE`, `SCAN_ANTERIEUR_AU_DEPART`, `PASSAGE_DEJA_ENREGISTRE`, `TEMPS_DE_COURSE_ECOULE`, `PASSAGE_PRECEDENT_MANQUANT`) sont affichés par le mécanisme générique ; 400 `VALIDATION_ECHOUEE` : même mécanisme (cas résiduel, le front contrôle le champ vide).
+- `GET /api/benevole/courses` : inchangé (`id`, `nom`, `date`, `statut`, `logoUrl`).
+- Front : types `PassageRequete`, `PassageReponse`, `ErreurScan`, méthode `BenevoleApiService.enregistrerPassage(courseId, requete): Observable<PassageReponse>`.
+
+## 5. Écrans
+
+### Accueil bénévole (`/benevole`, modifié)
+- **Ajout** : sur chaque carte de Course `EN_COURS`, bouton `benevole-lien-scanner` « Scanner » (RG14). Cartes `EN_PREPARATION` et `TERMINEE` inchangées (sans action). Le reste (titre, état vide « Aucune course à scanner pour le moment. », erreur de chargement) est inchangé.
+
+### Scan d'un passage (`/benevole/courses/:courseId/scan`, nouveau)
+- **Accès** : `BENEVOLE` (garde `reserveAuxBenevoles`), `main.page.page--cartes`.
+- **Affiché** : `scan-course-nom`, `scan-course-statut`, lien `scan-lien-changer` « Changer de course » ; formulaire `scan-champ-jeton` / `scan-bouton-enregistrer` (Course `EN_COURS` seulement) ; résultat `scan-resultat-succes` (`scan-resultat-dossard`, `scan-resultat-pseudo`, `scan-resultat-boucle`) ou `scan-resultat-erreur` ; `scan-erreur-saisie` ; `scan-message-etat` ; `scan-chargement`, `scan-erreur-chargement`.
+- **Actions** : saisir/coller un jeton et valider (bouton ou Entrée) ; « Changer de course ». Focus remis dans le champ après chaque réponse (champ vidé après un succès, valeur sélectionnée après une erreur).
+- **Messages** : « Saisissez le jeton du coureur. » ; « Passage enregistré » ; « Vous n'êtes pas affecté à cette course. » ; « La course n'est pas démarrée. » ; « La course est terminée. » ; « Impossible de charger la course. Réessayez plus tard. » ; « Le serveur est injoignable. Le passage n'est peut-être pas enregistré : validez de nouveau avec le même jeton. » ; et, tels que renvoyés par l'API (RG17), les `detail` des erreurs de 4.4a §4 (« Jeton inconnu pour cette course. », « Ce coureur a déjà un passage sur la boucle N. », « Ce coureur n'est plus en course. », « Le temps de la dernière boucle est écoulé. », « Ce coureur n'a pas de passage sur la boucle précédente. »…).
+
+## 6. Critères d'acceptation
+
+Valeurs de référence : comptes de 3.1 (`Patron` `ADMIN_MASTER`, `Nadia` `ADMIN`, `Léo` `BENEVOLE`, `Marc` `BENEVOLE` non affecté, `Alice` coureur). Les CA1 à CA14 sont dans 4.4a.
+
+| CA | Étant donné / quand / alors | Niveau |
+|---|---|---|
+| CA15 | Étant donné `Léo` affecté à une Course `EN_COURS` (démarrée par l'API) et à une Course `EN_PREPARATION`, quand il ouvre `/benevole`, alors la carte `EN_COURS` porte `benevole-lien-scanner` « Scanner » (un seul lien) et la carte `EN_PREPARATION` n'en porte pas ; le clic mène à `/benevole/courses/<id>/scan` ; une Course `TERMINEE` (SQL) n'a pas de lien ; un bénévole sans Course voit « Aucune course à scanner pour le moment. » ; le lien est atteignable au clavier, 44 px au moins (RG14) | E2E |
+| CA16 | Étant donné `Course E2E <suffixe>` (**60 min**, M = 5, datée du jour, deux coureurs inscrits (dossards 1 et 2), Léo affecté, démarrée par `demarrerCourseParApi`), quand `Léo` ouvre l'écran de scan (par le lien « Scanner »), alors `scan-course-nom` et `scan-course-statut` « En cours » s'affichent, le champ est présent ; il colle le jeton du coureur 1 (`lireJetonQrEnBase`) et appuie sur Entrée : `scan-resultat-succes` avec « Passage enregistré », `scan-resultat-dossard` « Dossard 1 », `scan-resultat-pseudo` le pseudo du coureur, `scan-resultat-boucle` « Boucle 1 » ; le champ est vide et **a le focus** ; sans toucher à la souris, il saisit le jeton du coureur 2 : « Dossard 2 » remplace le résultat précédent ; une ligne `passage` par coureur en base ; le jeton n'apparaît ni dans l'URL, ni dans le DOM, ni dans le `localStorage`/`sessionStorage` (RG16) | E2E |
+| CA17 | Étant donné la Course de CA16 et un coureur déjà scanné : le même jeton resaisi -> `scan-resultat-erreur` « Ce coureur a déjà un passage sur la boucle 1. » (`role="alert"`), la valeur reste dans le champ, sélectionnée, avec le focus ; `abc` -> « Jeton inconnu pour cette course. » ; champ vide -> `scan-erreur-saisie` « Saisissez le jeton du coureur. » sans requête réseau ; jeton collé avec espaces autour et retour à la ligne -> succès ; jeton d'une autre Course -> « Jeton inconnu pour cette course. » ; coureur passé `ABANDON` en base -> « Ce coureur n'est plus en course. » ; deux validations rapides (Entrée deux fois) -> une seule requête (RG16, RG17) | E2E |
+| CA18 | Étant donné `Léo` : URL de scan d'une Course `EN_PREPARATION` -> `scan-message-etat` « La course n'est pas démarrée. », pas de champ ; d'une Course `TERMINEE` (SQL) -> « La course est terminée. » ; d'une Course où il n'est pas affecté, d'un id inconnu et de `inexistant` -> « Vous n'êtes pas affecté à cette course. » ; `Alice` (coureur) et `Nadia` (admin) -> `/acces-refuse` ; anonyme -> `/connexion?retour=%2Fbenevole%2Fcourses%2F<id>%2Fscan` ; échec du chargement (réponse interceptée en 500) -> `scan-erreur-chargement` ; le lien « Changer de course » ramène à `/benevole` ; une Course passée `TERMINEE` (SQL) après l'ouverture de l'écran : le scan suivant affiche « La course est terminée. » (le serveur est maître) (RG15, RG17) | E2E |
+| CA19 | Étant donné la stack `e2e` (projet `horloge`), une Course de **60 min**, M = **2**, Alice et Bruno inscrits, Léo affecté, démarrée par l'API : le scan d'Alice -> « Boucle 1 » ; après `avancerHorloge(PT60M)`, le scan d'Alice -> « Boucle 2 » ; le scan de Bruno (sans Passage de Boucle 1) -> « Ce coureur n'a pas de passage sur la boucle précédente. » ; le rescan d'Alice -> « Ce coureur a déjà un passage sur la boucle 2. » ; après `avancerHorloge(PT60M)` de plus, le scan de Bruno -> « Le temps de la dernière boucle est écoulé. » ; deux lignes `passage` (Alice, Boucles 1 et 2) en base (4.4a RG5, RG7, RG8 vus par l'écran ; RG16, RG17) | E2E |
+| CA20 | Étant donné l'écran de scan et les requêtes interceptées (`page.route`) : réponse 500 ou requête interrompue -> `scan-resultat-erreur` « Le serveur est injoignable. Le passage n'est peut-être pas enregistré : validez de nouveau avec le même jeton. », valeur conservée, bouton de nouveau actif ; la nouvelle validation envoie le **même `identifiantScan`** (les deux corps sont comparés) ; la réponse 200 d'un rejeu s'affiche comme un succès vert ; après une réponse 409, le scan suivant du même jeton utilise un **nouvel** `identifiantScan` ; pendant l'envoi le bouton est désactivé et indique « Envoi… » ; 401 -> connexion avec `retour` ; 403 `ACCES_REFUSE` -> `/acces-refuse` (RG16, RG17) | E2E |
+| CA21 | Étant donné l'écran de scan à 375 px puis 320 px (texte normal puis 200 %) : aucun défilement horizontal, champ et bouton pleine largeur de 44 px au moins, dossard en grand lisible, contrastes AA du retour vert et rouge ; retour toujours couleur + libellé + pictogramme (jamais la couleur seule) ; focus visible au clavier sur champ, bouton et lien « Changer de course » ; `scan-resultat-succes` en `role="status"`, `scan-resultat-erreur` en `role="alert"` ; `prefers-reduced-motion` : aucune animation ; le champ a `autocomplete="off"`, `autocapitalize="off"`, `spellcheck="false"` et n'est pas de type `password` ; un pseudo de 30 caractères reste dans la carte (RG18) | E2E |
+| CA22 | Étant donné une base neuve et `scripts/donnees-demo.sh` : « Backyard du jour » a pour bénévoles `Léo` ; le script relancé ne crée rien en double ; il compte 21 éléments (7 Comptes, 4 Courses, 2 affectations, 8 Inscriptions) ; `Léo` voit les cartes « Backyard de démo » et « Backyard du jour » ; `Marc` n'en voit aucune ; les suites existantes (accueil bénévole R.8b, `affectation-benevoles`, pilotage, démarrage, `donnees-demo`, `theme-*`) passent sans changement d'attente métier hors cette affectation (RG19, RG21) | E2E |
+
+Répartition : unitaire 0 (pas de tests unitaires front, CLAUDE.md), intégration 0, E2E 8 (CA15 à CA22). Total 8.
+
+Couverture des RG : RG14 CA15, RG15 CA18, RG16 CA16/CA17/CA20, RG17 CA17/CA18/CA20, RG18 CA21, RG19 (écran) CA19/CA22, RG21 CA22. Écrans : « Accueil bénévole » CA15 et CA22 ; « Scan d'un passage » CA16 à CA21 (E2E).
+
+### Stratégie E2E
+- Les Courses sont créées, affectées et démarrées par l'API (`creerCourseParApi`, `affecterBenevolesParApi`, `demarrerCourseParApi`) ; les jetons se lisent par `lireJetonQrEnBase` (le jeton n'est jamais dans le DOM côté coureur, 3.3 RG16). Un statut posé par SQL passe par les helpers existants (`placerStatutInscriptionEnBase`, `placerStatutCourseEnBase`).
+- CA15 à CA18, CA20 et CA21 : projet `chromium`, Courses de **60 min** (Boucle 1 pendant une heure : aucune attente de Boucle ne dépend d'un délai réel). Les Courses sont datées du jour (démarrage possible, 4.1).
+- CA19 : projet `horloge` (un seul worker, remise à zéro automatique de l'horloge, 4.3 RG11) ; c'est le seul test de bascule de Boucle.
+- CA20 : les pannes sont simulées par interception, sans dépendance au serveur.
+
+## 7. Tester à la main
+
+Prérequis : 4.4a livrée. `docker compose up -d --build` (services sains), http://localhost. **Base neuve** de préférence (`docker compose down -v`), puis `./scripts/donnees-demo.sh` (évolué : Léo affecté à « Backyard de démo » **et** « Backyard du jour »). Comptes : `Léo` et `Marc` (`mot-de-passe-benevole-1`), `Nadia` (`mot-de-passe-admin-1`), `Karim`, `Sophie`, `Tom`, `Alice` (`un-mot-de-passe-12`). « Backyard du jour » : date du jour, boucles de **1 min**, 5 Boucles max, Karim 1, Sophie 2, Tom 3. Le jeton n'est volontairement pas affichable par le coureur : deux moyens de le lire pour le test.
+
+1. **Jetons** (avant de démarrer) : `docker compose exec base psql -U backyard -d backyard -c "select i.dossard, i.jeton_qr from inscription i join course c on c.id = i.course_id where c.nom = 'Backyard du jour' order by i.dossard"` : trois lignes de 43 caractères ; copier celui du dossard 1 (Karim), du 2 (Sophie) et du 3 (Tom) dans un fichier texte. Variante sans base : en `Karim`, ouvrir http://localhost/api/coureur/inscriptions : le JSON contient son `jetonQr`.
+2. **Accueil bénévole** : en `Léo`, « Espace bénévole » : « Backyard de démo » et « Backyard du jour » (toutes deux « En préparation ») sans bouton. En `Marc` : « Aucune course à scanner pour le moment. ».
+3. **Course non démarrée** : en `Léo`, ouvrir http://localhost/benevole/courses/<id de la course>/scan (id lu dans l'URL de la fiche admin) : « La course n'est pas démarrée. », pas de champ.
+4. **Démarrer** : en `Nadia`, fiche de « Backyard du jour » > « Démarrer la course » > « Démarrer maintenant ». Retour en `Léo` (recharger) : un bouton « Scanner » sur « Backyard du jour » seulement.
+5. **Scan nominal** (les étapes 5 à 8 doivent tenir dans la première minute ; au-delà, on est en Boucle 2 et un nouveau scan de Karim est accepté en Boucle 2, ce qui est correct) : « Scanner » > coller le jeton de Karim > « Enregistrer le passage » (ou Entrée) : bloc vert « Passage enregistré », « Dossard 1 », « Karim », « Boucle 1 » ; le champ est vide, le curseur y est. Coller le jeton de Sophie avec des espaces avant et après : vert « Dossard 2 ».
+6. **Déjà passé** : coller de nouveau le jeton de Karim : bloc rouge « Ce coureur a déjà un passage sur la boucle 1. », le jeton reste dans le champ, sélectionné.
+7. **Erreurs de saisie** : valider un champ vide : « Saisissez le jeton du coureur. » ; saisir `abc` : « Jeton inconnu pour cette course. ».
+8. **Base** : `docker compose exec base psql -U backyard -d backyard -c "select i.dossard, p.numero_boucle, p.origine, p.scanne_le from passage p join inscription i on i.id = p.inscription_id order by 1, 2"` : deux lignes (dossards 1 et 2, Boucle 1, `SCAN`). Le **pilotage** n'affiche pas encore les passages (4.7).
+9. **Boucle 2** : attendre la minute suivante (visible au pilotage) ; scanner Karim : vert « Boucle 2 ». Scanner Tom (aucun Passage de Boucle 1) : rouge « Ce coureur n'a pas de passage sur la boucle précédente. ».
+10. **Rôles et affectation** : en `Marc`, ouvrir l'URL de scan : « Vous n'êtes pas affecté à cette course. » ; en `Alice` ou `Nadia`, la même URL : accès refusé ; déconnecté : redirection vers la connexion.
+11. **Réseau** : `docker compose stop api`, coller un jeton valide dans l'écran de scan : « Le serveur est injoignable… » ; `docker compose start api`, attendre qu'elle soit saine, valider de nouveau sans modifier le champ : bloc vert, ou rouge « déjà un passage » si ce jeton a déjà un Passage sur la Boucle en cours ; jamais deux lignes pour la même Boucle en base.
+12. **Fin du temps** : cinq minutes après le démarrage, scanner : rouge « Le temps de la dernière boucle est écoulé. ».
+13. **Téléphone** (facultatif) : outils de développement du navigateur en 375 px de large : le champ et le bouton occupent la largeur, le dossard est en grand.
+
+## 8. Décisions
+
+Aucun point ouvert. Décisions de l'utilisateur et positions retenues :
+
+1. **Découpage** (**décidé par l'utilisateur**) : 4.4a (API) puis 4.4b (écran, accueil, démo). Contrat d'API inchangé entre les deux. Taille de 4.4b : ~245 lignes.
+2. **Anti-doublon** (re-scan accidentel juste après un départ) (**décidé par l'utilisateur**) : rien en 4.4b ; reporté à 4.6. La continuité des Boucles (4.4a RG7) est conservée.
+3. **Roadmap** : amendée par l'orchestrateur (4.4 « Tu testes », 4.6 devient un incrément d'écran avec l'anti-doublon). Le jeton se lit en base ou via `/api/coureur/inscriptions` (jamais depuis l'écran du coureur).
+4. **Frontière 4.4b / 4.6** : message d'erreur générique (le `detail` de l'API) ici ; retour plein cadre et libellés par motif en 4.6, sans changement de contrat (position par défaut).
+5. **Choix de la Course** : un clic depuis l'accueil, sans mémorisation (position par défaut). Pas de Boucle courante sur l'écran bénévole (position par défaut).
+6. **Données de démo** : Léo affecté aussi à « Backyard du jour » (21 éléments) pour que le test manuel fonctionne sans manipulation admin (position par défaut) ; mise à jour de `donnees-demo.spec.ts` par le testeur E2E.
+7. **Charte §11 « Scan »** : recommandations (retour plein cadre, dossard en `--taille-titre`) confirmées à la validation de l'incrément ; l'aperçu `docs/design-apercu.html` est complété.
+8. **Reprise hors ligne** : le même `identifiantScan` est réutilisé pour les nouvelles tentatives manuelles (RG16) ; la file automatique est en 5.1 (position par défaut).
