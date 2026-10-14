@@ -11,16 +11,19 @@ import fr.backyard.tracker.courses.domaine.DepotCourses;
 import fr.backyard.tracker.courses.domaine.DepotInscriptions;
 import fr.backyard.tracker.courses.domaine.DepotPassages;
 import fr.backyard.tracker.courses.domaine.Inscription;
+import fr.backyard.tracker.courses.domaine.MotifAbandon;
 import fr.backyard.tracker.courses.domaine.Passage;
 import fr.backyard.tracker.courses.domaine.ProgressionCoureur;
 import fr.backyard.tracker.courses.domaine.StatutInscription;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,9 +71,47 @@ public class ConsulterPilotage {
         }
     }
 
-    /** Instantané : chronométrage et bouclage vides pour une Course TERMINEE ou sans heure de départ. */
+    /**
+     * Ligne d'un inscrit en abandon : Boucle et motif vides pour un abandon enregistré sans eux (données antérieures).
+     * Jamais de jeton QR, d'identifiant de Compte ni de détail de Passage.
+     */
+    public record InscritEnAbandon(Inscrit inscrit, int nombreBouclesTerminees, Optional<Integer> boucleAbandon,
+                                   Optional<MotifAbandon> motifAbandon) {
+
+        public UUID inscriptionId() {
+            return inscrit.inscriptionId();
+        }
+
+        public int dossard() {
+            return inscrit.dossard();
+        }
+
+        public String pseudo() {
+            return inscrit.pseudo();
+        }
+
+        public StatutInscription statut() {
+            return inscrit.statut();
+        }
+
+        /** Identifiant et dossard uniquement : jamais de pseudo dans le journal. */
+        @Override
+        public String toString() {
+            return "InscritEnAbandon[inscriptionId=" + inscrit.inscriptionId() + ", dossard=" + inscrit.dossard() + "]";
+        }
+    }
+
+    /**
+     * Instantané : chronométrage et bouclage vides pour une Course TERMINEE ou sans heure de départ. Les abandons
+     * sont triés par dossard, quel que soit l'état de la Course.
+     */
     public record Pilotage(Course course, Instant heureServeur, Optional<Chronometrage> chronometrage,
-                           int nombreInscrits, List<InscritEnCourse> inscritsEnCourse, Optional<Bouclage> bouclage) {
+                           int nombreInscrits, List<InscritEnCourse> inscritsEnCourse, Optional<Bouclage> bouclage,
+                           List<InscritEnAbandon> inscritsEnAbandon) {
+
+        public int nombreAbandons() {
+            return inscritsEnAbandon.size();
+        }
 
         public Optional<Integer> nombreAyantBoucle() {
             return bouclage.map(Bouclage::nombreAyantBoucle);
@@ -111,22 +152,35 @@ public class ConsulterPilotage {
         Course course = depotCourses.parId(courseId).orElseThrow(CourseIntrouvableException::new);
         course.autoriserPilotage();
         Instant maintenant = horloge.instant();
-        List<Inscription> inscriptions = depotInscriptions.parCourse(courseId);
-        List<Inscription> enCourse = inscriptions.stream().filter(Inscription::estEnCourse).toList();
+        Map<UUID, Inscription> inscriptions = depotInscriptions.parCourse(courseId).stream()
+                .collect(Collectors.toMap(Inscription::id, Function.identity()));
         Optional<Chronometrage> chronometrage = course.chronometrage(maintenant);
         OptionalInt boucleCourante = chronometrage.map(c -> OptionalInt.of(c.boucleCourante()))
                 .orElseGet(OptionalInt::empty);
-        Map<UUID, List<Passage>> passages = passagesParInscription(enCourse);
-        List<InscritEnCourse> inscrits = ListerInscritsCourse.inscritsParDossard(enCourse, annuairePseudos).stream()
+        Map<UUID, List<Passage>> passages = passagesParInscription(inscriptions.keySet());
+        List<Inscrit> parDossard = ListerInscritsCourse.inscritsParDossard(List.copyOf(inscriptions.values()),
+                annuairePseudos);
+        List<InscritEnCourse> inscrits = parDossard.stream().filter(i -> i.statut() == StatutInscription.EN_COURSE)
                 .map(inscrit -> new InscritEnCourse(inscrit, ProgressionCoureur.de(
                         passages.getOrDefault(inscrit.inscriptionId(), List.of()), boucleCourante)))
                 .toList();
+        List<InscritEnAbandon> abandons = parDossard.stream().filter(i -> i.statut() == StatutInscription.ABANDON)
+                .map(inscrit -> enAbandon(inscrit, inscriptions.get(inscrit.inscriptionId()), passages))
+                .toList();
         return new Pilotage(course, maintenant, chronometrage, inscriptions.size(), inscrits,
-                Bouclage.de(inscrits.stream().map(InscritEnCourse::progression).toList(), boucleCourante));
+                Bouclage.de(inscrits.stream().map(InscritEnCourse::progression).toList(), boucleCourante), abandons);
     }
 
-    private Map<UUID, List<Passage>> passagesParInscription(List<Inscription> inscriptions) {
-        return depotPassages.parInscriptions(inscriptions.stream().map(Inscription::id).toList()).stream()
+    private static InscritEnAbandon enAbandon(Inscrit inscrit, Inscription inscription,
+                                              Map<UUID, List<Passage>> passages) {
+        int nombreBouclesTerminees = ProgressionCoureur.de(passages.getOrDefault(inscrit.inscriptionId(), List.of()),
+                OptionalInt.empty()).nombreBouclesTerminees();
+        return new InscritEnAbandon(inscrit, nombreBouclesTerminees, inscription.boucleAbandon(),
+                inscription.motifAbandon());
+    }
+
+    private Map<UUID, List<Passage>> passagesParInscription(Collection<UUID> inscriptionIds) {
+        return depotPassages.parInscriptions(List.copyOf(inscriptionIds)).stream()
                 .collect(Collectors.groupingBy(Passage::inscriptionId));
     }
 }

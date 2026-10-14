@@ -47,6 +47,10 @@ server:
         # Pas de Secure force : pose par Tomcat des que la requete est HTTPS (en-tete X-Forwarded-Proto).
 
 backyard:
+  abandon-automatique:
+    # Controle chaque seconde des courses en cours (abandon hors delai). Propriete interne, jamais posee par le
+    # deploiement : seuls les tests d'integration la passent a false.
+    actif: true
   connexion:
     # Limitation des tentatives de connexion par pseudo (entiers >= 1, sinon l'api ne demarre pas) :
     # echecs consecutifs avant blocage, puis duree du blocage et de l'oubli des echecs partiels.

@@ -76,7 +76,7 @@ class PassageIntegrationTest {
             "demarreeLe", "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle",
             "boucleMaxTerminee", "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
             "dureeEcouleeMillisecondes", "nombreInscrits", "inscritsEnCourse", "nombreAyantBoucle",
-            "nombreEnBoucle");
+            "nombreEnBoucle", "nombreAbandons", "inscritsEnAbandon");
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final String INSERTION_COURSE = "insert into course (id, nom, date_course, statut, distance_boucle_metres, "
@@ -539,7 +539,7 @@ class PassageIntegrationTest {
         assertThat(environnement.getProperty("spring.jpa.hibernate.ddl-auto")).isEqualTo("validate");
         List<String> ids = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
         assertThat(ids).containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                "0006-affectation-benevole", "0007-inscription", "0008-demarrage-course", "0009-passage");
+                "0006-affectation-benevole", "0007-inscription", "0008-demarrage-course", "0009-passage", "0010-abandon-inscription");
 
         assertThat(jdbc.queryForList("select column_name from information_schema.columns where table_name = 'passage'",
                 String.class)).containsExactlyInAnyOrder("id", "inscription_id", "numero_boucle", "scanne_le", "origine");

@@ -117,6 +117,8 @@ function instantane(surcharge: Record<string, unknown> = {}): Reponse {
         { inscriptionId: '00000000-0000-0000-0000-0000000000a1', dossard: 1, pseudo: 'Bruno', statut: 'EN_COURSE', nombreBouclesTerminees: 0, boucleCouranteTerminee: false },
         { inscriptionId: '00000000-0000-0000-0000-0000000000a2', dossard: 2, pseudo: 'Chloé', statut: 'EN_COURSE', nombreBouclesTerminees: 0, boucleCouranteTerminee: false },
       ],
+      nombreAbandons: 0,
+      inscritsEnAbandon: [],
       ...surcharge,
     },
   };

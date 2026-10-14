@@ -83,8 +83,12 @@ public class EnregistrerPassage {
         return new Resultat(passage, coureur.dossard(), coureur.pseudo(), false);
     }
 
+    /**
+     * Course chargée sous verrou, avant toute lecture de l'Inscription : un scan et l'abandon automatique de la même
+     * Course sont sérialisés (jamais un abandon sur une Boucle et un Passage sur cette même Boucle).
+     */
     private Course courseAffectee(UUID courseId, UUID benevoleId) {
-        Course course = depotCourses.parId(courseId).orElseThrow(BenevoleNonAffecteException::new);
+        Course course = depotCourses.parIdPourModification(courseId).orElseThrow(BenevoleNonAffecteException::new);
         course.autoriserScanPar(benevoleId);
         return course;
     }

@@ -1,0 +1,35 @@
+# Increment 4.8 : motif et boucle d'abandon d'une inscription. Colonnes nullables, contraintes de valeur seulement :
+# aucune contrainte ne couple le statut et ces colonnes (un abandon enregistre sans motif ni boucle reste valide).
+databaseChangeLog:
+  - changeSet:
+      id: 0010-abandon-inscription
+      author: backyard-ultra-tracker
+      changes:
+        - addColumn:
+            tableName: inscription
+            columns:
+              - column:
+                  name: motif_abandon
+                  type: varchar(20)
+              - column:
+                  name: boucle_abandon
+                  type: integer
+        - sql:
+            sql: >-
+              alter table inscription
+              add constraint ck_inscription_motif_abandon
+              check (motif_abandon in ('VOLONTAIRE', 'HORS_DELAI', 'MANUEL', 'AUTRE')),
+              add constraint ck_inscription_boucle_abandon check (boucle_abandon >= 1)
+      rollback:
+        - sql:
+            sql: >-
+              alter table inscription
+              drop constraint ck_inscription_boucle_abandon,
+              drop constraint ck_inscription_motif_abandon
+        - dropColumn:
+            tableName: inscription
+            columns:
+              - column:
+                  name: boucle_abandon
+              - column:
+                  name: motif_abandon

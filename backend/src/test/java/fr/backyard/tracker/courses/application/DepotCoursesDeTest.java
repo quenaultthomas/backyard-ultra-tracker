@@ -17,6 +17,11 @@ final class DepotCoursesDeTest implements DepotCourses {
 
     private final Map<UUID, Course> courses = new LinkedHashMap<>();
     int nombreDEnregistrements;
+    /** 4.8 : chargements par parId (simple lecture) et par parIdPourModification (verrou exclusif). */
+    int nombreDeChargementsParId;
+    int nombreDeChargementsPourModification;
+    /** 4.8 : ordre des lectures ("course-verrouillee", "course") ; partagé avec le double d'Inscriptions si posé. */
+    java.util.List<String> journalDesLectures;
 
     static Course course(UUID id, String nom, LocalDate date, StatutCourse statut) {
         return Course.reconstituer(id, nom, date, statut, new ParametresBoucle(6706, 60, 120), 50, 24);
@@ -35,6 +40,21 @@ final class DepotCoursesDeTest implements DepotCourses {
 
     @Override
     public Optional<Course> parId(UUID id) {
+        nombreDeChargementsParId++;
+        journaliser("course");
         return Optional.ofNullable(courses.get(id));
+    }
+
+    @Override
+    public Optional<Course> parIdPourModification(UUID id) {
+        nombreDeChargementsPourModification++;
+        journaliser("course-verrouillee");
+        return Optional.ofNullable(courses.get(id));
+    }
+
+    private void journaliser(String lecture) {
+        if (journalDesLectures != null) {
+            journalDesLectures.add(lecture);
+        }
     }
 }

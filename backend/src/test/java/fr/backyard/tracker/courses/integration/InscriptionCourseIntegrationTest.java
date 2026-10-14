@@ -77,7 +77,7 @@ class InscriptionCourseIntegrationTest {
             + "jeton_qr, statut) values (?, ?, ?, ?, ?, ?)";
     static final List<String> CHANGESETS = List.of("0002-compte", "0003-admin-master-unique", "0004-course",
             "0005-logo-course", "0006-affectation-benevole", "0007-inscription",
-                "0008-demarrage-course", "0009-passage");
+                "0008-demarrage-course", "0009-passage", "0010-abandon-inscription");
 
     @Container
     @ServiceConnection
@@ -441,7 +441,7 @@ class InscriptionCourseIntegrationTest {
     // ---------------------------------------------------------------- CA8
 
     @Test
-    @DisplayName("CA8 : databasechangelog contient exactement 0002 à 0009 (0001 à 0008 inchangés) ; la table inscription a colonnes, contraintes et index de RG11 ; aucune clé étrangère vers compte ; ddl-auto=validate")
+    @DisplayName("CA8 : databasechangelog contient exactement 0002 à 0010 (0001 à 0009 inchangés) ; la table inscription (colonnes de 4.8 comprises) a colonnes, contraintes et index de RG11 ; aucune clé étrangère vers compte ; ddl-auto=validate")
     void ca8_schema_de_la_table_inscription() {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactlyElementsOf(CHANGESETS);
@@ -456,12 +456,14 @@ class InscriptionCourseIntegrationTest {
         assertThat(colonnes).containsOnly(
                 Map.entry("id", "uuid//NO"), Map.entry("course_id", "uuid//NO"), Map.entry("compte_id", "uuid//NO"),
                 Map.entry("dossard", "integer//NO"), Map.entry("jeton_qr", "character varying/64/NO"),
-                Map.entry("statut", "character varying/20/NO"));
+                Map.entry("statut", "character varying/20/NO"),
+                Map.entry("motif_abandon", "character varying/20/YES"), Map.entry("boucle_abandon", "integer//YES"));
 
         assertThat(jdbc.queryForList("select conname from pg_constraint where conrelid = 'inscription'::regclass",
                 String.class)).containsExactlyInAnyOrder("pk_inscription", "fk_inscription_course",
                 "uq_inscription_course_dossard", "uq_inscription_course_compte", "uq_inscription_jeton_qr",
-                "ck_inscription_dossard", "ck_inscription_statut");
+                "ck_inscription_dossard", "ck_inscription_statut", "ck_inscription_motif_abandon",
+                "ck_inscription_boucle_abandon");
         assertThat(jdbc.queryForObject("select count(*) from pg_constraint where conrelid = 'inscription'::regclass "
                 + "and contype = 'f' and confrelid = 'compte'::regclass", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("select confdeltype::text from pg_constraint "
@@ -581,7 +583,7 @@ class InscriptionCourseIntegrationTest {
                 "Authentification requise", "Vous devez être connecté.");
         assertThat(lister(alice).statusCode()).isEqualTo(200);
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
-                .hasSize(8).containsExactlyElementsOf(CHANGESETS);
+                .hasSize(9).containsExactlyElementsOf(CHANGESETS);
     }
 
     // ---------------------------------------------------------------- utilitaires

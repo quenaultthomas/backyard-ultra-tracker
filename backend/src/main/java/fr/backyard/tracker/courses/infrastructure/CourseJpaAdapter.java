@@ -3,6 +3,7 @@ package fr.backyard.tracker.courses.infrastructure;
 import fr.backyard.tracker.courses.domaine.Course;
 import fr.backyard.tracker.courses.domaine.DepotCourses;
 import fr.backyard.tracker.courses.domaine.ParametresBoucle;
+import fr.backyard.tracker.courses.domaine.StatutCourse;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
@@ -78,6 +79,14 @@ public class CourseJpaAdapter implements DepotCourses {
     @Transactional(readOnly = true)
     public List<Course> toutes() {
         return versDomaine(entityManager.createQuery(COURSES_ET_BENEVOLES, CourseJpaEntity.class).getResultList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UUID> idsEnCours() {
+        return entityManager.createQuery("select c.id from CourseJpaEntity c where c.statut = :statut", UUID.class)
+                .setParameter("statut", StatutCourse.EN_COURS)
+                .getResultList();
     }
 
     @Override

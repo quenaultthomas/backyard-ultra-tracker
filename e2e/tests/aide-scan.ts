@@ -118,3 +118,20 @@ export function lirePassagesEnBase(courseId: string): string[] {
   );
   return sortie === '' ? [] : sortie.split('\n');
 }
+
+export interface InscriptionEnBase {
+  statut: string;
+  motifAbandon: string;
+  boucleAbandon: string;
+}
+
+/** Statut, motif et Boucle d'abandon de l'Inscription de ce dossard (4.8) ; champs vides si NULL. */
+export function lireInscriptionEnBase(courseId: string, dossard: number): InscriptionEnBase {
+  if (!/^[0-9a-f-]{36}$/.test(courseId)) throw new Error('identifiant de course invalide');
+  if (!Number.isInteger(dossard)) throw new Error('dossard invalide');
+  const sortie = executerSql(
+    `select statut || '|' || coalesce(motif_abandon, '') || '|' || coalesce(boucle_abandon::text, '') from inscription where course_id = '${courseId}' and dossard = ${dossard}`,
+  );
+  const [statut, motifAbandon, boucleAbandon] = sortie.split('|');
+  return { statut, motifAbandon, boucleAbandon };
+}
