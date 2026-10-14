@@ -6,6 +6,8 @@ import fr.backyard.tracker.courses.domaine.PassageDejaEnregistreException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.hibernate.Session;
@@ -41,6 +43,33 @@ public class PassageJpaAdapter implements DepotPassages {
                 .setParameter("inscriptionId", inscriptionId)
                 .setParameter("numeroBoucle", numeroBoucle)
                 .getSingleResult() > 0;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Passage> parInscriptionEtBoucle(UUID inscriptionId, int numeroBoucle) {
+        return entityManager.createQuery("select p from PassageJpaEntity p "
+                        + "where p.inscriptionId = :inscriptionId and p.numeroBoucle = :numeroBoucle",
+                        PassageJpaEntity.class)
+                .setParameter("inscriptionId", inscriptionId)
+                .setParameter("numeroBoucle", numeroBoucle)
+                .getResultStream()
+                .findFirst()
+                .map(PassageJpaAdapter::versDomaine);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Passage> parInscriptions(Collection<UUID> inscriptionIds) {
+        if (inscriptionIds.isEmpty()) {
+            return List.of();
+        }
+        return entityManager.createQuery("select p from PassageJpaEntity p where p.inscriptionId in :inscriptionIds",
+                        PassageJpaEntity.class)
+                .setParameter("inscriptionIds", inscriptionIds)
+                .getResultStream()
+                .map(PassageJpaAdapter::versDomaine)
+                .toList();
     }
 
     /**

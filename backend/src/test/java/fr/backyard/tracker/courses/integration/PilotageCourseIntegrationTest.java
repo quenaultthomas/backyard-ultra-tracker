@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Stream;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,10 +60,13 @@ class PilotageCourseIntegrationTest {
     static final Instant T0 = Instant.parse("2026-10-09T14:03:27Z");
     static final String JOUR = "2026-10-09";
     static final String ANONYME = "Coureur anonyme";
-    static final List<String> CHAMPS = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur", "demarreeLe",
-            "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee",
-            "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
+    static final List<String> CHAMPS_4_2 = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur",
+            "demarreeLe", "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle",
+            "boucleMaxTerminee", "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
             "dureeEcouleeMillisecondes", "nombreInscrits", "inscritsEnCourse");
+    /** 4.7 RG9 (point ouvert 7) : les 17 champs d'origine plus les 2 champs de bouclage, contrat additif. */
+    static final List<String> CHAMPS = Stream.concat(CHAMPS_4_2.stream(),
+            Stream.of("nombreAyantBoucle", "nombreEnBoucle")).toList();
     static final List<String> CHAMPS_CHRONOMETRAGE = List.of("demarreeLe", "boucleCourante", "debutBoucleCourante",
             "finBoucleCourante", "tempsAvantFinBoucleMillisecondes", "dureeEcouleeMillisecondes");
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
@@ -151,7 +155,7 @@ class PilotageCourseIntegrationTest {
     // ---------------------------------------------------------------- CA6
 
     @Test
-    @DisplayName("CA6 : Patron lit le pilotage de X à t0 + 60 s : 200, no-store, 17 champs exacts, valeurs de la spec, inscrits Bruno 1 et Chloé 2 sans jeton, aucune ligne modifiée")
+    @DisplayName("CA6 : Patron lit le pilotage de X à t0 + 60 s : 200, no-store, 19 champs exacts (17 d'origine + 2 de 4.7), valeurs de la spec, inscrits Bruno 1 et Chloé 2 sans jeton, aucune ligne modifiée")
     void ca6_instantane_nominal() throws Exception {
         String x = courseXDemarree();
         horloge.fixer(T0.plusMillis(60_000));
@@ -188,8 +192,10 @@ class PilotageCourseIntegrationTest {
         assertThat(inscrits).extracting(n -> n.get("dossard").asInt()).containsExactly(1, 2);
         assertThat(inscrits).extracting(n -> n.get("pseudo").asString()).containsExactly("Bruno", "Chloé");
         assertThat(inscrits).extracting(n -> n.get("statut").asString()).containsOnly("EN_COURSE");
-        assertThat(inscrits).allSatisfy(n -> assertThat(n.propertyNames())
-                .containsExactlyInAnyOrder("inscriptionId", "dossard", "pseudo", "statut"));
+        assertThat(inscrits).allSatisfy(n -> assertThat(n.propertyNames()).containsExactlyInAnyOrder(
+                "inscriptionId", "dossard", "pseudo", "statut", "nombreBouclesTerminees", "boucleCouranteTerminee"));
+        assertThat(corps.get("nombreAyantBoucle").asInt()).isZero();
+        assertThat(corps.get("nombreEnBoucle").asInt()).isEqualTo(2);
         assertThat(inscrits).extracting(n -> n.get("inscriptionId").asString()).containsExactly(
                 idInscription(x, idBruno), idInscription(x, idChloe));
         List<String> jetons = jdbc.queryForList("select jeton_qr from inscription", String.class);
@@ -492,6 +498,8 @@ class PilotageCourseIntegrationTest {
         }
         assertThat(corps.get("derniereBoucle").asBoolean()).isFalse();
         assertThat(corps.get("boucleMaxTerminee").asBoolean()).isFalse();
+        assertThat(corps.get("nombreAyantBoucle").isNull()).isTrue();
+        assertThat(corps.get("nombreEnBoucle").isNull()).isTrue();
         assertThat(corps.get("heureServeur").asString()).isEqualTo("2026-10-09T14:03:27.654Z");
         return corps;
     }

@@ -18,10 +18,17 @@ final class DepotPassagesEnMemoireDeTest implements DepotPassages {
     final List<Passage> passages = new ArrayList<>();
     int nombreDEnregistrements;
     RuntimeException echecAEnregistrer;
+    int nombreDeLecturesGroupees;
 
     /** Pose un Passage préexistant, sans compter d'écriture du cas d'usage. */
     void poser(Passage passage) {
         passages.add(passage);
+    }
+
+    /** Lecture groupée de 4.7 (port DepotPassages.parInscriptions, nom supposé). */
+    public List<Passage> parInscriptions(java.util.Collection<UUID> inscriptionIds) {
+        nombreDeLecturesGroupees++;
+        return passages.stream().filter(p -> inscriptionIds.contains(p.inscriptionId())).toList();
     }
 
     @Override
@@ -36,6 +43,13 @@ final class DepotPassagesEnMemoireDeTest implements DepotPassages {
         }
         return passages.stream()
                 .anyMatch(p -> p.inscriptionId().equals(inscriptionId) && p.numeroBoucle() == numeroBoucle);
+    }
+
+    @Override
+    public Optional<Passage> parInscriptionEtBoucle(UUID inscriptionId, int numeroBoucle) {
+        return passages.stream()
+                .filter(p -> p.inscriptionId().equals(inscriptionId) && p.numeroBoucle() == numeroBoucle)
+                .findFirst();
     }
 
     @Override

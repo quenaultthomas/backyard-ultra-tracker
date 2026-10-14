@@ -11,6 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.IntFunction;
 
 /**
  * Racine d'agrégat : une édition de backyard. Une Course ne se crée que par {@link #declarer} et ne change que par
@@ -24,6 +25,9 @@ public final class Course {
     public static final Comparator<Course> ORDRE_DE_LISTE = Comparator.comparing(Course::date).reversed()
             .thenComparing(Course::nom, String.CASE_INSENSITIVE_ORDER)
             .thenComparing(course -> course.id().toString());
+
+    /** Délai minimal entre deux Passages d'une même Inscription, avant plafonnement par la durée de Boucle. */
+    public static final Duration DELAI_MINIMAL_ENTRE_PASSAGES = Duration.ofMinutes(2);
 
     private final UUID id;
     private final String nom;
@@ -246,6 +250,42 @@ public final class Course {
             throw new TempsDeCourseEcouleException();
         }
         return chrono.boucleCourante();
+    }
+
+    /**
+     * Délai minimal entre deux Passages d'une même Inscription : {@link #DELAI_MINIMAL_ENTRE_PASSAGES}, plafonné au
+     * quart de la durée de Boucle pour ne jamais bloquer l'enchaînement des Boucles courtes. Unique définition.
+     */
+    public Duration delaiMinimalEntrePassages() {
+        Duration quartDeBoucle = Duration.ofMinutes(parametresBoucle.dureeMinutes()).dividedBy(4);
+        return quartDeBoucle.compareTo(DELAI_MINIMAL_ENTRE_PASSAGES) < 0 ? quartDeBoucle
+                : DELAI_MINIMAL_ENTRE_PASSAGES;
+    }
+
+    /**
+     * Anti-doublon : un scan de la Boucle N > 1 est refusé s'il suit de moins que {@link #delaiMinimalEntrePassages()}
+     * le Passage scanné de la Boucle N-1 (comparaison stricte, à la milliseconde). Aucun contrôle en Boucle 1, sans
+     * Passage précédent ou si celui-ci est une correction (sans instant). Unique définition de cette règle.
+     *
+     * @param passageDeLaBoucle Passage de l'Inscription sur une Boucle donnée, consulté pour la seule Boucle N-1
+     * @throws PassageTropRapprocheException le délai minimal n'est pas écoulé
+     */
+    public void verifierDelaiEntrePassages(int numeroBoucle, Instant scanneLe,
+                                           IntFunction<Optional<Passage>> passageDeLaBoucle) {
+        if (numeroBoucle <= 1) {
+            return;
+        }
+        passageDeLaBoucle.apply(numeroBoucle - 1)
+                .flatMap(Passage::scanneLe)
+                .ifPresent(precedent -> verifierEcart(numeroBoucle, Duration.between(precedent, scanneLe)));
+    }
+
+    private void verifierEcart(int numeroBoucle, Duration ecart) {
+        Duration delai = delaiMinimalEntrePassages();
+        if (ecart.compareTo(delai) < 0) {
+            long millisRestantes = delai.minus(ecart).toMillis();
+            throw new PassageTropRapprocheException(numeroBoucle, delai, Math.ceilDiv(millisRestantes, 1000L));
+        }
     }
 
     /** Instant à la milliseconde, ramené au départ s'il le précède (anomalie d'horloge) : jamais de durée négative. */

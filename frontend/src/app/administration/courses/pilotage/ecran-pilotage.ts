@@ -23,12 +23,13 @@ import {
   ETAT_MESSAGE_ERREUR,
   MESSAGE_COURSE_INTROUVABLE,
 } from '../erreurs-course';
+import { PASTILLES_BOUCLAGE } from '../pilotage-course';
 import { formaterCompteARebours, formaterDureeEcoulee } from './formats-duree';
 import { RafraichissementPilotage } from './rafraichissement-pilotage';
 
 /**
  * Pilotage d'une Course démarrée (admins et admin master) : Boucle courante, compte à rebours,
- * durée écoulée et inscrits `EN_COURSE`, tels que calculés par le serveur.
+ * durée écoulée, inscrits `EN_COURSE` et leur bouclage, tels que calculés par le serveur.
  */
 @Component({
   selector: 'app-ecran-pilotage',
@@ -57,6 +58,7 @@ export class EcranPilotage implements OnInit {
   protected readonly libellesInscription = LIBELLES_STATUT_INSCRIPTION;
   protected readonly pastillesInscription = PASTILLES_STATUT_INSCRIPTION;
   protected readonly messageIndisponible = MESSAGE_SERVICE_INDISPONIBLE;
+  protected readonly pastillesBouclage = PASTILLES_BOUCLAGE;
 
   protected readonly pilotage = this.rafraichissement.instantane;
   /** 409 `COURSE_NON_DEMARREE`. */

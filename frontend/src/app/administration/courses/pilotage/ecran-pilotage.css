@@ -65,8 +65,40 @@
   border-top: 1px solid var(--couleur-trait);
 }
 
-/* Repli étroit (320 px, texte à 200 %) : le bloc et le tableau tiennent dans la carte. */
+/* Repli étroit (320 px, texte à 200 %) : le bloc et le tableau tiennent dans la carte. Le tableau
+   passe en lignes empilées, chaque cellule précédée du libellé de sa colonne (`data-libelle`). */
 @container cartes (max-width: 15rem) {
+  .tableau thead {
+    display: none;
+  }
+
+  .tableau,
+  .tableau tbody,
+  .tableau tr {
+    display: block;
+  }
+
+  .tableau tr {
+    padding: var(--espace-2) 0;
+    border-bottom: 1px solid var(--couleur-trait);
+  }
+
+  .tableau td {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--espace-1) var(--espace-2);
+    padding: var(--espace-1) 0;
+    border-bottom: none;
+  }
+
+  .tableau td::before {
+    content: attr(data-libelle);
+    font-size: var(--taille-secondaire);
+    font-weight: 600;
+    color: var(--couleur-encre-douce);
+  }
+
   .chronometrage {
     padding: var(--espace-2);
   }

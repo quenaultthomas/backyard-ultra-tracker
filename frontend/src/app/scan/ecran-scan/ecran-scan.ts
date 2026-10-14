@@ -27,6 +27,7 @@ import { CameraScan } from '../camera-scan/camera-scan';
 import { CourseBenevoleReponse } from '../course-benevole';
 import { tirerIdentifiantScan } from '../identifiant-scan';
 import { ErreurScan, PassageReponse } from '../passage';
+import { RefusScan, lireRefusScan } from '../refus-scan';
 
 const MESSAGE_INJOIGNABLE =
   "Le serveur est injoignable. Le passage n'est peut-être pas enregistré : validez de nouveau avec le même jeton.";
@@ -37,8 +38,11 @@ const DELAI_ENVOI_MILLISECONDES = 15_000;
 /** Un jeton lu à la caméra ne touche pas au champ (pas de clavier virtuel qui s'ouvre). */
 type OrigineJeton = 'saisie' | 'camera';
 
+/** Succès, refus définitif de l'API, ou panne sans réponse définitive (message seul). */
 type ResultatScan =
-  { type: 'succes'; passage: PassageReponse } | { type: 'erreur'; message: string };
+  | { type: 'succes'; passage: PassageReponse }
+  | { type: 'refus'; refus: RefusScan }
+  | { type: 'erreur'; message: string };
 
 /** Envoi sans réponse définitive : son `identifiantScan` est réutilisé pour le même jeton. */
 interface TentativeEnAttente {
@@ -168,7 +172,7 @@ export class EcranScan implements OnInit {
 
   private afficherErreur(erreur: unknown, origine: OrigineJeton): void {
     if (estSansReponseDefinitive(erreur)) {
-      this.afficherMessageErreur(MESSAGE_INJOIGNABLE, origine);
+      this.afficherEchec({ type: 'erreur', message: MESSAGE_INJOIGNABLE }, origine);
       return;
     }
     this.tentative = null;
@@ -179,12 +183,17 @@ export class EcranScan implements OnInit {
     ) {
       return;
     }
-    this.afficherMessageErreur(probleme?.detail ?? MESSAGE_SERVICE_INDISPONIBLE, origine);
+    this.afficherEchec(
+      probleme
+        ? { type: 'refus', refus: lireRefusScan(probleme) }
+        : { type: 'erreur', message: MESSAGE_SERVICE_INDISPONIBLE },
+      origine,
+    );
   }
 
   /** Saisie : le jeton reste dans le champ, sélectionné, pour être corrigé ou validé de nouveau. */
-  private afficherMessageErreur(message: string, origine: OrigineJeton): void {
-    this.resultat.set({ type: 'erreur', message });
+  private afficherEchec(resultat: ResultatScan, origine: OrigineJeton): void {
+    this.resultat.set(resultat);
     if (origine === 'camera') {
       return;
     }

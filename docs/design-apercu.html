@@ -241,11 +241,12 @@
           <div class="formulaire inscrits" data-composant="pilotage-inscrits">
             <h3 class="sous-titre">Coureurs en course</h3>
             <p class="message resume"><span class="resume__compteur">2 coureurs en course sur 3 inscrits</span></p>
+            <p class="message resume" data-composant="pilotage-bouclage"><span class="resume__compteur">A bouclé : 1</span><span class="resume__compteur">En boucle : 1</span></p>
             <table class="tableau">
-              <thead><tr><th scope="col">Dossard</th><th scope="col">Coureur</th><th scope="col">Statut</th></tr></thead>
+              <thead><tr><th scope="col">Dossard</th><th scope="col">Coureur</th><th scope="col">Statut</th><th scope="col">Boucle 3</th><th scope="col">Boucles terminées</th></tr></thead>
               <tbody>
-                <tr><td class="dossard">1</td><td>Bruno</td><td><span class="pastille-statut pastille-statut--en-course">En course</span></td></tr>
-                <tr><td class="dossard">2</td><td>Coureur anonyme</td><td><span class="pastille-statut pastille-statut--en-course">En course</span></td></tr>
+                <tr><td class="dossard">1</td><td>Bruno</td><td><span class="pastille-statut pastille-statut--en-course">En course</span></td><td><span class="pastille-statut pastille-statut--a-boucle" data-composant="pastille-statut-a-boucle">A bouclé</span></td><td>3</td></tr>
+                <tr><td class="dossard">2</td><td>Coureur anonyme</td><td><span class="pastille-statut pastille-statut--en-course">En course</span></td><td><span class="pastille-statut pastille-statut--en-boucle" data-composant="pastille-statut-en-boucle">En boucle</span></td><td>2</td></tr>
               </tbody>
             </table>
           </div>
@@ -278,7 +279,18 @@
             <p>Karim</p>
             <p>Boucle 1</p>
           </div>
-          <p class="message--erreur resultat" data-composant="scan-resultat-erreur">Ce coureur a déjà un passage sur la boucle 1.</p>
+          <div class="message--erreur refus" data-composant="scan-refus">
+            <p class="refus__motif">Déjà passé</p>
+            <p class="resultat__dossard">Dossard 1</p>
+            <p>Karim</p>
+            <p>Boucle 1</p>
+            <p class="refus__detail">Ce coureur a déjà un passage sur la boucle 1.</p>
+          </div>
+          <div class="message--erreur refus" data-composant="scan-refus-jeton-inconnu">
+            <p class="refus__motif">Jeton inconnu</p>
+            <p class="refus__detail">Jeton inconnu pour cette course.</p>
+          </div>
+          <p class="message--erreur resultat" data-composant="scan-resultat-erreur">Le serveur est injoignable. Le passage n'est peut-être pas enregistré : validez de nouveau avec le même jeton.</p>
           <section class="camera" data-composant="scan-camera-arretee">
             <p class="camera__etat">Caméra arrêtée</p>
             <p class="message--erreur">L'accès à la caméra est refusé. Autorisez-la dans les réglages du navigateur, ou saisissez le jeton ci-dessous.</p>
