@@ -27,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Enregistrement du Passage d'un coureur par un bénévole affecté à la Course (le rôle est contrôlé avant ce cas
  * d'usage). Idempotent par identifiant de scan : le même identifiant pour la même Inscription renvoie le Passage
  * existant, quel que soit l'état actuel. Ordre des contrôles : affectation, jeton, rejeu, Course, Inscription,
- * Boucle, déjà passé, continuité. Aucun journal (chemin fréquent ; ni jeton ni pseudo).
+ * Boucle, déjà passé, continuité, anti-doublon. Aucun journal (chemin fréquent ; ni jeton ni pseudo).
  */
 @Service
 public class EnregistrerPassage {
@@ -63,7 +63,8 @@ public class EnregistrerPassage {
      * @throws BenevoleNonAffecteException bénévole non affecté ou Course inconnue
      * @throws JetonInconnuException aucune Inscription de la Course n'a ce jeton
      * @throws IdentifiantScanDejaUtiliseException l'identifiant désigne le Passage d'une autre Inscription
-     * @throws RefusPassageCoureurException refus rapporté au coureur scanné (statut, temps écoulé, Boucle)
+     * @throws RefusPassageCoureurException refus rapporté au coureur scanné (statut, temps écoulé, Boucle,
+     *                                     anti-doublon)
      */
     @Transactional
     public Resultat executer(UUID courseId, UUID benevoleId, JetonQr jeton, UUID identifiantScan,
@@ -108,6 +109,8 @@ public class EnregistrerPassage {
             int numeroBoucle = course.boucleDePassage(scanneLe);
             inscription.verifierBouclePassable(numeroBoucle,
                     boucle -> depotPassages.existe(inscription.id(), boucle));
+            course.verifierDelaiEntrePassages(numeroBoucle, scanneLe,
+                    boucle -> depotPassages.parInscriptionEtBoucle(inscription.id(), boucle));
             return Passage.scanner(identifiantScan, inscription, numeroBoucle, scanneLe);
         } catch (RefusPassageCoureurException refus) {
             throw refus.pour(coureur);

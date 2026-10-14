@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.read.ListAppender;
+import ch.qos.logback.core.spi.FilterReply;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.courses.integration.ClientHttp.Session;
@@ -585,6 +587,14 @@ class InscriptionsRefuseesIntegrationTest {
     private void demarrerJournal() {
         journal = new ListAppender<>();
         journal.list = new java.util.concurrent.CopyOnWriteArrayList<>();
+        // Les pools Hikari des autres contextes Spring mis en cache journalisent en arrière-plan (connexions
+        // fermées de conteneurs arrêtés) : ce bruit ne vient pas de la requête observée.
+        journal.addFilter(new Filter<ILoggingEvent>() {
+            @Override
+            public FilterReply decide(ILoggingEvent ev) {
+                return ev.getLoggerName().startsWith("com.zaxxer.hikari") ? FilterReply.DENY : FilterReply.NEUTRAL;
+            }
+        });
         journal.start();
         Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         racine.addAppender(journal);

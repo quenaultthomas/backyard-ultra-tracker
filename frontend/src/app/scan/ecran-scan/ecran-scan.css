@@ -39,9 +39,9 @@
   margin: 0;
 }
 
-.resultat::before {
+.resultat::before,
+.refus__detail::before {
   content: '';
-  grid-row: 1 / span 4;
   width: 2rem;
   height: 2rem;
   background-color: currentColor;
@@ -49,12 +49,53 @@
   mask: var(--pictogramme) center / contain no-repeat;
 }
 
+.resultat::before {
+  grid-row: 1 / span 4;
+}
+
 .message--succes.resultat {
   --pictogramme: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314352A' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5 9.5 18 20 6'/%3E%3C/svg%3E");
 }
 
-.message--erreur.resultat {
+.message--erreur.resultat,
+.refus {
   --pictogramme: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314352A' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6 6 18'/%3E%3C/svg%3E");
+}
+
+/*
+ * Refus définitif (4.6) : plein cadre, motif, coureur, boucle puis `detail` de l'API.
+ * La croix est portée par l'alerte (`.refus__detail::before`) mais placée en haut à gauche du bloc.
+ */
+.refus {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-1);
+  padding: var(--espace-4);
+  padding-left: calc(var(--espace-4) + 2rem + var(--espace-3));
+  font-size: var(--taille-moyenne);
+  overflow-wrap: anywhere;
+}
+
+.refus > * {
+  margin: 0;
+  min-width: 0;
+}
+
+.refus__motif {
+  font-size: var(--taille-grande);
+  font-weight: var(--poids-gras);
+}
+
+.refus__detail {
+  background-color: inherit;
+  color: inherit;
+}
+
+.refus__detail::before {
+  position: absolute;
+  top: var(--espace-4);
+  left: var(--espace-4);
 }
 
 .resultat__libelle {
@@ -68,7 +109,8 @@
 }
 
 @media (forced-colors: active) {
-  .resultat::before {
+  .resultat::before,
+  .refus__detail::before {
     forced-color-adjust: none;
     background-color: CanvasText;
   }

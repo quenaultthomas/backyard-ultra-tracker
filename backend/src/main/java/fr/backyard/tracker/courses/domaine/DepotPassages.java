@@ -1,5 +1,7 @@
 package fr.backyard.tracker.courses.domaine;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -11,6 +13,12 @@ public interface DepotPassages {
 
     /** L'Inscription a un Passage, quelle que soit son origine, sur cette Boucle. */
     boolean existe(UUID inscriptionId, int numeroBoucle);
+
+    /** Passage de l'Inscription sur cette Boucle, quelle que soit son origine. */
+    Optional<Passage> parInscriptionEtBoucle(UUID inscriptionId, int numeroBoucle);
+
+    /** Passages de toutes ces Inscriptions, en une seule lecture groupée (aucune lecture sans Inscription). */
+    List<Passage> parInscriptions(Collection<UUID> inscriptionIds);
 
     /**
      * Ajoute un nouveau Passage.
