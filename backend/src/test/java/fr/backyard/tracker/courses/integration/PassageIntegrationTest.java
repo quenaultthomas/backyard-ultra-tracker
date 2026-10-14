@@ -71,10 +71,12 @@ class PassageIntegrationTest {
     static final String JC = new StringBuilder(JB).reverse().toString();
     static final List<String> CHAMPS_PASSAGE = List.of("passageId", "inscriptionId", "dossard", "pseudo",
             "numeroBoucle", "scanneLe", "origine");
+    /** Les 17 champs d'origine (4.2) plus les 2 champs de bouclage de 4.7 (RG9, contrat additif). */
     static final List<String> CHAMPS_PILOTAGE = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur",
             "demarreeLe", "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle",
             "boucleMaxTerminee", "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
-            "dureeEcouleeMillisecondes", "nombreInscrits", "inscritsEnCourse");
+            "dureeEcouleeMillisecondes", "nombreInscrits", "inscritsEnCourse", "nombreAyantBoucle",
+            "nombreEnBoucle");
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final String INSERTION_COURSE = "insert into course (id, nom, date_course, statut, distance_boucle_metres, "
@@ -284,6 +286,10 @@ class PassageIntegrationTest {
         assertThat(boucle1.statusCode()).isEqualTo(201);
         assertThat(json.readTree(boucle1.body()).get("numeroBoucle").asInt()).isEqualTo(1);
         assertThat(json.readTree(boucle1.body()).get("scanneLe").asString()).isEqualTo("2026-10-12T14:04:26.999Z");
+
+        // Fixture (RG14 de 4.6, anti-doublon) : le Passage de la Boucle 1 est reculé à t0 + 5 s pour que le scan de la
+        // Boucle 2 à la frontière (t0 + 60 s) soit éloigné de plus du délai effectif (15 s à Boucle de 1 min).
+        jdbc.update("update passage set scanne_le = ?", Timestamp.from(T0.plusSeconds(5)));
 
         horloge.fixer(T0.plusMillis(60_000));
         HttpResponse<String> manquant = scanner(leo, x, corps(JC, UUID.randomUUID().toString(), null));
@@ -574,7 +580,7 @@ class PassageIntegrationTest {
     // ---------------------------------------------------------------- CA14
 
     @Test
-    @DisplayName("CA14 : journal silencieux (aucun INFO+, ni jeton, ni pseudo, ni nom de Course, ni UUID de Compte), aucun jeton dans les erreurs, Courses X et W indépendantes, pilotage inchangé (17 champs)")
+    @DisplayName("CA14 : journal silencieux (aucun INFO+, ni jeton, ni pseudo, ni nom de Course, ni UUID de Compte), aucun jeton dans les erreurs, Courses X et W indépendantes, pilotage : 17 champs d'origine + 2 de 4.7")
     void ca14_journal_independance_et_non_regression() throws Exception {
         String x = courseXDemarree();
         String jw = "Ww" + JB.substring(2);

@@ -493,8 +493,9 @@ test.describe('Mon compte - changement de mot de passe repliable', () => {
         });
       for (const deplie of [false, true]) {
         if (deplie) await deplierChangementMotDePasse(page);
+        // La couleur de fond est animée (transition de 150 ms) : on attend la valeur finale.
+        await expect.poll(async () => (await mesurerBouton()).fond).toBe(SURFACE);
         const m = await mesurerBouton();
-        expect(m.fond).toBe(SURFACE);
         expect(m.couleur).toBe(FORET);
         expect(m.bordure).toBe('1px');
         expect(m.bordureCouleur).toBe(FORET);

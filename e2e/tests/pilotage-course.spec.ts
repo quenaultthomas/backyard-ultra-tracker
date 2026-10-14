@@ -111,9 +111,11 @@ function instantane(surcharge: Record<string, unknown> = {}): Reponse {
       tempsAvantFinBoucleMillisecondes: 30000,
       dureeEcouleeMillisecondes: 30000,
       nombreInscrits: 2,
+      nombreAyantBoucle: 0,
+      nombreEnBoucle: 2,
       inscritsEnCourse: [
-        { inscriptionId: '00000000-0000-0000-0000-0000000000a1', dossard: 1, pseudo: 'Bruno', statut: 'EN_COURSE' },
-        { inscriptionId: '00000000-0000-0000-0000-0000000000a2', dossard: 2, pseudo: 'Chloé', statut: 'EN_COURSE' },
+        { inscriptionId: '00000000-0000-0000-0000-0000000000a1', dossard: 1, pseudo: 'Bruno', statut: 'EN_COURSE', nombreBouclesTerminees: 0, boucleCouranteTerminee: false },
+        { inscriptionId: '00000000-0000-0000-0000-0000000000a2', dossard: 2, pseudo: 'Chloé', statut: 'EN_COURSE', nombreBouclesTerminees: 0, boucleCouranteTerminee: false },
       ],
       ...surcharge,
     },
@@ -385,6 +387,8 @@ test.describe('Pilotage d\'une course', () => {
         finBoucleCourante: null,
         tempsAvantFinBoucleMillisecondes: null,
         dureeEcouleeMillisecondes: null,
+        nombreAyantBoucle: null,
+        nombreEnBoucle: null,
         inscritsEnCourse: [],
       }),
     );
@@ -402,6 +406,12 @@ test.describe('Pilotage d\'une course', () => {
     await ouvrirSimule(page, uuid(), () =>
       instantane({
         demarreeLe: null,
+        nombreAyantBoucle: null,
+        nombreEnBoucle: null,
+        inscritsEnCourse: [
+          { inscriptionId: '00000000-0000-0000-0000-0000000000a1', dossard: 1, pseudo: 'Bruno', statut: 'EN_COURSE', nombreBouclesTerminees: 0, boucleCouranteTerminee: null },
+          { inscriptionId: '00000000-0000-0000-0000-0000000000a2', dossard: 2, pseudo: 'Chloé', statut: 'EN_COURSE', nombreBouclesTerminees: 0, boucleCouranteTerminee: null },
+        ],
         boucleCourante: null,
         debutBoucleCourante: null,
         finBoucleCourante: null,
@@ -640,9 +650,9 @@ test.describe('Pilotage d\'une course', () => {
       const base = {
         nombreInscrits: 3,
         inscritsEnCourse: [
-          { inscriptionId: '00000000-0000-0000-0000-0000000000a1', dossard: 1, pseudo: pseudoLong, statut: 'EN_COURSE' },
-          { inscriptionId: '00000000-0000-0000-0000-0000000000a2', dossard: 2, pseudo: 'Chloé', statut: 'EN_COURSE' },
-          { inscriptionId: '00000000-0000-0000-0000-0000000000a3', dossard: 3, pseudo: 'Tom', statut: 'EN_COURSE' },
+          { inscriptionId: '00000000-0000-0000-0000-0000000000a1', dossard: 1, pseudo: pseudoLong, statut: 'EN_COURSE', nombreBouclesTerminees: 0, boucleCouranteTerminee: false },
+          { inscriptionId: '00000000-0000-0000-0000-0000000000a2', dossard: 2, pseudo: 'Chloé', statut: 'EN_COURSE', nombreBouclesTerminees: 0, boucleCouranteTerminee: false },
+          { inscriptionId: '00000000-0000-0000-0000-0000000000a3', dossard: 3, pseudo: 'Tom', statut: 'EN_COURSE', nombreBouclesTerminees: 0, boucleCouranteTerminee: false },
         ],
       };
       if (n === 1) return instantane({ ...base, heureServeur: heure(59000), tempsAvantFinBoucleMillisecondes: 1000 + 58000, dureeEcouleeMillisecondes: 59000 });

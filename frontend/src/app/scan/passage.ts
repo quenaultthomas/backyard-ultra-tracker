@@ -27,4 +27,8 @@ export interface ErreurScan extends ProblemDetail {
   pseudo?: string;
   numeroBoucle?: number;
   statut?: 'ABANDON' | 'VAINQUEUR';
+  /** `PASSAGE_TROP_RAPPROCHE` : délai minimal entre deux Passages, en secondes. */
+  delaiMinimalSecondes?: number;
+  /** `PASSAGE_TROP_RAPPROCHE` : secondes à attendre avant un nouveau Passage (au moins 1). */
+  secondesRestantes?: number;
 }
