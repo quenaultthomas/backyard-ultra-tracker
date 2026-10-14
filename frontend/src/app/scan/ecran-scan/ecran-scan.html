@@ -43,6 +43,22 @@
                 <p data-testid="scan-resultat-pseudo">{{ r.passage.pseudo }}</p>
                 <p data-testid="scan-resultat-boucle">Boucle {{ r.passage.numeroBoucle }}</p>
               </div>
+            } @else if (r.type === 'refus') {
+              <div class="message--erreur refus" data-testid="scan-refus">
+                <p class="refus__motif" data-testid="scan-refus-motif">{{ r.refus.motif }}</p>
+                @if (r.refus.coureur; as coureur) {
+                  <p class="resultat__dossard" data-testid="scan-refus-dossard">
+                    Dossard {{ coureur.dossard }}
+                  </p>
+                  <p data-testid="scan-refus-pseudo">{{ coureur.pseudo }}</p>
+                }
+                @if (r.refus.numeroBoucle !== undefined) {
+                  <p data-testid="scan-refus-boucle">Boucle {{ r.refus.numeroBoucle }}</p>
+                }
+                <p class="refus__detail" role="alert" data-testid="scan-resultat-erreur">
+                  {{ r.refus.detail }}
+                </p>
+              </div>
             } @else {
               <p class="message--erreur resultat" role="alert" data-testid="scan-resultat-erreur">
                 {{ r.message }}

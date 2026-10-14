@@ -12,6 +12,9 @@ public interface DepotPassages {
     /** L'Inscription a un Passage, quelle que soit son origine, sur cette Boucle. */
     boolean existe(UUID inscriptionId, int numeroBoucle);
 
+    /** Passage de l'Inscription sur cette Boucle, quelle que soit son origine. */
+    Optional<Passage> parInscriptionEtBoucle(UUID inscriptionId, int numeroBoucle);
+
     /**
      * Ajoute un nouveau Passage.
      *
