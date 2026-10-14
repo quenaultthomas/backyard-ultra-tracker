@@ -98,18 +98,13 @@ test.describe('Inscription à une course', () => {
       if (f === page.mainFrame()) navigations++;
     });
     const requete = page.waitForRequest(estInscription);
-    let corpsReponse: Promise<string> | undefined;
-    let statutReponse = 0;
-    page.on('response', (r) => {
-      if (estInscription(r.request())) {
-        statutReponse = r.status();
-        corpsReponse = r.text();
-      }
-    });
+    const reponse = page.waitForResponse((r) => estInscription(r.request()));
     await l.getByTestId('coureur-bouton-sinscrire').click();
     expect(new URL((await requete).url()).pathname).toBe(`/api/coureur/courses/${course.id}/inscriptions`);
-    await expect.poll(() => statutReponse).toBe(201);
-    expect(JSON.parse(await corpsReponse!)).not.toHaveProperty('jetonQr');
+    // Corps lu dès la réponse reçue : il n'est plus disponible une fois la page passée à autre chose.
+    const reponseInscription = await reponse;
+    expect(reponseInscription.status()).toBe(201);
+    expect(JSON.parse(await reponseInscription.text())).not.toHaveProperty('jetonQr');
 
     await expect(l.getByTestId('coureur-dossard')).toHaveText('Dossard 1');
     await expect(l.getByTestId('coureur-statut-inscription')).toHaveText('Inscrit');
