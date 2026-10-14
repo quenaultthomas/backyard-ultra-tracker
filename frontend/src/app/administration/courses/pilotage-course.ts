@@ -9,6 +9,10 @@ export interface InscritEnCourse {
   pseudo: string;
   /** Toujours `EN_COURSE`. */
   statut: StatutInscription;
+  /** Nombre de Passages de l'Inscription (`SCAN` et `CORRECTION`), toujours renseigné. */
+  nombreBouclesTerminees: number;
+  /** Passage sur la Boucle courante, selon le serveur ; `null` si `boucleCourante` est `null`. */
+  boucleCouranteTerminee: boolean | null;
 }
 
 /**
@@ -36,6 +40,22 @@ export interface PilotageCourse {
   dureeEcouleeMillisecondes: number | null;
   /** Toutes les Inscriptions de la Course, tous statuts. */
   nombreInscrits: number;
+  /** Inscrits `EN_COURSE` ayant bouclé la Boucle courante ; `null` si `boucleCourante` est `null`. */
+  nombreAyantBoucle: number | null;
+  /** Inscrits `EN_COURSE` encore en boucle ; `null` si `boucleCourante` est `null`. */
+  nombreEnBoucle: number | null;
   /** Inscriptions `EN_COURSE`, triées par dossard par l'API. */
   inscritsEnCourse: InscritEnCourse[];
 }
+
+/** Pastille d'un inscrit pour la Boucle courante : libellé en texte, classe de la charte. */
+export interface PastilleBouclage {
+  libelle: string;
+  classe: string;
+}
+
+/** Table d'affichage de `boucleCouranteTerminee` (valeur du serveur, jamais recalculée). */
+export const PASTILLES_BOUCLAGE: Readonly<Record<'termine' | 'enBoucle', PastilleBouclage>> = {
+  termine: { libelle: 'A bouclé', classe: 'pastille-statut pastille-statut--a-boucle' },
+  enBoucle: { libelle: 'En boucle', classe: 'pastille-statut pastille-statut--en-boucle' },
+};

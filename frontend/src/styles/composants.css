@@ -231,7 +231,9 @@ app-qr-code > .erreur {
   background-color: currentColor;
 }
 
-.pastille-statut--en-preparation {
+/* « En boucle » (pilotage, section 11) : neutre, comme « En préparation ». */
+.pastille-statut--en-preparation,
+.pastille-statut--en-boucle {
   border-color: var(--couleur-trait);
   background-color: var(--couleur-sable);
   color: var(--couleur-encre-douce);
@@ -249,7 +251,9 @@ app-qr-code > .erreur {
   color: var(--couleur-creme);
 }
 
-.pastille-statut--en-course {
+/* « A bouclé » (pilotage, section 11) : succès, comme « En course ». */
+.pastille-statut--en-course,
+.pastille-statut--a-boucle {
   border-color: var(--couleur-foret);
   background-color: var(--couleur-succes-pale);
   color: var(--couleur-foret);

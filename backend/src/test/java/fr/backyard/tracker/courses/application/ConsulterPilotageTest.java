@@ -234,7 +234,8 @@ class ConsulterPilotageTest {
     }
 
     private ConsulterPilotage consulter(Clock clock) {
-        return new ConsulterPilotage(depotCourses, depotInscriptions, annuaire, clock);
+        return new ConsulterPilotage(depotCourses, depotInscriptions, new DepotPassagesEnMemoireDeTest(), annuaire,
+                clock);
     }
 
     private Inscription inscrire(UUID courseId, UUID compteId, int dossard, StatutInscription statut) {

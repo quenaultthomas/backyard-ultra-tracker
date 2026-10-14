@@ -92,27 +92,64 @@
             </p>
           </div>
         } @else {
+          @if (p.nombreAyantBoucle !== null && p.nombreEnBoucle !== null) {
+            <p class="message resume" data-testid="pilotage-bouclage">
+              <span class="resume__compteur" data-testid="pilotage-ayant-boucle"
+                >A bouclé : {{ p.nombreAyantBoucle }}</span
+              >
+              <span class="resume__compteur" data-testid="pilotage-en-boucle"
+                >En boucle : {{ p.nombreEnBoucle }}</span
+              >
+            </p>
+          }
           <table class="tableau" aria-labelledby="titre-coureurs" data-testid="pilotage-inscrits">
             <thead>
               <tr>
                 <th scope="col">Dossard</th>
                 <th scope="col">Coureur</th>
                 <th scope="col">Statut</th>
+                @if (p.boucleCourante !== null) {
+                  <th scope="col" data-testid="pilotage-colonne-boucle">
+                    Boucle {{ p.boucleCourante }}
+                  </th>
+                }
+                <th scope="col" data-testid="pilotage-colonne-boucles-terminees">
+                  Boucles terminées
+                </th>
               </tr>
             </thead>
             <tbody>
               @for (inscrit of p.inscritsEnCourse; track inscrit.inscriptionId) {
                 <tr data-testid="pilotage-inscrit">
-                  <td class="dossard" data-testid="pilotage-inscrit-dossard">
+                  <td class="dossard" data-libelle="Dossard" data-testid="pilotage-inscrit-dossard">
                     {{ inscrit.dossard }}
                   </td>
-                  <td data-testid="pilotage-inscrit-pseudo">{{ inscrit.pseudo }}</td>
-                  <td>
+                  <td data-libelle="Coureur" data-testid="pilotage-inscrit-pseudo">
+                    {{ inscrit.pseudo }}
+                  </td>
+                  <td data-libelle="Statut">
                     <span
                       [class]="pastillesInscription[inscrit.statut]"
                       data-testid="pilotage-inscrit-statut"
                       >{{ libellesInscription[inscrit.statut] }}</span
                     >
+                  </td>
+                  @if (p.boucleCourante !== null) {
+                    @let bouclage =
+                      inscrit.boucleCouranteTerminee
+                        ? pastillesBouclage.termine
+                        : pastillesBouclage.enBoucle;
+                    <td [attr.data-libelle]="'Boucle ' + p.boucleCourante">
+                      <span [class]="bouclage.classe" data-testid="pilotage-inscrit-boucle">{{
+                        bouclage.libelle
+                      }}</span>
+                    </td>
+                  }
+                  <td
+                    data-libelle="Boucles terminées"
+                    data-testid="pilotage-inscrit-boucles-terminees"
+                  >
+                    {{ inscrit.nombreBouclesTerminees }}
                   </td>
                 </tr>
               }

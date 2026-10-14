@@ -5,6 +5,7 @@ import fr.backyard.tracker.courses.application.ListerCourses;
 import fr.backyard.tracker.courses.domaine.Chronometrage;
 import fr.backyard.tracker.courses.domaine.Course;
 import fr.backyard.tracker.courses.domaine.StatutCourse;
+import fr.backyard.tracker.courses.domaine.StatutInscription;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -16,16 +17,33 @@ import java.util.function.Function;
 
 /**
  * Instantané de pilotage d'une Course pour l'administration. Les champs de chronométrage sont null (et les booléens
- * faux) sans chronométrage ; {@code heureServeur} est l'instant UTC de calcul, toujours aux millisecondes. Ni jeton
- * QR, ni identifiant de Compte.
+ * faux) sans chronométrage ; les nombres de bouclage et l'indicateur de bouclage de chaque inscrit sont alors null.
+ * {@code heureServeur} est l'instant UTC de calcul, toujours aux millisecondes. Ni jeton QR, ni identifiant de
+ * Compte, ni détail de Passage.
  */
 public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, StatutCourse statut,
                                     String heureServeur, Instant demarreeLe, int dureeBoucleMinutes,
                                     int nombreMaxBoucles, Integer boucleCourante, boolean derniereBoucle,
                                     boolean boucleMaxTerminee, Instant debutBoucleCourante,
                                     Instant finBoucleCourante, Long tempsAvantFinBoucleMillisecondes,
-                                    Long dureeEcouleeMillisecondes, int nombreInscrits,
-                                    List<InscritsCourseReponse.InscritReponse> inscritsEnCourse) {
+                                    Long dureeEcouleeMillisecondes, int nombreInscrits, Integer nombreAyantBoucle,
+                                    Integer nombreEnBoucle, List<InscritPilotageReponse> inscritsEnCourse) {
+
+    /** Ligne d'un inscrit en course ; {@code boucleCouranteTerminee} est null sans chronométrage. */
+    public record InscritPilotageReponse(UUID inscriptionId, int dossard, String pseudo, StatutInscription statut,
+                                         int nombreBouclesTerminees, Boolean boucleCouranteTerminee) {
+
+        /** Identifiant et dossard uniquement : jamais de pseudo dans le journal. */
+        @Override
+        public String toString() {
+            return "InscritPilotageReponse[inscriptionId=" + inscriptionId + ", dossard=" + dossard + "]";
+        }
+
+        static InscritPilotageReponse depuis(ConsulterPilotage.InscritEnCourse inscrit) {
+            return new InscritPilotageReponse(inscrit.inscriptionId(), inscrit.dossard(), inscrit.pseudo(),
+                    inscrit.statut(), inscrit.nombreBouclesTerminees(), inscrit.boucleCouranteTerminee().orElse(null));
+        }
+    }
 
     private static final DateTimeFormatter INSTANT_AUX_MILLISECONDES =
             DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
@@ -48,7 +66,8 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
                 valeur(chrono, Chronometrage::debutBoucleCourante), valeur(chrono, Chronometrage::finBoucleCourante),
                 valeur(chrono, c -> millisecondes(c.tempsAvantFinBoucle())),
                 valeur(chrono, c -> millisecondes(c.dureeEcoulee())), pilotage.nombreInscrits(),
-                pilotage.inscritsEnCourse().stream().map(InscritsCourseReponse.InscritReponse::depuis).toList());
+                pilotage.nombreAyantBoucle().orElse(null), pilotage.nombreEnBoucle().orElse(null),
+                pilotage.inscritsEnCourse().stream().map(InscritPilotageReponse::depuis).toList());
     }
 
     private static <T> T valeur(Optional<Chronometrage> chronometrage, Function<Chronometrage, T> champ) {
