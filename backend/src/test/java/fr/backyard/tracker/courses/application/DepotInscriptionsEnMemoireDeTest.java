@@ -12,6 +12,19 @@ import java.util.UUID;
 final class DepotInscriptionsEnMemoireDeTest implements DepotInscriptions {
 
     final List<Inscription> inscriptions = new ArrayList<>();
+    /** 4.8 : écritures de mise à jour (transition d'une Inscription existante). */
+    int nombreDeMisesAJour;
+    /** 4.8 : si posé, reçoit "inscription" à chaque recherche par jeton (ordre des lectures). */
+    List<String> journalDesLectures;
+
+    /**
+     * 4.8 (nom supposé : {@code DepotInscriptions.mettreAJour(Inscription)}) : remplace l'Inscription de même
+     * identifiant par la version transmise.
+     */
+    public void mettreAJour(Inscription inscription) {
+        nombreDeMisesAJour++;
+        inscriptions.replaceAll(i -> i.id().equals(inscription.id()) ? inscription : i);
+    }
 
     @Override
     public void enregistrer(Inscription inscription) {
@@ -62,6 +75,9 @@ final class DepotInscriptionsEnMemoireDeTest implements DepotInscriptions {
     /** 4.4a RG3 : recherche du jeton dans la seule Course demandée ; le jeton d'une autre Course est inconnu. */
     @Override
     public Optional<Inscription> parCourseEtJeton(UUID courseId, JetonQr jeton) {
+        if (journalDesLectures != null) {
+            journalDesLectures.add("inscription");
+        }
         return inscriptions.stream()
                 .filter(i -> i.courseId().equals(courseId) && i.jetonQr().equals(jeton))
                 .findFirst();

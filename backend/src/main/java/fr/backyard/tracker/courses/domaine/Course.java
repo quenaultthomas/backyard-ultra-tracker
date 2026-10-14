@@ -201,6 +201,17 @@ public final class Course {
     }
 
     /**
+     * Nombre de Boucles terminées à {@code maintenant}, à la milliseconde : la Boucle courante moins un, ou le nombre
+     * maximum de Boucles une fois le temps de la dernière écoulé, d'après {@link #chronometrage}. Zéro pour une
+     * Course qui n'est pas EN_COURS, sans heure de départ ou avant son départ. Jamais stocké.
+     */
+    public int bouclesTerminees(Instant maintenant) {
+        return chronometrage(maintenant)
+                .map(chrono -> chrono.boucleMaxTerminee() ? nombreMaxBoucles : chrono.boucleCourante() - 1)
+                .orElse(0);
+    }
+
+    /**
      * Seuls les bénévoles affectés à la Course y scannent des Passages ; l'affectation est relue à chaque scan.
      *
      * @throws BenevoleNonAffecteException le Compte n'est pas un bénévole affecté à cette Course

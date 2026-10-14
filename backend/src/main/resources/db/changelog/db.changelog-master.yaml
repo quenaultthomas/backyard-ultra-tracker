@@ -26,3 +26,6 @@ databaseChangeLog:
   - include:
       file: changesets/0009-passage.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changesets/0010-abandon-inscription.yaml
+      relativeToChangelogFile: true

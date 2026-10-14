@@ -68,7 +68,7 @@ class MesInscriptionsIntegrationTest {
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final List<String> CHANGESETS = List.of("0002-compte", "0003-admin-master-unique", "0004-course",
             "0005-logo-course", "0006-affectation-benevole", "0007-inscription",
-                "0008-demarrage-course", "0009-passage");
+                "0008-demarrage-course", "0009-passage", "0010-abandon-inscription");
 
     @Container
     @ServiceConnection

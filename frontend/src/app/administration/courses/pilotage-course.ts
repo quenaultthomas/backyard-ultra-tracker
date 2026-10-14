@@ -15,6 +15,32 @@ export interface InscritEnCourse {
   boucleCouranteTerminee: boolean | null;
 }
 
+/** Motif d'abandon d'une Inscription (langage ubiquitaire). */
+export type MotifAbandon = 'VOLONTAIRE' | 'HORS_DELAI' | 'MANUEL' | 'AUTRE';
+
+/** Libellés des motifs d'abandon (affichage seulement). */
+export const LIBELLES_MOTIF_ABANDON: Readonly<Record<MotifAbandon, string>> = {
+  HORS_DELAI: 'Hors délai',
+  VOLONTAIRE: 'Volontaire',
+  MANUEL: 'Manuel',
+  AUTRE: 'Autre',
+};
+
+/** Ligne de `PilotageCourse.inscritsEnAbandon` : jamais de jeton QR ni d'identifiant de Compte. */
+export interface InscritEnAbandon {
+  inscriptionId: string;
+  dossard: number;
+  pseudo: string;
+  /** Toujours `ABANDON`. */
+  statut: StatutInscription;
+  /** Nombre de Passages de l'Inscription (`SCAN` et `CORRECTION`). */
+  nombreBouclesTerminees: number;
+  /** `null` pour un abandon sans Boucle enregistrée (affiché « — »). */
+  boucleAbandon: number | null;
+  /** `null` pour un abandon sans motif enregistré (affiché « — »). */
+  motifAbandon: MotifAbandon | null;
+}
+
 /**
  * Instantané de `GET /api/administration/courses/{id}/pilotage`, calculé par le serveur.
  * Les champs de chronométrage sont `null` pour une Course `TERMINEE` ou sans heure de départ.
@@ -46,6 +72,10 @@ export interface PilotageCourse {
   nombreEnBoucle: number | null;
   /** Inscriptions `EN_COURSE`, triées par dossard par l'API. */
   inscritsEnCourse: InscritEnCourse[];
+  /** Nombre d'Inscriptions `ABANDON` (longueur de `inscritsEnAbandon`). */
+  nombreAbandons: number;
+  /** Inscriptions `ABANDON`, triées par dossard par l'API. */
+  inscritsEnAbandon: InscritEnAbandon[];
 }
 
 /** Pastille d'un inscrit pour la Boucle courante : libellé en texte, classe de la charte. */

@@ -23,13 +23,14 @@ import {
   ETAT_MESSAGE_ERREUR,
   MESSAGE_COURSE_INTROUVABLE,
 } from '../erreurs-course';
-import { PASTILLES_BOUCLAGE } from '../pilotage-course';
+import { LIBELLES_MOTIF_ABANDON, PASTILLES_BOUCLAGE } from '../pilotage-course';
 import { formaterCompteARebours, formaterDureeEcoulee } from './formats-duree';
 import { RafraichissementPilotage } from './rafraichissement-pilotage';
 
 /**
  * Pilotage d'une Course démarrée (admins et admin master) : Boucle courante, compte à rebours,
- * durée écoulée, inscrits `EN_COURSE` et leur bouclage, tels que calculés par le serveur.
+ * durée écoulée, inscrits `EN_COURSE` et leur bouclage, inscrits en abandon, tels que calculés
+ * par le serveur.
  */
 @Component({
   selector: 'app-ecran-pilotage',
@@ -59,6 +60,7 @@ export class EcranPilotage implements OnInit {
   protected readonly pastillesInscription = PASTILLES_STATUT_INSCRIPTION;
   protected readonly messageIndisponible = MESSAGE_SERVICE_INDISPONIBLE;
   protected readonly pastillesBouclage = PASTILLES_BOUCLAGE;
+  protected readonly libellesMotif = LIBELLES_MOTIF_ABANDON;
 
   protected readonly pilotage = this.rafraichissement.instantane;
   /** 409 `COURSE_NON_DEMARREE`. */
@@ -85,6 +87,11 @@ export class EcranPilotage implements OnInit {
       `${enCourse} ${enCourse > 1 ? 'coureurs' : 'coureur'} en course ` +
       `sur ${inscrits} ${inscrits > 1 ? 'inscrits' : 'inscrit'}`
     );
+  });
+
+  protected readonly compteurAbandons = computed(() => {
+    const abandons = this.pilotage()?.nombreAbandons ?? 0;
+    return `${abandons} ${abandons > 1 ? 'coureurs' : 'coureur'} en abandon`;
   });
 
   ngOnInit(): void {

@@ -1,5 +1,6 @@
 package fr.backyard.tracker.courses.infrastructure;
 
+import fr.backyard.tracker.courses.domaine.MotifAbandon;
 import fr.backyard.tracker.courses.domaine.StatutInscription;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -37,18 +38,34 @@ public class InscriptionJpaEntity {
     @Column(name = "statut", nullable = false, length = 20)
     private StatutInscription statut;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "motif_abandon", length = 20)
+    private MotifAbandon motifAbandon;
+
+    @Column(name = "boucle_abandon")
+    private Integer boucleAbandon;
+
     protected InscriptionJpaEntity() {
         // requis par JPA
     }
 
     InscriptionJpaEntity(UUID id, UUID courseId, UUID compteId, int dossard, String jetonQr,
-                         StatutInscription statut) {
+                         StatutInscription statut, MotifAbandon motifAbandon, Integer boucleAbandon) {
         this.id = id;
         this.courseId = courseId;
         this.compteId = compteId;
         this.dossard = dossard;
         this.jetonQr = jetonQr;
         this.statut = statut;
+        this.motifAbandon = motifAbandon;
+        this.boucleAbandon = boucleAbandon;
+    }
+
+    /** Seuls le statut et l'abandon d'une Inscription changent après sa création. */
+    void remplacerAbandonPar(InscriptionJpaEntity version) {
+        this.statut = version.statut;
+        this.motifAbandon = version.motifAbandon;
+        this.boucleAbandon = version.boucleAbandon;
     }
 
     UUID id() {
@@ -73,5 +90,13 @@ public class InscriptionJpaEntity {
 
     StatutInscription statut() {
         return statut;
+    }
+
+    MotifAbandon motifAbandon() {
+        return motifAbandon;
+    }
+
+    Integer boucleAbandon() {
+        return boucleAbandon;
     }
 }

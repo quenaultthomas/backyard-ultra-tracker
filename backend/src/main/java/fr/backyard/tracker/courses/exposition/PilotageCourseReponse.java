@@ -4,6 +4,7 @@ import fr.backyard.tracker.courses.application.ConsulterPilotage;
 import fr.backyard.tracker.courses.application.ListerCourses;
 import fr.backyard.tracker.courses.domaine.Chronometrage;
 import fr.backyard.tracker.courses.domaine.Course;
+import fr.backyard.tracker.courses.domaine.MotifAbandon;
 import fr.backyard.tracker.courses.domaine.StatutCourse;
 import fr.backyard.tracker.courses.domaine.StatutInscription;
 import java.time.Duration;
@@ -27,7 +28,8 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
                                     boolean boucleMaxTerminee, Instant debutBoucleCourante,
                                     Instant finBoucleCourante, Long tempsAvantFinBoucleMillisecondes,
                                     Long dureeEcouleeMillisecondes, int nombreInscrits, Integer nombreAyantBoucle,
-                                    Integer nombreEnBoucle, List<InscritPilotageReponse> inscritsEnCourse) {
+                                    Integer nombreEnBoucle, List<InscritPilotageReponse> inscritsEnCourse,
+                                    int nombreAbandons, List<AbandonPilotageReponse> inscritsEnAbandon) {
 
     /** Ligne d'un inscrit en course ; {@code boucleCouranteTerminee} est null sans chronométrage. */
     public record InscritPilotageReponse(UUID inscriptionId, int dossard, String pseudo, StatutInscription statut,
@@ -42,6 +44,24 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
         static InscritPilotageReponse depuis(ConsulterPilotage.InscritEnCourse inscrit) {
             return new InscritPilotageReponse(inscrit.inscriptionId(), inscrit.dossard(), inscrit.pseudo(),
                     inscrit.statut(), inscrit.nombreBouclesTerminees(), inscrit.boucleCouranteTerminee().orElse(null));
+        }
+    }
+
+    /** Ligne d'un inscrit en abandon ; Boucle et motif null pour un abandon enregistré sans eux. */
+    public record AbandonPilotageReponse(UUID inscriptionId, int dossard, String pseudo, StatutInscription statut,
+                                         int nombreBouclesTerminees, Integer boucleAbandon,
+                                         MotifAbandon motifAbandon) {
+
+        /** Identifiant et dossard uniquement : jamais de pseudo dans le journal. */
+        @Override
+        public String toString() {
+            return "AbandonPilotageReponse[inscriptionId=" + inscriptionId + ", dossard=" + dossard + "]";
+        }
+
+        static AbandonPilotageReponse depuis(ConsulterPilotage.InscritEnAbandon abandon) {
+            return new AbandonPilotageReponse(abandon.inscriptionId(), abandon.dossard(), abandon.pseudo(),
+                    abandon.statut(), abandon.nombreBouclesTerminees(), abandon.boucleAbandon().orElse(null),
+                    abandon.motifAbandon().orElse(null));
         }
     }
 
@@ -67,7 +87,9 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
                 valeur(chrono, c -> millisecondes(c.tempsAvantFinBoucle())),
                 valeur(chrono, c -> millisecondes(c.dureeEcoulee())), pilotage.nombreInscrits(),
                 pilotage.nombreAyantBoucle().orElse(null), pilotage.nombreEnBoucle().orElse(null),
-                pilotage.inscritsEnCourse().stream().map(InscritPilotageReponse::depuis).toList());
+                pilotage.inscritsEnCourse().stream().map(InscritPilotageReponse::depuis).toList(),
+                pilotage.nombreAbandons(),
+                pilotage.inscritsEnAbandon().stream().map(AbandonPilotageReponse::depuis).toList());
     }
 
     private static <T> T valeur(Optional<Chronometrage> chronometrage, Function<Chronometrage, T> champ) {

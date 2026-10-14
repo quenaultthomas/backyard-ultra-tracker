@@ -63,6 +63,8 @@ function instantane(lignes: Ligne[], surcharge: Record<string, unknown> = {}): R
     nombreAyantBoucle: boucleCourante === null ? null : ayant,
     nombreEnBoucle: boucleCourante === null ? null : lignes.length - ayant,
     inscritsEnCourse: lignes.map(ligne),
+    nombreAbandons: 0,
+    inscritsEnAbandon: [],
     ...surcharge,
   };
 }

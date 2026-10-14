@@ -69,7 +69,8 @@ class PilotageBouclageIntegrationTest {
     static final List<String> CHAMPS = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur", "demarreeLe",
             "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee",
             "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
-            "dureeEcouleeMillisecondes", "nombreInscrits", "nombreAyantBoucle", "nombreEnBoucle", "inscritsEnCourse");
+            "dureeEcouleeMillisecondes", "nombreInscrits", "nombreAyantBoucle", "nombreEnBoucle", "inscritsEnCourse",
+            "nombreAbandons", "inscritsEnAbandon");
     static final List<String> CHAMPS_INSCRIT = List.of("inscriptionId", "dossard", "pseudo", "statut",
             "nombreBouclesTerminees", "boucleCouranteTerminee");
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
@@ -189,7 +190,7 @@ class PilotageBouclageIntegrationTest {
         assertThat(reponse.headers().firstValue("cache-control")).hasValueSatisfying(
                 c -> assertThat(c).contains("no-store"));
         JsonNode corps = json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(19).containsExactlyInAnyOrderElementsOf(CHAMPS);
+        assertThat(corps.propertyNames()).hasSize(21).containsExactlyInAnyOrderElementsOf(CHAMPS);
         assertThat(corps.get("courseId").asString()).isEqualTo(x);
         assertThat(corps.get("nom").asString()).isEqualTo(NOM_X);
         assertThat(corps.get("logoUrl").isNull()).isTrue();
@@ -478,7 +479,7 @@ class PilotageBouclageIntegrationTest {
         List<String> ids = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
 
         assertThat(ids).isNotEmpty();
-        assertThat(ids.get(ids.size() - 1)).isEqualTo("0009-passage");
+        assertThat(ids.get(ids.size() - 1)).isEqualTo("0010-abandon-inscription");
     }
 
     @Test

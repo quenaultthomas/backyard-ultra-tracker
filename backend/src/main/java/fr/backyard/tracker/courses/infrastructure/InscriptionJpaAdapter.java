@@ -125,6 +125,18 @@ public class InscriptionJpaAdapter implements DepotInscriptions {
                 .map(InscriptionJpaAdapter::versDomaine);
     }
 
+    /** Mise à jour de la ligne existante (statut, motif et Boucle d'abandon) ; une Inscription absente est une erreur. */
+    @Override
+    @Transactional
+    public void mettreAJour(Inscription inscription) {
+        InscriptionJpaEntity existante = entityManager.find(InscriptionJpaEntity.class, inscription.id());
+        if (existante == null) {
+            throw new IllegalStateException("Inscription introuvable pour mise à jour : " + inscription.id());
+        }
+        existante.remplacerAbandonPar(versEntite(inscription));
+        entityManager.flush();
+    }
+
     @Override
     @Transactional
     public void supprimer(UUID inscriptionId) {
@@ -150,11 +162,12 @@ public class InscriptionJpaAdapter implements DepotInscriptions {
 
     private static InscriptionJpaEntity versEntite(Inscription inscription) {
         return new InscriptionJpaEntity(inscription.id(), inscription.courseId(), inscription.compteId(),
-                inscription.dossard(), inscription.jetonQr().valeur(), inscription.statut());
+                inscription.dossard(), inscription.jetonQr().valeur(), inscription.statut(),
+                inscription.motifAbandon().orElse(null), inscription.boucleAbandon().orElse(null));
     }
 
     private static Inscription versDomaine(InscriptionJpaEntity entite) {
         return Inscription.reconstituer(entite.id(), entite.courseId(), entite.compteId(), entite.dossard(),
-                new JetonQr(entite.jetonQr()), entite.statut());
+                new JetonQr(entite.jetonQr()), entite.statut(), entite.motifAbandon(), entite.boucleAbandon());
     }
 }

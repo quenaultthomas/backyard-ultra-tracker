@@ -157,6 +157,62 @@
           </table>
         }
       </section>
+
+      <section class="formulaire inscrits" aria-labelledby="titre-abandons">
+        <h2 id="titre-abandons" class="sous-titre">Coureurs en abandon</h2>
+        <p class="message resume">
+          <span class="resume__compteur" data-testid="pilotage-compteur-abandons">{{
+            compteurAbandons()
+          }}</span>
+        </p>
+        @if (p.inscritsEnAbandon.length === 0) {
+          <p class="message" data-testid="pilotage-aucun-abandon">Aucun abandon.</p>
+        } @else {
+          <table class="tableau" aria-labelledby="titre-abandons" data-testid="pilotage-abandons">
+            <thead>
+              <tr>
+                <th scope="col">Dossard</th>
+                <th scope="col">Coureur</th>
+                <th scope="col">Boucle d'abandon</th>
+                <th scope="col">Motif</th>
+                <th scope="col">Boucles terminées</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (abandon of p.inscritsEnAbandon; track abandon.inscriptionId) {
+                <tr data-testid="pilotage-abandon">
+                  <td class="dossard" data-libelle="Dossard" data-testid="pilotage-abandon-dossard">
+                    {{ abandon.dossard }}
+                  </td>
+                  <td data-libelle="Coureur" data-testid="pilotage-abandon-pseudo">
+                    {{ abandon.pseudo }}
+                  </td>
+                  <td data-libelle="Boucle d'abandon" data-testid="pilotage-abandon-boucle">
+                    {{ abandon.boucleAbandon === null ? '—' : 'Boucle ' + abandon.boucleAbandon }}
+                  </td>
+                  <td data-libelle="Motif">
+                    @if (abandon.motifAbandon; as motif) {
+                      <span
+                        class="pastille-statut pastille-statut--abandon"
+                        data-testid="pilotage-abandon-motif"
+                        >{{ libellesMotif[motif] }}</span
+                      >
+                    } @else {
+                      <span data-testid="pilotage-abandon-motif">—</span>
+                    }
+                  </td>
+                  <td
+                    data-libelle="Boucles terminées"
+                    data-testid="pilotage-abandon-boucles-terminees"
+                  >
+                    {{ abandon.nombreBouclesTerminees }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
     } @else if (rafraichissement.echec()) {
       <h1 id="pilotage-titre" class="titre">Pilotage de la course</h1>
       <p class="message--erreur" role="alert" data-testid="pilotage-erreur">

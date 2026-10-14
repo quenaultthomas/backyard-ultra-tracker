@@ -33,6 +33,11 @@ public interface DepotCourses {
         throw new UnsupportedOperationException("Suppression de Course non prise en charge par ce dépôt");
     }
 
+    /** Identifiants des Courses EN_COURS, dans un ordre quelconque. */
+    default List<UUID> idsEnCours() {
+        return toutes().stream().filter(course -> course.statut() == StatutCourse.EN_COURS).map(Course::id).toList();
+    }
+
     /** Courses auxquelles ce bénévole est affecté, dans un ordre quelconque. */
     default List<Course> parBenevole(UUID idBenevole) {
         return toutes().stream().filter(course -> course.benevolesAffectes().contains(idBenevole)).toList();

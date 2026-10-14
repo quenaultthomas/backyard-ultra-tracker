@@ -37,6 +37,9 @@ public interface DepotInscriptions {
     /** Inscription de la Course qui a exactement ce jeton, vide sinon (jeton inconnu ou d'une autre Course). */
     Optional<Inscription> parCourseEtJeton(UUID courseId, JetonQr jeton);
 
+    /** Remplace une Inscription déjà enregistrée par cette version (statut, motif et Boucle d'abandon). */
+    void mettreAJour(Inscription inscription);
+
     /** Supprime définitivement l'Inscription ; une Inscription déjà absente ne supprime rien. */
     void supprimer(UUID inscriptionId);
 }

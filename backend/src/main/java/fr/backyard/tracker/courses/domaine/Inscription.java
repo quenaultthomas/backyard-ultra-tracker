@@ -19,15 +19,22 @@ public final class Inscription {
     private final int dossard;
     private final JetonQr jetonQr;
     private final StatutInscription statut;
+    private final MotifAbandon motifAbandon;
+    private final Integer boucleAbandon;
 
     private Inscription(UUID id, UUID courseId, UUID compteId, int dossard, JetonQr jetonQr,
-                        StatutInscription statut) {
+                        StatutInscription statut, MotifAbandon motifAbandon, Integer boucleAbandon) {
         this.id = Objects.requireNonNull(id);
         this.courseId = Objects.requireNonNull(courseId);
         this.compteId = Objects.requireNonNull(compteId);
         this.dossard = dossard;
         this.jetonQr = Objects.requireNonNull(jetonQr);
         this.statut = Objects.requireNonNull(statut);
+        if (statut != StatutInscription.ABANDON && (motifAbandon != null || boucleAbandon != null)) {
+            throw new IllegalArgumentException("Motif et Boucle d'abandon réservés à une Inscription en abandon");
+        }
+        this.motifAbandon = motifAbandon;
+        this.boucleAbandon = boucleAbandon;
     }
 
     /**
@@ -40,13 +47,40 @@ public final class Inscription {
                                     JetonQr jetonQr) {
         int dossard = plusGrandDossard.map(dernier -> dernier + 1).orElse(PREMIER_DOSSARD);
         return new Inscription(UUID.randomUUID(), course.id(), compteId, dossard, jetonQr,
-                StatutInscription.EN_COURSE);
+                StatutInscription.EN_COURSE, null, null);
     }
 
-    /** Reconstitue une Inscription déjà enregistrée. */
+    /** Reconstitue une Inscription déjà enregistrée, sans motif ni Boucle d'abandon. */
     public static Inscription reconstituer(UUID id, UUID courseId, UUID compteId, int dossard, JetonQr jetonQr,
                                            StatutInscription statut) {
-        return new Inscription(id, courseId, compteId, dossard, jetonQr, statut);
+        return reconstituer(id, courseId, compteId, dossard, jetonQr, statut, null, null);
+    }
+
+    /**
+     * Reconstitue une Inscription déjà enregistrée. Un abandon enregistré sans motif ni Boucle reste possible
+     * (données antérieures) ; hors abandon, motif et Boucle sont absents.
+     *
+     * @throws IllegalArgumentException motif ou Boucle d'abandon pour une Inscription qui n'est pas en abandon
+     */
+    public static Inscription reconstituer(UUID id, UUID courseId, UUID compteId, int dossard, JetonQr jetonQr,
+                                           StatutInscription statut, MotifAbandon motifAbandon,
+                                           Integer boucleAbandon) {
+        return new Inscription(id, courseId, compteId, dossard, jetonQr, statut, motifAbandon, boucleAbandon);
+    }
+
+    /**
+     * Met l'Inscription en abandon pour ce motif sur cette Boucle : l'Inscription renvoyée est ABANDON, celle-ci
+     * n'est pas affectée. Seule une Inscription EN_COURSE abandonne : un abandon n'est jamais remplacé.
+     *
+     * @throws InscriptionNonEnCourseException l'Inscription est déjà en abandon ou vainqueur
+     */
+    public Inscription abandonner(MotifAbandon motif, int boucle) {
+        verifierEnCourse();
+        if (boucle < 1) {
+            throw new IllegalArgumentException("Boucle d'abandon invalide : " + boucle);
+        }
+        return new Inscription(id, courseId, compteId, dossard, jetonQr, StatutInscription.ABANDON,
+                Objects.requireNonNull(motif), boucle);
     }
 
     public UUID id() {
@@ -73,6 +107,16 @@ public final class Inscription {
         return statut;
     }
 
+    /** Motif de l'abandon ; vide hors abandon ou pour un abandon enregistré sans motif. */
+    public Optional<MotifAbandon> motifAbandon() {
+        return Optional.ofNullable(motifAbandon);
+    }
+
+    /** Boucle de l'abandon ; vide hors abandon ou pour un abandon enregistré sans Boucle. */
+    public Optional<Integer> boucleAbandon() {
+        return Optional.ofNullable(boucleAbandon);
+    }
+
     /** L'Inscription est encore en course : ni en abandon, ni vainqueur. */
     public boolean estEnCourse() {
         return statut == StatutInscription.EN_COURSE;
@@ -84,6 +128,10 @@ public final class Inscription {
      * @throws InscriptionNonEnCourseException l'Inscription est en abandon ou vainqueur
      */
     public void autoriserPassage() {
+        verifierEnCourse();
+    }
+
+    private void verifierEnCourse() {
         if (!estEnCourse()) {
             throw new InscriptionNonEnCourseException(statut);
         }

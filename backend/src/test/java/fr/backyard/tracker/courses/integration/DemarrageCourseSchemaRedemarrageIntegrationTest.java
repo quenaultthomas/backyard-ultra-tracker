@@ -104,7 +104,7 @@ class DemarrageCourseSchemaRedemarrageIntegrationTest {
     private void verifierSchema(JdbcTemplate jdbc) {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                        "0006-affectation-benevole", "0007-inscription", "0008-demarrage-course", "0009-passage");
+                        "0006-affectation-benevole", "0007-inscription", "0008-demarrage-course", "0009-passage", "0010-abandon-inscription");
         Map<String, Object> colonne = jdbc.queryForMap("select data_type, is_nullable, column_default "
                 + "from information_schema.columns where table_name = 'course' and column_name = 'demarree_le'");
         assertThat(colonne.get("data_type")).isEqualTo("timestamp with time zone");
