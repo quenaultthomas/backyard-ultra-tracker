@@ -9,6 +9,7 @@ import fr.backyard.tracker.courses.domaine.InscriptionNonEnCourseException;
 import fr.backyard.tracker.courses.domaine.JetonInconnuException;
 import fr.backyard.tracker.courses.domaine.PassageDejaEnregistreException;
 import fr.backyard.tracker.courses.domaine.PassagePrecedentManquantException;
+import fr.backyard.tracker.courses.domaine.PassageTropRapprocheException;
 import fr.backyard.tracker.courses.domaine.RefusPassageCoureurException;
 import fr.backyard.tracker.courses.domaine.ScanAnterieurAuDepartException;
 import fr.backyard.tracker.courses.domaine.TempsDeCourseEcouleException;
@@ -202,6 +203,17 @@ public class GestionnaireErreursCourses {
         ProblemDetail probleme = refusCoureur(refus, "Ce coureur n'a pas de passage sur la boucle précédente.",
                 "PASSAGE_PRECEDENT_MANQUANT");
         probleme.setProperty("numeroBoucle", refus.numeroBoucle());
+        return probleme;
+    }
+
+    @ExceptionHandler(PassageTropRapprocheException.class)
+    ProblemDetail passageTropRapproche(PassageTropRapprocheException refus) {
+        long secondes = refus.secondesRestantes();
+        ProblemDetail probleme = refusCoureur(refus, "Ce coureur vient de passer : attendez " + secondes
+                + (secondes == 1 ? " seconde" : " secondes") + " avant un nouveau passage.", "PASSAGE_TROP_RAPPROCHE");
+        probleme.setProperty("numeroBoucle", refus.numeroBoucle());
+        probleme.setProperty("delaiMinimalSecondes", refus.delaiMinimal().toSeconds());
+        probleme.setProperty("secondesRestantes", secondes);
         return probleme;
     }
 

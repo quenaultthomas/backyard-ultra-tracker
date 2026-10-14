@@ -285,6 +285,10 @@ class PassageIntegrationTest {
         assertThat(json.readTree(boucle1.body()).get("numeroBoucle").asInt()).isEqualTo(1);
         assertThat(json.readTree(boucle1.body()).get("scanneLe").asString()).isEqualTo("2026-10-12T14:04:26.999Z");
 
+        // Fixture (RG14 de 4.6, anti-doublon) : le Passage de la Boucle 1 est reculé à t0 + 5 s pour que le scan de la
+        // Boucle 2 à la frontière (t0 + 60 s) soit éloigné de plus du délai effectif (15 s à Boucle de 1 min).
+        jdbc.update("update passage set scanne_le = ?", Timestamp.from(T0.plusSeconds(5)));
+
         horloge.fixer(T0.plusMillis(60_000));
         HttpResponse<String> manquant = scanner(leo, x, corps(JC, UUID.randomUUID().toString(), null));
         assertErreur(manquant, 409, "PASSAGE_PRECEDENT_MANQUANT", "Conflit",

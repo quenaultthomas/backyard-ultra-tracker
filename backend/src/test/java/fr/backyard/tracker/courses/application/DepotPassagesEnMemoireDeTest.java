@@ -39,6 +39,13 @@ final class DepotPassagesEnMemoireDeTest implements DepotPassages {
     }
 
     @Override
+    public Optional<Passage> parInscriptionEtBoucle(UUID inscriptionId, int numeroBoucle) {
+        return passages.stream()
+                .filter(p -> p.inscriptionId().equals(inscriptionId) && p.numeroBoucle() == numeroBoucle)
+                .findFirst();
+    }
+
+    @Override
     public void enregistrer(Passage passage) {
         nombreDEnregistrements++;
         if (echecAEnregistrer != null) {

@@ -43,6 +43,19 @@ public class PassageJpaAdapter implements DepotPassages {
                 .getSingleResult() > 0;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Passage> parInscriptionEtBoucle(UUID inscriptionId, int numeroBoucle) {
+        return entityManager.createQuery("select p from PassageJpaEntity p "
+                        + "where p.inscriptionId = :inscriptionId and p.numeroBoucle = :numeroBoucle",
+                        PassageJpaEntity.class)
+                .setParameter("inscriptionId", inscriptionId)
+                .setParameter("numeroBoucle", numeroBoucle)
+                .getResultStream()
+                .findFirst()
+                .map(PassageJpaAdapter::versDomaine);
+    }
+
     /**
      * Insertion sans erreur SQL sur un doublon ({@code on conflict do nothing}) : la transaction reste utilisable et
      * aucune erreur n'est journalisée. Aucune ligne insérée signifie qu'un Passage existe déjà pour (Inscription,
