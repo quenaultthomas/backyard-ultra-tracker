@@ -71,10 +71,12 @@ class PassageIntegrationTest {
     static final String JC = new StringBuilder(JB).reverse().toString();
     static final List<String> CHAMPS_PASSAGE = List.of("passageId", "inscriptionId", "dossard", "pseudo",
             "numeroBoucle", "scanneLe", "origine");
+    /** Les 17 champs d'origine (4.2) plus les 2 champs de bouclage de 4.7 (RG9, contrat additif). */
     static final List<String> CHAMPS_PILOTAGE = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur",
             "demarreeLe", "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle",
             "boucleMaxTerminee", "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
-            "dureeEcouleeMillisecondes", "nombreInscrits", "inscritsEnCourse");
+            "dureeEcouleeMillisecondes", "nombreInscrits", "inscritsEnCourse", "nombreAyantBoucle",
+            "nombreEnBoucle");
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final String INSERTION_COURSE = "insert into course (id, nom, date_course, statut, distance_boucle_metres, "
@@ -578,7 +580,7 @@ class PassageIntegrationTest {
     // ---------------------------------------------------------------- CA14
 
     @Test
-    @DisplayName("CA14 : journal silencieux (aucun INFO+, ni jeton, ni pseudo, ni nom de Course, ni UUID de Compte), aucun jeton dans les erreurs, Courses X et W indépendantes, pilotage inchangé (17 champs)")
+    @DisplayName("CA14 : journal silencieux (aucun INFO+, ni jeton, ni pseudo, ni nom de Course, ni UUID de Compte), aucun jeton dans les erreurs, Courses X et W indépendantes, pilotage : 17 champs d'origine + 2 de 4.7")
     void ca14_journal_independance_et_non_regression() throws Exception {
         String x = courseXDemarree();
         String jw = "Ww" + JB.substring(2);
