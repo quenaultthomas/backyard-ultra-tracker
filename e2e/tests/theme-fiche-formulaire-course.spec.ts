@@ -523,8 +523,10 @@ test('CA5 - les inscrits : résumé, tableau en texte, Course complète, état v
 
 /* ------------------------------------------------------------------ CA6 */
 
-test('CA6 - le formulaire de déclaration est un encart : mesures, ordre, erreurs de champ, contrastes et création', async ({ page }) => {
+test('CA6 - le formulaire de déclaration est un encart : mesures, ordre, erreurs de champ, contrastes et création', async ({ page, playwright }) => {
   test.setTimeout(90_000);
+  // La liste des courses n'est affichée que s'il existe au moins une course : sur une base vierge (shard CI), on en crée une.
+  await creerCourse(playwright);
   await ouvrirSessionMaster(page);
   await ouvrirGestion(page);
   const form = formulaireCourse(page);
