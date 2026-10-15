@@ -69,7 +69,10 @@ jobs:
         with:
           files: docker-compose.yml
           load: true
+          # Noms d'images attendus par `docker compose` (projet backyard-ultra-tracker).
           set: |
+            api.tags=backyard-ultra-tracker-api:latest
+            web.tags=backyard-ultra-tracker-web:latest
             *.cache-from=type=gha,scope=e2e
             *.cache-to=type=gha,scope=e2e,mode=max
       - name: Démarrer la stack e2e
