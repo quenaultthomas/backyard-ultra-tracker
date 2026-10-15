@@ -65,6 +65,8 @@ function instantane(lignes: Ligne[], surcharge: Record<string, unknown> = {}): R
     inscritsEnCourse: lignes.map(ligne),
     nombreAbandons: 0,
     inscritsEnAbandon: [],
+    nombreVainqueurs: 0,
+    inscritsVainqueurs: [],
     ...surcharge,
   };
 }

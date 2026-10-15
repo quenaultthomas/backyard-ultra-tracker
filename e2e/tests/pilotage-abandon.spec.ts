@@ -70,6 +70,8 @@ function instantane(enCours: Array<ReturnType<typeof enCourse>>, abandons: Aband
     inscritsEnCourse: enCours,
     nombreAbandons: abandons.length,
     inscritsEnAbandon: abandons.map(abandon),
+    nombreVainqueurs: 0,
+    inscritsVainqueurs: [],
     ...surcharge,
   };
 }

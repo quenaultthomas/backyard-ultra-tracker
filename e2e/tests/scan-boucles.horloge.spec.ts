@@ -10,18 +10,24 @@ test.beforeAll(() => {
 });
 
 test('CA19 - le scan suit les boucles : continuité, doublon et fin du temps, vus par l\'écran', async ({ page, playwright }) => {
-  const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 2, nombreMaxBoucles: 2, dureeBoucleMinutes: 60 });
-  const [alice, bruno] = course.coureurs;
+  // 4.9 (RG15) : un troisième coureur (Carole) est scanné comme Alice aux Boucles 1 et 2, sinon Alice seule passante
+  // serait VAINQUEUR au départ de la Boucle 2 (scan refusé « Course terminée ») au lieu des refus testés ici.
+  const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 3, nombreMaxBoucles: 2, dureeBoucleMinutes: 60 });
+  const [alice, bruno, carole] = course.coureurs;
   await ouvrirEcranDeScan(page, course);
   const erreur = page.getByTestId('scan-resultat-erreur');
 
   await scannerParEntree(page, alice.jeton);
   await verifierSucces(page, alice.dossard, alice.pseudo, 1);
+  await scannerParEntree(page, carole.jeton);
+  await verifierSucces(page, carole.dossard, carole.pseudo, 1);
 
   await avancerHorloge(playwright, 'PT60M');
 
   await scannerParEntree(page, alice.jeton);
   await verifierSucces(page, alice.dossard, alice.pseudo, 2);
+  await scannerParEntree(page, carole.jeton);
+  await verifierSucces(page, carole.dossard, carole.pseudo, 2);
 
   // 4.8 (RG19) : Bruno, sans Passage 1 alors qu'Alice en a un, est mis en abandon par le planificateur (tick d'1 s) ;
   // il n'est donc plus « sans passage sur la boucle précédente » mais « en abandon ». La continuité est couverte plus bas.
@@ -35,12 +41,13 @@ test('CA19 - le scan suit les boucles : continuité, doublon et fin du temps, vu
 
   await avancerHorloge(playwright, 'PT60M');
 
-  // 4.8 : Bruno étant en abandon, la fin du temps est constatée avec Alice (Passage 2, toujours en course)
+  // 4.8 : Bruno étant en abandon, la fin du temps est constatée avec Alice et Carole (Passage 2, toujours en course ;
+  // deux passants à la dernière Boucle : pas de vainqueur avant 4.10, la Course reste « En cours »)
   await scannerParEntree(page, alice.jeton);
   await expect(erreur).toHaveText('Le temps de la dernière boucle est écoulé.');
   await expect(champ(page)).toHaveValue(alice.jeton);
 
-  expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN', '1:2:SCAN']);
+  expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN', '1:2:SCAN', '3:1:SCAN', '3:2:SCAN']);
 });
 
 test('CA19 - personne n\'a bouclé la Boucle 1 (aucun abandon) : le scan de la Boucle 2 est refusé « pas de passage sur la boucle précédente »', async ({ page, playwright }) => {

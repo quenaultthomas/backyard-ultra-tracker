@@ -102,6 +102,10 @@ class AbandonAutomatiqueDemarrageIntegrationTest {
 
             assertThat(etat(course, tom)).isEqualTo("EN_COURSE:-:-");
             assertThat(etat(course, chloe)).isEqualTo("EN_COURSE:-:-");
+            // 4.9 CA7 : planificateur désactivé, aucun vainqueur ni fin de Course non plus
+            assertThat(etat(course, bruno)).isEqualTo("EN_COURSE:-:-");
+            assertThat(jdbc.queryForObject("select statut from course where id = ?", String.class, course))
+                    .isEqualTo("EN_COURS");
         }
     }
 
@@ -123,7 +127,10 @@ class AbandonAutomatiqueDemarrageIntegrationTest {
 
         assertThat(etat(course, tom)).isEqualTo("ABANDON:HORS_DELAI:1");
         assertThat(etat(course, chloe)).isEqualTo("ABANDON:HORS_DELAI:2");
-        assertThat(etat(course, bruno)).isEqualTo("EN_COURSE:-:-");
+        assertThat(jdbc.queryForObject("select statut from course where id = ?", String.class, course))
+                .isEqualTo("TERMINEE");
+        // 4.9 RG1/RG2 : Bruno, seul passant de la Boucle décisive, est VAINQUEUR (4.8 attendait EN_COURSE)
+        assertThat(etat(course, bruno)).isEqualTo("VAINQUEUR:-:-");
     }
 
     // ---------------------------------------------------------------- CA11
@@ -142,7 +149,8 @@ class AbandonAutomatiqueDemarrageIntegrationTest {
         }
 
         assertThat(etat(course, chloe)).isEqualTo("ABANDON:HORS_DELAI:1");
-        assertThat(etat(course, bruno)).isEqualTo("EN_COURSE:-:-");
+        // 4.9 RG1/RG2 : Bruno, seul passant de la Boucle décisive, est VAINQUEUR (4.8 attendait EN_COURSE)
+        assertThat(etat(course, bruno)).isEqualTo("VAINQUEUR:-:-");
     }
 
     @Test
@@ -164,7 +172,8 @@ class AbandonAutomatiqueDemarrageIntegrationTest {
         }
 
         assertThat(etat(course, chloe)).isEqualTo("ABANDON:HORS_DELAI:1");
-        assertThat(etat(course, bruno)).isEqualTo("EN_COURSE:-:-");
+        // 4.9 RG1/RG2 : Bruno, seul passant de la Boucle décisive, est VAINQUEUR (4.8 attendait EN_COURSE)
+        assertThat(etat(course, bruno)).isEqualTo("VAINQUEUR:-:-");
     }
 
     // ---------------------------------------------------------------- utilitaires

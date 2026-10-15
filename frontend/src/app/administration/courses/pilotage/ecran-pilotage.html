@@ -79,6 +79,57 @@
         }
       }
 
+      @if (p.nombreVainqueurs >= 1) {
+        <section
+          class="formulaire inscrits vainqueurs"
+          aria-labelledby="titre-vainqueurs"
+          data-testid="pilotage-vainqueurs"
+        >
+          <h2 id="titre-vainqueurs" class="sous-titre" data-testid="pilotage-vainqueurs-titre">
+            {{ p.nombreVainqueurs > 1 ? 'Vainqueurs' : 'Vainqueur' }}
+          </h2>
+          <table class="tableau" aria-labelledby="titre-vainqueurs">
+            <thead>
+              <tr>
+                <th scope="col">Dossard</th>
+                <th scope="col">Coureur</th>
+                <th scope="col">Statut</th>
+                <th scope="col">Boucles terminées</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (vainqueur of p.inscritsVainqueurs; track vainqueur.inscriptionId) {
+                <tr data-testid="pilotage-vainqueur">
+                  <td
+                    class="dossard"
+                    data-libelle="Dossard"
+                    data-testid="pilotage-vainqueur-dossard"
+                  >
+                    {{ vainqueur.dossard }}
+                  </td>
+                  <td data-libelle="Coureur" data-testid="pilotage-vainqueur-pseudo">
+                    {{ vainqueur.pseudo }}
+                  </td>
+                  <td data-libelle="Statut">
+                    <span
+                      [class]="pastillesInscription[vainqueur.statut]"
+                      data-testid="pilotage-vainqueur-statut"
+                      >{{ libellesInscription[vainqueur.statut] }}</span
+                    >
+                  </td>
+                  <td
+                    data-libelle="Boucles terminées"
+                    data-testid="pilotage-vainqueur-boucles-terminees"
+                  >
+                    {{ vainqueur.nombreBouclesTerminees }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      }
+
       <section class="formulaire inscrits" aria-labelledby="titre-coureurs">
         <h2 id="titre-coureurs" class="sous-titre">Coureurs en course</h2>
         <p class="message resume">

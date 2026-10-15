@@ -6,6 +6,7 @@ import { lirePassagesEnBase, ouvrirEcranDeScan, preparerCourseDeScan, scannerPar
 /*
  * Incrément 4.7 CA8 : bascule de Boucle, plafond et indépendance des Courses, horloge applicative pilotée.
  * Adapté en 4.8 (RG19) : un coureur sans Passage sur la Boucle terminée est en abandon, non plus « En boucle ».
+ * Adapté en 4.9 (RG15) : un 4e coureur (Zoé) est scanné avec Bruno aux Boucles 1 et 2, sinon Bruno seul passant serait VAINQUEUR.
  */
 
 test.describe.configure({ mode: 'serial' });
@@ -25,9 +26,9 @@ async function scanner(page: Page, c: CourseDeScan['coureurs'][number], boucle: 
 }
 
 test('CA8 - la bascule remet « En boucle » les coureurs ayant bouclé et met les autres en abandon, le plafond fige la Boucle, une autre Course est indépendante', async ({ browser, page, playwright }) => {
-  const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 3, nombreMaxBoucles: 2, dureeBoucleMinutes: 60 });
+  const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 4, nombreMaxBoucles: 2, dureeBoucleMinutes: 60 });
   const autre = await preparerCourseDeScan(playwright, { nombreCoureurs: 2, nombreMaxBoucles: 5, dureeBoucleMinutes: 1 });
-  const [bruno, chloe, tom] = course.coureurs;
+  const [bruno, chloe, tom, zoe] = course.coureurs;
 
   await connecterAdminMaster(page);
   await expect(page).toHaveURL(/\/administration$/);
@@ -46,7 +47,8 @@ test('CA8 - la bascule remet « En boucle » les coureurs ayant bouclé et met l
     await avancerHorloge(playwright, 'PT10M');
     await scanner(scan, bruno, 1);
     await scanner(scan, chloe, 1);
-    await expect(lire(page, 'pilotage-ayant-boucle')).toHaveText('A bouclé : 2', SIX_SECONDES);
+    await scanner(scan, zoe, 1);
+    await expect(lire(page, 'pilotage-ayant-boucle')).toHaveText('A bouclé : 3', SIX_SECONDES);
     await expect(lire(page, 'pilotage-en-boucle')).toHaveText('En boucle : 1');
 
     await avancerHorloge(playwright, 'PT50M');
@@ -55,25 +57,28 @@ test('CA8 - la bascule remet « En boucle » les coureurs ayant bouclé et met l
     await expect(lire(page, 'pilotage-abandon-pseudo')).toHaveText(tom.pseudo, HUIT_SECONDES);
     await expect(lire(page, 'pilotage-abandon-boucle')).toHaveText('Boucle 1');
     await expect(lire(page, 'pilotage-abandon-boucles-terminees')).toHaveText('0');
-    await expect(lire(page, 'pilotage-inscrit-pseudo')).toHaveText([bruno.pseudo, chloe.pseudo]);
-    await expect(lire(page, 'pilotage-inscrit-boucle')).toHaveText(['En boucle', 'En boucle']);
+    await expect(lire(page, 'pilotage-inscrit-pseudo')).toHaveText([bruno.pseudo, chloe.pseudo, zoe.pseudo]);
+    await expect(lire(page, 'pilotage-inscrit-boucle')).toHaveText(['En boucle', 'En boucle', 'En boucle']);
     await expect(lire(page, 'pilotage-ayant-boucle')).toHaveText('A bouclé : 0');
-    await expect(lire(page, 'pilotage-en-boucle')).toHaveText('En boucle : 2');
-    await expect(lire(page, 'pilotage-inscrit-boucles-terminees')).toHaveText(['1', '1']);
+    await expect(lire(page, 'pilotage-en-boucle')).toHaveText('En boucle : 3');
+    await expect(lire(page, 'pilotage-inscrit-boucles-terminees')).toHaveText(['1', '1', '1']);
 
     await scanner(scan, bruno, 2);
-    await expect(lire(page, 'pilotage-inscrit-boucle')).toHaveText(['A bouclé', 'En boucle'], SIX_SECONDES);
-    await expect(lire(page, 'pilotage-inscrit-boucles-terminees')).toHaveText(['2', '1']);
+    await expect(lire(page, 'pilotage-inscrit-boucle')).toHaveText(['A bouclé', 'En boucle', 'En boucle'], SIX_SECONDES);
+    await expect(lire(page, 'pilotage-inscrit-boucles-terminees')).toHaveText(['2', '1', '1']);
     await expect(lire(page, 'pilotage-ayant-boucle')).toHaveText('A bouclé : 1');
+    await scanner(scan, zoe, 2);
+    await expect(lire(page, 'pilotage-inscrit-boucle')).toHaveText(['A bouclé', 'En boucle', 'A bouclé'], SIX_SECONDES);
+    await expect(lire(page, 'pilotage-ayant-boucle')).toHaveText('A bouclé : 2');
 
     await avancerHorloge(playwright, 'PT60M');
     await expect(lire(page, 'pilotage-message-boucle-max-terminee')).toBeVisible(SIX_SECONDES);
     // 4.8 : Chloé, sans Passage sur la Boucle 2 (dernière autorisée), passe en abandon ; Bruno reste en course
     await expect(lire(page, 'pilotage-abandon-pseudo')).toHaveText([chloe.pseudo, tom.pseudo], HUIT_SECONDES);
     await expect(lire(page, 'pilotage-abandon-boucle')).toHaveText(['Boucle 2', 'Boucle 1']);
-    await expect(lire(page, 'pilotage-inscrit-pseudo')).toHaveText([bruno.pseudo]);
-    await expect(lire(page, 'pilotage-inscrit-boucle')).toHaveText(['A bouclé']);
-    await expect(lire(page, 'pilotage-inscrit-boucles-terminees')).toHaveText(['2']);
+    await expect(lire(page, 'pilotage-inscrit-pseudo')).toHaveText([bruno.pseudo, zoe.pseudo]);
+    await expect(lire(page, 'pilotage-inscrit-boucle')).toHaveText(['A bouclé', 'A bouclé']);
+    await expect(lire(page, 'pilotage-inscrit-boucles-terminees')).toHaveText(['2', '2']);
     await expect(lire(page, 'pilotage-statut')).toHaveText('En cours');
   } finally {
     await contexteBenevole.close();
@@ -82,6 +87,6 @@ test('CA8 - la bascule remet « En boucle » les coureurs ayant bouclé et met l
   // l'autre Course (1 min) n'a reçu aucun Passage : ses compteurs n'ont pas bougé avec ceux de la première
   await expect(lire(ongletAutre, 'pilotage-ayant-boucle')).toHaveText('A bouclé : 0');
   expect(lirePassagesEnBase(autre.id)).toEqual([]);
-  expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN', '1:2:SCAN', '2:1:SCAN']);
+  expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN', '1:2:SCAN', '2:1:SCAN', '4:1:SCAN', '4:2:SCAN']);
 });
 

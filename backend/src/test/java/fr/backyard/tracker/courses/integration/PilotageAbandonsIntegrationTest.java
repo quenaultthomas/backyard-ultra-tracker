@@ -30,8 +30,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import tools.jackson.databind.JsonNode;
 
 /**
- * Contrat de l'incrément 4.8 : liste des abandons au pilotage (CA9). Le contrat vient de la spec : 21 champs au
- * premier niveau (19 inchangés plus nombreAbandons et inscritsEnAbandon), 7 champs par abandon.
+ * Contrat de l'incrément 4.8 : liste des abandons au pilotage (CA9). Le contrat vient de la spec : 23 champs au
+ * premier niveau (19 inchangés plus nombreAbandons, inscritsEnAbandon, nombreVainqueurs et inscritsVainqueurs, 4.9), 7 champs par abandon.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "backyard.admin-master.pseudo=Patron", "backyard.admin-master.mot-de-passe=mot-de-passe-patron-1",
@@ -45,7 +45,7 @@ class PilotageAbandonsIntegrationTest {
             "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee",
             "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
             "dureeEcouleeMillisecondes", "nombreInscrits", "nombreAyantBoucle", "nombreEnBoucle", "inscritsEnCourse",
-            "nombreAbandons", "inscritsEnAbandon");
+            "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs", "inscritsVainqueurs");
     static final List<String> CHAMPS_ABANDON = List.of("inscriptionId", "dossard", "pseudo", "statut",
             "nombreBouclesTerminees", "boucleAbandon", "motifAbandon");
 
@@ -96,12 +96,12 @@ class PilotageAbandonsIntegrationTest {
         decor.poserPassage(x, decor.idBruno, 1);
         decor.poserPassage(x, decor.idTom, 1);
         decor.horloge.fixer(DecorAbandon.T0.plusSeconds(90));
-        assertThat(abandonner.executer(UUID.fromString(x))).isEqualTo(1);
+        assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isEqualTo(1);
         return x;
     }
 
     @Test
-    @DisplayName("CA9 : Patron lit le pilotage à t0 + 90 s après le contrôle : 200, no-store, 21 champs dont les 19 inchangés en valeur, un abandon à 7 champs (Chloé, dossard 2, HORS_DELAI, Boucle 1, 0 Boucle terminée), Nadia obtient le même corps")
+    @DisplayName("CA9 : Patron lit le pilotage à t0 + 90 s après le contrôle : 200, no-store, 23 champs dont les 19 inchangés en valeur, un abandon à 7 champs (Chloé, dossard 2, HORS_DELAI, Boucle 1, 0 Boucle terminée), Nadia obtient le même corps")
     void ca9_pilotage_avec_un_abandon() throws Exception {
         String x = courseAvecChloeAbandonnee();
 
@@ -113,7 +113,7 @@ class PilotageAbandonsIntegrationTest {
         assertThat(reponse.headers().firstValue("content-type")).hasValueSatisfying(
                 c -> assertThat(c).contains("application/json").doesNotContain("problem"));
         JsonNode corps = decor.json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(21).containsExactlyInAnyOrderElementsOf(CHAMPS);
+        assertThat(corps.propertyNames()).hasSize(23).containsExactlyInAnyOrderElementsOf(CHAMPS);
         assertThat(corps.get("courseId").asString()).isEqualTo(x);
         assertThat(corps.get("statut").asString()).isEqualTo("EN_COURS");
         assertThat(corps.get("boucleCourante").asInt()).isEqualTo(2);
@@ -124,6 +124,8 @@ class PilotageAbandonsIntegrationTest {
         assertThat(enCourse).extracting(n -> n.get("pseudo").asString()).containsExactly("Bruno", "Tom");
         assertThat(enCourse).extracting(n -> n.get("statut").asString()).containsOnly("EN_COURSE");
         assertThat(corps.get("nombreAbandons").asInt()).isEqualTo(1);
+        assertThat(corps.get("nombreVainqueurs").asInt()).isZero();
+        assertThat(corps.get("inscritsVainqueurs")).isEmpty();
         JsonNode abandons = corps.get("inscritsEnAbandon");
         assertThat(abandons).hasSize(1);
         JsonNode chloe = abandons.get(0);

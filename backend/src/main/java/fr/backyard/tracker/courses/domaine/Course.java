@@ -121,6 +121,20 @@ public final class Course {
     }
 
     /**
+     * Termine une Course EN_COURS : la Course renvoyée est TERMINEE, heure de départ et autres données conservées ;
+     * celle-ci n'est pas affectée. Aucun instant de fin n'est stocké.
+     *
+     * @throws CourseNonTerminableException la Course n'est pas EN_COURS
+     */
+    public Course terminer() {
+        if (statut != StatutCourse.EN_COURS) {
+            throw new CourseNonTerminableException(id);
+        }
+        return new Course(id, nom, date, StatutCourse.TERMINEE, parametresBoucle, nombreMaxParticipants,
+                nombreMaxBoucles, benevolesAffectes, demarreeLe);
+    }
+
+    /**
      * Remplace l'ensemble des bénévoles affectés par celui donné (doublons ignorés, ensemble vide permis).
      *
      * @throws CourseTermineeException la Course est TERMINEE ; l'ensemble précédent est conservé

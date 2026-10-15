@@ -109,8 +109,8 @@ class AbandonAutomatiqueIntegrationTest {
         List<Map<String, Object>> passagesAvant = decor.jdbc.queryForList("select * from passage order by id");
         decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
 
-        int abandons = abandonner.executer(UUID.fromString(x));
-        int abandonsY = abandonner.executer(UUID.fromString(y));
+        int abandons = abandonner.executer(UUID.fromString(x)).abandons();
+        int abandonsY = abandonner.executer(UUID.fromString(y)).abandons();
 
         assertThat(abandons).isEqualTo(1);
         assertThat(abandonsY).isZero();
@@ -132,7 +132,7 @@ class AbandonAutomatiqueIntegrationTest {
         decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
         decor.demarrerJournal();
 
-        abandonner.executer(UUID.fromString(x));
+        abandonner.executer(UUID.fromString(x)).abandons();
 
         assertThat(decor.lignesAbandonAutomatique()).containsExactly(
                 "Abandon automatique : course " + x + ", boucle 1, 1 inscription(s) en abandon.");
@@ -144,7 +144,7 @@ class AbandonAutomatiqueIntegrationTest {
         long suppressions = statistiques.getEntityDeleteCount();
         List<Map<String, Object>> inscriptionsAvant = decor.jdbc.queryForList("select * from inscription order by id");
 
-        int second = abandonner.executer(UUID.fromString(x));
+        int second = abandonner.executer(UUID.fromString(x)).abandons();
 
         assertThat(second).isZero();
         assertThat(statistiques.getEntityUpdateCount()).isEqualTo(misesAJour);
@@ -161,13 +161,17 @@ class AbandonAutomatiqueIntegrationTest {
         decor.poserPassage(x, decor.idBruno, 1);
         decor.horloge.fixer(DecorAbandon.T0.plusMillis(59_999));
 
-        assertThat(abandonner.executer(UUID.fromString(x))).isZero();
+        assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isZero();
         assertThat(decor.etat(x, decor.idChloe)).isEqualTo("EN_COURSE:-:-");
 
         decor.horloge.fixer(DecorAbandon.T0.plusMillis(60_000));
-        assertThat(abandonner.executer(UUID.fromString(x))).isEqualTo(2);
+        assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isEqualTo(2);
         assertThat(decor.etat(x, decor.idChloe)).isEqualTo("ABANDON:HORS_DELAI:1");
         assertThat(decor.etat(x, decor.idTom)).isEqualTo("ABANDON:HORS_DELAI:1");
+        // 4.9 RG1 : Bruno, seul passant de la Boucle 1, est désormais VAINQUEUR (adaptation, 4.8 CA6 sur RG4)
+        assertThat(decor.etat(x, decor.idBruno)).isEqualTo("VAINQUEUR:-:-");
+        assertThat(decor.jdbc.queryForObject("select statut from course where id = ?", String.class,
+                UUID.fromString(x))).isEqualTo("TERMINEE");
     }
 
     @Test
@@ -180,12 +184,13 @@ class AbandonAutomatiqueIntegrationTest {
         decor.horloge.fixer(DecorAbandon.T0.plusSeconds(180));
         decor.demarrerJournal();
 
-        int abandons = abandonner.executer(UUID.fromString(x));
+        int abandons = abandonner.executer(UUID.fromString(x)).abandons();
 
         assertThat(abandons).isEqualTo(2);
         assertThat(decor.etat(x, decor.idTom)).isEqualTo("ABANDON:HORS_DELAI:1");
         assertThat(decor.etat(x, decor.idChloe)).isEqualTo("ABANDON:HORS_DELAI:2");
-        assertThat(decor.etat(x, decor.idBruno)).isEqualTo("EN_COURSE:-:-");
+        // 4.9 RG2 : Bruno, seul passant de la Boucle 2, est VAINQUEUR (4.8 attendait EN_COURSE)
+        assertThat(decor.etat(x, decor.idBruno)).isEqualTo("VAINQUEUR:-:-");
         assertThat(decor.lignesAbandonAutomatique()).containsExactly(
                 "Abandon automatique : course " + x + ", boucle 1, 1 inscription(s) en abandon.",
                 "Abandon automatique : course " + x + ", boucle 2, 1 inscription(s) en abandon.");
@@ -198,7 +203,7 @@ class AbandonAutomatiqueIntegrationTest {
         decor.horloge.fixer(DecorAbandon.T0.plusSeconds(120));
         decor.demarrerJournal();
 
-        assertThat(abandonner.executer(UUID.fromString(x))).isZero();
+        assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isZero();
 
         for (UUID compte : List.of(decor.idBruno, decor.idChloe, decor.idTom)) {
             assertThat(decor.etat(x, compte)).isEqualTo("EN_COURSE:-:-");
@@ -216,7 +221,7 @@ class AbandonAutomatiqueIntegrationTest {
         decor.poserPassageCorrection(x, decor.idChloe, 1);
         decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
 
-        assertThat(abandonner.executer(UUID.fromString(x))).isEqualTo(1);
+        assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isEqualTo(1);
 
         assertThat(decor.etat(x, decor.idChloe)).isEqualTo("EN_COURSE:-:-");
         assertThat(decor.etat(x, decor.idTom)).isEqualTo("ABANDON:HORS_DELAI:1");
@@ -239,10 +244,10 @@ class AbandonAutomatiqueIntegrationTest {
         decor.horloge.fixer(DecorAbandon.T0.plus(Duration.ofHours(2)));
         List<Map<String, Object>> avant = decor.jdbc.queryForList("select * from inscription order by id");
 
-        assertThat(abandonner.executer(UUID.fromString(preparation))).isZero();
-        assertThat(abandonner.executer(terminee)).isZero();
-        assertThat(abandonner.executer(sansHeure)).isZero();
-        assertThat(abandonner.executer(UUID.randomUUID())).isZero();
+        assertThat(abandonner.executer(UUID.fromString(preparation)).abandons()).isZero();
+        assertThat(abandonner.executer(terminee).abandons()).isZero();
+        assertThat(abandonner.executer(sansHeure).abandons()).isZero();
+        assertThat(abandonner.executer(UUID.randomUUID()).abandons()).isZero();
 
         assertThat(decor.jdbc.queryForList("select * from inscription order by id")).isEqualTo(avant);
     }
@@ -287,7 +292,7 @@ class AbandonAutomatiqueIntegrationTest {
         CyclicBarrier depart = new CyclicBarrier(2);
         Callable<Integer> execution = () -> {
             depart.await(10, TimeUnit.SECONDS);
-            return abandonner.executer(UUID.fromString(x));
+            return abandonner.executer(UUID.fromString(x)).abandons();
         };
         ExecutorService pool = Executors.newFixedThreadPool(2);
         try {
@@ -322,7 +327,7 @@ class AbandonAutomatiqueIntegrationTest {
                 CyclicBarrier depart = new CyclicBarrier(2);
                 Future<Integer> controle = pool.submit(() -> {
                     depart.await(10, TimeUnit.SECONDS);
-                    return abandonner.executer(UUID.fromString(x));
+                    return abandonner.executer(UUID.fromString(x)).abandons();
                 });
                 Future<HttpResponse<String>> scan = pool.submit(() -> {
                     depart.await(10, TimeUnit.SECONDS);
@@ -395,7 +400,7 @@ class AbandonAutomatiqueIntegrationTest {
         assertThat(decor.scanner(decor.leo, x, decor.jeton(x, decor.idTom), UUID.randomUUID(), 0).statusCode())
                 .isEqualTo(201);
         decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
-        assertThat(abandonner.executer(UUID.fromString(x))).isEqualTo(1);
+        assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isEqualTo(1);
         decor.jdbc.update("update inscription set statut = 'ABANDON' where course_id = ? and compte_id = ?",
                 UUID.fromString(x), decor.idTom);
 
@@ -436,8 +441,10 @@ class AbandonAutomatiqueIntegrationTest {
         assertThat(decor.scanner(decor.leo, x, decor.jeton(x, decor.idBruno), UUID.randomUUID(), 0).statusCode())
                 .isEqualTo(201);
         decor.horloge.fixer(DecorAbandon.T0.plusSeconds(120));
-        assertThat(abandonner.executer(UUID.fromString(x))).isEqualTo(2);
+        assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isEqualTo(2);
         assertThat(decor.etat(x, decor.idChloe)).isEqualTo("ABANDON:HORS_DELAI:2");
+        // 4.9 : Bruno, seul passant de la Boucle 2, est vainqueur ; le rejeu d'un scan antérieur reste 200
+        assertThat(decor.etat(x, decor.idBruno)).isEqualTo("VAINQUEUR:-:-");
 
         HttpResponse<String> rejeu = decor.scanner(decor.leo, x, decor.jeton(x, decor.idChloe), scanChloe, 0);
 
@@ -457,7 +464,7 @@ class AbandonAutomatiqueIntegrationTest {
 
         assertThat(sauve.statusCode()).as(sauve.body()).isEqualTo(201);
         assertThat(decor.json.readTree(sauve.body()).get("numeroBoucle").asInt()).isEqualTo(1);
-        assertThat(abandonner.executer(UUID.fromString(x))).isZero();
+        assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isZero();
         assertThat(decor.etat(x, decor.idChloe)).isEqualTo("EN_COURSE:-:-");
         decor.horloge.fixer(DecorAbandon.T0.plusSeconds(70));
         HttpResponse<String> survivant = decor.scanner(decor.leo, x, decor.jeton(x, decor.idTom), UUID.randomUUID(), 0);

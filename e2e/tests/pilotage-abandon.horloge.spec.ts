@@ -98,9 +98,11 @@ test('CA12 - Tom, sans passage sur la Boucle 1, passe en abandon « Hors délai 
   expect(lireInscriptionEnBase(longue.id, sophie.dossard)).toEqual({ statut: 'EN_COURSE', motifAbandon: '', boucleAbandon: '' });
 });
 
-test('CA13 - deux Boucles d\'un coup : Chloé et Tom en abandon Boucle 1 (rattrapage), Bruno seul en course, aucun abandon Boucle 2 ; sans aucun scan, personne n\'abandonne', async ({ browser, page, playwright }) => {
-  const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 3, nombreMaxBoucles: 5, dureeBoucleMinutes: 60 });
-  const [bruno, chloe, tom] = course.coureurs;
+test('CA13 - deux Boucles d\'un coup : Tom et Karim en abandon Boucle 1 (rattrapage), Bruno et Chloé en course, aucun abandon Boucle 2 ; sans aucun scan, personne n\'abandonne', async ({ browser, page, playwright }) => {
+  // 4.9 : adapté (RG15). Avec un seul coureur scanné, il serait désormais VAINQUEUR (couvert par 4.9 CA12) ;
+  // Chloé est donc scannée aussi sur la Boucle 1 pour conserver l'intention de 4.8 (rattrapage sans abandon Boucle 2).
+  const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 4, nombreMaxBoucles: 5, dureeBoucleMinutes: 60 });
+  const [bruno, chloe, tom, karim] = course.coureurs;
   await ouvrirPilotage(page, course.id);
   await expect(lire(page, 'pilotage-aucun-abandon')).toBeVisible();
 
@@ -109,6 +111,7 @@ test('CA13 - deux Boucles d\'un coup : Chloé et Tom en abandon Boucle 1 (rattra
     const scan = await contexteBenevole.newPage();
     await ouvrirEcranDeScan(scan, course);
     await scanner(scan, bruno, 1);
+    await scanner(scan, chloe, 1);
   } finally {
     await contexteBenevole.close();
   }
@@ -117,19 +120,21 @@ test('CA13 - deux Boucles d\'un coup : Chloé et Tom en abandon Boucle 1 (rattra
 
   await expect(lire(page, 'pilotage-compteur-abandons')).toHaveText('2 coureurs en abandon', HUIT_SECONDES);
   await expect(lire(page, 'pilotage-abandon')).toHaveCount(2);
-  await expect(lire(page, 'pilotage-abandon-dossard')).toHaveText([String(chloe.dossard), String(tom.dossard)]);
-  await expect(lire(page, 'pilotage-abandon-pseudo')).toHaveText([chloe.pseudo, tom.pseudo]);
+  await expect(lire(page, 'pilotage-abandon-dossard')).toHaveText([String(tom.dossard), String(karim.dossard)]);
+  await expect(lire(page, 'pilotage-abandon-pseudo')).toHaveText([tom.pseudo, karim.pseudo]);
   await expect(lire(page, 'pilotage-abandon-boucle')).toHaveText(['Boucle 1', 'Boucle 1']);
   await expect(lire(page, 'pilotage-abandon-motif')).toHaveText(['Hors délai', 'Hors délai']);
-  await expect(lire(page, 'pilotage-inscrit')).toHaveCount(1);
-  await expect(lire(page, 'pilotage-inscrit-pseudo')).toHaveText(bruno.pseudo);
-  await expect(lire(page, 'pilotage-inscrit-boucles-terminees')).toHaveText('1');
+  await expect(lire(page, 'pilotage-inscrit')).toHaveCount(2);
+  await expect(lire(page, 'pilotage-inscrit-pseudo')).toHaveText([bruno.pseudo, chloe.pseudo]);
+  await expect(lire(page, 'pilotage-inscrit-boucles-terminees')).toHaveText(['1', '1']);
   await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 3 sur 5');
   await expect(lire(page, 'pilotage-statut')).toHaveText('En cours');
+  await expect(lire(page, 'pilotage-vainqueurs')).toHaveCount(0);
   await verifierSansRechargement(page);
   expect(lireInscriptionEnBase(course.id, bruno.dossard)).toEqual({ statut: 'EN_COURSE', motifAbandon: '', boucleAbandon: '' });
-  expect(lireInscriptionEnBase(course.id, chloe.dossard)).toEqual({ statut: 'ABANDON', motifAbandon: 'HORS_DELAI', boucleAbandon: '1' });
+  expect(lireInscriptionEnBase(course.id, chloe.dossard)).toEqual({ statut: 'EN_COURSE', motifAbandon: '', boucleAbandon: '' });
   expect(lireInscriptionEnBase(course.id, tom.dossard)).toEqual({ statut: 'ABANDON', motifAbandon: 'HORS_DELAI', boucleAbandon: '1' });
+  expect(lireInscriptionEnBase(course.id, karim.dossard)).toEqual({ statut: 'ABANDON', motifAbandon: 'HORS_DELAI', boucleAbandon: '1' });
 });
 
 test('CA13 - personne n\'a bouclé la Boucle 1 : aucun abandon, les trois restent en course', async ({ page, playwright }) => {
@@ -189,9 +194,11 @@ test('CA14 - le scan de Tom en abandon est refusé « Coureur en abandon », san
   expect(lireInscriptionEnBase(course.id, tom.dossard)).toEqual({ statut: 'ABANDON', motifAbandon: 'HORS_DELAI', boucleAbandon: '1' });
 });
 
-test('CA15 - dernière Boucle autorisée (M = 2) : Chloé, sans Passage sur la Boucle 2, abandonne Boucle 2 ; Bruno reste en course, la Course reste « En cours »', async ({ browser, page, playwright }) => {
-  const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 2, nombreMaxBoucles: 2, dureeBoucleMinutes: 60 });
-  const [bruno, chloe] = course.coureurs;
+test('CA15 - dernière Boucle autorisée (M = 2) : Chloé, sans Passage sur la Boucle 2, abandonne Boucle 2 ; Bruno et Karim (deux passants) restent en course, la Course reste « En cours »', async ({ browser, page, playwright }) => {
+  // 4.9 : adapté (RG15). Avec Bruno seul sur la Boucle 2, il serait VAINQUEUR (4.9 CA13) ; Karim est scanné
+  // aussi sur les Boucles 1 et 2 pour conserver l'intention de 4.8 (deux passants à M : 4.10).
+  const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 3, nombreMaxBoucles: 2, dureeBoucleMinutes: 60 });
+  const [bruno, chloe, karim] = course.coureurs;
   await ouvrirPilotage(page, course.id);
 
   const contexteBenevole = await browser.newContext();
@@ -201,9 +208,11 @@ test('CA15 - dernière Boucle autorisée (M = 2) : Chloé, sans Passage sur la B
     await avancerHorloge(playwright, 'PT10M');
     await scanner(scan, bruno, 1);
     await scanner(scan, chloe, 1);
+    await scanner(scan, karim, 1);
     await avancerHorloge(playwright, 'PT50M');
     await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 2 sur 2', HUIT_SECONDES);
     await scanner(scan, bruno, 2);
+    await scanner(scan, karim, 2);
 
     await avancerHorloge(playwright, 'PT60M');
   } finally {
@@ -215,10 +224,12 @@ test('CA15 - dernière Boucle autorisée (M = 2) : Chloé, sans Passage sur la B
   await expect(lire(page, 'pilotage-abandon-boucle')).toHaveText('Boucle 2');
   await expect(lire(page, 'pilotage-abandon-motif')).toHaveText('Hors délai');
   await expect(lire(page, 'pilotage-abandon-boucles-terminees')).toHaveText('1');
-  await expect(lire(page, 'pilotage-inscrit-pseudo')).toHaveText(bruno.pseudo);
-  await expect(lire(page, 'pilotage-inscrit-boucles-terminees')).toHaveText('2');
+  await expect(lire(page, 'pilotage-inscrit-pseudo')).toHaveText([bruno.pseudo, karim.pseudo]);
+  await expect(lire(page, 'pilotage-inscrit-boucles-terminees')).toHaveText(['2', '2']);
   await expect(lire(page, 'pilotage-statut')).toHaveText('En cours');
   await expect(lire(page, 'pilotage-message-boucle-max-terminee')).toBeVisible();
+  await expect(lire(page, 'pilotage-vainqueurs')).toHaveCount(0);
   expect(lireInscriptionEnBase(course.id, chloe.dossard)).toEqual({ statut: 'ABANDON', motifAbandon: 'HORS_DELAI', boucleAbandon: '2' });
   expect(lireInscriptionEnBase(course.id, bruno.dossard)).toEqual({ statut: 'EN_COURSE', motifAbandon: '', boucleAbandon: '' });
+  expect(lireInscriptionEnBase(course.id, karim.dossard)).toEqual({ statut: 'EN_COURSE', motifAbandon: '', boucleAbandon: '' });
 });

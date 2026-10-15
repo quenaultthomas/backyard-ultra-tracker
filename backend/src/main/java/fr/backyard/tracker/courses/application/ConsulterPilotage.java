@@ -30,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Instantané de pilotage d'une Course démarrée : chronométrage à l'instant de l'horloge (lu une seule fois) et
- * inscrits encore en course, triés par dossard, avec leur progression dérivée de leurs Passages (lus en une seule
+ * inscrits encore en course, en abandon et vainqueurs, triés par dossard, avec leur progression dérivée de leurs Passages (lus en une seule
  * lecture groupée) et le bouclage de la Boucle courante. Lecture seule : rien n'est écrit ni stocké, aucune transition n'est
  * déclenchée. Aucun journal en fonctionnement normal (lecture fréquente).
  */
@@ -101,16 +101,46 @@ public class ConsulterPilotage {
         }
     }
 
+    /** Ligne d'un vainqueur. Jamais de jeton QR, d'identifiant de Compte ni de détail de Passage. */
+    public record InscritVainqueur(Inscrit inscrit, int nombreBouclesTerminees) {
+
+        public UUID inscriptionId() {
+            return inscrit.inscriptionId();
+        }
+
+        public int dossard() {
+            return inscrit.dossard();
+        }
+
+        public String pseudo() {
+            return inscrit.pseudo();
+        }
+
+        public StatutInscription statut() {
+            return inscrit.statut();
+        }
+
+        /** Identifiant et dossard uniquement : jamais de pseudo dans le journal. */
+        @Override
+        public String toString() {
+            return "InscritVainqueur[inscriptionId=" + inscrit.inscriptionId() + ", dossard=" + inscrit.dossard() + "]";
+        }
+    }
+
     /**
      * Instantané : chronométrage et bouclage vides pour une Course TERMINEE ou sans heure de départ. Les abandons
-     * sont triés par dossard, quel que soit l'état de la Course.
+     * et les vainqueurs sont triés par dossard, quel que soit l'état de la Course.
      */
     public record Pilotage(Course course, Instant heureServeur, Optional<Chronometrage> chronometrage,
                            int nombreInscrits, List<InscritEnCourse> inscritsEnCourse, Optional<Bouclage> bouclage,
-                           List<InscritEnAbandon> inscritsEnAbandon) {
+                           List<InscritEnAbandon> inscritsEnAbandon, List<InscritVainqueur> inscritsVainqueurs) {
 
         public int nombreAbandons() {
             return inscritsEnAbandon.size();
+        }
+
+        public int nombreVainqueurs() {
+            return inscritsVainqueurs.size();
         }
 
         public Optional<Integer> nombreAyantBoucle() {
@@ -167,15 +197,23 @@ public class ConsulterPilotage {
         List<InscritEnAbandon> abandons = parDossard.stream().filter(i -> i.statut() == StatutInscription.ABANDON)
                 .map(inscrit -> enAbandon(inscrit, inscriptions.get(inscrit.inscriptionId()), passages))
                 .toList();
+        List<InscritVainqueur> vainqueurs = parDossard.stream()
+                .filter(i -> i.statut() == StatutInscription.VAINQUEUR)
+                .map(inscrit -> new InscritVainqueur(inscrit, bouclesTerminees(inscrit, passages)))
+                .toList();
         return new Pilotage(course, maintenant, chronometrage, inscriptions.size(), inscrits,
-                Bouclage.de(inscrits.stream().map(InscritEnCourse::progression).toList(), boucleCourante), abandons);
+                Bouclage.de(inscrits.stream().map(InscritEnCourse::progression).toList(), boucleCourante), abandons,
+                vainqueurs);
+    }
+
+    private static int bouclesTerminees(Inscrit inscrit, Map<UUID, List<Passage>> passages) {
+        return ProgressionCoureur.de(passages.getOrDefault(inscrit.inscriptionId(), List.of()), OptionalInt.empty())
+                .nombreBouclesTerminees();
     }
 
     private static InscritEnAbandon enAbandon(Inscrit inscrit, Inscription inscription,
                                               Map<UUID, List<Passage>> passages) {
-        int nombreBouclesTerminees = ProgressionCoureur.de(passages.getOrDefault(inscrit.inscriptionId(), List.of()),
-                OptionalInt.empty()).nombreBouclesTerminees();
-        return new InscritEnAbandon(inscrit, nombreBouclesTerminees, inscription.boucleAbandon(),
+        return new InscritEnAbandon(inscrit, bouclesTerminees(inscrit, passages), inscription.boucleAbandon(),
                 inscription.motifAbandon());
     }
 

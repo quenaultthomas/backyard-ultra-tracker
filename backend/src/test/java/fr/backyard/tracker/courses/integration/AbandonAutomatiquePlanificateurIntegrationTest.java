@@ -125,7 +125,8 @@ class AbandonAutomatiquePlanificateurIntegrationTest {
                 .isTrue();
         assertThat(decor.etat(x, decor.idTom)).isEqualTo("ABANDON:HORS_DELAI:1");
         assertThat(decor.etat(x, decor.idChloe)).isEqualTo("ABANDON:HORS_DELAI:2");
-        assertThat(decor.etat(x, decor.idBruno)).isEqualTo("EN_COURSE:-:-");
+        // 4.9 RG2 : Bruno, seul passant de la Boucle 2, est VAINQUEUR (4.8 attendait EN_COURSE)
+        assertThat(decor.etat(x, decor.idBruno)).isEqualTo("VAINQUEUR:-:-");
     }
 
     @Test
@@ -181,6 +182,9 @@ class AbandonAutomatiquePlanificateurIntegrationTest {
         assertThat(DecorAbandon.attendre(() -> erreurs().size() >= 2, DELAI))
                 .as("la Course piégée est retentée aux ticks suivants").isTrue();
         assertThat(decor.etat(piegee, decor.idChloe)).isEqualTo("EN_COURSE:-:-");
+        assertThat(decor.etat(piegee, decor.idBruno)).isEqualTo("EN_COURSE:-:-");
+        assertThat(decor.jdbc.queryForObject("select statut from course where id = ?", String.class,
+                UUID.fromString(piegee))).as("transaction annulée : la Course n'est pas terminée").isEqualTo("EN_COURS");
         for (ILoggingEvent erreur : erreurs()) {
             assertThat(erreur.getFormattedMessage()).contains(piegee)
                     .doesNotContain("Chloé", "Bruno", "Tom", "Retardataire");
@@ -193,7 +197,8 @@ class AbandonAutomatiquePlanificateurIntegrationTest {
         assertThat(DecorAbandon.attendre(() -> abandonne(piegee, decor.idChloe), DELAI))
                 .as("la Course piégée est rattrapée une fois la panne levée").isTrue();
         assertThat(decor.etat(piegee, decor.idChloe)).isEqualTo("ABANDON:HORS_DELAI:1");
-        assertThat(decor.etat(piegee, decor.idBruno)).isEqualTo("EN_COURSE:-:-");
+        // 4.9 : Bruno, seul passant de la Boucle 1, est VAINQUEUR une fois la panne levée (4.8 attendait EN_COURSE)
+        assertThat(decor.etat(piegee, decor.idBruno)).isEqualTo("VAINQUEUR:-:-");
     }
 
     private List<ILoggingEvent> erreurs() {

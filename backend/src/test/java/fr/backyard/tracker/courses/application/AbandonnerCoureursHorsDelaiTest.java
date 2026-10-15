@@ -26,11 +26,15 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 /**
  * Tests de l'incrément 4.8 : cas d'usage AbandonnerCoureursHorsDelai (CA4 ; RG2, RG7, RG9, RG12, RG18).
+ * Adaptés à 4.9 (RG15) sans affaiblissement : le résultat est un {@code Resultat} (voir ci-dessous) ; le test du
+ * plafond de Boucles reçoit un second passant sur la Boucle 5 (un seul passant serait désormais vainqueur, voir
+ * {@link AbandonnerCoureursHorsDelaiVainqueurTest}) ; les attentes de 4.8 sont par ailleurs inchangées.
  *
  * Signatures supposées :
  * - {@code new AbandonnerCoureursHorsDelai(DepotCourses, DepotInscriptions, DepotPassages, Clock)} ;
- * - {@code int executer(UUID courseId)} : nombre d'Inscriptions mises en abandon ; Course chargée par
- *   {@code DepotCourses.parIdPourModification} ; Clock lu une seule fois, après le chargement ;
+ * - {@code Resultat executer(UUID courseId)} (4.9 : remplace l'entier de 4.8) ; {@code Resultat} expose
+ *   {@code int abandons()} (nombre d'Inscriptions mises en abandon) et {@code boolean vainqueur()} ; Course chargée
+ *   par {@code DepotCourses.parIdPourModification} ; Clock lu une seule fois, après le chargement ;
  * - port {@code DepotInscriptions.mettreAJour(Inscription)} : écriture d'une Inscription existante (le double
  *   DepotInscriptionsEnMemoireDeTest la fournit et compte les appels) ; une écriture par Inscription mise en abandon ;
  * - lecture des Passages par {@code DepotPassages.parInscriptions} ou {@code existe} (les deux sont dans le double).
@@ -77,7 +81,7 @@ class AbandonnerCoureursHorsDelaiTest {
     void doit_passer_en_abandon_le_coureur_sans_passage_sur_la_boucle_terminee() {
         garnirX();
 
-        int abandons = casA(T0.plusSeconds(60)).executer(X);
+        int abandons = casA(T0.plusSeconds(60)).executer(X).abandons();
 
         assertThat(abandons).isEqualTo(1);
         Inscription chloeApres = relue(chloe);
@@ -96,7 +100,7 @@ class AbandonnerCoureursHorsDelaiTest {
         casA(T0.plusSeconds(60)).executer(X);
         int ecrituresAvant = inscriptions.nombreDeMisesAJour;
 
-        int abandons = casA(T0.plusSeconds(60)).executer(X);
+        int abandons = casA(T0.plusSeconds(60)).executer(X).abandons();
 
         assertThat(abandons).isZero();
         assertThat(inscriptions.nombreDeMisesAJour).isEqualTo(ecrituresAvant);
@@ -109,7 +113,7 @@ class AbandonnerCoureursHorsDelaiTest {
         casA(T0.plusSeconds(60)).executer(X);
         int ecrituresAvant = inscriptions.nombreDeMisesAJour;
 
-        int abandons = casA(T0.plusMillis(60_001)).executer(X);
+        int abandons = casA(T0.plusMillis(60_001)).executer(X).abandons();
 
         assertThat(abandons).isZero();
         assertThat(inscriptions.nombreDeMisesAJour).isEqualTo(ecrituresAvant);
@@ -120,7 +124,7 @@ class AbandonnerCoureursHorsDelaiTest {
     void doit_ne_rien_faire_une_milliseconde_avant_la_bascule() {
         garnirX();
 
-        int abandons = casA(T0.plusMillis(59_999)).executer(X);
+        int abandons = casA(T0.plusMillis(59_999)).executer(X).abandons();
 
         assertThat(abandons).isZero();
         assertThat(inscriptions.nombreDeMisesAJour).isZero();
@@ -134,7 +138,7 @@ class AbandonnerCoureursHorsDelaiTest {
         bruno = inscrire(X, 1);
         chloe = inscrire(X, 2);
 
-        int abandons = casA(T0.plusSeconds(60)).executer(X);
+        int abandons = casA(T0.plusSeconds(60)).executer(X).abandons();
 
         assertThat(abandons).isZero();
         assertThat(inscriptions.nombreDeMisesAJour).isZero();
@@ -146,14 +150,14 @@ class AbandonnerCoureursHorsDelaiTest {
         garnirX();
         passages.poser(Passage.corriger(UUID.randomUUID(), chloe, 1));
 
-        int abandons = casA(T0.plusSeconds(60)).executer(X);
+        int abandons = casA(T0.plusSeconds(60)).executer(X).abandons();
 
         assertThat(abandons).isZero();
         assertThat(relue(chloe).statut()).isEqualTo(StatutInscription.EN_COURSE);
     }
 
     @Test
-    @DisplayName("CA4 - RG5 : rattrapage à t0 + 3 min, Bruno {1, 2}, Chloé {1}, Tom {} : Tom boucle 1, Chloé boucle 2")
+    @DisplayName("CA4 - RG5 : rattrapage à t0 + 3 min, Bruno {1, 2}, Chloé {1}, Tom {} : Tom boucle 1, Chloé boucle 2, Bruno vainqueur (4.9)")
     void doit_rattraper_les_boucles_manquees_dans_l_ordre() {
         courses.enregistrer(course(X, StatutCourse.EN_COURS, 1, T0));
         bruno = inscrire(X, 1);
@@ -163,12 +167,13 @@ class AbandonnerCoureursHorsDelaiTest {
         scan(bruno, 2);
         scan(chloe, 1);
 
-        int abandons = casA(T0.plus(Duration.ofMinutes(3))).executer(X);
+        int abandons = casA(T0.plus(Duration.ofMinutes(3))).executer(X).abandons();
 
         assertThat(abandons).isEqualTo(2);
         assertThat(relue(tom).boucleAbandon()).contains(1);
         assertThat(relue(chloe).boucleAbandon()).contains(2);
-        assertThat(relue(bruno).statut()).isEqualTo(StatutInscription.EN_COURSE);
+        // 4.9 RG1 : Bruno seul passant de la boucle 2 est désormais vainqueur (4.8 : restait EN_COURSE)
+        assertThat(relue(bruno).statut()).isEqualTo(StatutInscription.VAINQUEUR);
     }
 
     @Test
@@ -201,7 +206,7 @@ class AbandonnerCoureursHorsDelaiTest {
         Inscription avec = inscrire(EN_PREPARATION, 2);
         scan(avec, 1);
 
-        int abandons = casA(T0.plus(Duration.ofDays(1))).executer(EN_PREPARATION);
+        int abandons = casA(T0.plus(Duration.ofDays(1))).executer(EN_PREPARATION).abandons();
 
         assertThat(abandons).isZero();
         assertThat(inscriptions.nombreDeMisesAJour).isZero();
@@ -216,7 +221,7 @@ class AbandonnerCoureursHorsDelaiTest {
         inscrire(SANS_DEPART, 1);
         scan(inscrire(SANS_DEPART, 2), 1);
 
-        int abandons = casA(T0.plus(Duration.ofDays(1))).executer(SANS_DEPART);
+        int abandons = casA(T0.plus(Duration.ofDays(1))).executer(SANS_DEPART).abandons();
 
         assertThat(abandons).isZero();
         assertThat(inscriptions.nombreDeMisesAJour).isZero();
@@ -226,7 +231,7 @@ class AbandonnerCoureursHorsDelaiTest {
     @DisplayName("CA4 - Course introuvable : 0, aucune exception, aucune écriture")
     void doit_ignorer_une_course_introuvable() {
         assertThatCode(() -> {
-            int abandons = casA(T0.plusSeconds(60)).executer(INCONNUE);
+            int abandons = casA(T0.plusSeconds(60)).executer(INCONNUE).abandons();
             assertThat(abandons).isZero();
         }).doesNotThrowAnyException();
         assertThat(inscriptions.nombreDeMisesAJour).isZero();
@@ -242,7 +247,7 @@ class AbandonnerCoureursHorsDelaiTest {
         scan(karim, 1);
 
         casA(T0.plusSeconds(60)).executer(X);
-        int abandonsY = casA(T0.plusSeconds(60)).executer(Y);
+        int abandonsY = casA(T0.plusSeconds(60)).executer(Y).abandons();
 
         assertThat(abandonsY).isZero();
         assertThat(relue(sophie).statut()).isEqualTo(StatutInscription.EN_COURSE);
@@ -277,24 +282,29 @@ class AbandonnerCoureursHorsDelaiTest {
     }
 
     @Test
-    @DisplayName("CA4 - RG6/RG12 : à la fin du temps (t0 + 6 min), pas de boucle 6 ; la Course reste EN_COURS")
+    @DisplayName("CA4 - RG6/RG12 : à la fin du temps (t0 + 6 min), pas de boucle 6 ; avec deux passants sur la boucle 5 la Course reste EN_COURS")
     void doit_plafonner_au_nombre_max_de_boucles_sans_terminer_la_course() {
         courses.enregistrer(course(X, StatutCourse.EN_COURS, 1, T0));
         bruno = inscrire(X, 1);
         chloe = inscrire(X, 2);
+        Inscription david = inscrire(X, 3);
         for (int boucle = 1; boucle <= 5; boucle++) {
             scan(bruno, boucle);
+            scan(david, boucle);
             if (boucle <= 4) {
                 scan(chloe, boucle);
             }
         }
+        courses.nombreDEnregistrements = 0;
 
-        int abandons = casA(T0.plus(Duration.ofMinutes(6))).executer(X);
+        int abandons = casA(T0.plus(Duration.ofMinutes(6))).executer(X).abandons();
 
         assertThat(abandons).isEqualTo(1);
         assertThat(relue(chloe).boucleAbandon()).contains(5);
         assertThat(relue(bruno).statut()).isEqualTo(StatutInscription.EN_COURSE);
+        assertThat(relue(david).statut()).isEqualTo(StatutInscription.EN_COURSE);
         assertThat(courses.parId(X).orElseThrow().statut()).isEqualTo(StatutCourse.EN_COURS);
+        assertThat(courses.nombreDEnregistrements).isZero();
     }
 
     // ---------- fabriques ----------

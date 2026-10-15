@@ -76,7 +76,8 @@ class PassageIntegrationTest {
             "demarreeLe", "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle",
             "boucleMaxTerminee", "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
             "dureeEcouleeMillisecondes", "nombreInscrits", "inscritsEnCourse", "nombreAyantBoucle",
-            "nombreEnBoucle", "nombreAbandons", "inscritsEnAbandon");
+            "nombreEnBoucle", "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs",
+            "inscritsVainqueurs");
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final String INSERTION_COURSE = "insert into course (id, nom, date_course, statut, distance_boucle_metres, "
