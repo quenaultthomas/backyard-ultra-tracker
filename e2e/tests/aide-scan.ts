@@ -135,3 +135,9 @@ export function lireInscriptionEnBase(courseId: string, dossard: number): Inscri
   const [statut, motifAbandon, boucleAbandon] = sortie.split('|');
   return { statut, motifAbandon, boucleAbandon };
 }
+
+/** Statut de la Course en base (4.9) : `EN_PREPARATION`, `EN_COURS` ou `TERMINEE`. */
+export function lireStatutCourseEnBase(courseId: string): string {
+  if (!/^[0-9a-f-]{36}$/.test(courseId)) throw new Error('identifiant de course invalide');
+  return executerSql(`select statut from course where id = '${courseId}'`);
+}

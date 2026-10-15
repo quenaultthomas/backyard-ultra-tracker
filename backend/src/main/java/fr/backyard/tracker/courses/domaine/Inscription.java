@@ -83,6 +83,17 @@ public final class Inscription {
                 Objects.requireNonNull(motif), boucle);
     }
 
+    /**
+     * Déclare l'Inscription vainqueur : l'Inscription renvoyée est VAINQUEUR, sans motif ni Boucle d'abandon ; celle-ci
+     * n'est pas affectée. Seule une Inscription EN_COURSE devient vainqueur.
+     *
+     * @throws InscriptionNonEnCourseException l'Inscription est déjà en abandon ou vainqueur
+     */
+    public Inscription devenirVainqueur() {
+        verifierEnCourse();
+        return new Inscription(id, courseId, compteId, dossard, jetonQr, StatutInscription.VAINQUEUR, null, null);
+    }
+
     public UUID id() {
         return id;
     }

@@ -1,6 +1,7 @@
 package fr.backyard.tracker.courses.application;
 
 import fr.backyard.tracker.courses.domaine.AbandonAutomatique;
+import fr.backyard.tracker.courses.domaine.AbandonAutomatique.Decision;
 import fr.backyard.tracker.courses.domaine.AbandonAutomatique.Designation;
 import fr.backyard.tracker.courses.domaine.Course;
 import fr.backyard.tracker.courses.domaine.DepotCourses;
@@ -24,8 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
  * Abandon automatique des coureurs hors délai d'une Course, déclenché côté serveur. La Course est chargée sous
  * verrou, puis Inscriptions et Passages sont relus et l'horloge lue une seule fois : deux exécutions concurrentes,
  * ou une exécution et un scan, sont sérialisées et la seconde trouve l'état déjà traité. Idempotent : une Course
- * introuvable, qui n'est pas en cours ou sans Boucle terminée à décider n'est pas modifiée. Journal : une ligne par
- * Boucle ayant produit des abandons, identifiant de la Course seulement.
+ * introuvable, qui n'est pas en cours (une Course TERMINEE comprise) ou sans Boucle terminée à décider n'est pas
+ * modifiée. Statuts des Inscriptions et de la Course sont écrits dans la même transaction. Journal : une ligne par
+ * Boucle ayant produit des abandons et une ligne de fin de course, identifiant de la Course seulement.
  */
 @Service
 public class AbandonnerCoureursHorsDelai {
@@ -51,30 +53,51 @@ public class AbandonnerCoureursHorsDelai {
         return depotCourses.idsEnCours();
     }
 
-    /** @return nombre d'Inscriptions mises en abandon par cette exécution */
+    /**
+     * Résultat d'une exécution du contrôle.
+     *
+     * @param abandons nombre d'Inscriptions mises en abandon
+     * @param vainqueur un vainqueur a été déclaré et la Course terminée
+     */
+    public record Resultat(int abandons, boolean vainqueur) {
+
+        static final Resultat AUCUNE_DECISION = new Resultat(0, false);
+    }
+
+    /**
+     * Applique la décision du domaine dans la transaction : abandons, vainqueur et fin de Course, tout ou rien.
+     */
     @Transactional
-    public int executer(UUID courseId) {
+    public Resultat executer(UUID courseId) {
         Course course = depotCourses.parIdPourModification(courseId).orElse(null);
         if (course == null) {
-            return 0;
+            return Resultat.AUCUNE_DECISION;
         }
         int bouclesTerminees = course.bouclesTerminees(horloge.instant());
         if (bouclesTerminees == 0) {
-            return 0;
+            return Resultat.AUCUNE_DECISION;
         }
         List<Inscription> enCourse = depotInscriptions.parCourse(courseId).stream()
                 .filter(Inscription::estEnCourse).toList();
         if (enCourse.isEmpty()) {
-            return 0;
+            return Resultat.AUCUNE_DECISION;
         }
         Map<UUID, Set<Integer>> boucles = bouclesPasseesParInscription(enCourse);
-        List<Designation> designations = AbandonAutomatique.designer(enCourse,
+        Decision decision = AbandonAutomatique.decider(enCourse,
                 (inscription, boucle) -> boucles.getOrDefault(inscription.id(), Set.of()).contains(boucle),
                 bouclesTerminees);
-        designations.forEach(d -> depotInscriptions.mettreAJour(d.inscription().abandonner(d.motif(),
+        appliquer(course, decision);
+        journaliser(courseId, decision);
+        return new Resultat(decision.abandons().size(), decision.vainqueur().isPresent());
+    }
+
+    private void appliquer(Course course, Decision decision) {
+        decision.abandons().forEach(d -> depotInscriptions.mettreAJour(d.inscription().abandonner(d.motif(),
                 d.boucleAbandon())));
-        journaliser(courseId, designations);
-        return designations.size();
+        decision.vainqueur().ifPresent(vainqueur -> depotInscriptions.mettreAJour(vainqueur.devenirVainqueur()));
+        if (decision.courseTerminee()) {
+            depotCourses.enregistrer(course.terminer());
+        }
     }
 
     private Map<UUID, Set<Integer>> bouclesPasseesParInscription(List<Inscription> inscriptions) {
@@ -83,11 +106,13 @@ public class AbandonnerCoureursHorsDelai {
                         Collectors.mapping(Passage::numeroBoucle, Collectors.toSet())));
     }
 
-    private static void journaliser(UUID courseId, List<Designation> designations) {
-        designations.stream()
+    private static void journaliser(UUID courseId, Decision decision) {
+        decision.abandons().stream()
                 .collect(Collectors.groupingBy(Designation::boucleAbandon, TreeMap::new, Collectors.counting()))
                 .forEach((boucle, nombre) -> JOURNAL.log(Level.INFO,
                         "Abandon automatique : course {0}, boucle {1}, {2} inscription(s) en abandon.",
                         courseId, String.valueOf(boucle), String.valueOf(nombre)));
+        decision.boucleDeFin().ifPresent(boucle -> JOURNAL.log(Level.INFO,
+                "Fin de course : course {0}, boucle {1}, vainqueur unique.", courseId, String.valueOf(boucle)));
     }
 }

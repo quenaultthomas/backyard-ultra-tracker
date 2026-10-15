@@ -20,13 +20,16 @@ function secondesAnnoncees(detail: string | null): number {
 }
 
 test('CA9 - boucle de 60 min : un re-scan juste après le départ de la boucle suivante est refusé « Scan trop rapproché », accepté après le délai', async ({ page, playwright }) => {
-  const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 1, nombreMaxBoucles: 3, dureeBoucleMinutes: 60 });
-  const [bruno] = course.coureurs;
+  const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 2, nombreMaxBoucles: 3, dureeBoucleMinutes: 60 });
+  // 4.9 (RG15) : Chloé est scannée aussi sur la Boucle 1, sinon Bruno seul passant serait VAINQUEUR au départ de la Boucle 2.
+  const [bruno, chloe] = course.coureurs;
   await ouvrirEcranDeScan(page, course);
 
   await avancerHorloge(playwright, 'PT59M50S');
   await scannerParEntree(page, bruno.jeton);
   await verifierSucces(page, bruno.dossard, bruno.pseudo, 1);
+  await scannerParEntree(page, chloe.jeton);
+  await verifierSucces(page, chloe.dossard, chloe.pseudo, 1);
 
   await avancerHorloge(playwright, 'PT15S');
   await scannerParEntree(page, bruno.jeton);
@@ -38,13 +41,13 @@ test('CA9 - boucle de 60 min : un re-scan juste après le départ de la boucle s
   const restantes = secondesAnnoncees(detail?.trim() ?? null);
   expect(restantes).toBeLessThanOrEqual(105);
   expect(restantes).toBeGreaterThanOrEqual(90);
-  expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN']);
+  expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN', '2:1:SCAN']);
 
   await avancerHorloge(playwright, 'PT105S');
   await scannerParEntree(page, bruno.jeton);
   await verifierSucces(page, bruno.dossard, bruno.pseudo, 2);
   await expect(page.getByTestId('scan-refus')).toHaveCount(0);
-  expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN', '1:2:SCAN']);
+  expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN', '1:2:SCAN', '2:1:SCAN']);
 });
 
 test('CA10 - boucle de 1 min : un enchaînement ordinaire n\'est pas gêné, un re-scan à 10 s est refusé, accepté après le délai de 15 s', async ({ page, playwright }) => {

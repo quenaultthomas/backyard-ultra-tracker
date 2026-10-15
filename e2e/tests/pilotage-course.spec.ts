@@ -119,6 +119,8 @@ function instantane(surcharge: Record<string, unknown> = {}): Reponse {
       ],
       nombreAbandons: 0,
       inscritsEnAbandon: [],
+      nombreVainqueurs: 0,
+      inscritsVainqueurs: [],
       ...surcharge,
     },
   };

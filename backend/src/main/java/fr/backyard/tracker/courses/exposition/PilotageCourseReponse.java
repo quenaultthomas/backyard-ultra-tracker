@@ -29,7 +29,8 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
                                     Instant finBoucleCourante, Long tempsAvantFinBoucleMillisecondes,
                                     Long dureeEcouleeMillisecondes, int nombreInscrits, Integer nombreAyantBoucle,
                                     Integer nombreEnBoucle, List<InscritPilotageReponse> inscritsEnCourse,
-                                    int nombreAbandons, List<AbandonPilotageReponse> inscritsEnAbandon) {
+                                    int nombreAbandons, List<AbandonPilotageReponse> inscritsEnAbandon,
+                                    int nombreVainqueurs, List<VainqueurPilotageReponse> inscritsVainqueurs) {
 
     /** Ligne d'un inscrit en course ; {@code boucleCouranteTerminee} est null sans chronométrage. */
     public record InscritPilotageReponse(UUID inscriptionId, int dossard, String pseudo, StatutInscription statut,
@@ -65,6 +66,22 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
         }
     }
 
+    /** Ligne d'un vainqueur. */
+    public record VainqueurPilotageReponse(UUID inscriptionId, int dossard, String pseudo, StatutInscription statut,
+                                           int nombreBouclesTerminees) {
+
+        /** Identifiant et dossard uniquement : jamais de pseudo dans le journal. */
+        @Override
+        public String toString() {
+            return "VainqueurPilotageReponse[inscriptionId=" + inscriptionId + ", dossard=" + dossard + "]";
+        }
+
+        static VainqueurPilotageReponse depuis(ConsulterPilotage.InscritVainqueur vainqueur) {
+            return new VainqueurPilotageReponse(vainqueur.inscriptionId(), vainqueur.dossard(), vainqueur.pseudo(),
+                    vainqueur.statut(), vainqueur.nombreBouclesTerminees());
+        }
+    }
+
     private static final DateTimeFormatter INSTANT_AUX_MILLISECONDES =
             DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS'Z'").withZone(ZoneOffset.UTC);
 
@@ -89,7 +106,9 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
                 pilotage.nombreAyantBoucle().orElse(null), pilotage.nombreEnBoucle().orElse(null),
                 pilotage.inscritsEnCourse().stream().map(InscritPilotageReponse::depuis).toList(),
                 pilotage.nombreAbandons(),
-                pilotage.inscritsEnAbandon().stream().map(AbandonPilotageReponse::depuis).toList());
+                pilotage.inscritsEnAbandon().stream().map(AbandonPilotageReponse::depuis).toList(),
+                pilotage.nombreVainqueurs(),
+                pilotage.inscritsVainqueurs().stream().map(VainqueurPilotageReponse::depuis).toList());
     }
 
     private static <T> T valeur(Optional<Chronometrage> chronometrage, Function<Chronometrage, T> champ) {

@@ -29,8 +29,8 @@ import { RafraichissementPilotage } from './rafraichissement-pilotage';
 
 /**
  * Pilotage d'une Course démarrée (admins et admin master) : Boucle courante, compte à rebours,
- * durée écoulée, inscrits `EN_COURSE` et leur bouclage, inscrits en abandon, tels que calculés
- * par le serveur.
+ * durée écoulée, vainqueur(s), inscrits `EN_COURSE` et leur bouclage, inscrits en abandon, tels
+ * que calculés par le serveur.
  */
 @Component({
   selector: 'app-ecran-pilotage',

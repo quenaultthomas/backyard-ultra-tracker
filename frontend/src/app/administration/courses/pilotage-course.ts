@@ -41,6 +41,17 @@ export interface InscritEnAbandon {
   motifAbandon: MotifAbandon | null;
 }
 
+/** Ligne de `PilotageCourse.inscritsVainqueurs` : jamais de jeton QR ni d'identifiant de Compte. */
+export interface InscritVainqueur {
+  inscriptionId: string;
+  dossard: number;
+  pseudo: string;
+  /** Toujours `VAINQUEUR`. */
+  statut: StatutInscription;
+  /** Nombre de Passages de l'Inscription (`SCAN` et `CORRECTION`). */
+  nombreBouclesTerminees: number;
+}
+
 /**
  * Instantané de `GET /api/administration/courses/{id}/pilotage`, calculé par le serveur.
  * Les champs de chronométrage sont `null` pour une Course `TERMINEE` ou sans heure de départ.
@@ -76,6 +87,10 @@ export interface PilotageCourse {
   nombreAbandons: number;
   /** Inscriptions `ABANDON`, triées par dossard par l'API. */
   inscritsEnAbandon: InscritEnAbandon[];
+  /** Nombre d'Inscriptions `VAINQUEUR` (longueur de `inscritsVainqueurs`), 0 hors fin de course. */
+  nombreVainqueurs: number;
+  /** Inscriptions `VAINQUEUR`, triées par dossard par l'API ; jamais déduites par le front. */
+  inscritsVainqueurs: InscritVainqueur[];
 }
 
 /** Pastille d'un inscrit pour la Boucle courante : libellé en texte, classe de la charte. */

@@ -112,6 +112,21 @@ final class DecorAbandon {
         return x;
     }
 
+    /** Course d'une Boucle de 1 min et d'au plus {@code maxBoucles} Boucles, mêmes inscrits que X, démarrée à t0. */
+    String courseDemarreeAvecMaxBoucles(String nom, int maxBoucles) throws Exception {
+        String course = creerCourse(nom, 1, maxBoucles);
+        assertThat(affecter(course, idLeo).statusCode()).isEqualTo(200);
+        assertThat(sinscrire(bruno, course).statusCode()).isEqualTo(201);
+        assertThat(sinscrire(chloe, course).statusCode()).isEqualTo(201);
+        assertThat(sinscrire(tom, course).statusCode()).isEqualTo(201);
+        demarrer(course);
+        return course;
+    }
+
+    String statutCourse(String idCourse) {
+        return jdbc.queryForObject("select statut from course where id = ?", String.class, UUID.fromString(idCourse));
+    }
+
     /** Y (Boucles de 90 min) : Alice inscrite, Léo affecté, démarrée à t0 par l'API. */
     String courseYDemarree() throws Exception {
         String y = creerCourse(NOM_Y, 90, 5);
@@ -255,6 +270,12 @@ final class DecorAbandon {
     List<String> lignesAbandonAutomatique() {
         return evenements().stream().filter(e -> e.getLevel() == Level.INFO)
                 .map(ILoggingEvent::getFormattedMessage).filter(m -> m.startsWith("Abandon automatique")).toList();
+    }
+
+    /** Lignes INFO « Fin de course : … » du journal (4.9). */
+    List<String> lignesFinDeCourse() {
+        return evenements().stream().filter(e -> e.getLevel() == Level.INFO)
+                .map(ILoggingEvent::getFormattedMessage).filter(m -> m.startsWith("Fin de course")).toList();
     }
 
     // ---------------------------------------------------------------- attente

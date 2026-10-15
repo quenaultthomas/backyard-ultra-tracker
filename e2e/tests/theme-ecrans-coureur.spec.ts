@@ -773,7 +773,13 @@ test.describe('Grilles et largeurs', () => {
       expect(cartes.map((c) => c.nom), 'ordre de lecture').toEqual(ordreAttendu);
       await sansDefilementHorizontal(page);
       const region = (await carteDePage(page, coureur ? 'Courses ouvertes' : 'Mes inscriptions').boundingBox())!;
-      return { cartes, region };
+      // Les colonnes se comptent sur TOUTES les cartes de l'écran : la base est partagée avec les autres tests, dont les Courses
+      // s'intercalent dans la grille (les 4 cartes nommées peuvent alors n'occuper qu'une colonne).
+      const colonnesEcran = await page.evaluate(
+        (ligne) => new Set(Array.from(document.querySelectorAll(`[data-testid="${ligne}"]`)).map((e) => Math.round(e.getBoundingClientRect().left))).size,
+        coureur ? 'coureur-ligne-course' : 'inscriptions-ligne',
+      );
+      return { cartes, region, colonnesEcran };
     };
     const rangees = (cartes: Boite[]): Boite[][] => {
       const groupes = new Map<number, Boite[]>();
@@ -783,9 +789,9 @@ test.describe('Grilles et largeurs', () => {
 
     // 1280 x 800
     for (const [pseudo, chemin, largeur] of [[bob, '/coureur', 314], [alice, '/coureur/inscriptions', 314]] as const) {
-      const { cartes, region } = await mesurer(pseudo, chemin, 1280, 800);
+      const { cartes, region, colonnesEcran } = await mesurer(pseudo, chemin, 1280, 800);
       proche(region.width, 1024, 1, `carte de la page ${chemin}`);
-      expect(colonnes(cartes), `colonnes ${chemin}`).toBe(3);
+      expect(colonnesEcran, `colonnes ${chemin}`).toBe(3);
       for (const c of cartes) proche(c.width, largeur, 1, `largeur de carte ${chemin}`);
       for (const rangee of rangees(cartes)) {
         for (const c of rangee) proche(c.height, rangee[0].height, 1, `hauteur dans la rangée ${chemin}`);
@@ -801,24 +807,24 @@ test.describe('Grilles et largeurs', () => {
     // 1024 x 768
     {
       const insc = await mesurer(alice, '/coureur/inscriptions', 1024, 768);
-      expect(colonnes(insc.cartes)).toBe(2);
+      expect(insc.colonnesEcran).toBe(2);
       for (const c of insc.cartes) proche(c.width, 463, 1, 'dossard à 1024');
       const cour = await mesurer(bob, '/coureur', 1024, 768);
-      expect(colonnes(cour.cartes)).toBe(3);
+      expect(cour.colonnesEcran).toBe(3);
     }
     // 768 x 1024
     for (const [pseudo, chemin] of [[bob, '/coureur'], [alice, '/coureur/inscriptions']] as const) {
-      const { cartes, region } = await mesurer(pseudo, chemin, 768, 1024);
+      const { cartes, region, colonnesEcran } = await mesurer(pseudo, chemin, 768, 1024);
       proche(region.width, 736, 1, 'carte de la page à 768');
-      expect(colonnes(cartes)).toBe(2);
+      expect(colonnesEcran).toBe(2);
       for (const c of cartes) proche(c.width, 335, 1, 'largeur à 768');
     }
     // 640 x 360 et 360 x 640
     for (const [pseudo, chemin] of [[bob, '/coureur'], [alice, '/coureur/inscriptions']] as const) {
       const paysage = await mesurer(pseudo, chemin, 640, 360);
-      expect(colonnes(paysage.cartes)).toBe(1);
-      const { cartes, region } = await mesurer(pseudo, chemin, 360, 640);
-      expect(colonnes(cartes)).toBe(1);
+      expect(paysage.colonnesEcran).toBe(1);
+      const { cartes, region, colonnesEcran } = await mesurer(pseudo, chemin, 360, 640);
+      expect(colonnesEcran).toBe(1);
       proche(region.width, 328, 1, 'carte de la page à 360');
       proche(region.x, 16, 1, 'bord gauche à 360');
       for (const c of cartes) proche(c.width, 278, 1, 'carte à 360');

@@ -70,7 +70,7 @@ class PilotageBouclageIntegrationTest {
             "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee",
             "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
             "dureeEcouleeMillisecondes", "nombreInscrits", "nombreAyantBoucle", "nombreEnBoucle", "inscritsEnCourse",
-            "nombreAbandons", "inscritsEnAbandon");
+            "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs", "inscritsVainqueurs");
     static final List<String> CHAMPS_INSCRIT = List.of("inscriptionId", "dossard", "pseudo", "statut",
             "nombreBouclesTerminees", "boucleCouranteTerminee");
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
@@ -190,7 +190,7 @@ class PilotageBouclageIntegrationTest {
         assertThat(reponse.headers().firstValue("cache-control")).hasValueSatisfying(
                 c -> assertThat(c).contains("no-store"));
         JsonNode corps = json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(21).containsExactlyInAnyOrderElementsOf(CHAMPS);
+        assertThat(corps.propertyNames()).hasSize(23).containsExactlyInAnyOrderElementsOf(CHAMPS);
         assertThat(corps.get("courseId").asString()).isEqualTo(x);
         assertThat(corps.get("nom").asString()).isEqualTo(NOM_X);
         assertThat(corps.get("logoUrl").isNull()).isTrue();
