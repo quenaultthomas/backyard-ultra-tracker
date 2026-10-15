@@ -197,20 +197,22 @@ class AbandonAutomatiqueIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA6 : personne n'a de Passage sur la Boucle 1 à t0 + 2 min : aucun abandon, aucune ligne INFO, la Course reste EN_COURS")
-    void ca6_personne_n_a_boucle_aucune_decision() throws Exception {
+    @DisplayName("CA6 (adapté 4.10 RG1) : personne n'a de Passage sur la Boucle 1 à t0 + 2 min : aucun abandon, les trois sont VAINQUEUR (partagés), la Course est TERMINEE, aucune ligne « Abandon automatique »")
+    void ca6_personne_n_a_boucle_vainqueurs_partages() throws Exception {
         String x = decor.courseXDemarree();
         decor.horloge.fixer(DecorAbandon.T0.plusSeconds(120));
         decor.demarrerJournal();
 
-        assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isZero();
+        AbandonnerCoureursHorsDelai.Resultat resultat = abandonner.executer(UUID.fromString(x));
 
+        assertThat(resultat.abandons()).isZero();
+        assertThat(resultat.vainqueurs()).isEqualTo(3);
         for (UUID compte : List.of(decor.idBruno, decor.idChloe, decor.idTom)) {
-            assertThat(decor.etat(x, compte)).isEqualTo("EN_COURSE:-:-");
+            assertThat(decor.etat(x, compte)).isEqualTo("VAINQUEUR:-:-");
         }
         assertThat(decor.lignesAbandonAutomatique()).isEmpty();
         assertThat(decor.jdbc.queryForObject("select statut from course where id = ?", String.class,
-                UUID.fromString(x))).isEqualTo("EN_COURS");
+                UUID.fromString(x))).isEqualTo("TERMINEE");
     }
 
     @Test

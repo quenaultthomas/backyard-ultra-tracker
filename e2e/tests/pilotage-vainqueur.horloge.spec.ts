@@ -203,19 +203,19 @@ test('CA12 - coureur seul inscrit : scanné, il est vainqueur au départ de la B
   expect(lireStatutCourseEnBase(course.id)).toBe('TERMINEE');
 });
 
-test('CA12 - aucun scan : à la fin de la Boucle 1 la Course reste « En cours », ni vainqueur ni abandon', async ({ page, playwright }) => {
+test('CA12 - aucun scan : à la fin de la Boucle 1 la Course est terminée, les trois coureurs sont vainqueurs, aucun abandon', async ({ page, playwright }) => {
+  // 4.10 : adapté (RG14). 4.9 laissait la Course « En cours » sans décision ; les vainqueurs partagés la terminent.
   const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 3, nombreMaxBoucles: 5, dureeBoucleMinutes: 60 });
   await ouvrirPilotage(page, course.id);
 
   await avancerHorloge(playwright, 'PT60M');
 
-  await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 2 sur 5', HUIT_SECONDES);
-  await expect(lire(page, 'pilotage-statut')).toHaveText('En cours');
-  await expect(lire(page, 'pilotage-compteur')).toHaveText('3 coureurs en course sur 3 inscrits');
+  await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée', HUIT_SECONDES);
+  await expect(lire(page, 'pilotage-vainqueurs-titre')).toHaveText('Vainqueurs');
+  await expect(lire(page, 'pilotage-vainqueur')).toHaveCount(3);
   await expect(lire(page, 'pilotage-aucun-abandon')).toBeVisible();
-  await expect(lire(page, 'pilotage-vainqueurs')).toHaveCount(0);
-  expect(lireStatutCourseEnBase(course.id)).toBe('EN_COURS');
-  for (const c of course.coureurs) expect(lireInscriptionEnBase(course.id, c.dossard)).toEqual(SANS_DECISION);
+  expect(lireStatutCourseEnBase(course.id)).toBe('TERMINEE');
+  for (const c of course.coureurs) expect(lireInscriptionEnBase(course.id, c.dossard)).toEqual(VAINQUEUR);
 });
 
 test('CA13 - dernière Boucle autorisée (M = 2) : Bruno seul sur la Boucle 2 est vainqueur, Chloé abandonne Boucle 2, la Course est terminée', async ({ browser, page, playwright }) => {
@@ -246,7 +246,8 @@ test('CA13 - dernière Boucle autorisée (M = 2) : Bruno seul sur la Boucle 2 es
   expect(lireStatutCourseEnBase(course.id)).toBe('TERMINEE');
 });
 
-test('CA13 - dernière Boucle autorisée (M = 2) : Bruno et Chloé ont tous deux bouclé les deux Boucles, la Course reste « En cours » sans vainqueur', async ({ browser, page, playwright }) => {
+test('CA13 - dernière Boucle autorisée (M = 2) : Bruno et Chloé ont tous deux bouclé les deux Boucles, ils sont vainqueurs partagés et la Course est terminée', async ({ browser, page, playwright }) => {
+  // 4.10 : adapté (RG14). 4.9 laissait la Course « En cours » sans vainqueur (message de Boucle max terminée).
   const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 2, nombreMaxBoucles: 2, dureeBoucleMinutes: 60 });
   const [bruno, chloe] = course.coureurs;
   await ouvrirPilotage(page, course.id);
@@ -266,14 +267,16 @@ test('CA13 - dernière Boucle autorisée (M = 2) : Bruno et Chloé ont tous deux
     await contexteBenevole.close();
   }
 
-  await expect(lire(page, 'pilotage-message-boucle-max-terminee')).toBeVisible(HUIT_SECONDES);
-  await expect(lire(page, 'pilotage-statut')).toHaveText('En cours');
-  await expect(lire(page, 'pilotage-vainqueurs')).toHaveCount(0);
-  await expect(lire(page, 'pilotage-inscrit')).toHaveCount(2);
+  await expect(lire(page, 'pilotage-vainqueurs')).toBeVisible(HUIT_SECONDES);
+  await expect(lire(page, 'pilotage-vainqueurs-titre')).toHaveText('Vainqueurs');
+  await expect(lire(page, 'pilotage-vainqueur-pseudo')).toHaveText([bruno.pseudo, chloe.pseudo]);
+  await expect(lire(page, 'pilotage-vainqueur-boucles-terminees')).toHaveText(['2', '2']);
+  await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée');
+  await expect(lire(page, 'pilotage-inscrit')).toHaveCount(0);
   await expect(lire(page, 'pilotage-aucun-abandon')).toBeVisible();
-  expect(lireStatutCourseEnBase(course.id)).toBe('EN_COURS');
-  expect(lireInscriptionEnBase(course.id, bruno.dossard)).toEqual(SANS_DECISION);
-  expect(lireInscriptionEnBase(course.id, chloe.dossard)).toEqual(SANS_DECISION);
+  expect(lireStatutCourseEnBase(course.id)).toBe('TERMINEE');
+  expect(lireInscriptionEnBase(course.id, bruno.dossard)).toEqual(VAINQUEUR);
+  expect(lireInscriptionEnBase(course.id, chloe.dossard)).toEqual(VAINQUEUR);
 });
 
 async function rejouerParApi(playwright: import('@playwright/test').PlaywrightWorkerArgs['playwright'], course: CourseDeScan, identifiantScan: string, jetonQr: string): Promise<number> {

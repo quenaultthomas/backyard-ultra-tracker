@@ -23,7 +23,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 /**
- * Tests de l'incrément 4.9 : effet sur le scan d'une Course terminée par le contrôle (CA4 ; RG9). Décor de
+ * Tests de l'incrément 4.9 (adaptés à 4.10 : {@code Resultat.vainqueurs()} entier) : effet sur le scan d'une Course terminée par le contrôle (CA4 ; RG9). Décor de
  * {@link ScenarioPassageDeTest} : Z est TERMINEE (boucles de 1 min, t0 = 14:03:27Z), Léo y est affecté ; X est EN_COURS
  * avec Bruno (1) et Chloé (2). Signatures supposées : celles de 4.4a ; le refus d'une Course terminée reste
  * {@link CourseTermineePourPassageException} (409 COURSE_TERMINEE), évalué avant l'état de l'Inscription.
@@ -98,7 +98,7 @@ class EnregistrerPassageCourseTermineeTest {
 
         assertThat(resultat.rejeu()).isFalse();
         assertThat(resultat.passage().numeroBoucle()).isEqualTo(1);
-        assertThat(controle.vainqueur()).isFalse();
+        assertThat(controle.vainqueurs()).isZero();
         assertThat(controle.abandons()).isZero();
         assertThat(s.inscriptions.inscriptions).allMatch(Inscription::estEnCourse);
         assertThat(s.courses.parId(X).orElseThrow().statut()).isEqualTo(StatutCourse.EN_COURS);
@@ -118,5 +118,38 @@ class EnregistrerPassageCourseTermineeTest {
                 () -> s.casA(validation).executer(X, LEO, s.chloe.jetonQr(), UUID.randomUUID(), 500),
                 CourseTermineePourPassageException.class);
         assertThat(s.passages.passages).noneMatch(p -> p.inscriptionId().equals(s.chloe.id()));
+    }
+
+    @Test
+    @DisplayName("CA3 - RG8 : scan de Chloé de scanneLe 59,8 s validé à 60,3 s, Bruno {} : Passage boucle 1 créé, puis le contrôle désigne Chloé vainqueur unique et abandonne Bruno (boucle 1)")
+    void doit_designer_la_scanneuse_vainqueur_unique_quand_son_scan_est_le_seul_de_la_boucle() {
+        Instant validation = T0.plusMillis(60_300);
+
+        var resultat = s.casA(validation).executer(X, LEO, s.chloe.jetonQr(), UUID.randomUUID(), 500);
+        var controle = new AbandonnerCoureursHorsDelai(s.courses, s.inscriptions, s.passages,
+                java.time.Clock.fixed(validation, java.time.ZoneOffset.UTC)).executer(X);
+
+        assertThat(resultat.passage().numeroBoucle()).isEqualTo(1);
+        assertThat(controle.vainqueurs()).isEqualTo(1);
+        assertThat(controle.abandons()).isEqualTo(1);
+        assertThat(s.inscriptions.inscriptions).filteredOn(i -> i.id().equals(s.chloe.id()))
+                .allMatch(i -> i.statut() == StatutInscription.VAINQUEUR);
+        assertThat(s.inscriptions.inscriptions).filteredOn(i -> i.id().equals(s.bruno.id()))
+                .allMatch(i -> i.statut() == StatutInscription.ABANDON && i.boucleAbandon().equals(java.util.Optional.of(1)));
+        assertThat(s.courses.parId(X).orElseThrow().statut()).isEqualTo(StatutCourse.TERMINEE);
+    }
+
+    @Test
+    @DisplayName("CA3 - RG8 : le même scan validé après un contrôle ayant déclaré Bruno et Chloé vainqueurs partagés (personne n'a bouclé) est refusé : Course terminée, aucun Passage")
+    void doit_refuser_le_scan_valide_apres_des_vainqueurs_partages() {
+        new AbandonnerCoureursHorsDelai(s.courses, s.inscriptions, s.passages,
+                java.time.Clock.fixed(T0.plusSeconds(60), java.time.ZoneOffset.UTC)).executer(X);
+        assertThat(s.inscriptions.inscriptions).allMatch(i -> i.statut() == StatutInscription.VAINQUEUR);
+        s.courses.nombreDEnregistrements = 0;
+
+        s.assertRefusSansEcriture(
+                () -> s.casA(T0.plusMillis(60_300)).executer(X, LEO, s.chloe.jetonQr(), UUID.randomUUID(), 500),
+                CourseTermineePourPassageException.class);
+        assertThat(s.passages.passages).isEmpty();
     }
 }

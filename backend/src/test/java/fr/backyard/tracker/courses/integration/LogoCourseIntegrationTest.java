@@ -603,7 +603,9 @@ class LogoCourseIntegrationTest {
                 .filter(m -> m.contains("Logo de la course")).toList();
         assertThat(infos).containsExactlyInAnyOrder("Logo de la course enregistré (course " + x + ")",
                 "Logo de la course enregistré (course " + x + ")", "Logo de la course supprimé (course " + x + ")");
+        // Le journal capture la racine : on écarte le bruit du pool de connexions des contextes Spring en cache.
         List<String> apresRefus = evenements.stream().skip(apresSucces)
+                .filter(e -> !e.getLoggerName().startsWith("com.zaxxer.hikari"))
                 .filter(e -> e.getLevel().isGreaterOrEqual(Level.INFO)).map(ILoggingEvent::getFormattedMessage)
                 .toList();
         assertThat(apresRefus).as("aucune ligne INFO ou supérieure pour les refus et le DELETE sans logo").isEmpty();

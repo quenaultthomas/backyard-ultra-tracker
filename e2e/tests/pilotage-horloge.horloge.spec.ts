@@ -1,16 +1,7 @@
-import { type Page, type PlaywrightWorkerArgs } from '@playwright/test';
-import { creerCompteParApi, pseudoUnique } from './aide-connexion';
-import {
-  connecterAdminMaster,
-  courseDeReference,
-  creerCourseParApi,
-  dateDansJours,
-  demarrerCourseParApi,
-  exigerIdentifiantsAdminMaster,
-  nomCourseUnique,
-} from './aide-admin';
-import { sinscrireParApi } from './aide-coureur';
-import { avancerHorloge, avecApi, expect, lireHorloge, test } from './aide-horloge';
+import { type Browser, type Page, type PlaywrightWorkerArgs } from '@playwright/test';
+import { connecterAdminMaster, exigerIdentifiantsAdminMaster } from './aide-admin';
+import { avancerHorloge, expect, lireHorloge, test } from './aide-horloge';
+import { ouvrirEcranDeScan, preparerCourseDeScan, scannerParEntree, verifierSucces, type CourseDeScan } from './aide-scan';
 
 /*
  * Incrément 4.3 : CA12 à CA14, l'horloge applicative est avancée par l'API ; les écrans de pilotage
@@ -40,26 +31,34 @@ async function dansIntervalle(page: Page, testid: string, min: string, max: stri
   expect(secondes(await lire(page, testid).innerText())).toBeLessThanOrEqual(secondes(max));
 }
 
-/** Course datée du jour à Paris, avec 2 inscrits, démarrée par l'API. */
-async function courseDemarree(playwright: PlaywrightLib, dureeBoucleMinutes: number, nombreMaxBoucles: number): Promise<{ id: string; nom: string }> {
-  const nom = nomCourseUnique();
-  const course = await avecApi(playwright, (ctx) =>
-    creerCourseParApi(ctx, courseDeReference({ nom, date: dateDansJours(0), dureeBoucleMinutes, nombreMaxBoucles })),
-  );
-  const id = course['id'] as string;
-  for (const prefixe of ['bruno', 'chloe']) {
-    const pseudo = pseudoUnique(prefixe);
-    await avecApi(playwright, (ctx) => creerCompteParApi(ctx, pseudo));
-    await avecApi(playwright, (ctx) => sinscrireParApi(ctx, pseudo, id));
+/**
+ * Course datée du jour à Paris, avec 2 inscrits et un bénévole affecté, démarrée par l'API.
+ * 4.10 (RG14) : ces tests avancent l'horloge ; sans aucun scan la Course se terminerait (vainqueurs partagés) et le
+ * pilotage n'afficherait plus la Boucle suivante. Les deux coureurs sont donc scannés à chaque Boucle (`scannerTous`).
+ */
+async function courseDemarree(playwright: PlaywrightLib, dureeBoucleMinutes: number, nombreMaxBoucles: number, benevole?: string): Promise<CourseDeScan> {
+  return preparerCourseDeScan(playwright, { nombreCoureurs: 2, nombreMaxBoucles, dureeBoucleMinutes, benevole });
+}
+
+/** Scanne tous les coureurs de la Course pour la Boucle donnée, depuis un contexte de bénévole isolé. */
+async function scannerTous(browser: Browser, course: CourseDeScan, boucle: number): Promise<void> {
+  const contexte = await browser.newContext();
+  try {
+    const scan = await contexte.newPage();
+    await ouvrirEcranDeScan(scan, course);
+    for (const c of course.coureurs) {
+      await scannerParEntree(scan, c.jeton);
+      await verifierSucces(scan, c.dossard, c.pseudo, boucle);
+    }
+  } finally {
+    await contexte.close();
   }
-  await avecApi(playwright, (ctx) => demarrerCourseParApi(ctx, id));
-  return { id, nom };
 }
 
 const urlPilotage = (id: string) => `/administration/courses/${id}/pilotage`;
 
 test.describe('Pilotage avec horloge pilotable (4.3)', () => {
-  test('CA12 - avancer l\'horloge de 60 min fait passer le pilotage à la Boucle 2 puis 3, sans rechargement', async ({ page, playwright }) => {
+  test('CA12 - avancer l\'horloge de 60 min fait passer le pilotage à la Boucle 2 puis 3, sans rechargement', async ({ browser, page, playwright }) => {
     const course = await courseDemarree(playwright, 60, 24);
     await connecterAdminMaster(page);
     await expect(page).toHaveURL(/\/administration$/);
@@ -69,12 +68,14 @@ test.describe('Pilotage avec horloge pilotable (4.3)', () => {
     await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 1 sur 24');
     await dansIntervalle(page, 'pilotage-compte-a-rebours', '00:59:00', '01:00:00');
 
+    await scannerTous(browser, course, 1);
     await avancerHorloge(playwright, 'PT60M');
     await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 2 sur 24', SIX_SECONDES);
     await expect(lire(page, 'pilotage-annonce-boucle')).toContainText('Boucle 2 en cours', SIX_SECONDES);
     await dansIntervalle(page, 'pilotage-compte-a-rebours', '00:58:00', '01:00:00');
     await dansIntervalle(page, 'pilotage-duree-ecoulee', '01:00:00', '01:02:00');
 
+    await scannerTous(browser, course, 2);
     await avancerHorloge(playwright, 'PT60M');
     await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 3 sur 24', SIX_SECONDES);
     expect((await lireHorloge(playwright)).decalage).toBe('PT2H');
@@ -87,31 +88,33 @@ test.describe('Pilotage avec horloge pilotable (4.3)', () => {
     expect(etat.decalageMillisecondes).toBe(0);
   });
 
-  test('CA13 - sur la dernière boucle autorisée puis après son temps, le pilotage l\'annonce', async ({ page, playwright }) => {
+  test('CA13 - sur la dernière boucle autorisée puis après son temps, le pilotage l\'annonce, puis la Course se termine avec ses vainqueurs', async ({ browser, page, playwright }) => {
     const course = await courseDemarree(playwright, 60, 2);
     await connecterAdminMaster(page);
     await expect(page).toHaveURL(/\/administration$/);
     await page.goto(urlPilotage(course.id));
     await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 1 sur 2');
 
+    await scannerTous(browser, course, 1);
     await avancerHorloge(playwright, 'PT60M');
     await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 2 sur 2', SIX_SECONDES);
     await expect(lire(page, 'pilotage-libelle-compte-a-rebours')).toHaveText('Fin de la dernière boucle dans', SIX_SECONDES);
     await expect(lire(page, 'pilotage-message-derniere-boucle')).toHaveText('Dernière boucle autorisée.', SIX_SECONDES);
 
+    await scannerTous(browser, course, 2);
     await avancerHorloge(playwright, 'PT60M');
-    await expect(lire(page, 'pilotage-message-boucle-max-terminee')).toHaveText(
-      'Le temps de la dernière boucle est écoulé. La fin de course sera constatée automatiquement.',
-      SIX_SECONDES,
-    );
-    await expect(lire(page, 'pilotage-compte-a-rebours')).toHaveText('00:00:00');
-    expect(secondes(await lire(page, 'pilotage-duree-ecoulee').innerText())).toBeGreaterThanOrEqual(2 * 3600);
-    await expect(lire(page, 'pilotage-statut')).toHaveText('En cours');
+    // 4.10 : adapté (RG14). Le temps de la dernière Boucle écoulé, la fin est constatée dans la seconde (avec des inscrits,
+    // le message transitoire « La fin de course sera constatée automatiquement » n'est plus observable) : les deux
+    // coureurs, passants de la dernière Boucle, sont vainqueurs partagés et la Course est terminée.
+    await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée', SIX_SECONDES);
+    await expect(lire(page, 'pilotage-vainqueurs-titre')).toHaveText('Vainqueurs');
+    await expect(lire(page, 'pilotage-vainqueur-pseudo')).toHaveText(course.coureurs.map((c) => c.pseudo));
+    await expect(lire(page, 'pilotage-vainqueur-boucles-terminees')).toHaveText(['2', '2']);
   });
 
-  test('CA14 - deux courses de 60 et 90 min dans deux onglets : le même décalage, des boucles différentes', async ({ context, page, playwright }) => {
+  test('CA14 - deux courses de 60 et 90 min dans deux onglets : le même décalage, des boucles différentes', async ({ browser, context, page, playwright }) => {
     const a = await courseDemarree(playwright, 60, 24);
-    const b = await courseDemarree(playwright, 90, 24);
+    const b = await courseDemarree(playwright, 90, 24, a.benevole);
     await connecterAdminMaster(page);
     await expect(page).toHaveURL(/\/administration$/);
     const ongletB = await context.newPage();
@@ -120,6 +123,9 @@ test.describe('Pilotage avec horloge pilotable (4.3)', () => {
     await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 1 sur 24');
     await expect(lire(ongletB, 'pilotage-boucle-courante')).toHaveText('Boucle 1 sur 24');
 
+    // 4.10 (RG14) : les deux Courses sont scannées sur la Boucle 1, sinon leurs coureurs seraient vainqueurs à la fin de la Boucle 1
+    await scannerTous(browser, a, 1);
+    await scannerTous(browser, b, 1);
     await avancerHorloge(playwright, 'PT60M');
     await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 2 sur 24', SIX_SECONDES);
     await expect(lire(ongletB, 'pilotage-boucle-courante')).toHaveText('Boucle 1 sur 24');

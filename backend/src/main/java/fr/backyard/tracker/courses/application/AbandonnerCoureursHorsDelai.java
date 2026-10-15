@@ -27,7 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
  * ou une exécution et un scan, sont sérialisées et la seconde trouve l'état déjà traité. Idempotent : une Course
  * introuvable, qui n'est pas en cours (une Course TERMINEE comprise) ou sans Boucle terminée à décider n'est pas
  * modifiée. Statuts des Inscriptions et de la Course sont écrits dans la même transaction. Journal : une ligne par
- * Boucle ayant produit des abandons et une ligne de fin de course, identifiant de la Course seulement.
+ * Boucle ayant produit des abandons et une ligne de fin de course (vainqueur unique ou vainqueurs partagés),
+ * identifiant de la Course seulement.
  */
 @Service
 public class AbandonnerCoureursHorsDelai {
@@ -57,15 +58,15 @@ public class AbandonnerCoureursHorsDelai {
      * Résultat d'une exécution du contrôle.
      *
      * @param abandons nombre d'Inscriptions mises en abandon
-     * @param vainqueur un vainqueur a été déclaré et la Course terminée
+     * @param vainqueurs nombre d'Inscriptions déclarées vainqueurs, la Course étant alors terminée
      */
-    public record Resultat(int abandons, boolean vainqueur) {
+    public record Resultat(int abandons, int vainqueurs) {
 
-        static final Resultat AUCUNE_DECISION = new Resultat(0, false);
+        static final Resultat AUCUNE_DECISION = new Resultat(0, 0);
     }
 
     /**
-     * Applique la décision du domaine dans la transaction : abandons, vainqueur et fin de Course, tout ou rien.
+     * Applique la décision du domaine dans la transaction : abandons, vainqueurs et fin de Course, tout ou rien.
      */
     @Transactional
     public Resultat executer(UUID courseId) {
@@ -85,16 +86,16 @@ public class AbandonnerCoureursHorsDelai {
         Map<UUID, Set<Integer>> boucles = bouclesPasseesParInscription(enCourse);
         Decision decision = AbandonAutomatique.decider(enCourse,
                 (inscription, boucle) -> boucles.getOrDefault(inscription.id(), Set.of()).contains(boucle),
-                bouclesTerminees);
+                bouclesTerminees, course.nombreMaxBoucles());
         appliquer(course, decision);
         journaliser(courseId, decision);
-        return new Resultat(decision.abandons().size(), decision.vainqueur().isPresent());
+        return new Resultat(decision.abandons().size(), decision.vainqueurs().size());
     }
 
     private void appliquer(Course course, Decision decision) {
         decision.abandons().forEach(d -> depotInscriptions.mettreAJour(d.inscription().abandonner(d.motif(),
                 d.boucleAbandon())));
-        decision.vainqueur().ifPresent(vainqueur -> depotInscriptions.mettreAJour(vainqueur.devenirVainqueur()));
+        decision.vainqueurs().forEach(vainqueur -> depotInscriptions.mettreAJour(vainqueur.devenirVainqueur()));
         if (decision.courseTerminee()) {
             depotCourses.enregistrer(course.terminer());
         }
@@ -112,7 +113,16 @@ public class AbandonnerCoureursHorsDelai {
                 .forEach((boucle, nombre) -> JOURNAL.log(Level.INFO,
                         "Abandon automatique : course {0}, boucle {1}, {2} inscription(s) en abandon.",
                         courseId, String.valueOf(boucle), String.valueOf(nombre)));
-        decision.boucleDeFin().ifPresent(boucle -> JOURNAL.log(Level.INFO,
-                "Fin de course : course {0}, boucle {1}, vainqueur unique.", courseId, String.valueOf(boucle)));
+        decision.boucleDeFin().ifPresent(boucle -> journaliserFin(courseId, boucle, decision.vainqueurs().size()));
+    }
+
+    private static void journaliserFin(UUID courseId, int boucle, int vainqueurs) {
+        if (vainqueurs == 1) {
+            JOURNAL.log(Level.INFO, "Fin de course : course {0}, boucle {1}, vainqueur unique.",
+                    courseId, String.valueOf(boucle));
+        } else {
+            JOURNAL.log(Level.INFO, "Fin de course : course {0}, boucle {1}, {2} vainqueurs partagés.",
+                    courseId, String.valueOf(boucle), String.valueOf(vainqueurs));
+        }
     }
 }
