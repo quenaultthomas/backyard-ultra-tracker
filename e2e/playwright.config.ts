@@ -6,8 +6,6 @@ export default defineConfig({
   testDir: './tests',
   globalSetup: './global-setup.ts',
   fullyParallel: true,
-  // Runner GitHub (4 coeurs) : la stack docker occupe une partie du CPU ; en local, valeur par défaut de Playwright.
-  workers: process.env.CI ? 4 : undefined,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL,
