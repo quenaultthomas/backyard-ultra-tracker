@@ -61,12 +61,39 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: e2e/package-lock.json
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      # Build des images api/web via bake, avec cache de couches GitHub Actions ; le override e2e
+      # ne change que l'environnement, les images sont donc identiques à celles de la production.
+      - name: Construire les images (cache buildx)
+        uses: docker/bake-action@59cb1203cd42bcefd40a1b6d73b589e48c86040e # v7.5.0
+        with:
+          files: docker-compose.yml
+          load: true
+          set: |
+            *.cache-from=type=gha,scope=e2e
+            *.cache-to=type=gha,scope=e2e,mode=max
       - name: Démarrer la stack e2e
-        run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait
-      - name: Installer Playwright
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
+        run: docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --no-build --wait
+      - name: Installer les dépendances e2e
+        run: npm ci
+        working-directory: e2e
+      - name: Lire la version de Playwright
+        id: playwright
+        run: echo "version=$(npx playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+        working-directory: e2e
+      - name: Cache des navigateurs Playwright
+        id: cache-navigateurs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
+      - name: Installer Chromium
+        if: steps.cache-navigateurs.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+        working-directory: e2e
+      - name: Installer les dépendances système de Chromium
+        if: steps.cache-navigateurs.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
         working-directory: e2e
       # `npm test` enchaîne les projets chromium/camera puis horloge (voir e2e/README.md).
       - name: Lancer les tests Playwright

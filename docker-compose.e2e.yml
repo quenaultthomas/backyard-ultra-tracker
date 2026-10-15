@@ -7,3 +7,18 @@ services:
   api:
     environment:
       SPRING_PROFILES_ACTIVE: e2e
+    # Healthchecks plus rapprochés pour raccourcir l'attente du démarrage (la production reste inchangée).
+    healthcheck:
+      interval: 3s
+      retries: 20
+      start_period: 15s
+
+  base:
+    healthcheck:
+      interval: 2s
+      start_period: 2s
+
+  web:
+    healthcheck:
+      interval: 2s
+      start_period: 2s
