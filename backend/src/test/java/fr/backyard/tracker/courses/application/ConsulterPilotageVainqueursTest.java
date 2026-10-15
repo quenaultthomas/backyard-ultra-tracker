@@ -132,6 +132,46 @@ class ConsulterPilotageVainqueursTest {
         assertThat(depotCourses.nombreDEnregistrements).isZero();
     }
 
+    @Test
+    @DisplayName("CA3 - RG10 : Course TERMINEE, 2 vainqueurs (Bruno 1 boucle, Chloé 1 boucle) et 1 abandon (Tom) : nombreVainqueurs 2, triés par dossard, inscritsEnCourse vide, nombreAbandons 1, nombreInscrits 3")
+    void doit_renseigner_deux_vainqueurs_et_un_abandon() {
+        garnir(StatutCourse.TERMINEE);
+        Inscription chloe = inscrire(2, "Chloé", StatutInscription.VAINQUEUR);
+        Inscription bruno = inscrire(1, "Bruno", StatutInscription.VAINQUEUR);
+        Inscription tom = inscrire(3, "Tom", StatutInscription.EN_COURSE);
+        scan(bruno, 1);
+        scan(chloe, 1);
+        remplacer(tom.abandonner(MotifAbandon.HORS_DELAI, 1));
+
+        var pilotage = consulterA(T0.plusSeconds(130)).executer(X);
+
+        assertThat(pilotage.nombreVainqueurs()).isEqualTo(2);
+        assertThat(pilotage.inscritsVainqueurs())
+                .extracting(v -> v.dossard(), v -> v.pseudo(), v -> v.statut(), v -> v.nombreBouclesTerminees())
+                .containsExactly(tuple(1, "Bruno", StatutInscription.VAINQUEUR, 1),
+                        tuple(2, "Chloé", StatutInscription.VAINQUEUR, 1));
+        assertThat(pilotage.inscritsEnCourse()).isEmpty();
+        assertThat(pilotage.nombreAbandons()).isEqualTo(1);
+        assertThat(pilotage.inscritsEnAbandon()).extracting(a -> a.dossard()).containsExactly(3);
+        assertThat(pilotage.nombreInscrits()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("CA3 - RG4/RG10 : vainqueurs à 2 et 1 boucles terminées : nombreBouclesTerminees distincts conservés")
+    void doit_conserver_des_nombres_de_boucles_distincts_entre_vainqueurs() {
+        garnir(StatutCourse.TERMINEE);
+        Inscription bruno = inscrire(1, "Bruno", StatutInscription.VAINQUEUR);
+        Inscription chloe = inscrire(2, "Chloé", StatutInscription.VAINQUEUR);
+        scan(bruno, 1);
+        scan(bruno, 2);
+        scan(chloe, 1);
+
+        var pilotage = consulterA(T0.plusSeconds(200)).executer(X);
+
+        assertThat(pilotage.inscritsVainqueurs()).extracting(v -> v.dossard(), v -> v.nombreBouclesTerminees())
+                .containsExactly(tuple(1, 2), tuple(2, 1));
+    }
+
     // ---------- fabriques ----------
 
     private void garnir(StatutCourse statut) {

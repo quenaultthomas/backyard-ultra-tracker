@@ -26,14 +26,15 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 /**
  * Tests de l'incrément 4.8 : cas d'usage AbandonnerCoureursHorsDelai (CA4 ; RG2, RG7, RG9, RG12, RG18).
- * Adaptés à 4.9 (RG15) sans affaiblissement : le résultat est un {@code Resultat} (voir ci-dessous) ; le test du
+ * Adaptés à 4.10 (RG14 : personne n'a bouclé = vainqueurs partagés ; M atteint = vainqueurs partagés, tests « ADAPTÉ 4.10 »)
+ * et à 4.9 (RG15) sans affaiblissement : le résultat est un {@code Resultat} (voir ci-dessous) ; le test du
  * plafond de Boucles reçoit un second passant sur la Boucle 5 (un seul passant serait désormais vainqueur, voir
  * {@link AbandonnerCoureursHorsDelaiVainqueurTest}) ; les attentes de 4.8 sont par ailleurs inchangées.
  *
  * Signatures supposées :
  * - {@code new AbandonnerCoureursHorsDelai(DepotCourses, DepotInscriptions, DepotPassages, Clock)} ;
  * - {@code Resultat executer(UUID courseId)} (4.9 : remplace l'entier de 4.8) ; {@code Resultat} expose
- *   {@code int abandons()} (nombre d'Inscriptions mises en abandon) et {@code boolean vainqueur()} ; Course chargée
+ *   {@code int abandons()} (nombre d'Inscriptions mises en abandon) et {@code int vainqueurs()} (4.10 : nombre de vainqueurs) ; Course chargée
  *   par {@code DepotCourses.parIdPourModification} ; Clock lu une seule fois, après le chargement ;
  * - port {@code DepotInscriptions.mettreAJour(Inscription)} : écriture d'une Inscription existante (le double
  *   DepotInscriptionsEnMemoireDeTest la fournit et compte les appels) ; une écriture par Inscription mise en abandon ;
@@ -132,16 +133,18 @@ class AbandonnerCoureursHorsDelaiTest {
     }
 
     @Test
-    @DisplayName("CA4 - RG4 : personne n'a de passage sur la boucle 1 : retourne 0, personne en abandon")
-    void doit_ne_rien_decider_quand_personne_n_a_boucle() {
+    @DisplayName("CA2 - ADAPTÉ 4.10 (était « personne en abandon, aucune écriture ») RG1 : personne n'a de passage sur la boucle 1 : 0 abandon, les deux inscrits VAINQUEUR")
+    void doit_declarer_vainqueurs_les_inscrits_quand_personne_n_a_boucle() {
         courses.enregistrer(course(X, StatutCourse.EN_COURS, 1, T0));
         bruno = inscrire(X, 1);
         chloe = inscrire(X, 2);
 
-        int abandons = casA(T0.plusSeconds(60)).executer(X).abandons();
+        var resultat = casA(T0.plusSeconds(60)).executer(X);
 
-        assertThat(abandons).isZero();
-        assertThat(inscriptions.nombreDeMisesAJour).isZero();
+        assertThat(resultat.abandons()).isZero();
+        assertThat(resultat.vainqueurs()).isEqualTo(2);
+        assertThat(relue(bruno).statut()).isEqualTo(StatutInscription.VAINQUEUR);
+        assertThat(relue(chloe).statut()).isEqualTo(StatutInscription.VAINQUEUR);
     }
 
     @Test
@@ -268,7 +271,7 @@ class AbandonnerCoureursHorsDelaiTest {
     }
 
     @Test
-    @DisplayName("CA4 - RG12 : aucun Passage créé, statut de la Course inchangé, aucune écriture de Course")
+    @DisplayName("CA4 - RG12 : aucun Passage créé, statut de la Course inchangé (décision d'abandon seule, k < M, deux passants), aucune écriture de Course")
     void doit_se_limiter_aux_inscriptions() {
         garnirX();
         int passagesAvant = passages.passages.size();
@@ -282,8 +285,8 @@ class AbandonnerCoureursHorsDelaiTest {
     }
 
     @Test
-    @DisplayName("CA4 - RG6/RG12 : à la fin du temps (t0 + 6 min), pas de boucle 6 ; avec deux passants sur la boucle 5 la Course reste EN_COURS")
-    void doit_plafonner_au_nombre_max_de_boucles_sans_terminer_la_course() {
+    @DisplayName("CA2 - ADAPTÉ 4.10 (était « la Course reste EN_COURS ») RG2 : à la fin du temps (t0 + 6 min), pas de boucle 6 ; Bruno et David (2 passants sur la boucle 5 = M) VAINQUEUR, Chloé ABANDON boucle 5, Course TERMINEE")
+    void doit_plafonner_au_nombre_max_de_boucles_et_partager_la_victoire() {
         courses.enregistrer(course(X, StatutCourse.EN_COURS, 1, T0));
         bruno = inscrire(X, 1);
         chloe = inscrire(X, 2);
@@ -301,10 +304,10 @@ class AbandonnerCoureursHorsDelaiTest {
 
         assertThat(abandons).isEqualTo(1);
         assertThat(relue(chloe).boucleAbandon()).contains(5);
-        assertThat(relue(bruno).statut()).isEqualTo(StatutInscription.EN_COURSE);
-        assertThat(relue(david).statut()).isEqualTo(StatutInscription.EN_COURSE);
-        assertThat(courses.parId(X).orElseThrow().statut()).isEqualTo(StatutCourse.EN_COURS);
-        assertThat(courses.nombreDEnregistrements).isZero();
+        assertThat(relue(bruno).statut()).isEqualTo(StatutInscription.VAINQUEUR);
+        assertThat(relue(david).statut()).isEqualTo(StatutInscription.VAINQUEUR);
+        assertThat(courses.parId(X).orElseThrow().statut()).isEqualTo(StatutCourse.TERMINEE);
+        assertThat(courses.nombreDEnregistrements).isEqualTo(1);
     }
 
     // ---------- fabriques ----------

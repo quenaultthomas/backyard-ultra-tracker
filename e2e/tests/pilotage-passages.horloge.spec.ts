@@ -72,20 +72,23 @@ test('CA8 - la bascule remet « En boucle » les coureurs ayant bouclé et met l
     await expect(lire(page, 'pilotage-ayant-boucle')).toHaveText('A bouclé : 2');
 
     await avancerHorloge(playwright, 'PT60M');
-    await expect(lire(page, 'pilotage-message-boucle-max-terminee')).toBeVisible(SIX_SECONDES);
-    // 4.8 : Chloé, sans Passage sur la Boucle 2 (dernière autorisée), passe en abandon ; Bruno reste en course
+    // 4.10 : adapté (RG14). Chloé, sans Passage sur la Boucle 2 (dernière autorisée), passe en abandon ; Bruno et Zoé,
+    // seuls passants à la dernière Boucle, sont vainqueurs partagés (4.8/4.9 les laissaient « En cours »), la Course est terminée.
+    await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée', HUIT_SECONDES);
     await expect(lire(page, 'pilotage-abandon-pseudo')).toHaveText([chloe.pseudo, tom.pseudo], HUIT_SECONDES);
     await expect(lire(page, 'pilotage-abandon-boucle')).toHaveText(['Boucle 2', 'Boucle 1']);
-    await expect(lire(page, 'pilotage-inscrit-pseudo')).toHaveText([bruno.pseudo, zoe.pseudo]);
-    await expect(lire(page, 'pilotage-inscrit-boucle')).toHaveText(['A bouclé', 'A bouclé']);
-    await expect(lire(page, 'pilotage-inscrit-boucles-terminees')).toHaveText(['2', '2']);
-    await expect(lire(page, 'pilotage-statut')).toHaveText('En cours');
+    await expect(lire(page, 'pilotage-inscrit')).toHaveCount(0);
+    await expect(lire(page, 'pilotage-vainqueur-pseudo')).toHaveText([bruno.pseudo, zoe.pseudo]);
+    await expect(lire(page, 'pilotage-vainqueur-boucles-terminees')).toHaveText(['2', '2']);
   } finally {
     await contexteBenevole.close();
   }
 
-  // l'autre Course (1 min) n'a reçu aucun Passage : ses compteurs n'ont pas bougé avec ceux de la première
-  await expect(lire(ongletAutre, 'pilotage-ayant-boucle')).toHaveText('A bouclé : 0');
+  // l'autre Course (1 min) n'a reçu aucun Passage : elle est indépendante de la première (4.10, RG13/RG14 : sans scan,
+  // ses deux coureurs sont vainqueurs partagés et sa Course terminée, alors que la première avait ses propres issues)
+  await expect(lire(ongletAutre, 'pilotage-statut')).toHaveText('Terminée', HUIT_SECONDES);
+  await expect(lire(ongletAutre, 'pilotage-vainqueur')).toHaveCount(2);
+  await expect(lire(ongletAutre, 'pilotage-vainqueur-boucles-terminees')).toHaveText(['0', '0']);
   expect(lirePassagesEnBase(autre.id)).toEqual([]);
   expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN', '1:2:SCAN', '2:1:SCAN', '4:1:SCAN', '4:2:SCAN']);
 });

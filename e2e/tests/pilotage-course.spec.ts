@@ -18,6 +18,7 @@ import {
   pseudoBenevoleUnique,
 } from './aide-admin';
 import { placerStatutCourseEnBase, sinscrireParApi } from './aide-coureur';
+import { ouvrirEcranDeScan, preparerCourseDeScan, scannerParEntree, verifierSucces } from './aide-scan';
 
 /*
  * Incrément 4.2 : écran de pilotage (CA13 à CA19 ; CA20 = non-régression de la suite complète).
@@ -233,13 +234,23 @@ test.describe('Pilotage d\'une course', () => {
 
   // ---------- CA14 ----------
 
-  test('CA14 - la bascule de boucle apparaît d\'elle-même : Boucle 2, annonce, compte à rebours repart', async ({ page, playwright }) => {
+  test('CA14 - la bascule de boucle apparaît d\'elle-même : Boucle 2, annonce, compte à rebours repart', async ({ browser, page, playwright }) => {
     test.slow(); // vraie bascule de boucle (environ 60 s), délai 90 s
-    const bruno = await creerCoureur(playwright, 'bruno');
-    const chloe = await creerCoureur(playwright, 'chloe');
-    const course = await creerCourse(playwright, 0, [bruno, chloe]);
+    // 4.10 : adapté (RG14). Sans scan, la Course d'1 min serait terminée avec ses vainqueurs au départ de la Boucle 2 :
+    // les deux coureurs sont scannés pendant la Boucle 1 pour conserver la bascule vers la Boucle 2 (cas sans scan : test suivant).
+    const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 2, nombreMaxBoucles: 5, dureeBoucleMinutes: 1 });
+    const contexteBenevole = await browser.newContext();
+    try {
+      const scan = await contexteBenevole.newPage();
+      await ouvrirEcranDeScan(scan, course);
+      for (const c of course.coureurs) {
+        await scannerParEntree(scan, c.jeton);
+        await verifierSucces(scan, c.dossard, c.pseudo, 1);
+      }
+    } finally {
+      await contexteBenevole.close();
+    }
     await connecterMaster(page);
-    await avecApi(playwright, (ctx) => demarrerCourseParApi(ctx, course.id));
     await page.goto(urlPilotage(course.id));
     await page.evaluate(() => ((window as unknown as Record<string, unknown>)['marqueurRechargement'] = 1));
     await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 1 sur 5');
@@ -251,6 +262,22 @@ test.describe('Pilotage d\'une course', () => {
     expect(secondes(await lire(page, 'pilotage-duree-ecoulee').innerText())).toBeGreaterThanOrEqual(60);
     await expect(lire(page, 'pilotage-compte-a-rebours')).not.toHaveAttribute('aria-live');
     await expect(lire(page, 'pilotage-duree-ecoulee')).not.toHaveAttribute('aria-live');
+    expect(await page.evaluate(() => (window as unknown as Record<string, unknown>)['marqueurRechargement'])).toBe(1);
+  });
+
+  test('CA14 - sans aucun scan, à la fin de la Boucle 1 d\'1 min la Course se termine d\'elle-même avec les deux coureurs vainqueurs (4.10)', async ({ page, playwright }) => {
+    test.slow(); // vraie fin de Boucle (environ 60 s), délai 90 s
+    const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 2, nombreMaxBoucles: 5, dureeBoucleMinutes: 1 });
+    await connecterMaster(page);
+    await page.goto(urlPilotage(course.id));
+    await page.evaluate(() => ((window as unknown as Record<string, unknown>)['marqueurRechargement'] = 1));
+    await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 1 sur 5');
+
+    await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée', { timeout: 80000 });
+    await expect(lire(page, 'pilotage-vainqueurs-titre')).toHaveText('Vainqueurs');
+    await expect(lire(page, 'pilotage-vainqueur')).toHaveCount(2);
+    await expect(lire(page, 'pilotage-vainqueur-pseudo')).toHaveText(course.coureurs.map((c) => c.pseudo));
+    await expect(lire(page, 'pilotage-message-terminee')).toHaveText('La course est terminée.');
     expect(await page.evaluate(() => (window as unknown as Record<string, unknown>)['marqueurRechargement'])).toBe(1);
   });
 
