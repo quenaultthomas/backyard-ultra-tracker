@@ -28,6 +28,10 @@ Toute la suite tourne sur la stack lancée avec `docker-compose.e2e.yml` (profil
 
 `npm test` lance `chromium` et `camera` (sans le scénario « base neuve », voir ci-dessous) puis `horloge --workers=1`. Pour un seul projet : `npx playwright test --project=chromium` ou `npx playwright test --project=horloge --no-deps --workers=1`.
 
+## En CI
+
+Le job `e2e-tests` de `.github/workflows/ci.yml` répartit la suite sur 4 runners, chacun avec sa propre stack : 3 shards (`--shard=i/3`) des projets `chromium` et `camera`, et un job `horloge` (1 worker). Le job `e2e` agrège le résultat. Équivaut à `npm test`, en parallèle.
+
 ## Base neuve
 
 Le scénario « base neuve » de `donnees-demo.spec.ts` exige une base vierge : `docker compose down -v` puis `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build`, sans lancer `scripts/donnees-demo.sh` avant, puis `npx playwright test tests/donnees-demo.spec.ts`. `npm test` l'exclut (`--grep-invert "base neuve"`) pour tourner sur n'importe quelle base.

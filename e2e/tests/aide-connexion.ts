@@ -2,8 +2,12 @@ import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
 export const MOT_DE_PASSE = 'un-mot-de-passe-12';
 
+/**
+ * Suffixe sans la suite « qr » : plusieurs écrans (fiche admin des inscrits, courses ouvertes) interdisent toute
+ * occurrence de « qr » dans leur DOM, et un suffixe aléatoire peut la contenir par hasard.
+ */
 export function pseudoUnique(prefixe = 'coureur'): string {
-  const suffixe = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+  const suffixe = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`.replace(/qr/gi, 'q9');
   return `${prefixe}-${suffixe}`;
 }
 
