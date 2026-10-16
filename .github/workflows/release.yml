@@ -1,0 +1,130 @@
+name: Release
+
+# Déclenché par un tag de version : v0.4.0, ou une pré-version v0.4.0-rc.1.
+# Les images ne sont publiées que si la CI complète (back, front, e2e) est verte et si la version du tag
+# correspond à celle des sources. Le VPS ne compile jamais : il récupère ces images (voir docs/deploiement.md).
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: ci
+    uses: ./.github/workflows/ci.yml
+
+  version:
+    name: version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.lire.outputs.version }}
+      prerelease: ${{ steps.lire.outputs.prerelease }}
+      proprietaire: ${{ steps.lire.outputs.proprietaire }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Vérifier que le tag correspond aux versions des sources
+        id: lire
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          base="${version%%-*}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]]; then
+            echo "::error::Le tag ${GITHUB_REF_NAME} n'a pas le format vX.Y.Z ou vX.Y.Z-rc.N"
+            exit 1
+          fi
+          pom="$(sed -n 's#^    <version>\(.*\)</version>$#\1#p' backend/pom.xml | head -n 1)"
+          front="$(jq -r .version frontend/package.json)"
+          e2e="$(jq -r .version e2e/package.json)"
+          echo "tag=${version} (base ${base}) pom=${pom} front=${front} e2e=${e2e}"
+          for source in "backend/pom.xml:${pom}" "frontend/package.json:${front}" "e2e/package.json:${e2e}"; do
+            if [ "${source#*:}" != "$base" ]; then
+              echo "::error::${source%%:*} est en version ${source#*:}, le tag ${GITHUB_REF_NAME} attend ${base}"
+              exit 1
+            fi
+          done
+          if ! grep -q "^## \[${base}\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md n'a pas de section [${base}]"
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          if [ "$version" != "$base" ]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+          echo "proprietaire=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+  images:
+    name: image ${{ matrix.service }}
+    needs: [ci, version]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        service: [api, web]
+        include:
+          - service: api
+            contexte: backend
+          - service: web
+            contexte: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Calculer le SHA court
+        id: sha
+        run: echo "court=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ matrix.contexte }}
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            VERSION=${{ needs.version.outputs.version }}
+          # Jamais de tag `latest` : le VPS référence toujours une version explicite.
+          tags: |
+            ghcr.io/${{ needs.version.outputs.proprietaire }}/backyard-ultra-tracker-${{ matrix.service }}:${{ needs.version.outputs.version }}
+            ghcr.io/${{ needs.version.outputs.proprietaire }}/backyard-ultra-tracker-${{ matrix.service }}:${{ steps.sha.outputs.court }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ needs.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=release-${{ matrix.service }}
+          cache-to: type=gha,scope=release-${{ matrix.service }},mode=max
+
+  release:
+    name: github release
+    needs: [version, images]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Extraire les notes du CHANGELOG
+        run: |
+          set -euo pipefail
+          version="${{ needs.version.outputs.version }}"
+          base="${version%%-*}"
+          awk -v titre="## [${base}]" 'index($0, titre) == 1 { dedans = 1; next } dedans && /^## \[/ { exit } dedans' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "::error::Section [${base}] vide dans CHANGELOG.md"; exit 1; }
+      - name: Créer la GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          options=()
+          if [ "${{ needs.version.outputs.prerelease }}" = "true" ]; then options+=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file notes.md "${options[@]}"

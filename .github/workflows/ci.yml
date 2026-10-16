@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Réutilisé par release.yml : aucune image n'est publiée si un job échoue.
+  workflow_call:
 
 permissions:
   contents: read

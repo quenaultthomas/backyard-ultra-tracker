@@ -71,7 +71,11 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,info
+  # /actuator/info : version du build (pom) et version de l'image déployée (argument de build VERSION du Dockerfile).
+  info:
+    env:
+      enabled: true
   endpoint:
     health:
       show-details: never
@@ -79,3 +83,7 @@ management:
       # Pas de groupes liveness/readiness : la reponse se limite a {"status":"UP"}.
       probes:
         enabled: false
+
+info:
+  app:
+    version: ${APP_VERSION:dev}

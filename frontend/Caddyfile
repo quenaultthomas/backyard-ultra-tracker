@@ -32,6 +32,16 @@
 		reverse_proxy api:8080
 	}
 
+	# Alias public de la version déployée (/actuator/info du back) : vérifier ce qui tourne après un déploiement.
+	handle /api/version {
+		header {
+			Cache-Control no-store
+			defer
+		}
+		rewrite * /actuator/info
+		reverse_proxy api:8080
+	}
+
 	# Endpoints métier : relayés sans réécriture du chemin.
 	handle /api/* {
 		# Logo de course : 2 Mo refusés par l'api (413 ProblemDetail) ; au-delà de 4 Mio, Caddy répond lui-même 413

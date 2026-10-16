@@ -1,5 +1,5 @@
 # Surcharges de production : ne s'utilise qu'en complément de docker-compose.yml.
-#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 # Requiert Docker Compose >= 2.24 (balise !reset). Variables : voir .env.example.
 
 services:
@@ -11,6 +11,10 @@ services:
       POSTGRES_PASSWORD: ${BASE_MOT_DE_PASSE:?BASE_MOT_DE_PASSE est obligatoire en production (générer avec openssl rand -hex 24)}
 
   api:
+    # Image versionnée construite et testée par la CI (release.yml) : le VPS ne compile jamais.
+    image: ghcr.io/quenaultthomas/backyard-ultra-tracker-api:${VERSION:?VERSION doit être défini dans .env}
+    # Pas de construction sur le VPS : l'image vient toujours du registre.
+    build: !reset null
     restart: unless-stopped
     # La JVM prend 60 % de ce plafond pour son tas (-XX:MaxRAMPercentage=60, backend/Dockerfile), le reste pour la
     # mémoire hors tas (métaspace, piles, tampons). Argon2id : HACHAGE_CONCURRENCE_MAX x 19 Mio au plus (SEC-06).
@@ -25,6 +29,8 @@ services:
     ports: !reset []
 
   web:
+    image: ghcr.io/quenaultthomas/backyard-ultra-tracker-web:${VERSION:?VERSION doit être défini dans .env}
+    build: !reset null
     restart: unless-stopped
     mem_limit: ${WEB_MEMOIRE_MAX:-256m}
     environment:

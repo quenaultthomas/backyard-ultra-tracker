@@ -18,6 +18,9 @@ FROM eclipse-temurin:25.0.4.1_1-jre-noble
 RUN groupadd --system --gid 10001 backyard \
     && useradd --system --uid 10001 --gid backyard --no-create-home --shell /usr/sbin/nologin backyard
 WORKDIR /application
+# Version de l'image, exposée par /actuator/info (info.app.version) ; `dev` en développement local.
+ARG VERSION=dev
+ENV APP_VERSION=${VERSION}
 COPY --from=build --chown=backyard:backyard /construction/application.jar application.jar
 USER backyard:backyard
 EXPOSE 8080
