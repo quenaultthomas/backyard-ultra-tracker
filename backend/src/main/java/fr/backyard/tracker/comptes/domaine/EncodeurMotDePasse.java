@@ -1,6 +1,10 @@
 package fr.backyard.tracker.comptes.domaine;
 
-/** Port sortant : calcule et vérifie l'empreinte non réversible d'un mot de passe. */
+/**
+ * Port sortant : calcule et vérifie l'empreinte non réversible d'un mot de passe. Calcul coûteux (mémoire et temps) :
+ * un adaptateur peut en plafonner la concurrence et lever {@link HachageSatureException} au-delà ; l'appelant ne
+ * l'invoque hors transaction sur les endpoints publics (connexion, création de compte coureur).
+ */
 @FunctionalInterface
 public interface EncodeurMotDePasse {
 

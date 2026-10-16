@@ -24,6 +24,7 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 | 4 | Course en direct | 4.1 → 4.12 | faire tourner une course de bout en bout |
 | 5 | Scan hors ligne | 5.1 → 5.2 | scanner sans réseau sans perdre de passage |
 | 6 | Suivi public | 6.1 → 6.4 | projeter le suivi d'une course |
+| A | Durcissement post-audit | A.1 → A.3 | tenir la charge d'une course réelle avec un transport et une gestion d'erreurs durcis |
 
 ---
 
@@ -279,6 +280,24 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 
 ---
 
+## Jalon A : Durcissement post-audit
+
+Issu de `docs/audits/audit-2026-10-16-backend-securite-performance.md`. SEC-06 (limite de débit, hachage hors transaction) et DEP-05 (journaux et mémoire) sont traités à part, avant le premier déploiement. Le reste est planifié ici, sans bloquer les jalons 5 et 6.
+
+### A.1 Planificateur d'abandon allégé
+- **Livré** : le planificateur ne prend le verrou pessimiste d'une course et ne relit inscrits et passages que lorsqu'une échéance de boucle est atteinte ; les scans n'attendent plus ce verrou à chaque seconde ; fin des requêtes N+1 sur les deux listes signalées (PER-04).
+- **Tu testes** : une course de démo avec une trentaine de coureurs tourne, l'abandon automatique et la fin de course se déclenchent comme avant ; les scans restent fluides.
+
+### A.2 Règles d'erreur et de validation dans le bon calque
+- **Livré** : la borne de 24 h de l'âge d'un scan passe de `PassageRequete` au domaine (ARC-03) ; `GestionnaireErreursCourses` couvre tous les contrôleurs, un contrôleur oublié ne répond plus 500 (ARC-07).
+- **Tu testes** : un scan trop ancien est refusé avec le même message qu'avant ; une erreur métier sur n'importe quel écran affiche un message exploitable.
+
+### A.3 En-têtes de transport et blocage de connexion
+- **Livré** : en-tête HSTS dans le `Caddyfile`, cookie `Secure` indépendant de `X-Forwarded-Proto` (SEC-04) ; le blocage de connexion tient compte de l'origine en plus du pseudo, pour que l'admin master ne puisse pas être bloqué par un tiers (SEC-06, reste).
+- **Tu testes** : les en-têtes de réponse en HTTPS ; des échecs répétés depuis une origine ne bloquent pas la connexion légitime de l'admin master.
+
+---
+
 ## Décisions prises
 
 | Sujet | Décision | Incrément |
@@ -293,6 +312,7 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 
 ## Décisions en attente
 
-- Aucune pour l'instant. (Direction artistique tranchée pour R.1 : thème clair sur fond crème, Inter auto-hébergée, courbes de niveau et boucle fermée ; voir `docs/specs/increment-R.1.md`.)
+- **Idempotence du scan (avant 5.1, MET-04)** : l'API est idempotente sur l'identifiant de scan, alors que CLAUDE.md l'annonce sur (inscription, boucle). À trancher : aligner le code sur (inscription, boucle), ou garder l'identifiant de scan et corriger CLAUDE.md. À traiter dans la spec 5.1.
+- (Direction artistique tranchée pour R.1 : thème clair sur fond crème, Inter auto-hébergée, courbes de niveau et boucle fermée ; voir `docs/specs/increment-R.1.md`.)
 
 Toute nouvelle question est ajoutée ici et tranchée avant l'incrément concerné.

@@ -4,10 +4,10 @@ import fr.backyard.tracker.comptes.domaine.Compte;
 import fr.backyard.tracker.comptes.domaine.DepotComptes;
 import fr.backyard.tracker.comptes.domaine.DonneesCompteInvalidesException;
 import fr.backyard.tracker.comptes.domaine.EncodeurMotDePasse;
+import fr.backyard.tracker.comptes.domaine.HachageSatureException;
 import fr.backyard.tracker.comptes.domaine.PseudoDejaUtiliseException;
 import java.time.Clock;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /** Création d'un compte BENEVOLE par un admin (le rôle de l'appelant est contrôlé avant ce cas d'usage). */
 @Service
@@ -31,8 +31,8 @@ public class CreerBenevole {
     /**
      * @throws DonneesCompteInvalidesException toutes les violations de saisie, avant toute vérification d'unicité
      * @throws PseudoDejaUtiliseException      si le pseudo est déjà pris, tous rôles confondus
+     * @throws HachageSatureException         trop de calculs d'empreinte simultanés : aucun compte créé
      */
-    @Transactional
     public Compte executer(Commande commande) {
         return creationCompte.creer(commande.pseudo(), commande.motDePasse(), Compte::creerBenevole);
     }

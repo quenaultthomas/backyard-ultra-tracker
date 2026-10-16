@@ -12,7 +12,7 @@ Toute l'application tourne dans Docker : aucune installation de Java, Node ou Po
 - Tests E2E : `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build` (voir « Tests E2E et profil `e2e` »).
 - Production : `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`.
 
-`docker-compose.prod.yml` ne contient que des surcharges : seul `web` publie des ports, `restart: unless-stopped` sur les trois services, HTTPS par Caddy, volumes des certificats `donnees-caddy` et `config-caddy`, variables `BASE_MOT_DE_PASSE`, `DOMAINE`, `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE` obligatoires, variable fixe `BACKYARD_ENVIRONNEMENT=production` (garde-fou, jamais lue dans `.env`).
+`docker-compose.prod.yml` ne contient que des surcharges : seul `web` publie des ports, `restart: unless-stopped` sur les trois services, HTTPS par Caddy, volumes des certificats `donnees-caddy` et `config-caddy`, variables `BASE_MOT_DE_PASSE`, `DOMAINE`, `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE` obligatoires, variable fixe `BACKYARD_ENVIRONNEMENT=production` (garde-fou, jamais lue dans `.env`), plafonds mémoire `mem_limit` des trois services (voir « Ressources : mémoire et journaux »).
 
 Dans la suite, sur le VPS :
 
@@ -43,10 +43,32 @@ Toutes les variables sont décrites dans `.env.example`. Le fichier `.env` n'est
 | `CONNEXION_BLOCAGE_SECONDES` | facultative (défaut `900`, entier ≥ 1) | durée du blocage, et délai au-delà duquel des échecs partiels sont oubliés |
 | `ADMIN_MASTER_PSEUDO` | **obligatoire** (facultative en dev) | pseudo de l'admin master, créé au démarrage s'il n'existe pas (3 à 30 caractères) |
 | `ADMIN_MASTER_MOT_DE_PASSE` | **obligatoire** (facultative en dev) | mot de passe initial de l'admin master (12 à 128 caractères) |
+| `HACHAGE_CONCURRENCE_MAX` | facultative (défaut `4`, entier ≥ 1) | calculs Argon2id simultanés (connexion, création de compte, changement de mot de passe), environ 19 Mio chacun ; au-delà, attente d'une seconde au plus puis réponse 503 `SERVICE_SATURE` |
+| `API_MEMOIRE_MAX` | facultative (défaut `1g`) | plafond mémoire du conteneur `api` (production seulement) |
+| `BASE_MEMOIRE_MAX` | facultative (défaut `512m`) | plafond mémoire du conteneur `base` (production seulement) |
+| `WEB_MEMOIRE_MAX` | facultative (défaut `256m`) | plafond mémoire du conteneur `web` (production seulement) |
 
 Si `BASE_MOT_DE_PASSE`, `DOMAINE`, `ADMIN_MASTER_PSEUDO` ou `ADMIN_MASTER_MOT_DE_PASSE` est absente ou vide, Compose échoue avant tout démarrage avec un message citant la variable. Compose ne peut pas refuser une valeur faible : utiliser impérativement un mot de passe généré (`openssl rand -hex 24`), jamais `backyard`.
 
 Une valeur de `CONNEXION_ECHECS_MAX` ou `CONNEXION_BLOCAGE_SECONDES` non entière ou inférieure à 1 empêche `api` de démarrer (jamais `healthy`) ; `$PROD logs api` cite la propriété (`backyard.connexion.echecs-max` ou `backyard.connexion.blocage-secondes`) et la borne. Pour un test à la main, `CONNEXION_BLOCAGE_SECONDES=30` évite d'attendre 15 minutes ; ne pas garder une valeur aussi basse en production.
+
+Une valeur de `HACHAGE_CONCURRENCE_MAX` non entière ou inférieure à 1 empêche de même `api` de démarrer ; `$PROD logs api` cite `backyard.hachage.concurrence-max`.
+
+### Limitation des connexions : compromis connu
+
+Le blocage temporaire après `CONNEXION_ECHECS_MAX` échecs porte sur le **pseudo**, pas sur l'adresse IP : il protège chaque compte contre la recherche de mot de passe, quelle que soit l'origine des tentatives. Contrepartie : n'importe qui connaissant un pseudo (classement et listes publics) peut le bloquer pendant `CONNEXION_BLOCAGE_SECONDES` en enchaînant des mots de passe faux, **y compris celui de l'admin master**, et recommencer à la fin du blocage. Le mot de passe n'est jamais exposé, mais la connexion du compte visé est refusée (429 `TENTATIVES_EXCESSIVES`) pendant ce temps.
+
+- Une session déjà ouverte n'est pas affectée : le jour d'une course, l'admin master se connecte **avant** le départ et garde sa session (12 h d'inactivité au plus ; ne pas se déconnecter).
+- Pour lever un blocage en urgence : `$PROD restart api` remet à zéro compteurs et blocages, mais déconnecte tout le monde (sessions en mémoire) ; à éviter pendant une course.
+- Si un blocage abusif se répète, réduire temporairement `CONNEXION_BLOCAGE_SECONDES` dans `.env` puis `$PROD up -d api` (même effet de déconnexion).
+
+Il n'y a pas de limite de débit par adresse IP (le Caddy standard n'en fournit pas). Le coût des tentatives est borné autrement : chaque vérification Argon2id se fait hors transaction (aucune connexion de base tenue pendant le calcul) et au plus `HACHAGE_CONCURRENCE_MAX` calculs tournent en même temps. Une rafale sur `/api/connexion` ou `/api/comptes` reçoit des 503 `SERVICE_SATURE` (en-tête `Retry-After`) au lieu d'épuiser la mémoire de `api` ou le pool de connexions de la base, que partagent les scans des bénévoles et le planificateur. Limite restante : une rafale massive et soutenue (plusieurs centaines de requêtes simultanées) peut encore occuper les fils d'exécution de Tomcat pendant l'attente d'une seconde ; une limite par IP dans Caddy (module tiers `caddy-ratelimit`, image Caddy à construire) reste la protection à ajouter avant une exposition à forte audience. `$PROD logs api | grep "calculs d'empreinte saturés"` montre ces refus.
+
+### Ressources : mémoire et journaux
+
+**Journaux** : les trois services utilisent le pilote `json-file` avec rotation (5 fichiers de 10 Mo au plus par conteneur, défini dans `docker-compose.yml`), soit 150 Mo au plus pour la stack. `$PROD logs` ne montre que ce qui est conservé : pour garder une trace plus longue, copier les journaux régulièrement (`$PROD logs --no-color --since 24h > journaux-$(date +%F).txt`). Une panne durable du contrôle d'abandon automatique (base injoignable, course en échec) n'est journalisée, trace comprise, qu'aux échecs consécutifs 1, 2, 4, 8… puis tous les 1024, et son rétablissement une fois.
+
+**Mémoire (production)** : `mem_limit` plafonne chaque conteneur (`API_MEMOIRE_MAX`, `BASE_MEMOIRE_MAX`, `WEB_MEMOIRE_MAX`, défauts `1g`, `512m`, `256m`, soit 1,75 Go). La JVM de `api` prend 60 % de son plafond pour le tas (`-XX:MaxRAMPercentage=60`, `backend/Dockerfile`), le reste couvre la mémoire hors tas ; elle s'arrête sur `OutOfMemoryError` (`-XX:+ExitOnOutOfMemoryError`) et Docker la relance (`restart: unless-stopped`). Sur un VPS de 2 Go, garder les défauts ; au-delà, augmenter d'abord `API_MEMOIRE_MAX` (et `HACHAGE_CONCURRENCE_MAX` si les connexions simultanées sont nombreuses : compter 19 Mio par calcul dans le tas). Un conteneur qui dépasse son plafond est tué par le noyau (`$PROD ps` le montre redémarré, `docker inspect --format '{{.State.OOMKilled}}' <conteneur>` vaut `true`). Une modification de ces variables s'applique par `$PROD up -d`. En dev, aucun plafond n'est posé.
 
 ### Admin master
 
@@ -116,7 +138,7 @@ Le certificat Let's Encrypt est obtenu au premier démarrage puis renouvelé aut
    ```sh
    git pull
    ```
-3. Comparer `.env.example` avec `.env` et ajouter les nouvelles variables éventuelles (depuis 1.4 : `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE`, obligatoires ; ignorées si l'admin master existe déjà).
+3. Comparer `.env.example` avec `.env` et ajouter les nouvelles variables éventuelles (depuis 1.4 : `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE`, obligatoires ; ignorées si l'admin master existe déjà ; depuis la correction de l'audit du 2026-10-16 : `HACHAGE_CONCURRENCE_MAX`, `API_MEMOIRE_MAX`, `BASE_MEMOIRE_MAX` et `WEB_MEMOIRE_MAX`, toutes facultatives).
 4. Reconstruire et relancer (les migrations Liquibase s'appliquent au démarrage de `api`) :
    ```sh
    $PROD up -d --build

@@ -4,6 +4,7 @@ import fr.backyard.tracker.comptes.domaine.CompteIntrouvableOuInutilisableExcept
 import fr.backyard.tracker.comptes.domaine.CompteNonConnectableException;
 import fr.backyard.tracker.comptes.domaine.ConnexionBloqueeException;
 import fr.backyard.tracker.comptes.domaine.DonneesCompteInvalidesException;
+import fr.backyard.tracker.comptes.domaine.HachageSatureException;
 import fr.backyard.tracker.comptes.domaine.IdentifiantsInvalidesException;
 import fr.backyard.tracker.comptes.domaine.MotDePasseActuelIncorrectException;
 import fr.backyard.tracker.comptes.domaine.NouveauMotDePasseIdentiqueException;
@@ -44,6 +45,7 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
     /** Explicite : Spring 7 omet le type par défaut, le contrat d'API l'exige. */
     private static final URI TYPE_GENERIQUE = URI.create("about:blank");
     private static final Logger JOURNAL = LoggerFactory.getLogger(GestionnaireErreurs.class);
+    private static final long REESSAYER_APRES_SATURATION_SECONDES = 2;
 
     private final SessionConnexion sessionConnexion;
 
@@ -82,6 +84,21 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
         probleme.setProperty("reessayerDansSecondes", secondes);
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, Long.toString(secondes))
+                .body(probleme);
+    }
+
+    /**
+     * Trop de calculs d'empreinte simultanés (SEC-06) : rien n'a été fait, la requête peut être rejouée. Journal sans
+     * pseudo ni mot de passe, en WARN pour repérer une rafale.
+     */
+    @ExceptionHandler(HachageSatureException.class)
+    ResponseEntity<ProblemDetail> hachageSature() {
+        JOURNAL.warn("Requête refusée : calculs d'empreinte saturés");
+        ProblemDetail probleme = probleme(HttpStatus.SERVICE_UNAVAILABLE, "Service saturé",
+                "Le service est momentanément saturé. Réessayez dans quelques secondes.", "SERVICE_SATURE");
+        probleme.setProperty("reessayerDansSecondes", REESSAYER_APRES_SATURATION_SECONDES);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(REESSAYER_APRES_SATURATION_SECONDES))
                 .body(probleme);
     }
 
