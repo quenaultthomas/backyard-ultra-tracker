@@ -2,6 +2,7 @@ package fr.backyard.tracker.courses.exposition;
 
 import fr.backyard.tracker.courses.domaine.BenevoleInconnuException;
 import fr.backyard.tracker.courses.domaine.BenevoleNonAffecteException;
+import fr.backyard.tracker.courses.domaine.CourseTermineePourAbandonException;
 import fr.backyard.tracker.courses.domaine.CourseTermineePourPassageException;
 import fr.backyard.tracker.courses.domaine.HeureDeDepartInconnueException;
 import fr.backyard.tracker.courses.domaine.IdentifiantScanDejaUtiliseException;
@@ -44,7 +45,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @RestControllerAdvice(assignableTypes = {CourseController.class, LogoCourseController.class,
         FicheCourseController.class, CoursesDuBenevoleController.class, InscriptionsCoureurController.class,
-        MesInscriptionsController.class, PassageController.class})
+        MesInscriptionsController.class, PassageController.class, AbandonManuelController.class})
 @Order(0)
 public class GestionnaireErreursCourses {
 
@@ -165,6 +166,11 @@ public class GestionnaireErreursCourses {
     @ExceptionHandler(CourseTermineePourPassageException.class)
     ProblemDetail courseTermineePourPassage() {
         return conflit("La course est terminée.", "COURSE_TERMINEE");
+    }
+
+    @ExceptionHandler(CourseTermineePourAbandonException.class)
+    ProblemDetail courseTermineePourAbandon() {
+        return conflit("La course est terminée : aucun abandon n'est possible.", "COURSE_TERMINEE");
     }
 
     @ExceptionHandler(HeureDeDepartInconnueException.class)

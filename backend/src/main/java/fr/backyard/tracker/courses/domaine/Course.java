@@ -135,6 +135,33 @@ public final class Course {
     }
 
     /**
+     * Seule une Course EN_COURS, avec ou sans heure de départ, accepte un abandon manuel. Unique contrôle de cette
+     * règle.
+     *
+     * @throws CourseTermineePourAbandonException la Course est TERMINEE
+     * @throws CourseNonDemarreeException la Course est EN_PREPARATION
+     */
+    public void autoriserAbandonManuel() {
+        if (statut == StatutCourse.TERMINEE) {
+            throw new CourseTermineePourAbandonException(id);
+        }
+        if (statut == StatutCourse.EN_PREPARATION) {
+            throw new CourseNonDemarreeException(id);
+        }
+    }
+
+    /**
+     * Après un abandon manuel : une Course sans aucune Inscription EN_COURSE est terminée sans vainqueur (la Course
+     * renvoyée est TERMINEE), sinon elle est renvoyée inchangée. Celle-ci n'est pas affectée. Unique définition.
+     *
+     * @param nombreInscriptionsEnCourse Inscriptions encore EN_COURSE dans cette Course après l'abandon
+     * @throws CourseNonTerminableException la Course n'est pas EN_COURS alors qu'elle devrait se terminer
+     */
+    public Course terminerSiPlusAucunCoureurEnCourse(int nombreInscriptionsEnCourse) {
+        return nombreInscriptionsEnCourse > 0 ? this : terminer();
+    }
+
+    /**
      * Remplace l'ensemble des bénévoles affectés par celui donné (doublons ignorés, ensemble vide permis).
      *
      * @throws CourseTermineeException la Course est TERMINEE ; l'ensemble précédent est conservé

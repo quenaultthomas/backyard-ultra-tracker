@@ -84,6 +84,22 @@ public final class Inscription {
     }
 
     /**
+     * Abandon manuel décidé par un admin : l'Inscription renvoyée est ABANDON sur la première Boucle que le coureur
+     * n'a pas terminée ({@code nombrePassages + 1}, toute origine de Passage comprise, sans lecture de l'horloge) ;
+     * celle-ci n'est pas affectée. Unique définition de la Boucle d'un abandon manuel.
+     *
+     * @param nombrePassages nombre de Passages de l'Inscription, quelle que soit leur origine
+     * @throws IllegalArgumentException motif réservé à l'abandon automatique (HORS_DELAI)
+     * @throws InscriptionNonEnCourseException l'Inscription est déjà en abandon ou vainqueur
+     */
+    public Inscription abandonnerManuellement(MotifAbandon motif, int nombrePassages) {
+        if (!motif.estPermisPourAbandonManuel()) {
+            throw new IllegalArgumentException("Motif réservé à l'abandon automatique : " + motif);
+        }
+        return abandonner(motif, nombrePassages + 1);
+    }
+
+    /**
      * Déclare l'Inscription vainqueur : l'Inscription renvoyée est VAINQUEUR, sans motif ni Boucle d'abandon ; celle-ci
      * n'est pas affectée. Seule une Inscription EN_COURSE devient vainqueur.
      *

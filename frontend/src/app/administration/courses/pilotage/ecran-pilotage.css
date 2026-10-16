@@ -70,9 +70,10 @@
   border-top: var(--espace-1) solid var(--couleur-orange);
 }
 
-/* Repli étroit (320 px, texte à 200 %) : le bloc et les tableaux tiennent dans la carte. Le tableau
-   passe en lignes empilées, chaque cellule précédée du libellé de sa colonne (`data-libelle`). */
-@container cartes (max-width: 15rem) {
+/* Téléphone (sous 30rem de conteneur, 375 px au texte normal) : les tableaux, dont celui des coureurs
+   en course et sa colonne « Action », passent en lignes empilées, chaque cellule précédée du libellé
+   de sa colonne (`data-libelle`). */
+@container cartes (max-width: 30rem) {
   .tableau thead {
     display: none;
   }
@@ -103,7 +104,10 @@
     font-weight: 600;
     color: var(--couleur-encre-douce);
   }
+}
 
+/* Repli étroit (320 px, texte à 200 %) : le chronométrage tient dans la carte. */
+@container cartes (max-width: 15rem) {
   .chronometrage {
     padding: var(--espace-2);
   }

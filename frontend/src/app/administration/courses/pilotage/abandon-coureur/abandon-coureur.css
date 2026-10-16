@@ -1,0 +1,72 @@
+/* Abandon manuel (docs/design.md, section 11 « Pilotage ») : messages puis confirmation en ligne. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+}
+
+:host(:empty) {
+  display: none;
+}
+
+.confirmation__titre {
+  margin: 0;
+  font-size: var(--taille-moyenne);
+  color: var(--couleur-encre);
+  overflow-wrap: anywhere;
+}
+
+/* Motifs en tuiles : toute la tuile (libellé étiré) est une cible de 44 px. */
+.motifs-abandon {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
+  gap: var(--espace-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.motifs-abandon__legende {
+  margin-bottom: var(--espace-2);
+  padding: 0;
+  font-weight: 600;
+  color: var(--couleur-encre);
+}
+
+.motif-abandon {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-3);
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: var(--cible-min);
+  padding-inline: var(--espace-3);
+  border: 1px solid var(--couleur-trait);
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-surface);
+}
+
+/* Choisi : le bouton radio natif porte l'état, la couleur le renforce. */
+.motif-abandon:has(input:checked) {
+  border-color: var(--couleur-foret);
+  background-color: var(--couleur-succes-pale);
+}
+
+.motif-abandon input {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+}
+
+.motif-abandon label {
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-block: var(--espace-2);
+  font-weight: var(--poids-normal);
+  overflow-wrap: anywhere;
+}

@@ -1,5 +1,6 @@
 package fr.backyard.tracker.courses.exposition;
 
+import fr.backyard.tracker.courses.domaine.MotifAbandon;
 import java.util.UUID;
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -11,7 +12,8 @@ import tools.jackson.databind.type.LogicalType;
 /**
  * Lecture stricte des entiers : une décimale (1.5), une chaîne ("12") ou un booléen reçus à la place d'un
  * entier rendent le corps illisible au lieu d'être tronqués ou convertis silencieusement. Une chaîne vide reçue
- * à la place d'un UUID rend aussi le corps illisible (au lieu de devenir null).
+ * à la place d'un UUID rend aussi le corps illisible (au lieu de devenir null). Un motif d'abandon ne se lit que
+ * par son nom : un nombre (rang) ou une chaîne vide rend le corps illisible.
  */
 @Configuration(proxyBeanMethods = false)
 public class CoursesJsonConfiguration {
@@ -28,6 +30,13 @@ public class CoursesJsonConfiguration {
     @Bean
     JsonMapperBuilderCustomizer uuidStricts() {
         return builder -> builder.withCoercionConfig(UUID.class, coercion -> coercion
+                .setCoercion(CoercionInputShape.EmptyString, CoercionAction.Fail));
+    }
+
+    @Bean
+    JsonMapperBuilderCustomizer motifsAbandonStricts() {
+        return builder -> builder.withCoercionConfig(MotifAbandon.class, coercion -> coercion
+                .setCoercion(CoercionInputShape.Integer, CoercionAction.Fail)
                 .setCoercion(CoercionInputShape.EmptyString, CoercionAction.Fail));
     }
 }

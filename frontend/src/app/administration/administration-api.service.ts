@@ -12,7 +12,12 @@ import {
   InscritsCourseReponse,
   ModifierCourseRequete,
 } from './courses/course';
-import { PilotageCourse } from './courses/pilotage-course';
+import {
+  AbandonManuel,
+  AbandonManuelRequete,
+  MotifAbandonManuel,
+  PilotageCourse,
+} from './courses/pilotage-course';
 import { CreerAdminRequete, CreerBenevoleRequete } from './requetes-creation-compte';
 
 const URL_ACCES = '/api/administration/acces';
@@ -89,6 +94,19 @@ export class AdministrationApiService {
   /** Instantané de pilotage d'une Course démarrée, calculé par le serveur (409 si non démarrée). */
   consulterPilotage(id: string): Observable<PilotageCourse> {
     return this.http.get<PilotageCourse>(`${urlCourse(id)}/pilotage`);
+  }
+
+  /** Met en abandon une Inscription `EN_COURSE` d'une Course `EN_COURS`, avec un motif explicite. */
+  abandonnerCoureur(
+    id: string,
+    inscriptionId: string,
+    motif: MotifAbandonManuel,
+  ): Observable<AbandonManuel> {
+    const requete: AbandonManuelRequete = { motif };
+    return this.http.post<AbandonManuel>(
+      `${urlCourse(id)}/inscriptions/${encodeURIComponent(inscriptionId)}/abandon`,
+      requete,
+    );
   }
 
   /** Remplace les champs modifiables d'une Course `EN_PREPARATION` (admins et admin master). */

@@ -10,6 +10,8 @@ import java.util.UUID;
  */
 final class IdentifiantCourse {
 
+    private static final UUID AUCUNE_INSCRIPTION = new UUID(0L, 0L);
+
     private IdentifiantCourse() {
     }
 
@@ -21,6 +23,15 @@ final class IdentifiantCourse {
     /** @throws InscriptionIntrouvableException la valeur n'est pas un UUID : 404, comme un UUID inconnu */
     static UUID dInscription(String id) {
         return lire(id).orElseThrow(InscriptionIntrouvableException::new);
+    }
+
+    /**
+     * Un identifiant d'Inscription qui n'est pas un UUID devient l'UUID nul, que les Inscriptions (UUID aléatoires
+     * de version 4) ne portent jamais : le cas d'usage contrôle ainsi la Course avant de répondre
+     * INSCRIPTION_INTROUVABLE.
+     */
+    static UUID dInscriptionApresCourse(String id) {
+        return lire(id).orElse(AUCUNE_INSCRIPTION);
     }
 
     static Optional<UUID> lire(String id) {

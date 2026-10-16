@@ -26,6 +26,33 @@ export const LIBELLES_MOTIF_ABANDON: Readonly<Record<MotifAbandon, string>> = {
   AUTRE: 'Autre',
 };
 
+/** Motifs acceptés par l'abandon manuel (`HORS_DELAI` est réservé à l'abandon automatique). */
+export type MotifAbandonManuel = Exclude<MotifAbandon, 'HORS_DELAI'>;
+
+/** Choix proposés par le panneau de confirmation, dans l'ordre d'affichage. */
+export const MOTIFS_ABANDON_MANUEL: readonly MotifAbandonManuel[] = [
+  'VOLONTAIRE',
+  'MANUEL',
+  'AUTRE',
+];
+
+/** Corps de `POST /api/administration/courses/{id}/inscriptions/{inscriptionId}/abandon`. */
+export interface AbandonManuelRequete {
+  motif: MotifAbandonManuel;
+}
+
+/** Réponse 200 de l'abandon manuel : ni jeton QR, ni identifiant de Compte, ni pseudo. */
+export interface AbandonManuel {
+  inscriptionId: string;
+  dossard: number;
+  /** Toujours `ABANDON`. */
+  statut: StatutInscription;
+  motifAbandon: MotifAbandonManuel;
+  boucleAbandon: number;
+  /** `TERMINEE` quand plus aucun coureur n'est en course (décidé par le serveur). */
+  statutCourse: Exclude<StatutCourse, 'EN_PREPARATION'>;
+}
+
 /** Ligne de `PilotageCourse.inscritsEnAbandon` : jamais de jeton QR ni d'identifiant de Compte. */
 export interface InscritEnAbandon {
   inscriptionId: string;

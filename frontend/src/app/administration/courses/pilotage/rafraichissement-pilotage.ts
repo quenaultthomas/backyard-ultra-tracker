@@ -58,6 +58,8 @@ export class RafraichissementPilotage {
   private battement: ReturnType<typeof setInterval> | undefined;
   /** Un nouvel instantané a été demandé au zéro du compte à rebours, la bascule est attendue. */
   private basculeDemandee = false;
+  /** Une actualisation immédiate a été demandée pendant une demande en cours. */
+  private relanceDemandee = false;
   private arrete = false;
 
   constructor() {
@@ -69,6 +71,18 @@ export class RafraichissementPilotage {
     this.courseId = courseId;
     this.surRefus = surRefus;
     this.battement = setInterval(() => this.battre(), PERIODE_AFFICHAGE_MS);
+    this.demander();
+  }
+
+  /**
+   * Demande un instantané hors rythme (après une action de l'admin). Si une demande est déjà en
+   * cours, sa réponse peut précéder l'action : une nouvelle demande part dès sa réception.
+   */
+  actualiserMaintenant(): void {
+    if (this.requete !== null) {
+      this.relanceDemandee = true;
+      return;
+    }
     this.demander();
   }
 
@@ -110,12 +124,21 @@ export class RafraichissementPilotage {
       next: (instantane) => {
         this.requete = null;
         this.appliquer(instantane);
+        this.relancerSiDemande();
       },
       error: (erreur: unknown) => {
         this.requete = null;
         this.traiterErreur(erreur);
+        this.relancerSiDemande();
       },
     });
+  }
+
+  private relancerSiDemande(): void {
+    if (this.relanceDemandee) {
+      this.relanceDemandee = false;
+      this.demander();
+    }
   }
 
   private appliquer(suivant: PilotageCourse): void {
