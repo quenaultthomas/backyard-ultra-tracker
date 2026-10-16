@@ -20,6 +20,8 @@
     <link rel="stylesheet" href="../frontend/src/app/scan/ecran-scan/ecran-scan.css" />
     <!-- Scan à la caméra (4.5) : feuille réelle du composant, sans copie. -->
     <link rel="stylesheet" href="../frontend/src/app/scan/camera-scan/camera-scan.css" />
+    <!-- File de scans (5.1a) : feuille réelle du composant, sans copie (`:host` sans effet ici : colonne en ligne). -->
+    <link rel="stylesheet" href="../frontend/src/app/scan/etat-file/etat-file.css" />
     <!-- Dossard imprimable (4.5b) : feuilles réelles de l'écran et du QR code, sans copie. -->
     <link rel="stylesheet" href="../frontend/src/app/inscriptions/qr-code/qr-code.css" />
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/dossard/ecran-dossard.css" />
@@ -366,7 +368,16 @@
             <p class="refus__motif">Jeton inconnu</p>
             <p class="refus__detail">Jeton inconnu pour cette course.</p>
           </div>
-          <p class="message--erreur resultat" data-composant="scan-resultat-erreur">Le serveur est injoignable. Le passage n'est peut-être pas enregistré : validez de nouveau avec le même jeton.</p>
+          <p class="message--avertissement resultat pictogramme-attente" data-composant="scan-resultat-attente">Scan gardé sur l'appareil. Il sera envoyé dès que possible.</p>
+          <p class="message--info" data-composant="scan-resultat-envoi">Envoi…</p>
+          <div style="display: flex; flex-direction: column; gap: var(--espace-3)" data-composant="scan-etat-file">
+            <p class="message--avertissement avertissement pictogramme-hors-ligne">Hors ligne : les scans sont gardés sur cet appareil.</p>
+            <div class="file">
+              <p class="file__compteur">2 en attente</p>
+              <button type="button" class="bouton bouton--secondaire">Renvoyer maintenant</button>
+            </div>
+            <p class="message--succes">3 scans envoyés</p>
+          </div>
           <section class="camera" data-composant="scan-camera-arretee">
             <p class="camera__etat">Caméra arrêtée</p>
             <p class="message--erreur">L'accès à la caméra est refusé. Autorisez-la dans les réglages du navigateur, ou saisissez le jeton ci-dessous.</p>
@@ -393,7 +404,6 @@
               <input id="apercu-jeton" type="text" autocomplete="off" spellcheck="false" />
             </div>
             <button type="submit" class="bouton">Enregistrer le passage</button>
-            <button type="button" class="bouton" disabled>Envoi…</button>
           </form>
         </div>
       </section>

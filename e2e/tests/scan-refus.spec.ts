@@ -5,6 +5,7 @@ import { MOT_DE_PASSE_BENEVOLE_CREE, affecterBenevolesParApi, exigerIdentifiants
 import { placerStatutCourseEnBase, placerStatutInscriptionEnBase } from './aide-coureur';
 import { installerCameraSimulee, presenterQr } from './aide-camera';
 import { avecApi } from './aide-horloge';
+import { MESSAGE_ATTENTE, avancerJusquaRequete, installerHorloge, routePassagesChronometree } from './aide-file-scan';
 import {
   champ,
   creerBenevole,
@@ -21,7 +22,6 @@ test.beforeAll(() => {
 });
 
 const MOTIF_PASSAGES = '**/api/benevole/courses/*/passages';
-const MESSAGE_INJOIGNABLE = 'Le serveur est injoignable. Le passage n\'est peut-être pas enregistré : validez de nouveau avec le même jeton.';
 
 const refus = (page: Page) => page.getByTestId('scan-refus');
 const motif = (page: Page) => page.getByTestId('scan-refus-motif');
@@ -232,50 +232,55 @@ test.describe('Écran de scan, refus plein cadre', () => {
     await expect.poll(() => identifiants.length, { timeout: 3000, intervals: [3000] }).toBe(2);
   });
 
-  test('CA13 - une réponse 500 ou une requête interrompue est une panne, pas un refus', async ({ page, playwright }) => {
+  test('CA13 - une réponse 500 ou une requête interrompue est une panne (gardée sur l\'appareil, renvoyée automatiquement), pas un refus', async ({ page, playwright }) => {
+    // 5.1a (RG17) : plus de message « injoignable » ni de revalidation manuelle ; la file renvoie toute seule.
     const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 1 });
     const [un] = course.coureurs;
+    await installerHorloge(page, course);
     await ouvrirEcranDeScan(page, course);
-    let appels = 0;
-    await page.route(MOTIF_PASSAGES, async (route) => {
-      appels++;
-      if (appels === 1) return route.fulfill(probleme(500, 'ERREUR_INTERNE'));
-      return route.abort('failed');
+    const releve = await routePassagesChronometree(page, (n, route) => {
+      if (n === 1) return route.fulfill(probleme(500, 'ERREUR_INTERNE'));
+      if (n === 2) return route.abort('failed');
+      return route.continue();
     });
     await scannerParEntree(page, un.jeton);
-    await expect(erreur(page)).toHaveText(MESSAGE_INJOIGNABLE);
+    await expect(page.getByTestId('scan-resultat-attente')).toHaveText(MESSAGE_ATTENTE);
     await expect(refus(page)).toHaveCount(0);
     await expect(motif(page)).toHaveCount(0);
+    await expect(erreur(page)).toHaveCount(0);
 
-    await champ(page).press('Enter');
-    await expect.poll(() => appels).toBe(2);
-    await expect(erreur(page)).toHaveText(MESSAGE_INJOIGNABLE);
+    await avancerJusquaRequete(page, releve, 2, 1.6, 2.4);
+    await expect(page.getByTestId('scan-resultat-attente')).toHaveText(MESSAGE_ATTENTE);
     await expect(refus(page)).toHaveCount(0);
+    await expect(erreur(page)).toHaveCount(0);
+
+    await avancerJusquaRequete(page, releve, 3, 3.2, 4.8);
+    await verifierSucces(page, un.dossard, un.pseudo, 1);
+    expect(new Set(releve.identifiants).size).toBe(1);
   });
 
-  test('CA13 - réponse perdue puis revalidation : même identifiantScan, le rejeu s\'affiche en succès vert, jamais en refus', async ({ page, playwright }) => {
+  test('CA13 - réponse perdue : la nouvelle tentative automatique garde le même identifiantScan, le rejeu s\'affiche en succès vert, jamais en refus', async ({ page, playwright }) => {
     const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 1 });
     const [un] = course.coureurs;
+    await installerHorloge(page, course);
     await ouvrirEcranDeScan(page, course);
-    const identifiants: string[] = [];
-    await page.route(MOTIF_PASSAGES, async (route) => {
-      identifiants.push(identifiantDe(route));
-      if (identifiants.length === 1) {
+    const releve = await routePassagesChronometree(page, async (n, route) => {
+      if (n === 1) {
         await route.fetch();
         return route.abort('failed');
       }
       return route.continue();
     });
     await scannerParEntree(page, un.jeton);
-    await expect(erreur(page)).toHaveText(MESSAGE_INJOIGNABLE);
+    await expect(page.getByTestId('scan-resultat-attente')).toHaveText(MESSAGE_ATTENTE);
     await expect(refus(page)).toHaveCount(0);
     expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN']);
 
-    await champ(page).press('Enter');
+    await avancerJusquaRequete(page, releve, 2, 1.6, 2.4);
     await verifierSucces(page, un.dossard, un.pseudo, 1);
     await expect(refus(page)).toHaveCount(0);
-    expect(identifiants).toHaveLength(2);
-    expect(identifiants[1]).toBe(identifiants[0]);
+    expect(releve.identifiants).toHaveLength(2);
+    expect(releve.identifiants[1]).toBe(releve.identifiants[0]);
     expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN']);
   });
 

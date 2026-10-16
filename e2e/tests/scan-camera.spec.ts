@@ -33,7 +33,6 @@ test.beforeAll(() => {
 
 const MOTIF_PASSAGES = '**/api/benevole/courses/*/passages';
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-const MESSAGE_INJOIGNABLE = 'Le serveur est injoignable. Le passage n\'est peut-être pas enregistré : validez de nouveau avec le même jeton.';
 
 const camera = (page: Page) => page.getByTestId('scan-camera');
 const etat = (page: Page) => page.getByTestId('scan-camera-etat');
@@ -171,7 +170,11 @@ test.describe('Scan à la caméra, activation et lecture', () => {
     expect(envois).toHaveLength(1);
     expect(envois[0].jetonQr).toBe(un.jeton);
     expect(envois[0].identifiantScan).toMatch(UUID_V4);
-    expect(Object.keys(envois[0]).sort()).toEqual(['identifiantScan', 'jetonQr']);
+    expect(Object.keys(envois[0]).sort()).toEqual(['ageDuScanMillisecondes', 'identifiantScan', 'jetonQr']);
+    // 5.1a (RG3, RG16) : le corps porte désormais l'âge du scan (entier de 0 à 5000 ms pour un scan en direct).
+    expect(Number.isInteger(envois[0].ageDuScanMillisecondes)).toBe(true);
+    expect(envois[0].ageDuScanMillisecondes as number).toBeGreaterThanOrEqual(0);
+    expect(envois[0].ageDuScanMillisecondes as number).toBeLessThanOrEqual(5000);
     await expect(champ(page)).toHaveValue('');
     await expect(champ(page)).not.toBeFocused();
     expect(page.url()).not.toContain(un.jeton);
@@ -222,7 +225,8 @@ test.describe('Scan à la caméra, activation et lecture', () => {
     expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN']);
   });
 
-  test('CA4 - un seul envoi à la fois : le second QR attend la réponse du premier, la saisie ne passe pas non plus', async ({ page, playwright }) => {
+  test('CA4 - la saisie et la caméra n\'attendent plus l\'envoi : les scans sont mis en file au fil de l\'eau puis envoyés un à la fois, dans l\'ordre', async ({ page, playwright }) => {
+    // 5.1a (RG1, RG4, RG17) : remplace « un seul envoi à la fois, caméra et saisie confondues » ; l'envoi reste unique.
     const course = await ouvrirAvecCamera(page, playwright);
     const [un, deux] = course.coureurs;
     const jetons: string[] = [];
@@ -242,13 +246,16 @@ test.describe('Scan à la caméra, activation et lecture', () => {
     await presenterQr(page, un.jeton);
     await expect.poll(() => jetons.length, { timeout: 5000 }).toBe(1);
     const bouton = page.getByTestId('scan-bouton-enregistrer');
-    await expect(bouton).toBeDisabled();
+    await expect(bouton).toBeEnabled();
+    await expect(bouton).toHaveText('Enregistrer le passage');
+    // La saisie n'est pas bloquée par l'envoi en cours : le champ est libéré tout de suite.
     await champ(page).fill(un.jeton);
     await champ(page).press('Enter');
+    await expect(champ(page)).toHaveValue('');
     await presenterQr(page, deux.jeton);
 
-    await expect(page.getByTestId('scan-resultat-dossard')).toHaveText('Dossard 2', { timeout: 10_000 });
-    expect(jetons).toEqual([un.jeton, deux.jeton]);
+    await expect(page.getByTestId('scan-resultat-dossard')).toHaveText('Dossard 2', { timeout: 15_000 });
+    expect(jetons).toEqual([un.jeton, un.jeton, deux.jeton]);
     expect(maximumEnVol).toBe(1);
     expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN', '2:1:SCAN']);
     await expect(bouton).toBeEnabled();
@@ -299,7 +306,8 @@ test.describe('Scan à la caméra, refus et pannes', () => {
   });
 
   for (const panne of ['500', 'requête interrompue'] as const) {
-    test(`CA6 - après ${panne === '500' ? 'une réponse 500' : 'une requête interrompue'}, aucun réessai automatique, le rejeu garde le même identifiantScan`, async ({ page, playwright }) => {
+    test(`CA6 - après ${panne === '500' ? 'une réponse 500' : 'une requête interrompue'}, le scan est gardé puis renvoyé automatiquement avec le même identifiantScan`, async ({ page, playwright }) => {
+      // 5.1a (RG6, RG17) : remplace « aucun réessai automatique, le rejeu manuel garde le même identifiantScan ».
       const course = await ouvrirAvecCamera(page, playwright, {}, 1);
       const [un] = course.coureurs;
       const identifiants: string[] = [];
@@ -311,13 +319,10 @@ test.describe('Scan à la caméra, refus et pannes', () => {
       await activerCamera(page);
 
       await presenterQr(page, un.jeton);
-      await expect(erreur(page)).toHaveText(MESSAGE_INJOIGNABLE, { timeout: 5000 });
-      // Durée du critère : le QR reste maintenu, aucun réessai automatique.
-      await page.waitForTimeout(3000);
-      expect(identifiants).toHaveLength(1);
-
-      await retirerPendant(page, 2000);
-      await presenterQr(page, un.jeton);
+      await expect(page.getByTestId('scan-resultat-attente')).toHaveText('Scan gardé sur l\'appareil. Il sera envoyé dès que possible.', { timeout: 5000 });
+      await expect(erreur(page)).toHaveCount(0);
+      // Nouvelle tentative automatique après 2 s (±20 %), le QR restant maintenu devant la caméra.
+      await expect(page.getByTestId('scan-resultat-succes')).toBeVisible({ timeout: 8000 });
       await verifierSucces(page, un.dossard, un.pseudo, 1);
       expect(identifiants).toHaveLength(2);
       expect(identifiants[1]).toBe(identifiants[0]);
@@ -563,7 +568,7 @@ test.describe('Scan à la caméra, arrêt et cycle de vie', () => {
     }
     const passages = requetes.filter((r) => r.url.includes('/passages'));
     expect(passages).toHaveLength(2);
-    for (const p of passages) expect(Object.keys(JSON.parse(p.corps as string)).sort()).toEqual(['identifiantScan', 'jetonQr']);
+    for (const p of passages) expect(Object.keys(JSON.parse(p.corps as string)).sort()).toEqual(['ageDuScanMillisecondes', 'identifiantScan', 'jetonQr']);
     const demandes = await etatCamera(page);
     expect(demandes.demandesMicro).toBe(0);
     expect(demandes.contraintes.every((c) => c.audio === false)).toBe(true);

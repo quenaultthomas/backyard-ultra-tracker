@@ -9,6 +9,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { routes } from './app.routes';
 import { SessionService } from './comptes/session.service';
+import { FileScansService } from './scan/file-scans/file-scans.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -24,6 +25,10 @@ export const appConfig: ApplicationConfig = {
     // l'en-tête et les gardes attendent la réponse de GET /api/comptes/moi.
     provideAppInitializer(() => {
       inject(SessionService).restaurer().subscribe();
+    }),
+    // File de scans du bénévole : son cycle d'envoi tourne sur toute page de l'application.
+    provideAppInitializer(() => {
+      inject(FileScansService);
     }),
   ],
 };

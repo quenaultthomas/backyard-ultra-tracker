@@ -1,4 +1,3 @@
-import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -13,50 +12,44 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { TimeoutError, finalize, switchMap, timeout } from 'rxjs';
+import { filter } from 'rxjs';
 
 import {
   LIBELLES_STATUT_COURSE,
   PASTILLES_STATUT_COURSE,
 } from '../../administration/courses/course';
 import { RefusAccesService } from '../../comptes/refus-acces.service';
-import { CsrfService } from '../../partage/csrf.service';
-import { MESSAGE_SERVICE_INDISPONIBLE, lireProbleme } from '../../partage/probleme';
 import { BenevoleApiService } from '../benevole-api.service';
 import { CameraScan } from '../camera-scan/camera-scan';
 import { CourseBenevoleReponse } from '../course-benevole';
-import { tirerIdentifiantScan } from '../identifiant-scan';
-import { ErreurScan, PassageReponse } from '../passage';
-import { RefusScan, lireRefusScan } from '../refus-scan';
+import { EtatFile } from '../etat-file/etat-file';
+import { EvenementScan, FileScansService } from '../file-scans/file-scans.service';
+import { PassageReponse } from '../passage';
+import { RefusScan } from '../refus-scan';
 
-const MESSAGE_INJOIGNABLE =
-  "Le serveur est injoignable. Le passage n'est peut-être pas enregistré : validez de nouveau avec le même jeton.";
 const MESSAGE_SAISIE_VIDE = 'Saisissez le jeton du coureur.';
-/** Au-delà, l'envoi est considéré comme perdu (même traitement qu'une coupure réseau). */
-const DELAI_ENVOI_MILLISECONDES = 15_000;
 
-/** Un jeton lu à la caméra ne touche pas au champ (pas de clavier virtuel qui s'ouvre). */
-type OrigineJeton = 'saisie' | 'camera';
-
-/** Succès, refus définitif de l'API, ou panne sans réponse définitive (message seul). */
-type ResultatScan =
+/** Retour du dernier scan : première tentative, gardé sur l'appareil, ou réponse définitive. */
+type RetourScan =
+  | { type: 'envoi' }
+  | { type: 'attente' }
   | { type: 'succes'; passage: PassageReponse }
-  | { type: 'refus'; refus: RefusScan }
-  | { type: 'erreur'; message: string };
+  | { type: 'refus'; refus: RefusScan };
 
-/** Envoi sans réponse définitive : son `identifiantScan` est réutilisé pour le même jeton. */
-interface TentativeEnAttente {
-  jeton: string;
+/** Dernier scan de l'écran ; `saisie` : valeur du champ, rendue après un refus en direct. */
+interface DernierScan {
   identifiantScan: string;
+  saisie: string | null;
 }
 
 /**
- * Scan d'un passage par un bénévole : jeton QR d'un coureur saisi ou lu à la caméra, et retour du serveur.
- * Le serveur décide de tout (Boucle, refus) ; le statut lu au chargement ne sert qu'à l'affichage.
+ * Scan d'un passage par un bénévole : jeton QR d'un coureur saisi ou lu à la caméra, mis dans la
+ * file locale puis envoyé. Le serveur décide de tout (Boucle, refus) ; le statut lu au chargement
+ * ne sert qu'à l'affichage.
  */
 @Component({
   selector: 'app-ecran-scan',
-  imports: [ReactiveFormsModule, RouterLink, CameraScan],
+  imports: [ReactiveFormsModule, RouterLink, CameraScan, EtatFile],
   templateUrl: './ecran-scan.html',
   styleUrls: [
     '../../partage/page-carte.css',
@@ -67,7 +60,7 @@ interface TentativeEnAttente {
 })
 export class EcranScan implements OnInit {
   private readonly benevoleApi = inject(BenevoleApiService);
-  private readonly csrf = inject(CsrfService);
+  private readonly fileScans = inject(FileScansService);
   private readonly refusAcces = inject(RefusAccesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly champ = viewChild<ElementRef<HTMLInputElement>>('champJeton');
@@ -83,10 +76,9 @@ export class EcranScan implements OnInit {
   protected readonly formulaire = new FormGroup({
     jeton: new FormControl('', { nonNullable: true }),
   });
-  protected readonly envoiEnCours = signal(false);
   protected readonly erreurSaisie = signal<string | null>(null);
-  protected readonly resultat = signal<ResultatScan | null>(null);
-  private tentative: TentativeEnAttente | null = null;
+  protected readonly retour = signal<RetourScan | null>(null);
+  private dernierScan: DernierScan | null = null;
 
   ngOnInit(): void {
     this.benevoleApi
@@ -96,124 +88,100 @@ export class EcranScan implements OnInit {
         next: (courses) =>
           this.course.set(courses.find((course) => course.id === this.courseId()) ?? null),
         error: (erreur: unknown) => {
-          if (!this.refusAcces.rediriger(erreur, this.ecran())) {
+          if (!this.refusAcces.rediriger(erreur, `/benevole/courses/${this.courseId()}/scan`)) {
             this.erreurChargement.set(true);
           }
         },
       });
+    this.fileScans.evenements$
+      .pipe(
+        filter((evenement) => evenement.courseId === this.courseId()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((evenement) => this.suivre(evenement));
   }
 
-  /** Une nouvelle saisie efface le résultat précédent. */
+  /** Une nouvelle saisie efface le retour précédent. */
   protected effacerResultat(): void {
-    this.resultat.set(null);
+    this.retour.set(null);
     this.erreurSaisie.set(null);
+    this.fileScans.effacerMessageEnvoyes();
   }
 
+  /** Le champ est libéré dès la mise en file : la saisie n'attend jamais l'envoi. */
   protected enregistrer(): void {
-    if (this.envoiEnCours()) {
-      return;
-    }
     const saisie = this.formulaire.controls.jeton.value;
-    const jetonNettoye = saisie.replace(/\s+/g, '');
-    this.effacerResultat();
-    if (jetonNettoye === '') {
+    if (saisie.replace(/\s+/g, '') === '') {
       this.erreurSaisie.set(MESSAGE_SAISIE_VIDE);
       this.champ()?.nativeElement.focus();
       return;
     }
-    this.envoyer(saisie, jetonNettoye, 'saisie');
+    this.effacerResultat();
+    this.mettreEnFile(saisie, saisie);
+    this.formulaire.reset();
+    this.champ()?.nativeElement.focus();
   }
 
-  /** Jeton lu à la caméra : même envoi que la saisie ; le résultat précédent reste jusqu'au suivant. */
+  /** Jeton lu à la caméra : même mise en file que la saisie, sans toucher au champ. */
   protected scannerJeton(jeton: string): void {
-    if (!this.envoiEnCours()) {
-      this.envoyer(jeton, jeton, 'camera');
-    }
+    this.effacerResultat();
+    this.mettreEnFile(jeton, null);
   }
 
-  private envoyer(jetonQr: string, jetonNettoye: string, origine: OrigineJeton): void {
-    const identifiantScan = this.identifiantPour(jetonNettoye);
-    this.envoiEnCours.set(true);
-    this.csrf
-      .renouvelerJeton()
-      .pipe(
-        switchMap(() =>
-          this.benevoleApi.enregistrerPassage(this.courseId(), {
-            jetonQr,
-            identifiantScan,
-          }),
-        ),
-        timeout(DELAI_ENVOI_MILLISECONDES),
-        finalize(() => this.envoiEnCours.set(false)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: (passage) => this.afficherSucces(passage, origine),
-        error: (erreur: unknown) => this.afficherErreur(erreur, origine),
-      });
-  }
-
-  /** Même jeton sans réponse définitive : même identifiant (l'API est idempotente). */
-  private identifiantPour(jeton: string): string {
-    if (this.tentative?.jeton !== jeton) {
-      this.tentative = { jeton, identifiantScan: tirerIdentifiantScan() };
-    }
-    return this.tentative.identifiantScan;
-  }
-
-  private afficherSucces(passage: PassageReponse, origine: OrigineJeton): void {
-    this.tentative = null;
-    this.resultat.set({ type: 'succes', passage });
-    if (origine === 'saisie') {
-      this.formulaire.reset();
-      this.champ()?.nativeElement.focus();
-    }
-  }
-
-  private afficherErreur(erreur: unknown, origine: OrigineJeton): void {
-    if (estSansReponseDefinitive(erreur)) {
-      this.afficherEchec({ type: 'erreur', message: MESSAGE_INJOIGNABLE }, origine);
+  /**
+   * « Envoi… » s'affiche aussitôt ; « gardé sur l'appareil » seulement une fois l'entrée écrite,
+   * si ce scan pilote encore la zone et que rien d'autre ne l'a remplie entre-temps.
+   */
+  private mettreEnFile(jetonQr: string, saisie: string | null): void {
+    const ajout = this.fileScans.ajouter(this.courseId(), jetonQr);
+    if (!ajout) {
       return;
     }
-    this.tentative = null;
-    const probleme = lireProbleme(erreur) as ErreurScan | null;
-    if (
-      probleme?.code !== 'BENEVOLE_NON_AFFECTE' &&
-      this.refusAcces.rediriger(erreur, this.ecran())
-    ) {
+    const { scan, ecrit } = ajout;
+    this.dernierScan = { identifiantScan: scan.identifiantScan, saisie };
+    if (scan.etat === 'EN_ENVOI') {
+      this.retour.set({ type: 'envoi' });
       return;
     }
-    this.afficherEchec(
-      probleme
-        ? { type: 'refus', refus: lireRefusScan(probleme) }
-        : { type: 'erreur', message: MESSAGE_SERVICE_INDISPONIBLE },
-      origine,
-    );
+    void ecrit.then(() => {
+      if (this.dernierScan?.identifiantScan === scan.identifiantScan && this.retour() === null) {
+        this.retour.set({ type: 'attente' });
+      }
+    });
   }
 
-  /** Saisie : le jeton reste dans le champ, sélectionné, pour être corrigé ou validé de nouveau. */
-  private afficherEchec(resultat: ResultatScan, origine: OrigineJeton): void {
-    this.resultat.set(resultat);
-    if (origine === 'camera') {
+  /**
+   * Seul le dernier scan pilote la zone de retour ; tout refus la remplace. Un refus en différé
+   * (entrée qui a été en attente) y reste : le dernier scan ne pilote plus la zone ensuite.
+   */
+  private suivre(evenement: EvenementScan): void {
+    const estDernier = evenement.identifiantScan === this.dernierScan?.identifiantScan;
+    if (evenement.type === 'refus') {
+      this.retour.set({ type: 'refus', refus: evenement.refus });
+      if (estDernier && evenement.enDirect) {
+        this.rendreLaSaisie(this.dernierScan?.saisie ?? null);
+      }
+      if (estDernier || !evenement.enDirect) {
+        this.dernierScan = null;
+      }
+    } else if (!estDernier) {
       return;
+    } else if (evenement.type === 'succes') {
+      this.retour.set({ type: 'succes', passage: evenement.passage });
+      this.dernierScan = null;
+    } else {
+      this.retour.set({ type: 'attente' });
     }
+  }
+
+  /** Refus en direct d'une saisie : le jeton revient, sélectionné, si le champ est resté vide. */
+  private rendreLaSaisie(saisie: string | null): void {
     const champ = this.champ()?.nativeElement;
-    champ?.focus();
-    champ?.select();
+    if (saisie === null || !champ || this.formulaire.controls.jeton.value !== '') {
+      return;
+    }
+    this.formulaire.controls.jeton.setValue(saisie);
+    champ.focus();
+    champ.select();
   }
-
-  private ecran(): string {
-    return `/benevole/courses/${this.courseId()}/scan`;
-  }
-}
-
-/** Coupure réseau, délai dépassé ou erreur serveur : le passage a pu être enregistré ou non. */
-function estSansReponseDefinitive(erreur: unknown): boolean {
-  if (erreur instanceof TimeoutError) {
-    return true;
-  }
-  return (
-    erreur instanceof HttpErrorResponse &&
-    (erreur.status === 0 || erreur.status >= HttpStatusCode.InternalServerError)
-  );
 }
