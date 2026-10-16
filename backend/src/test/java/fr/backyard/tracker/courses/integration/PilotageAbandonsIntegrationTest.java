@@ -31,7 +31,7 @@ import tools.jackson.databind.JsonNode;
 
 /**
  * Contrat de l'incrément 4.8 : liste des abandons au pilotage (CA9). Le contrat vient de la spec : 23 champs au
- * premier niveau (19 inchangés plus nombreAbandons, inscritsEnAbandon, nombreVainqueurs et inscritsVainqueurs, 4.9), 7 champs par abandon.
+ * premier niveau (19 inchangés plus nombreAbandons, inscritsEnAbandon, nombreVainqueurs et inscritsVainqueurs, 4.9), 8 champs par abandon (4.12 : nombreBouclesCorrigees).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "backyard.admin-master.pseudo=Patron", "backyard.admin-master.mot-de-passe=mot-de-passe-patron-1",
@@ -47,7 +47,7 @@ class PilotageAbandonsIntegrationTest {
             "dureeEcouleeMillisecondes", "nombreInscrits", "nombreAyantBoucle", "nombreEnBoucle", "inscritsEnCourse",
             "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs", "inscritsVainqueurs");
     static final List<String> CHAMPS_ABANDON = List.of("inscriptionId", "dossard", "pseudo", "statut",
-            "nombreBouclesTerminees", "boucleAbandon", "motifAbandon");
+            "nombreBouclesTerminees", "boucleAbandon", "motifAbandon", "nombreBouclesCorrigees");
 
     @Container
     @ServiceConnection
@@ -101,7 +101,7 @@ class PilotageAbandonsIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA9 : Patron lit le pilotage à t0 + 90 s après le contrôle : 200, no-store, 23 champs dont les 19 inchangés en valeur, un abandon à 7 champs (Chloé, dossard 2, HORS_DELAI, Boucle 1, 0 Boucle terminée), Nadia obtient le même corps")
+    @DisplayName("CA9 : Patron lit le pilotage à t0 + 90 s après le contrôle : 200, no-store, 23 champs dont les 19 inchangés en valeur, un abandon à 8 champs (Chloé, dossard 2, HORS_DELAI, Boucle 1, 0 Boucle terminée), Nadia obtient le même corps")
     void ca9_pilotage_avec_un_abandon() throws Exception {
         String x = courseAvecChloeAbandonnee();
 
@@ -129,7 +129,7 @@ class PilotageAbandonsIntegrationTest {
         JsonNode abandons = corps.get("inscritsEnAbandon");
         assertThat(abandons).hasSize(1);
         JsonNode chloe = abandons.get(0);
-        assertThat(chloe.propertyNames()).hasSize(7).containsExactlyInAnyOrderElementsOf(CHAMPS_ABANDON);
+        assertThat(chloe.propertyNames()).hasSize(8).containsExactlyInAnyOrderElementsOf(CHAMPS_ABANDON);
         assertThat(chloe.get("inscriptionId").asString()).isEqualTo(decor.idInscription(x, decor.idChloe));
         assertThat(chloe.get("dossard").asInt()).isEqualTo(2);
         assertThat(chloe.get("pseudo").asString()).isEqualTo("Chloé");

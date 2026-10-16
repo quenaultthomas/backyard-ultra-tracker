@@ -32,9 +32,13 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
                                     int nombreAbandons, List<AbandonPilotageReponse> inscritsEnAbandon,
                                     int nombreVainqueurs, List<VainqueurPilotageReponse> inscritsVainqueurs) {
 
-    /** Ligne d'un inscrit en course ; {@code boucleCouranteTerminee} est null sans chronométrage. */
+    /**
+     * Ligne d'un inscrit en course ; {@code boucleCouranteTerminee} est null sans chronométrage. Dans les trois
+     * lignes, {@code nombreBouclesCorrigees} est le nombre de Passages CORRECTION (badge « corrigé »).
+     */
     public record InscritPilotageReponse(UUID inscriptionId, int dossard, String pseudo, StatutInscription statut,
-                                         int nombreBouclesTerminees, Boolean boucleCouranteTerminee) {
+                                         int nombreBouclesTerminees, Boolean boucleCouranteTerminee,
+                                         int nombreBouclesCorrigees) {
 
         /** Identifiant et dossard uniquement : jamais de pseudo dans le journal. */
         @Override
@@ -44,14 +48,15 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
 
         static InscritPilotageReponse depuis(ConsulterPilotage.InscritEnCourse inscrit) {
             return new InscritPilotageReponse(inscrit.inscriptionId(), inscrit.dossard(), inscrit.pseudo(),
-                    inscrit.statut(), inscrit.nombreBouclesTerminees(), inscrit.boucleCouranteTerminee().orElse(null));
+                    inscrit.statut(), inscrit.nombreBouclesTerminees(), inscrit.boucleCouranteTerminee().orElse(null),
+                    inscrit.nombreBouclesCorrigees());
         }
     }
 
     /** Ligne d'un inscrit en abandon ; Boucle et motif null pour un abandon enregistré sans eux. */
     public record AbandonPilotageReponse(UUID inscriptionId, int dossard, String pseudo, StatutInscription statut,
                                          int nombreBouclesTerminees, Integer boucleAbandon,
-                                         MotifAbandon motifAbandon) {
+                                         MotifAbandon motifAbandon, int nombreBouclesCorrigees) {
 
         /** Identifiant et dossard uniquement : jamais de pseudo dans le journal. */
         @Override
@@ -62,13 +67,13 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
         static AbandonPilotageReponse depuis(ConsulterPilotage.InscritEnAbandon abandon) {
             return new AbandonPilotageReponse(abandon.inscriptionId(), abandon.dossard(), abandon.pseudo(),
                     abandon.statut(), abandon.nombreBouclesTerminees(), abandon.boucleAbandon().orElse(null),
-                    abandon.motifAbandon().orElse(null));
+                    abandon.motifAbandon().orElse(null), abandon.nombreBouclesCorrigees());
         }
     }
 
     /** Ligne d'un vainqueur. */
     public record VainqueurPilotageReponse(UUID inscriptionId, int dossard, String pseudo, StatutInscription statut,
-                                           int nombreBouclesTerminees) {
+                                           int nombreBouclesTerminees, int nombreBouclesCorrigees) {
 
         /** Identifiant et dossard uniquement : jamais de pseudo dans le journal. */
         @Override
@@ -78,7 +83,7 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
 
         static VainqueurPilotageReponse depuis(ConsulterPilotage.InscritVainqueur vainqueur) {
             return new VainqueurPilotageReponse(vainqueur.inscriptionId(), vainqueur.dossard(), vainqueur.pseudo(),
-                    vainqueur.statut(), vainqueur.nombreBouclesTerminees());
+                    vainqueur.statut(), vainqueur.nombreBouclesTerminees(), vainqueur.nombreBouclesCorrigees());
         }
     }
 

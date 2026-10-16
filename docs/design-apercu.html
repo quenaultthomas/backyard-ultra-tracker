@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/ecran-pilotage.css" />
     <!-- Abandon manuel (4.11) : confirmation en ligne et panneau d'abandon, feuilles réelles. -->
     <link rel="stylesheet" href="../frontend/src/app/partage/confirmation-en-ligne.css" />
+    <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/confirmation-pilotage.css" />
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/abandon-coureur/abandon-coureur.css" />
     <!-- Scan (4.4b) : feuille réelle de l'écran, sans copie. -->
     <link rel="stylesheet" href="../frontend/src/app/scan/ecran-scan/ecran-scan.css" />
@@ -304,6 +305,26 @@
             <h3 class="sous-titre">Coureurs en abandon</h3>
             <p class="message resume"><span class="resume__compteur">0 coureur en abandon</span></p>
             <p class="message">Aucun abandon.</p>
+          </div>
+          <!-- Réintégration (4.12) : bouton « Réintégrer », panneau de confirmation neutre, badge « corrigé ». -->
+          <div class="formulaire inscrits" data-composant="pilotage-reintegration">
+            <h3 class="sous-titre">Coureurs en abandon</h3>
+            <table class="tableau">
+              <thead><tr><th scope="col">Dossard</th><th scope="col">Coureur</th><th scope="col">Boucle d'abandon</th><th scope="col">Motif</th><th scope="col">Boucles terminées</th><th scope="col">Action</th></tr></thead>
+              <tbody>
+                <tr><td class="dossard">3</td><td>Tom</td><td>Boucle 2</td><td><span class="pastille-statut pastille-statut--abandon">Hors délai</span></td><td>1 <span class="badge-corrige" aria-hidden="true" data-composant="pilotage-abandon-corrige">corrigé</span><span class="masque">, dont 1 boucle corrigée</span></td><td><button type="button" class="bouton bouton--secondaire" aria-expanded="true" data-composant="pilotage-abandon-reintegrer">Réintégrer</button></td></tr>
+              </tbody>
+            </table>
+            <p class="message--succes" data-composant="pilotage-reintegrer-succes">Coureur n° 2 Chloé réintégré : 2 boucles corrigées.</p>
+            <div class="confirmation confirmation--neutre" role="group" aria-labelledby="apercu-titre-reintegration" data-composant="pilotage-reintegrer-confirmation">
+              <h4 id="apercu-titre-reintegration" class="confirmation__titre">Réintégrer le coureur n° 3 Tom ?</h4>
+              <p class="confirmation__texte">Le coureur sera remis en course. Les boucles qu'il a manquées seront enregistrées comme passages corrigés, ce qui ne peut pas être annulé. Il devra scanner normalement la boucle en cours.</p>
+              <div class="confirmation__actions">
+                <button type="button" class="bouton">Confirmer la réintégration</button>
+                <button type="button" class="bouton bouton--secondaire">Annuler</button>
+              </div>
+            </div>
+            <p class="message--erreur" data-composant="pilotage-reintegrer-erreur">Ce coureur n'est plus en abandon.</p>
           </div>
           <a href="#titre-pilotage">Retour à la fiche de la course</a>
         </div>

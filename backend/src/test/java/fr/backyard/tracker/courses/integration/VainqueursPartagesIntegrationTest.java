@@ -58,7 +58,7 @@ class VainqueursPartagesIntegrationTest {
             "dureeEcouleeMillisecondes", "nombreInscrits", "nombreAyantBoucle", "nombreEnBoucle", "inscritsEnCourse",
             "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs", "inscritsVainqueurs");
     static final List<String> CHAMPS_VAINQUEUR = List.of("inscriptionId", "dossard", "pseudo", "statut",
-            "nombreBouclesTerminees");
+            "nombreBouclesTerminees", "nombreBouclesCorrigees");
 
     @Container
     @ServiceConnection
@@ -393,7 +393,7 @@ class VainqueursPartagesIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA7 : Patron lit le pilotage de X terminée à deux vainqueurs : 200, no-store, 23 champs, TERMINEE, inscritsEnCourse vide, 1 abandon, 3 inscrits, 2 vainqueurs de 5 champs triés par dossard à 1 Boucle chacun ; Nadia obtient le même corps")
+    @DisplayName("CA7 : Patron lit le pilotage de X terminée à deux vainqueurs : 200, no-store, 23 champs, TERMINEE, inscritsEnCourse vide, 1 abandon, 3 inscrits, 2 vainqueurs de 6 champs triés par dossard à 1 Boucle chacun ; Nadia obtient le même corps")
     void ca7_pilotage_deux_vainqueurs() throws Exception {
         String x = courseTermineeDeuxVainqueurs();
 
@@ -415,7 +415,7 @@ class VainqueursPartagesIntegrationTest {
         JsonNode vainqueurs = corps.get("inscritsVainqueurs");
         assertThat(vainqueurs).hasSize(2);
         for (JsonNode vainqueur : vainqueurs) {
-            assertThat(vainqueur.propertyNames()).hasSize(5).containsExactlyInAnyOrderElementsOf(CHAMPS_VAINQUEUR);
+            assertThat(vainqueur.propertyNames()).hasSize(6).containsExactlyInAnyOrderElementsOf(CHAMPS_VAINQUEUR);
             assertThat(vainqueur.get("statut").asString()).isEqualTo("VAINQUEUR");
             assertThat(vainqueur.get("nombreBouclesTerminees").asInt()).isEqualTo(1);
         }

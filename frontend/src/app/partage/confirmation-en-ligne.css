@@ -20,3 +20,13 @@
   flex-wrap: wrap;
   gap: var(--espace-3);
 }
+
+/* Variante d'une action non destructive confirmée (réintégration) : encart sable, texte encre. */
+.confirmation--neutre {
+  border-color: var(--couleur-trait);
+  background-color: var(--couleur-sable);
+}
+
+.confirmation--neutre .confirmation__texte {
+  color: var(--couleur-encre);
+}

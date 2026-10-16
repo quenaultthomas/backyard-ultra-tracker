@@ -151,6 +151,31 @@ public final class Course {
     }
 
     /**
+     * Seule une Course EN_COURS, avec une heure de départ et dont le temps de la dernière Boucle n'est pas écoulé,
+     * accepte une réintégration. Une Course TERMINEE n'est jamais rouverte. Unique contrôle de cette règle.
+     *
+     * @param maintenant instant lu une seule fois sur l'horloge par l'appelant
+     * @throws CourseTermineePourReintegrationException la Course est TERMINEE
+     * @throws CourseNonDemarreeException la Course est EN_PREPARATION
+     * @throws HeureDeDepartInconnueException la Course est EN_COURS sans heure de départ
+     * @throws TempsDeCourseEcouleException le temps de la dernière Boucle autorisée est écoulé
+     */
+    public void autoriserReintegration(Instant maintenant) {
+        if (statut == StatutCourse.TERMINEE) {
+            throw new CourseTermineePourReintegrationException(id);
+        }
+        if (statut == StatutCourse.EN_PREPARATION) {
+            throw new CourseNonDemarreeException(id);
+        }
+        if (demarreeLe == null) {
+            throw new HeureDeDepartInconnueException(id);
+        }
+        if (chronometrage(maintenant).orElseThrow().boucleMaxTerminee()) {
+            throw new TempsDeCourseEcouleException();
+        }
+    }
+
+    /**
      * Après un abandon manuel : une Course sans aucune Inscription EN_COURSE est terminée sans vainqueur (la Course
      * renvoyée est TERMINEE), sinon elle est renvoyée inchangée. Celle-ci n'est pas affectée. Unique définition.
      *

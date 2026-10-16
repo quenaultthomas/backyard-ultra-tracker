@@ -17,6 +17,7 @@ import {
   AbandonManuelRequete,
   MotifAbandonManuel,
   PilotageCourse,
+  Reintegration,
 } from './courses/pilotage-course';
 import { CreerAdminRequete, CreerBenevoleRequete } from './requetes-creation-compte';
 
@@ -106,6 +107,14 @@ export class AdministrationApiService {
     return this.http.post<AbandonManuel>(
       `${urlCourse(id)}/inscriptions/${encodeURIComponent(inscriptionId)}/abandon`,
       requete,
+    );
+  }
+
+  /** Remet `EN_COURSE` une Inscription `ABANDON` d'une Course `EN_COURS` (sans corps). */
+  reintegrerCoureur(id: string, inscriptionId: string): Observable<Reintegration> {
+    return this.http.post<Reintegration>(
+      `${urlCourse(id)}/inscriptions/${encodeURIComponent(inscriptionId)}/reintegration`,
+      null,
     );
   }
 

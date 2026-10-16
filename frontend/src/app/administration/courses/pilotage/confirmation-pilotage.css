@@ -1,0 +1,18 @@
+/* Actions confirmées du pilotage (docs/design.md, section 11 « Pilotage ») : messages puis
+   confirmation en ligne, sur l'hôte des composants d'abandon manuel et de réintégration. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+}
+
+:host(:empty) {
+  display: none;
+}
+
+.confirmation__titre {
+  margin: 0;
+  font-size: var(--taille-moyenne);
+  color: var(--couleur-encre);
+  overflow-wrap: anywhere;
+}

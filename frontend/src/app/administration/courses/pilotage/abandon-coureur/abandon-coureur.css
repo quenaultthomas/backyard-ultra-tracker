@@ -1,21 +1,4 @@
-/* Abandon manuel (docs/design.md, section 11 « Pilotage ») : messages puis confirmation en ligne. */
-:host {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espace-3);
-}
-
-:host(:empty) {
-  display: none;
-}
-
-.confirmation__titre {
-  margin: 0;
-  font-size: var(--taille-moyenne);
-  color: var(--couleur-encre);
-  overflow-wrap: anywhere;
-}
-
+/* Abandon manuel (docs/design.md, section 11 « Pilotage ») : motifs du panneau de confirmation. */
 /* Motifs en tuiles : toute la tuile (libellé étiré) est une cible de 44 px. */
 .motifs-abandon {
   display: grid;
