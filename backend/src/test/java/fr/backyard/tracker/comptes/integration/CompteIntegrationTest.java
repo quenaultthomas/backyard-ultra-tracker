@@ -45,7 +45,12 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /** Contrat d'API de l'incrément 1.1 (création d'un compte coureur, CSRF, sécurité par défaut). */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+// Les tests de ce fichier lancent jusqu'a 5 (CA20) hachages Argon2id simultanes : on neutralise le plafond SEC-06
+// (4 par defaut, puis 503 SERVICE_SATURE apres 1 s d'attente) pour que le resultat ne depende pas de la vitesse
+// du runner. Le comportement de saturation est couvert par HachageSatureIntegrationTest.
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+        "backyard.hachage.concurrence-max=32",
+        "backyard.hachage.attente-max-millisecondes=60000"})
 @Testcontainers
 @Import(CompteIntegrationTest.HorlogeDeTest.class)
 class CompteIntegrationTest {

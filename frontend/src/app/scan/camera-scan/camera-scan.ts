@@ -5,7 +5,6 @@ import {
   DestroyRef,
   ElementRef,
   inject,
-  input,
   output,
   signal,
   viewChild,
@@ -53,8 +52,7 @@ export class CameraScan {
   private readonly lecteur = new LecteurQr();
   private readonly antiRepetition = new AntiRepetition();
 
-  /** Un seul envoi à la fois, caméra et saisie confondues : une lecture pendant l'envoi est ignorée. */
-  readonly envoiEnCours = input.required<boolean>();
+  /** Chaque jeton lu est mis en file par l'écran de scan, sans attendre l'envoi précédent. */
   readonly jetonLu = output<string>();
 
   protected readonly disponible = cameraDisponible();
@@ -148,9 +146,6 @@ export class CameraScan {
     if (!FORMAT_JETON.test(contenu)) {
       this.antiRepetition.retenir(contenu, instant);
       this.afficherQrEtranger();
-      return;
-    }
-    if (this.envoiEnCours()) {
       return;
     }
     this.antiRepetition.retenir(contenu, instant);

@@ -1,11 +1,13 @@
 import { ProblemDetail } from '../partage/probleme';
 
-/** Corps de `POST /api/benevole/courses/{courseId}/passages` (scan en direct : sans âge du scan). */
+/** Corps de `POST /api/benevole/courses/{courseId}/passages`. */
 export interface PassageRequete {
   /** Jeton tel que saisi : le nettoyage des espaces est fait par l'API. */
   jetonQr: string;
-  /** UUID v4 tiré par saisie, conservé pour une nouvelle tentative du même jeton. */
+  /** UUID v4 tiré à la mise en file, identique à chaque tentative (idempotence de l'API). */
   identifiantScan: string;
+  /** Temps écoulé depuis le scan, recalculé à chaque tentative (0 à 86 400 000 ; défaut 0). */
+  ageDuScanMillisecondes?: number;
 }
 
 /** Passage renvoyé en 201 (créé) ou 200 (rejeu du même `identifiantScan`). */

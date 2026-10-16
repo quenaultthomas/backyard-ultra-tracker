@@ -1,0 +1,40 @@
+@if (!file.stockagePersistant()) {
+  <p
+    class="message--avertissement avertissement pictogramme-attente"
+    role="alert"
+    data-testid="scan-avertissement-stockage"
+  >
+    Les scans en attente seront perdus si vous fermez ou rechargez cette page.
+  </p>
+}
+@if (messageSessionExpiree(); as message) {
+  <p class="message--erreur" role="alert" data-testid="scan-session-expiree">{{ message }}</p>
+}
+@if (file.horsLigne()) {
+  <p
+    class="message--avertissement avertissement pictogramme-hors-ligne"
+    data-testid="scan-hors-ligne"
+  >
+    Hors ligne : les scans sont gardés sur cet appareil.
+  </p>
+}
+@if (enAttente() > 0) {
+  <div class="file">
+    <p class="file__compteur" role="status" data-testid="scan-compteur-attente">
+      {{ enAttente() }} en attente
+    </p>
+    @if (!file.horsLigne()) {
+      <button
+        type="button"
+        class="bouton bouton--secondaire"
+        (click)="file.renvoyerMaintenant()"
+        data-testid="scan-renvoyer"
+      >
+        Renvoyer maintenant
+      </button>
+    }
+  </div>
+}
+@if (messageEnvoyes(); as message) {
+  <p class="message--succes" role="status" data-testid="scan-message-envoyes">{{ message }}</p>
+}

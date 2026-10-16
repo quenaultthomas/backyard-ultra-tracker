@@ -55,6 +55,18 @@
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='none' stroke='%2314352A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 12a8 8 0 1 1-2.34-5.66'/%3E%3Cpath d='M20 3.5V9h-5.5'/%3E%3C/svg%3E");
 }
 
+/*
+ * File de scans (5.1a) : horloge (scan gardé sur l'appareil) et réseau barré (hors ligne), portés par
+ * `--pictogramme` ; l'écran de scan les dessine en masque teinté par la couleur du texte.
+ */
+.pictogramme-attente {
+  --pictogramme: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314352A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
+}
+
+.pictogramme-hors-ligne {
+  --pictogramme: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314352A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 8.5a15 15 0 0 1 20 0'/%3E%3Cpath d='M5.5 12a10 10 0 0 1 13 0'/%3E%3Cpath d='M9 15.5a5 5 0 0 1 6 0'/%3E%3Cpath d='M12 19h.01'/%3E%3Cpath d='M3 3l18 18'/%3E%3C/svg%3E");
+}
+
 /* Contraste forcé : le visuel n'est plus qu'un cadre, les pictogrammes prennent la couleur du texte. */
 @media (forced-colors: active) {
   .visuel-substitution {

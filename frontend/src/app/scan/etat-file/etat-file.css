@@ -1,0 +1,47 @@
+/* File de scans (docs/design.md, section 11 « Scan ») : libellé + pictogramme, sans animation. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  overflow-wrap: anywhere;
+}
+
+:host(:empty) {
+  display: none;
+}
+
+.avertissement {
+  display: flex;
+  align-items: center;
+  gap: var(--espace-3);
+}
+
+.avertissement::before {
+  content: '';
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  background-color: currentColor;
+  -webkit-mask: var(--pictogramme) center / contain no-repeat;
+  mask: var(--pictogramme) center / contain no-repeat;
+}
+
+.file {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-2);
+}
+
+.file__compteur {
+  margin: 0;
+  font-size: var(--taille-moyenne);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-orange-fonce);
+}
+
+@media (forced-colors: active) {
+  .avertissement::before {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}

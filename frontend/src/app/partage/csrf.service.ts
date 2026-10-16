@@ -17,9 +17,11 @@ export class CsrfService {
    * reçoit un 403 `CSRF_INVALIDE`, qui affiche « La page a expiré » et redemande un jeton.
    */
   renouvelerJeton(): Observable<void> {
-    return this.http.get<void>(URL_CSRF).pipe(
-      map(() => undefined),
-      catchError(() => of(undefined)),
-    );
+    return this.obtenirJeton().pipe(catchError(() => of(undefined)));
+  }
+
+  /** Comme `renouvelerJeton`, mais un échec est propagé (la file de scans le traite en panne). */
+  obtenirJeton(): Observable<void> {
+    return this.http.get<void>(URL_CSRF).pipe(map(() => undefined));
   }
 }
