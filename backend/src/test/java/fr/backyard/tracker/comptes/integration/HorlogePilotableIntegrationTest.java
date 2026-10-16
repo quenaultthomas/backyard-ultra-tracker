@@ -2,6 +2,7 @@ package fr.backyard.tracker.comptes.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.HorlogeDecalee;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
@@ -169,7 +170,7 @@ class HorlogePilotableIntegrationTest {
     @DisplayName("CA6 : une ligne INFO par avance et par réinitialisation, sans pseudo ni identifiant de Compte, rien pour les GET")
     void ca6_journal_de_l_horloge() throws Exception {
         List<UUID> idsComptes = jdbc.queryForList("select id from compte", UUID.class);
-        try (JournalDeTest journal = JournalDeTest.demarrer()) {
+        try (JournalApplicatif journal = JournalApplicatif.demarrer()) {
             lire(patron);
             avancer(patron, "{\"duree\":\"PT60M\"}");
             lire(patron);
@@ -179,7 +180,7 @@ class HorlogePilotableIntegrationTest {
             api.requete("DELETE", CHEMIN, patron, null, null);
             lire(patron);
 
-            List<ch.qos.logback.classic.spi.ILoggingEvent> horloge = journal.evenements().stream()
+            List<ch.qos.logback.classic.spi.ILoggingEvent> horloge = journal.evenementsApplicatifs().stream()
                     .filter(e -> e.getFormattedMessage() != null
                             && e.getFormattedMessage().toLowerCase(Locale.ROOT).contains("horloge")).toList();
             assertThat(horloge).extracting(e -> e.getFormattedMessage()).containsExactly(

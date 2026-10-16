@@ -5,9 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +14,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.slf4j.LoggerFactory;
 import org.springframework.mock.env.MockEnvironment;
 
 /** CA3 - garde-fou de profil e2e (RG8), environnement simulé, sans contexte Spring. */
@@ -24,24 +22,20 @@ class GardeFouProfilE2eTest {
     private static final String MESSAGE_REFUS = "Le profil e2e est interdit en production (horloge pilotable).";
     private static final String DEBUT_AVERTISSEMENT = "Profil e2e actif";
 
-    private Logger racine;
-    private ListAppender<ILoggingEvent> journal;
+    private JournalApplicatif journal;
 
     @BeforeEach
     void capturer_le_journal() {
-        racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        journal = new ListAppender<>();
-        journal.start();
-        racine.addAppender(journal);
+        journal = JournalApplicatif.demarrer();
     }
 
     @AfterEach
     void liberer_le_journal() {
-        racine.detachAppender(journal);
+        journal.fermer();
     }
 
     private List<String> avertissementsProfil() {
-        return journal.list.stream()
+        return journal.evenementsApplicatifs().stream()
                 .filter(evenement -> evenement.getLevel() == Level.WARN)
                 .map(ILoggingEvent::getFormattedMessage)
                 .filter(message -> message != null && message.startsWith(DEBUT_AVERTISSEMENT))

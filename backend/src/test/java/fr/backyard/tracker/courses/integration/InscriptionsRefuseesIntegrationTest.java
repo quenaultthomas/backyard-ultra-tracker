@@ -3,11 +3,8 @@ package fr.backyard.tracker.courses.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.filter.Filter;
-import ch.qos.logback.core.read.ListAppender;
-import ch.qos.logback.core.spi.FilterReply;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.courses.integration.ClientHttp.Session;
@@ -30,7 +27,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -105,7 +101,7 @@ class InscriptionsRefuseesIntegrationTest {
     final JsonMapper json = JsonMapper.builder().build();
     JdbcTemplate jdbc;
     ClientHttp api;
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
     String empreinte;
     Session patron;
     Session nadia;
@@ -449,7 +445,7 @@ class InscriptionsRefuseesIntegrationTest {
         HttpResponse<String> succes2 = sinscrire(bruno, d);
         assertThat(succes1.statusCode()).isEqualTo(201);
         assertThat(succes2.statusCode()).isEqualTo(201);
-        int apresSucces = journal.list.size();
+        int apresSucces = journal.marque();
         HttpResponse<String> complete = sinscrire(chloe, d);
         HttpResponse<String> nonOuverte = sinscrire(bruno, e);
         HttpResponse<String> dejaInscrit = sinscrire(alice, d);
@@ -458,9 +454,9 @@ class InscriptionsRefuseesIntegrationTest {
         assertErreur(nonOuverte, 409, "COURSE_NON_OUVERTE", "Conflit", NON_OUVERTE_DETAIL);
         assertErreur(dejaInscrit, 409, "INSCRIPTION_DEJA_EXISTANTE", "Conflit", DEJA_INSCRIT_DETAIL);
 
-        assertThat(journal.list.subList(apresSucces, journal.list.size()))
+        assertThat(journal.applicatifsDepuis(apresSucces))
                 .noneSatisfy(ev -> assertThat(ev.getLevel().isGreaterOrEqual(Level.INFO)).isTrue());
-        List<ILoggingEvent> inscriptions = journal.list.stream()
+        List<ILoggingEvent> inscriptions = journal.evenements().stream()
                 .filter(ev -> ev.getFormattedMessage().contains("Inscription enregistrée")).toList();
         assertThat(inscriptions).hasSize(2);
         assertThat(inscriptions).allSatisfy(ev -> assertThat(ev.getLevel()).isEqualTo(Level.INFO));
@@ -470,7 +466,7 @@ class InscriptionsRefuseesIntegrationTest {
         interdits.addAll(jdbc.queryForList("select jeton_qr from inscription", String.class));
         // Tous niveaux pour le code de l'application ; INFO et plus pour les bibliothèques (le DEBUG de Spring
         // Security affiche le principal de la session, hors du code de l'application).
-        assertThat(journal.list).filteredOn(ev -> ev.getLoggerName().startsWith("fr.backyard")
+        assertThat(journal.evenements()).filteredOn(ev -> ev.getLoggerName().startsWith("fr.backyard")
                         || ev.getLevel().isGreaterOrEqual(Level.INFO))
                 .noneSatisfy(ev -> assertThat(ev.getFormattedMessage()).containsAnyOf(interdits.toArray(new String[0])));
         for (HttpResponse<String> reponse : List.of(complete, nonOuverte, dejaInscrit)) {
@@ -585,31 +581,15 @@ class InscriptionsRefuseesIntegrationTest {
     }
 
     private void demarrerJournal() {
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>();
-        // Les pools Hikari des autres contextes Spring mis en cache journalisent en arrière-plan (connexions
-        // fermées de conteneurs arrêtés) : ce bruit ne vient pas de la requête observée.
-        journal.addFilter(new Filter<ILoggingEvent>() {
-            @Override
-            public FilterReply decide(ILoggingEvent ev) {
-                return ev.getLoggerName().startsWith("com.zaxxer.hikari") ? FilterReply.DENY : FilterReply.NEUTRAL;
-            }
-        });
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(Level.INFO);
+        arreterJournal();
+        journal = JournalApplicatif.demarrerEnDebug();
     }
 
     private void arreterJournal() {
         if (journal == null) {
             return;
         }
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(null);
+        journal.fermer();
         journal = null;
     }
 

@@ -6,7 +6,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxyUtil;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.exposition.ChangerMotDePasseRequete;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
@@ -28,7 +28,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -124,8 +123,7 @@ class ChangementMotDePasseIntegrationTest {
     JdbcTemplate jdbc;
     ApiHttp api;
     final JsonMapper json = JsonMapper.builder().build();
-    ListAppender<ILoggingEvent> journal;
-    Level niveauAvant;
+    JournalApplicatif journal;
 
     /** Cookies d'une session ouverte. */
     record Session(String id, String xsrf) {
@@ -141,24 +139,14 @@ class ChangementMotDePasseIntegrationTest {
         registre.vider();
         horloge.fixer(T);
         api = new ApiHttp(port);
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        niveauAvant = racine.getLevel();
-        racine.addAppender(journal);
         // Racine en DEBUG ; le code de l'application en TRACE. Le TRACE de Tomcat journalise les octets bruts des
         // requêtes (dont le corps de la connexion), ce qui n'est pas le comportement de l'application testée.
-        racine.setLevel(Level.DEBUG);
-        ((Logger) LoggerFactory.getLogger("fr.backyard")).setLevel(Level.TRACE);
+        journal = JournalApplicatif.demarrer().niveau(Logger.ROOT_LOGGER_NAME, Level.DEBUG).niveau("fr.backyard", Level.TRACE);
     }
 
     @AfterEach
     void nettoyer() {
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(niveauAvant == null ? Level.INFO : niveauAvant);
-        ((Logger) LoggerFactory.getLogger("fr.backyard")).setLevel(null);
+        journal.fermer();
     }
 
     // ---------------------------------------------------------------- CA9
@@ -552,7 +540,7 @@ class ChangementMotDePasseIntegrationTest {
         }
         assertThat(changer(apres, NOUVEAU, SECRET).statusCode()).isEqualTo(429);
 
-        List<ILoggingEvent> evenements = new ArrayList<>(journal.list);
+        List<ILoggingEvent> evenements = journal.evenements();
         assertThat(evenements).isNotEmpty();
         assertThat(lignes(Level.TRACE)).noneMatch(l -> l.contains(SECRET) || l.contains(TROP_COURT)
                 || l.contains(NOUVEAU) || l.contains(MOT_DE_PASSE));
@@ -702,7 +690,7 @@ class ChangementMotDePasseIntegrationTest {
 
     private List<String> lignes(Level niveauMinimal) {
         List<String> lignes = new ArrayList<>();
-        for (ILoggingEvent evenement : new ArrayList<>(journal.list)) {
+        for (ILoggingEvent evenement : journal.evenements()) {
             if (!evenement.getLevel().isGreaterOrEqual(niveauMinimal)) {
                 continue;
             }

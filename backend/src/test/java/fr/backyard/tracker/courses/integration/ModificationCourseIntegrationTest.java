@@ -3,9 +3,8 @@ package fr.backyard.tracker.courses.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.courses.integration.ClientHttp.Session;
@@ -22,7 +21,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -86,7 +84,7 @@ class ModificationCourseIntegrationTest {
     JdbcTemplate jdbc;
     ClientHttp api;
     final JsonMapper json = JsonMapper.builder().build();
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
     Session patron;
     Session nadia;
     Session alice;
@@ -109,21 +107,13 @@ class ModificationCourseIntegrationTest {
         nadia = api.ouvrir("Nadia", MOT_DE_PASSE);
         alice = api.ouvrir("Alice", MOT_DE_PASSE);
         leo = api.ouvrir("Léo", MOT_DE_PASSE);
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(Level.INFO);
+        // Le DEBUG interne d'Hibernate affiche les entités persistées (donnée enregistrée, pas le corps de la requête).
+        journal = JournalApplicatif.demarrerEnDebug();
     }
 
     @AfterEach
     void nettoyer() {
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(null);
+        journal.fermer();
     }
 
     // ---------------------------------------------------------------- CA7
@@ -618,7 +608,7 @@ class ModificationCourseIntegrationTest {
         corps.put("inconnu", "valeur-secrete-journal-xyz");
 
         assertThat(modifier(patron, x, corps.toString()).statusCode()).isEqualTo(200);
-        int apresSucces = journal.list.size();
+        int apresSucces = journal.marque();
         ObjectNode refuse = modification();
         refuse.put("nom", "Nom-refuse-secret-xyz");
         refuse.put("distanceBoucleMetres", 0);
@@ -626,17 +616,17 @@ class ModificationCourseIntegrationTest {
         assertThat(modifier(patron, ID_INCONNU, refuse.toString()).statusCode()).isEqualTo(404);
         assertThat(modifier(patron, enCours, refuse.toString()).statusCode()).isEqualTo(409);
 
-        List<ILoggingEvent> modifications = journal.list.stream()
+        List<ILoggingEvent> modifications = journal.evenements().stream()
                 .filter(e -> e.getFormattedMessage().contains("Course modifiée")).toList();
         assertThat(modifications).hasSize(1);
         assertThat(modifications.get(0).getLevel()).isEqualTo(Level.INFO);
         assertThat(modifications.get(0).getFormattedMessage()).contains(x);
-        assertThat(journal.list.subList(apresSucces, journal.list.size()))
+        assertThat(journal.applicatifsDepuis(apresSucces))
                 .noneSatisfy(e -> assertThat(e.getLevel().isGreaterOrEqual(Level.INFO)).isTrue());
-        assertThat(journal.list).noneSatisfy(e -> assertThat(e.getFormattedMessage()).containsAnyOf(
+        assertThat(journal.evenements()).noneSatisfy(e -> assertThat(e.getFormattedMessage()).containsAnyOf(
                 "Backyard des Alpes", "Nom-initial-secret-xyz", "Nom-refuse-secret-xyz",
                 "valeur-secrete-journal-xyz"));
-        List<String> messagesDExceptions = journal.list.stream()
+        List<String> messagesDExceptions = journal.evenements().stream()
                 .filter(e -> e.getThrowableProxy() != null && e.getThrowableProxy().getMessage() != null)
                 .map(e -> e.getThrowableProxy().getMessage()).toList();
         assertThat(messagesDExceptions).noneMatch(m -> m.contains("Backyard des Alpes")

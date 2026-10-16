@@ -2,6 +2,7 @@ package fr.backyard.tracker.comptes.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import java.net.http.HttpResponse;
@@ -46,7 +47,7 @@ class HorlogeHorsProfilIntegrationTest {
     static final String CHEMIN = "/api/test/horloge";
     static final String CORPS_VALIDE = "{\"duree\":\"PT60M\"}";
 
-    static JournalDeTest journal;
+    static JournalApplicatif journal;
 
     @Container
     @ServiceConnection
@@ -75,7 +76,7 @@ class HorlogeHorsProfilIntegrationTest {
 
     @BeforeAll
     static void capturer_le_journal() {
-        journal = JournalDeTest.demarrer();
+        journal = JournalApplicatif.demarrer();
     }
 
     @AfterAll

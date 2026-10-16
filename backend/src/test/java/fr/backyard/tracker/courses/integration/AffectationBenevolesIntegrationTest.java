@@ -3,9 +3,8 @@ package fr.backyard.tracker.courses.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.courses.OctetsDeLogo;
@@ -34,7 +33,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -105,7 +103,7 @@ class AffectationBenevolesIntegrationTest {
     final JsonMapper json = JsonMapper.builder().build();
     JdbcTemplate jdbc;
     ClientHttp api;
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
     Session patron;
     Session nadia;
     Session alice;
@@ -557,21 +555,21 @@ class AffectationBenevolesIntegrationTest {
         demarrerJournal();
 
         assertThat(affecter(patron, x, ids(idLeo, idMarc)).statusCode()).isEqualTo(200);
-        int apresSucces = journal.list.size();
+        int apresSucces = journal.marque();
         assertThat(affecter(patron, x, ids(idAlice)).statusCode()).isEqualTo(400);
         assertThat(affecter(patron, ID_INCONNU, ids(idLeo)).statusCode()).isEqualTo(404);
         assertThat(affecter(patron, terminee, ids(idLeo)).statusCode()).isEqualTo(409);
 
-        List<ILoggingEvent> affectations = journal.list.stream()
+        List<ILoggingEvent> affectations = journal.evenements().stream()
                 .filter(e -> e.getFormattedMessage().contains("Bénévoles de la course affectés")).toList();
         assertThat(affectations).hasSize(1);
         assertThat(affectations.get(0).getLevel()).isEqualTo(Level.INFO);
         assertThat(affectations.get(0).getFormattedMessage()).contains(x).contains("2");
-        assertThat(journal.list.subList(apresSucces, journal.list.size()))
+        assertThat(journal.applicatifsDepuis(apresSucces))
                 .noneSatisfy(e -> assertThat(e.getLevel().isGreaterOrEqual(Level.INFO)).isTrue());
-        assertThat(journal.list).noneSatisfy(e -> assertThat(e.getFormattedMessage()).containsAnyOf(
+        assertThat(journal.evenements()).noneSatisfy(e -> assertThat(e.getFormattedMessage()).containsAnyOf(
                 "Backyard des Crêtes", "Léo", "Marc", idLeo.toString(), idMarc.toString()));
-        List<String> messagesDExceptions = journal.list.stream()
+        List<String> messagesDExceptions = journal.evenements().stream()
                 .filter(e -> e.getThrowableProxy() != null && e.getThrowableProxy().getMessage() != null)
                 .map(e -> e.getThrowableProxy().getMessage()).toList();
         assertThat(messagesDExceptions).noneMatch(m -> m.contains(idLeo.toString()) || m.contains(idMarc.toString())
@@ -647,23 +645,15 @@ class AffectationBenevolesIntegrationTest {
     // ---------------------------------------------------------------- utilitaires
 
     private void demarrerJournal() {
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(Level.INFO);
+        arreterJournal();
+        journal = JournalApplicatif.demarrerEnDebug();
     }
 
     private void arreterJournal() {
         if (journal == null) {
             return;
         }
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(null);
+        journal.fermer();
         journal = null;
     }
 

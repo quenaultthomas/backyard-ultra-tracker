@@ -5,9 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.application.LirePseudos;
 import fr.backyard.tracker.comptes.infrastructure.CompteJpaAdapter;
@@ -31,7 +30,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -105,7 +103,7 @@ class SuppressionCompteCoureurIntegrationTest {
     final JsonMapper json = JsonMapper.builder().build();
     JdbcTemplate jdbc;
     ClientHttp api;
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
     Session patron;
     Session nadia;
     Session alice;
@@ -573,7 +571,7 @@ class SuppressionCompteCoureurIntegrationTest {
 
         assertThat(echec.statusCode()).isEqualTo(400);
         assertThat(succes.statusCode()).isEqualTo(204);
-        List<ILoggingEvent> evenements = new ArrayList<>(journal.list);
+        List<ILoggingEvent> evenements = journal.evenements();
         assertThat(evenements).anySatisfy(e -> {
             assertThat(e.getLevel()).isEqualTo(Level.INFO);
             assertThat(e.getFormattedMessage())
@@ -690,7 +688,7 @@ class SuppressionCompteCoureurIntegrationTest {
 
     private List<String> messagesDuJournal() {
         List<String> messages = new ArrayList<>();
-        for (ILoggingEvent e : journal.list) {
+        for (ILoggingEvent e : journal.evenements()) {
             messages.add(e.getFormattedMessage());
             if (e.getThrowableProxy() != null && e.getThrowableProxy().getMessage() != null) {
                 messages.add(e.getThrowableProxy().getMessage());
@@ -700,23 +698,15 @@ class SuppressionCompteCoureurIntegrationTest {
     }
 
     private void demarrerJournal() {
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>();
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(Level.INFO);
+        arreterJournal();
+        journal = JournalApplicatif.demarrerEnDebug();
     }
 
     private void arreterJournal() {
         if (journal == null) {
             return;
         }
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(null);
+        journal.fermer();
         journal = null;
     }
 }

@@ -12,7 +12,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxyUtil;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.infrastructure.EncodeurMotDePasseArgon2;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.comptes.integration.ApiHttp.Jeton;
@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.tomcat.TomcatWebServer;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -84,7 +83,7 @@ class ConnexionIntegrationTest {
     JdbcTemplate jdbc;
     ApiHttp api;
     final JsonMapper json = JsonMapper.builder().build();
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
     static String empreinteDeReference;
 
     /** Cookies d'un client connecté. */
@@ -104,19 +103,12 @@ class ConnexionIntegrationTest {
             empreinteDeReference = encodeur.encode(MOT_DE_PASSE);
         }
         clearInvocations(encodeurEspionne);
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
+        journal = JournalApplicatif.demarrer().niveau(Logger.ROOT_LOGGER_NAME, Level.DEBUG);
     }
 
     @AfterEach
     void nettoyer() {
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
+        journal.fermer();
     }
 
     // ---------------------------------------------------------------- CA10, CA11
@@ -319,7 +311,7 @@ class ConnexionIntegrationTest {
 
     private List<String> lignes(Level niveauMinimal) {
         List<String> lignes = new ArrayList<>();
-        for (ILoggingEvent evenement : new ArrayList<>(journal.list)) {
+        for (ILoggingEvent evenement : journal.evenements()) {
             if (!evenement.getLevel().isGreaterOrEqual(niveauMinimal)) {
                 continue;
             }

@@ -3,9 +3,8 @@ package fr.backyard.tracker.courses.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.courses.integration.ClientHttp.Session;
@@ -19,13 +18,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -97,7 +94,7 @@ class AntiDoublonPassageIntegrationTest {
     final JsonMapper json = JsonMapper.builder().build();
     JdbcTemplate jdbc;
     ClientHttp api;
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
     Session patron;
     Session leo;
     Session marc;
@@ -374,7 +371,8 @@ class AntiDoublonPassageIntegrationTest {
             assertThat(reponse.statusCode()).isEqualTo(409);
             assertThat(reponse.body()).contains("PASSAGE_TROP_RAPPROCHE").doesNotContain(JB).doesNotContain(NOM_X);
         });
-        assertThat(journal.list).noneSatisfy(e -> assertThat(e.getLevel().isGreaterOrEqual(Level.INFO)).isTrue());
+        assertThat(journal.evenementsApplicatifs())
+                .noneSatisfy(e -> assertThat(e.getLevel().isGreaterOrEqual(Level.INFO)).isTrue());
         List<String> interdits = List.of(JB, JC, "Bruno", NOM_X, idBruno.toString());
         assertThat(messagesDuJournal()).allSatisfy(m -> assertThat(m).doesNotContain(interdits));
         assertThat(compterPassagesDe(idBruno)).isEqualTo(1);
@@ -499,7 +497,7 @@ class AntiDoublonPassageIntegrationTest {
 
     private List<String> messagesDuJournal() {
         List<String> messages = new ArrayList<>();
-        for (ILoggingEvent e : journal.list) {
+        for (ILoggingEvent e : journal.evenements()) {
             if (!e.getLoggerName().startsWith("fr.backyard")) {
                 continue; // journaux DEBUG des bibliothèques, hors application
             }
@@ -514,23 +512,15 @@ class AntiDoublonPassageIntegrationTest {
     }
 
     private void demarrerJournal() {
-        journal = new ListAppender<>();
-        journal.list = new CopyOnWriteArrayList<>();
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(Level.INFO);
+        arreterJournal();
+        journal = JournalApplicatif.demarrerEnDebug();
     }
 
     private void arreterJournal() {
         if (journal == null) {
             return;
         }
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(null);
+        journal.fermer();
         journal = null;
     }
 

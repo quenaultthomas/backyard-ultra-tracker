@@ -3,9 +3,7 @@ package fr.backyard.tracker.courses.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.courses.integration.ClientHttp.Session;
@@ -27,7 +25,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -97,7 +94,7 @@ class DesinscriptionIntegrationTest {
     final JsonMapper json = JsonMapper.builder().build();
     JdbcTemplate jdbc;
     ClientHttp api;
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
     Session patron;
     Session nadia;
     Session alice;
@@ -426,7 +423,7 @@ class DesinscriptionIntegrationTest {
         demarrerJournal();
 
         HttpResponse<String> succes = supprimer(alice, idAliceX);
-        int apresSucces = journal.list.size();
+        int apresSucces = journal.marque();
         HttpResponse<String> introuvable = supprimer(alice, idAliceX);
         jdbc.update("update course set statut = 'EN_COURS' where id = ?", UUID.fromString(s.x));
         HttpResponse<String> conflit = supprimer(bruno, idBrunoX);
@@ -438,18 +435,18 @@ class DesinscriptionIntegrationTest {
         assertThat(conflit.statusCode()).isEqualTo(409);
         assertThat(refus.statusCode()).isEqualTo(403);
         assertThat(anonyme.statusCode()).isEqualTo(401);
-        assertThat(journal.list.stream()
+        assertThat(journal.evenements().stream()
                 .filter(e -> e.getFormattedMessage().contains("Désinscription enregistrée")).toList())
                 .singleElement().satisfies(e -> {
                     assertThat(e.getLevel()).isEqualTo(Level.INFO);
                     assertThat(e.getFormattedMessage())
                             .isEqualTo("Désinscription enregistrée (course " + s.x + ", dossard 1)");
                 });
-        assertThat(journal.list.subList(apresSucces, journal.list.size()))
+        assertThat(journal.applicatifsDepuis(apresSucces))
                 .noneSatisfy(e -> assertThat(e.getLevel().isGreaterOrEqual(Level.INFO)).isTrue());
         List<String> interdits = new ArrayList<>(List.of("Alice", idAlice.toString(), idAliceX, NOM_X));
         interdits.addAll(jetons);
-        assertThat(journal.list).filteredOn(e -> e.getLoggerName().startsWith("fr.backyard")
+        assertThat(journal.evenements()).filteredOn(e -> e.getLoggerName().startsWith("fr.backyard")
                         || e.getLevel().isGreaterOrEqual(Level.INFO))
                 .noneSatisfy(e -> assertThat(e.getFormattedMessage()).containsAnyOf(interdits.toArray(new String[0])));
         for (HttpResponse<String> reponse : List.of(introuvable, conflit, refus, anonyme)) {
@@ -612,23 +609,15 @@ class DesinscriptionIntegrationTest {
     }
 
     private void demarrerJournal() {
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>();
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(Level.INFO);
+        arreterJournal();
+        journal = JournalApplicatif.demarrerEnDebug();
     }
 
     private void arreterJournal() {
         if (journal == null) {
             return;
         }
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(null);
+        journal.fermer();
         journal = null;
     }
 

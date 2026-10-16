@@ -3,9 +3,8 @@ package fr.backyard.tracker.courses.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.courses.integration.ClientHttp.Session;
@@ -25,7 +24,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -95,7 +93,7 @@ class DossardAdminIntegrationTest {
     final JsonMapper json = JsonMapper.builder().build();
     JdbcTemplate jdbc;
     ClientHttp api;
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
     Session patron;
     Session nadia;
     Session alice;
@@ -268,7 +266,7 @@ class DossardAdminIntegrationTest {
 
         assertThat(reponse.statusCode()).isEqualTo(200);
         assertThat(json.readTree(reponse.body()).get("pseudo").asString()).isEqualTo("Compte inconnu");
-        List<ILoggingEvent> avertissements = journal.list.stream()
+        List<ILoggingEvent> avertissements = journal.evenementsApplicatifs().stream()
                 .filter(e -> e.getLevel().isGreaterOrEqual(Level.WARN)).toList();
         assertThat(avertissements).hasSize(1);
         assertThat(avertissements.get(0).getFormattedMessage())
@@ -490,10 +488,10 @@ class DossardAdminIntegrationTest {
         inscrireDansLOrdre(x, alice, bruno, chloe);
         UUID inscriptionAlice = inscriptionDe(x, idAlice);
         demarrerJournal();
-        int avant = journal.list.size();
+        int avant = journal.marque();
 
         HttpResponse<String> lecture = lire(nadia, x, inscriptionAlice.toString());
-        int apresLecture = journal.list.size();
+        int apresLecture = journal.marque();
         HttpResponse<String> introuvableCourse = lire(nadia, UUID.randomUUID().toString(),
                 inscriptionAlice.toString());
         HttpResponse<String> introuvableInscription = lire(nadia, x, UUID.randomUUID().toString());
@@ -506,22 +504,22 @@ class DossardAdminIntegrationTest {
         assertThat(introuvableInscription.statusCode()).isEqualTo(404);
         assertThat(anonyme.statusCode()).isEqualTo(401);
         assertThat(refuse.statusCode()).isEqualTo(403);
-        List<ILoggingEvent> lectureInfo = journal.list.subList(avant, apresLecture).stream()
+        List<ILoggingEvent> lectureInfo = journal.applicatifsEntre(avant, apresLecture).stream()
                 .filter(e -> e.getLevel().isGreaterOrEqual(Level.INFO)).toList();
         assertThat(lectureInfo).hasSize(1);
         assertThat(lectureInfo.get(0).getLevel()).isEqualTo(Level.INFO);
         assertThat(lectureInfo.get(0).getFormattedMessage())
                 .isEqualTo("Dossard consulté (course " + x + ", dossard 1)");
-        assertThat(journal.list.subList(apresLecture, journal.list.size()))
+        assertThat(journal.applicatifsDepuis(apresLecture))
                 .noneSatisfy(e -> assertThat(e.getLevel().isGreaterOrEqual(Level.INFO)).isTrue());
 
         List<String> interdits = new ArrayList<>(List.of("Alice", "Bruno", "Chloé", NOM_X, idAlice.toString(),
                 idBruno.toString(), idChloe.toString()));
         interdits.addAll(jdbc.queryForList("select jeton_qr from inscription", String.class));
-        assertThat(journal.list).filteredOn(e -> e.getLoggerName().startsWith("fr.backyard")
+        assertThat(journal.evenements()).filteredOn(e -> e.getLoggerName().startsWith("fr.backyard")
                         || e.getLevel().isGreaterOrEqual(Level.INFO))
                 .noneSatisfy(e -> assertThat(e.getFormattedMessage()).containsAnyOf(interdits.toArray(new String[0])));
-        assertThat(journal.list).filteredOn(e -> e.getThrowableProxy() != null)
+        assertThat(journal.evenements()).filteredOn(e -> e.getThrowableProxy() != null)
                 .noneSatisfy(e -> assertThat(e.getThrowableProxy().getMessage())
                         .containsAnyOf(interdits.toArray(new String[0])));
         String jeton = jetonDe(inscriptionAlice);
@@ -638,23 +636,15 @@ class DossardAdminIntegrationTest {
     }
 
     private void demarrerJournal() {
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>();
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(Level.INFO);
+        arreterJournal();
+        journal = JournalApplicatif.demarrerEnDebug();
     }
 
     private void arreterJournal() {
         if (journal == null) {
             return;
         }
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(null);
+        journal.fermer();
         journal = null;
     }
 
