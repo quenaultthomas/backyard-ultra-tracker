@@ -22,7 +22,7 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 | 3 | Inscriptions | 3.1 → 3.6 | inscrire des coureurs et voir leurs dossards et QR |
 | R | Refonte graphique | R.1 → R.9 | naviguer dans une application au thème backyard, avec menu burger et liste de courses en cartes |
 | 4 | Course en direct | 4.1 → 4.12 | faire tourner une course de bout en bout |
-| 5 | Scan hors ligne | 5.1 → 5.2 | scanner sans réseau sans perdre de passage |
+| 5 | Scan hors ligne | 5.1a → 5.2 | scanner sans réseau sans perdre de passage |
 | 6 | Suivi public | 6.1 → 6.4 | projeter le suivi d'une course |
 | A | Durcissement post-audit | A.1 → A.3 | tenir la charge d'une course réelle avec un transport et une gestion d'erreurs durcis |
 
@@ -250,9 +250,13 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 
 ## Jalon 5 : Scan hors ligne
 
-### 5.1 File de scan hors ligne
-- **Livré** : chaque scan est enregistré localement puis envoyé, avec nouvelles tentatives ; compteur de scans en attente ; API idempotente sur l'identifiant de scan (un rejeu ne crée pas de doublon).
+### 5.1a File de scan hors ligne
+- **Livré** : chaque scan est enregistré localement (IndexedDB) avant tout envoi, puis envoyé dans l'ordre avec nouvelles tentatives ; compteur de scans en attente ; session expirée (file en pause), isolation par compte ; API idempotente sur l'identifiant de scan (un rejeu ne crée pas de doublon). Contrat d'API inchangé.
 - **Tu testes** : dans les outils de développement du navigateur, passer hors ligne, scanner 3 coureurs → « 3 en attente ». Repasser en ligne → envoyés, visibles au pilotage, sans doublon.
+
+### 5.1b Scans à vérifier et déconnexion
+- **Livré** : liste persistante « Scans à vérifier » pour les scans refusés à l'envoi différé (avec bouton « Compris »), totaux sur l'accueil bénévole, confirmation à la déconnexion quand des scans sont en attente.
+- **Tu testes** : scanner hors ligne un coureur déjà passé, repasser en ligne → le refus apparaît dans « Scans à vérifier » ; se déconnecter avec des scans en attente → confirmation.
 
 ### 5.2 Application installable
 - **Livré** : manifeste PWA et service worker : l'écran de scan s'installe et s'ouvre sans réseau.
@@ -308,7 +312,8 @@ Issu de `docs/audits/audit-2026-10-16-backend-securite-performance.md`. SEC-06 (
 | Suppression d'un compte ayant couru | Anonymisation : le compte ne peut plus se connecter, son pseudo est remplacé, ses résultats sont conservés. | 3.6 |
 | Suppression d'une course | Par l'admin master uniquement, tant que la course est `EN_PREPARATION`. | 2.5 |
 | Thème graphique | Charte `docs/design.md` appliquée à tous les écrans, y compris ceux des jalons 4 à 6 | R.1 |
-| Idempotence du scan | Idempotence sur l'identifiant de scan généré par le client ; un autre scan pour la même (inscription, boucle) reste refusé en doublon (audit MET-04). | 5.1 |
+| Idempotence du scan | Idempotence sur l'identifiant de scan généré par le client ; un autre scan pour la même (inscription, boucle) reste refusé en doublon (audit MET-04). | 5.1a |
+| Scan fait dans les temps mais reçu après la fin de boucle ou de course | Refusé définitivement (contrat figé) ; rattrapage par la réintégration admin (4.12). Pas de tolérance de réception côté serveur. | 5.1a |
 | Abandon manuel du dernier coureur en course | La course passe `TERMINEE` sans vainqueur, dans la même transaction (avertissement dans la confirmation). | 4.11 |
 
 ## Décisions en attente
