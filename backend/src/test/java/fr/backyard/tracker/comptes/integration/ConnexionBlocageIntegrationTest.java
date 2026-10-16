@@ -6,7 +6,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxyUtil;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.domaine.PolitiqueBlocage;
 import fr.backyard.tracker.comptes.infrastructure.EncodeurMotDePasseArgon2;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
@@ -33,7 +33,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -121,7 +120,7 @@ class ConnexionBlocageIntegrationTest {
     JdbcTemplate jdbc;
     ApiHttp api;
     final JsonMapper json = JsonMapper.builder().build();
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
     static String empreinteDeReference;
 
     @BeforeEach
@@ -134,19 +133,12 @@ class ConnexionBlocageIntegrationTest {
         if (empreinteDeReference == null) {
             empreinteDeReference = encodeur.encoder(new fr.backyard.tracker.comptes.domaine.MotDePasse(MOT_DE_PASSE));
         }
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
+        journal = JournalApplicatif.demarrer().niveau(Logger.ROOT_LOGGER_NAME, Level.DEBUG);
     }
 
     @AfterEach
     void nettoyer() {
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
+        journal.fermer();
     }
 
     // ---------------------------------------------------------------- CA14
@@ -312,7 +304,7 @@ class ConnexionBlocageIntegrationTest {
         assertThat(connecter("Inconnu", MOT_DE_PASSE).statusCode()).isEqualTo(429);
         assertThat(connecter("Inconnu", MOT_DE_PASSE).statusCode()).isEqualTo(429);
 
-        List<ILoggingEvent> evenements = new ArrayList<>(journal.list);
+        List<ILoggingEvent> evenements = journal.evenements();
         assertThat(evenements.stream().filter(e -> e.getLevel() == Level.WARN
                 && e.getFormattedMessage().contains("Connexion bloquée temporairement"))).hasSize(1);
         assertThat(evenements.stream().filter(e -> e.getLevel() == Level.INFO
@@ -432,7 +424,7 @@ class ConnexionBlocageIntegrationTest {
 
     private List<String> lignes(Level niveauMinimal) {
         List<String> lignes = new ArrayList<>();
-        for (ILoggingEvent evenement : new ArrayList<>(journal.list)) {
+        for (ILoggingEvent evenement : journal.evenements()) {
             if (!evenement.getLevel().isGreaterOrEqual(niveauMinimal)) {
                 continue;
             }

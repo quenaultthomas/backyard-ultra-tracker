@@ -3,9 +3,8 @@ package fr.backyard.tracker.courses.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.courses.integration.ClientHttp.Session;
@@ -24,7 +23,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -100,7 +98,7 @@ class PilotageCourseIntegrationTest {
     final JsonMapper json = JsonMapper.builder().build();
     JdbcTemplate jdbc;
     ClientHttp api;
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
     Session patron;
     Session nadia;
     Session alice;
@@ -463,7 +461,8 @@ class PilotageCourseIntegrationTest {
         assertThat(pilotage(patron, ID_INCONNU).statusCode()).isEqualTo(404);
         assertThat(pilotage(patron, preparation).statusCode()).isEqualTo(409);
 
-        assertThat(journal.list).noneSatisfy(e -> assertThat(e.getLevel().isGreaterOrEqual(Level.INFO)).isTrue());
+        assertThat(journal.evenementsApplicatifs())
+                .noneSatisfy(e -> assertThat(e.getLevel().isGreaterOrEqual(Level.INFO)).isTrue());
         List<String> interdits = List.of(NOM_X, "Préparation discrète", "Bruno", "Chloé", "Patron", "Nadia",
                 idBruno.toString(), idChloe.toString(), idAlice.toString(), idLeo.toString());
         assertThat(messagesDuJournal()).allSatisfy(m -> assertThat(m).doesNotContain(interdits));
@@ -564,7 +563,7 @@ class PilotageCourseIntegrationTest {
 
     private List<String> messagesDuJournal() {
         List<String> messages = new ArrayList<>();
-        for (ILoggingEvent e : journal.list) {
+        for (ILoggingEvent e : journal.evenements()) {
             if (!e.getLoggerName().startsWith("fr.backyard")) {
                 continue; // journaux DEBUG des bibliothèques (Spring Security trace le principal), hors application
             }
@@ -577,23 +576,15 @@ class PilotageCourseIntegrationTest {
     }
 
     private void demarrerJournal() {
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>();
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(Level.INFO);
+        arreterJournal();
+        journal = JournalApplicatif.demarrerEnDebug();
     }
 
     private void arreterJournal() {
         if (journal == null) {
             return;
         }
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(null);
+        journal.fermer();
         journal = null;
     }
 

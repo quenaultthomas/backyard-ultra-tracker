@@ -4,9 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.courses.integration.ClientHttp.Session;
@@ -27,7 +26,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -131,7 +129,7 @@ class CoursesIntegrationTest {
     JdbcTemplate jdbc;
     ClientHttp api;
     final JsonMapper json = JsonMapper.builder().build();
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
     Session patron;
     Session nadia;
     Session alice;
@@ -154,22 +152,13 @@ class CoursesIntegrationTest {
         nadia = api.ouvrir("Nadia", MOT_DE_PASSE);
         alice = api.ouvrir("Alice", MOT_DE_PASSE);
         leo = api.ouvrir("Léo", MOT_DE_PASSE);
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
         // Le DEBUG interne d'Hibernate affiche les entités persistées (donnée enregistrée, pas le corps de la requête).
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(Level.INFO);
+        journal = JournalApplicatif.demarrerEnDebug();
     }
 
     @AfterEach
     void nettoyer() {
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(null);
+        journal.fermer();
     }
 
     // ---------------------------------------------------------------- CA10
@@ -699,15 +688,15 @@ class CoursesIntegrationTest {
         corps.put("distanceBoucleMetres", 0);
         assertThat(creer(patron, corps.toString()).statusCode()).isEqualTo(400);
 
-        List<ILoggingEvent> declarations = journal.list.stream()
+        List<ILoggingEvent> declarations = journal.evenements().stream()
                 .filter(e -> e.getFormattedMessage().contains("Course déclarée")).toList();
         assertThat(declarations).hasSize(1);
         assertThat(declarations.get(0).getLevel()).isEqualTo(Level.INFO);
         assertThat(declarations.get(0).getFormattedMessage()).contains(course.get("id").asString())
                 .doesNotContain("Nom-secret-journal-xyz");
-        assertThat(journal.list).noneSatisfy(e -> assertThat(e.getFormattedMessage())
+        assertThat(journal.evenements()).noneSatisfy(e -> assertThat(e.getFormattedMessage())
                 .containsAnyOf("Nom-secret-journal-xyz", "valeur-secrete-journal-xyz"));
-        List<String> messagesDExceptions = journal.list.stream()
+        List<String> messagesDExceptions = journal.evenements().stream()
                 .filter(e -> e.getThrowableProxy() != null && e.getThrowableProxy().getMessage() != null)
                 .map(e -> e.getThrowableProxy().getMessage()).toList();
         assertThat(messagesDExceptions).noneMatch(m -> m.contains("Nom-secret-journal-xyz")

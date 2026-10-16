@@ -7,8 +7,8 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxyUtil;
-import ch.qos.logback.core.read.ListAppender;
 import fr.backyard.tracker.BackyardUltraTrackerApplication;
+import fr.backyard.tracker.JournalApplicatif;
 import java.net.http.HttpResponse;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.event.ApplicationPreparedEvent;
@@ -57,29 +56,25 @@ class AdminMasterDemarrageIntegrationTest {
 
     final JsonMapper json = JsonMapper.builder().build();
     JdbcTemplate jdbc;
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
 
     @BeforeEach
     void preparer() {
         DriverManagerDataSource source = new DriverManagerDataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(),
                 POSTGRES.getPassword());
         jdbc = new JdbcTemplate(source);
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
-        journal.start();
+        journal = JournalApplicatif.demarrer();
         // Premier test : le schéma n'existe pas encore, une première application le crée.
         if (Boolean.FALSE.equals(jdbc.queryForObject("select to_regclass('public.compte') is not null", Boolean.class))) {
             demarrer(Map.of()).close();
         }
         jdbc.update("delete from compte");
-        journal.list.clear();
+        journal.vider();
     }
 
     @AfterEach
     void nettoyer() {
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
+        journal.fermer();
     }
 
     /** L'arrêt d'une application retire le pont JUL : on le remet pour les autres tests du module. */
@@ -162,11 +157,11 @@ class AdminMasterDemarrageIntegrationTest {
                         + "ne sont pas renseignées"));
 
         // Sur une base qui a déjà un admin master : variables absentes ignorées.
-        journal.list.clear();
+        journal.vider();
         try (ConfigurableApplicationContext premier = demarrer(proprietes(PSEUDO, MOT_DE_PASSE))) {
             assertThat(premier.isRunning()).isTrue();
         }
-        journal.list.clear();
+        journal.vider();
         try (ConfigurableApplicationContext contexte = demarrer(Map.of())) {
             assertThat(contexte.isRunning()).isTrue();
         }
@@ -245,7 +240,7 @@ class AdminMasterDemarrageIntegrationTest {
 
         assertThat(texteDuJournal(null)).doesNotContain(VALIDE).doesNotContain(TROP_COURT);
         assertThat(texteDuJournal(Level.INFO)).doesNotContain(PSEUDO);
-        assertThat(journal.list).isNotEmpty();
+        assertThat(journal.evenements()).isNotEmpty();
     }
 
     // ---------------------------------------------------------------- utilitaires
@@ -269,7 +264,6 @@ class AdminMasterDemarrageIntegrationTest {
                 "--spring.datasource.password=" + POSTGRES.getPassword(),
                 "--server.port=0"));
         proprietes.forEach((cle, valeur) -> arguments.add("--" + cle + "=" + valeur));
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         return new SpringApplicationBuilder(BackyardUltraTrackerApplication.class)
                 // Après l'initialisation du système de journalisation par Spring Boot, qui réinitialise Logback.
                 .listeners(evenement -> {
@@ -278,10 +272,7 @@ class AdminMasterDemarrageIntegrationTest {
                         SLF4JBridgeHandler.removeHandlersForRootLogger();
                         SLF4JBridgeHandler.install();
                         // La réinitialisation de Logback par Spring Boot arrête les appenders encore attachés.
-                        racine.detachAppender(journal);
-                        journal.start();
-                        racine.addAppender(journal);
-                        racine.setLevel(Level.DEBUG);
+                        journal.niveau(Logger.ROOT_LOGGER_NAME, Level.DEBUG).rattacher();
                     }
                 })
                 .run(arguments.toArray(String[]::new));
@@ -325,13 +316,13 @@ class AdminMasterDemarrageIntegrationTest {
     }
 
     private List<String> lignes(Level niveauMinimal) {
-        return journal.list.stream().filter(e -> e.getLevel().isGreaterOrEqual(niveauMinimal))
+        return journal.evenements().stream().filter(e -> e.getLevel().isGreaterOrEqual(niveauMinimal))
                 .map(AdminMasterDemarrageIntegrationTest::texte).toList();
     }
 
     /** Tout le journal capturé (message, arguments formatés, exceptions), à partir d'un niveau ou tous niveaux. */
     private String texteDuJournal(Level niveauMinimal) {
-        return journal.list.stream().filter(e -> niveauMinimal == null || e.getLevel().isGreaterOrEqual(niveauMinimal))
+        return journal.evenements().stream().filter(e -> niveauMinimal == null || e.getLevel().isGreaterOrEqual(niveauMinimal))
                 .map(AdminMasterDemarrageIntegrationTest::texte).collect(Collectors.joining("\n"));
     }
 

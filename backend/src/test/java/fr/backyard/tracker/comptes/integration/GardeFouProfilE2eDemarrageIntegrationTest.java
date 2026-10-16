@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ch.qos.logback.classic.Level;
 import fr.backyard.tracker.BackyardUltraTrackerApplication;
+import fr.backyard.tracker.JournalApplicatif;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +32,7 @@ class GardeFouProfilE2eDemarrageIntegrationTest {
     @Container
     static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17.11-alpine");
 
-    private ConfigurableApplicationContext demarrer(JournalDeTest journal, String profil, String... proprietes) {
+    private ConfigurableApplicationContext demarrer(JournalApplicatif journal, String profil, String... proprietes) {
         List<String> toutes = new ArrayList<>(List.of(
                 "server.port=0",
                 "spring.datasource.url=" + POSTGRES.getJdbcUrl(),
@@ -50,8 +51,8 @@ class GardeFouProfilE2eDemarrageIntegrationTest {
         return constructeur.run();
     }
 
-    private static List<String> avertissementsProfil(JournalDeTest journal) {
-        return journal.evenements().stream()
+    private static List<String> avertissementsProfil(JournalApplicatif journal) {
+        return journal.evenementsApplicatifs().stream()
                 .filter(e -> e.getLevel() == Level.WARN)
                 .map(e -> e.getFormattedMessage())
                 .filter(m -> m != null && m.startsWith("Profil e2e actif"))
@@ -70,7 +71,7 @@ class GardeFouProfilE2eDemarrageIntegrationTest {
     @Test
     @DisplayName("CA10 : profil e2e avec backyard.environnement=production : le contexte ne se crée pas, avec le message exact de RG8")
     void ca10_refus_en_production() {
-        try (JournalDeTest journal = JournalDeTest.demarrer()) {
+        try (JournalApplicatif journal = JournalApplicatif.demarrer()) {
             assertThatThrownBy(() -> demarrer(journal, "e2e", "backyard.environnement=production"))
                     .satisfies(erreur -> assertThat(causeAvecMessage(erreur, MESSAGE_REFUS))
                             .as("cause portant le message %s dans %s", MESSAGE_REFUS, erreur).isTrue());
@@ -81,7 +82,7 @@ class GardeFouProfilE2eDemarrageIntegrationTest {
     @Test
     @DisplayName("CA10 : la valeur production est reconnue sans tenir compte de la casse ni des espaces")
     void ca10_refus_casse_et_espaces() {
-        try (JournalDeTest journal = JournalDeTest.demarrer()) {
+        try (JournalApplicatif journal = JournalApplicatif.demarrer()) {
             assertThatThrownBy(() -> demarrer(journal, "e2e", "backyard.environnement= Production "))
                     .satisfies(erreur -> assertThat(causeAvecMessage(erreur, MESSAGE_REFUS)).isTrue());
         }
@@ -90,7 +91,7 @@ class GardeFouProfilE2eDemarrageIntegrationTest {
     @Test
     @DisplayName("CA10 : profil e2e avec la propriété absente : le contexte démarre et une seule ligne WARN Profil e2e actif est émise")
     void ca10_demarrage_autorise_propriete_absente() {
-        try (JournalDeTest journal = JournalDeTest.demarrer();
+        try (JournalApplicatif journal = JournalApplicatif.demarrer();
              ConfigurableApplicationContext contexte = demarrer(journal, "e2e")) {
             assertThat(contexte.isRunning()).isTrue();
             assertThat(avertissementsProfil(journal)).containsExactly(AVERTISSEMENT);
@@ -100,7 +101,7 @@ class GardeFouProfilE2eDemarrageIntegrationTest {
     @Test
     @DisplayName("CA10 : profil e2e avec backyard.environnement=dev : le contexte démarre et une seule ligne WARN est émise")
     void ca10_demarrage_autorise_environnement_dev() {
-        try (JournalDeTest journal = JournalDeTest.demarrer();
+        try (JournalApplicatif journal = JournalApplicatif.demarrer();
              ConfigurableApplicationContext contexte = demarrer(journal, "e2e", "backyard.environnement=dev")) {
             assertThat(contexte.isRunning()).isTrue();
             assertThat(avertissementsProfil(journal)).containsExactly(AVERTISSEMENT);
@@ -110,7 +111,7 @@ class GardeFouProfilE2eDemarrageIntegrationTest {
     @Test
     @DisplayName("CA10 : sans profil e2e et avec backyard.environnement=production : le contexte démarre sans la ligne WARN ni aucune ligne sur l'horloge pilotable")
     void ca10_production_sans_profil_e2e() {
-        try (JournalDeTest journal = JournalDeTest.demarrer();
+        try (JournalApplicatif journal = JournalApplicatif.demarrer();
              ConfigurableApplicationContext contexte = demarrer(journal, null, "backyard.environnement=production")) {
             assertThat(contexte.isRunning()).isTrue();
             assertThat(avertissementsProfil(journal)).isEmpty();

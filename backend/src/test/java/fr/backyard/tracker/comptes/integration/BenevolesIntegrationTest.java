@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.comptes.integration.ApiHttp.Jeton;
@@ -27,7 +27,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -79,7 +78,7 @@ class BenevolesIntegrationTest {
     ApiHttp api;
     final JsonMapper json = JsonMapper.builder().build();
     String empreinte;
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
 
     /** Cookies d'une session ouverte. */
     record Session(String id, String xsrf) {
@@ -97,19 +96,12 @@ class BenevolesIntegrationTest {
         empreinte = encodeur.encode(MOT_DE_PASSE);
         assertThat(initialiserAdminMaster.executer("Patron", MOT_DE_PASSE_PATRON))
                 .isEqualTo(InitialiserAdminMaster.Resultat.CREE);
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
+        journal = JournalApplicatif.demarrer().niveau(Logger.ROOT_LOGGER_NAME, Level.DEBUG);
     }
 
     @AfterEach
     void nettoyer() {
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
+        journal.fermer();
     }
 
     // ---------------------------------------------------------------- CA9
@@ -409,7 +401,7 @@ class BenevolesIntegrationTest {
         assertThat(creer(patron, corps("Léo", "secret-de-test-123")).statusCode()).isEqualTo(409);
         assertThat(creer(patron, corps("Autre1", "court-secre")).statusCode()).isEqualTo(400);
 
-        List<ILoggingEvent> evenements = List.copyOf(journal.list);
+        List<ILoggingEvent> evenements = journal.evenements();
         for (ILoggingEvent evenement : evenements) {
             String texte = evenement.getFormattedMessage() + " " + evenement.getMDCPropertyMap()
                     + (evenement.getThrowableProxy() == null ? "" : evenement.getThrowableProxy().getMessage());

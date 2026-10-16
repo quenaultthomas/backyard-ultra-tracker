@@ -6,7 +6,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.ThrowableProxyUtil;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.integration.ApiHttp.Jeton;
 import java.net.http.HttpResponse;
 import java.time.Clock;
@@ -27,7 +27,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -84,26 +83,19 @@ class CompteIntegrationTest {
     JdbcTemplate jdbc;
     ApiHttp api;
     final JsonMapper json = JsonMapper.builder().build();
-    ListAppender<ILoggingEvent> journal;
+    JournalApplicatif journal;
 
     @BeforeEach
     void preparer() {
         jdbc = new JdbcTemplate(dataSource);
         jdbc.update("delete from compte");
         api = new ApiHttp(port);
-        journal = new ListAppender<>();
-        journal.list = new java.util.concurrent.CopyOnWriteArrayList<>(); // liste sûre face aux threads qui journalisent
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
+        journal = JournalApplicatif.demarrer().niveau(Logger.ROOT_LOGGER_NAME, Level.DEBUG);
     }
 
     @AfterEach
     void nettoyer() {
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
+        journal.fermer();
     }
 
     // ---------------------------------------------------------------- CA9, CA10, CA11, CA15
@@ -430,7 +422,7 @@ class CompteIntegrationTest {
         api.postJson("/api/comptes", "pas-du-json " + MOT_DE_PASSE, jeton);
 
         List<String> lignes = new ArrayList<>();
-        for (ILoggingEvent evenement : new ArrayList<>(journal.list)) {
+        for (ILoggingEvent evenement : journal.evenements()) {
             lignes.add(evenement.getFormattedMessage());
             if (evenement.getThrowableProxy() != null) {
                 lignes.add(ThrowableProxyUtil.asString(evenement.getThrowableProxy()));

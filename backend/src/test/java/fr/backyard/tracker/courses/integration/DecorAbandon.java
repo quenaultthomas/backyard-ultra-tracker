@@ -3,9 +3,8 @@ package fr.backyard.tracker.courses.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
+import fr.backyard.tracker.JournalApplicatif;
 import fr.backyard.tracker.comptes.application.InitialiserAdminMaster;
 import fr.backyard.tracker.comptes.infrastructure.RegistreTentativesConnexionEnMemoire;
 import fr.backyard.tracker.courses.integration.ClientHttp.Session;
@@ -17,10 +16,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BooleanSupplier;
 import javax.sql.DataSource;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import tools.jackson.databind.json.JsonMapper;
@@ -66,7 +63,7 @@ final class DecorAbandon {
     UUID idChloe;
     UUID idTom;
     UUID idLeo;
-    private ListAppender<ILoggingEvent> journal;
+    private JournalApplicatif journal;
 
     DecorAbandon(DataSource dataSource, PasswordEncoder encodeur, CoursesIntegrationTest.HorlogeMutable horloge,
                  int port) {
@@ -241,29 +238,21 @@ final class DecorAbandon {
     // ---------------------------------------------------------------- journal
 
     void demarrerJournal() {
-        journal = new ListAppender<>();
-        journal.list = new CopyOnWriteArrayList<>();
-        journal.start();
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.addAppender(journal);
-        racine.setLevel(Level.DEBUG);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(Level.INFO);
+        arreterJournal();
+        journal = JournalApplicatif.demarrerEnDebug();
     }
 
     void arreterJournal() {
         if (journal == null) {
             return;
         }
-        Logger racine = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        racine.detachAppender(journal);
-        racine.setLevel(Level.INFO);
-        ((Logger) LoggerFactory.getLogger("org.hibernate")).setLevel(null);
+        journal.fermer();
         journal = null;
     }
 
-    /** Événements de l'application (loggers fr.backyard) depuis le démarrage du journal. */
+    /** Événements de l'application (paquet fr.backyard.tracker) depuis le démarrage du journal, copie figée. */
     List<ILoggingEvent> evenements() {
-        return journal.list.stream().filter(e -> e.getLoggerName().startsWith("fr.backyard")).toList();
+        return journal.evenementsApplicatifs();
     }
 
     /** Lignes INFO « Abandon automatique : … » du journal. */
