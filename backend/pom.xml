@@ -13,7 +13,7 @@
 
     <groupId>fr.backyard</groupId>
     <artifactId>backyard-ultra-tracker</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.4.0</version>
     <name>Backyard Ultra Tracker</name>
     <description>API de gestion de courses backyard ultra</description>
 
@@ -125,6 +125,15 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <!-- META-INF/build-info.properties : exposé par /actuator/info (version, date de build). -->
+                    <execution>
+                        <id>informations-de-build</id>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <!-- Expose ${org.mockito:mockito-core:jar} : Mockito chargé comme agent Java au lancement des tests
                  (le chargement dynamique d'agent est déprécié depuis le JDK 21). -->

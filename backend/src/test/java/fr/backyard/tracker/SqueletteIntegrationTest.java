@@ -74,11 +74,23 @@ class SqueletteIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA4 : les endpoints actuator info, env et beans répondent 404")
+    @DisplayName("CA4 : les endpoints actuator env et beans répondent 404")
     void ca4_endpoints_actuator_non_exposes() throws IOException, InterruptedException {
-        for (String chemin : List.of("/actuator/info", "/actuator/env", "/actuator/beans")) {
+        for (String chemin : List.of("/actuator/env", "/actuator/beans")) {
             assertThat(SanteHttp.get(port, chemin).statusCode()).as(chemin).isEqualTo(404);
         }
+    }
+
+    @Test
+    @DisplayName("Release : /actuator/info expose la version de l'application, sans détail interne")
+    void info_expose_la_version() throws Exception {
+        HttpResponse<String> reponse = SanteHttp.get(port, "/actuator/info");
+
+        assertThat(reponse.statusCode()).isEqualTo(200);
+        JsonNode corps = JsonMapper.builder().build().readTree(reponse.body());
+        assertThat(corps.get("build").get("version").asString()).isEqualTo("0.4.0");
+        assertThat(corps.get("app").get("version").asString()).isNotBlank();
+        assertThat(reponse.body()).doesNotContain("password", "motDePasse");
     }
 
     @Test

@@ -10,7 +10,7 @@ Toute l'application tourne dans Docker : aucune installation de Java, Node ou Po
 
 - Dev : `docker compose up -d --build` (HTTP sur http://localhost, API aussi publiée sur le port 8080).
 - Tests E2E : `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build` (voir « Tests E2E et profil `e2e` »).
-- Production : `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`.
+- Production : `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`. Le VPS ne compile jamais : `api` et `web` sont des images versionnées (`VERSION` dans `.env`) construites et testées par la CI, tirées de `ghcr.io` (voir « Publier une version » et « Accès du VPS aux images »).
 
 `docker-compose.prod.yml` ne contient que des surcharges : seul `web` publie des ports, `restart: unless-stopped` sur les trois services, HTTPS par Caddy, volumes des certificats `donnees-caddy` et `config-caddy`, variables `BASE_MOT_DE_PASSE`, `DOMAINE`, `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE` obligatoires, variable fixe `BACKYARD_ENVIRONNEMENT=production` (garde-fou, jamais lue dans `.env`), plafonds mémoire `mem_limit` des trois services (voir « Ressources : mémoire et journaux »).
 
@@ -23,7 +23,7 @@ PROD="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
 ## Prérequis
 
 - Un VPS Linux avec **Docker Engine** et **Docker Compose >= 2.24** (`docker compose version`) : la surcharge de production utilise la balise `!reset`, inconnue des versions antérieures.
-- **2 Go de RAM** recommandés pour la construction des images (Maven et Angular).
+- **2 Go de RAM** recommandés pour faire tourner la stack (plafonds mémoire de production : 1,75 Go au total, voir « Ressources : mémoire et journaux »). Aucune construction d'image sur le VPS.
 - Un **enregistrement DNS** (A, et AAAA si IPv6) du nom de domaine pointant vers l'adresse IP du VPS.
 - Pare-feu : ports **80/tcp** et **443/tcp** ouverts depuis Internet (obtention et renouvellement du certificat Let's Encrypt, puis trafic HTTPS), **443/udp** ouvert pour HTTP/3 (facultatif : pour s'en passer, retirer la ligne `443:443/udp` de `docker-compose.prod.yml`).
 - Ports 80 et 443 libres sur l'hôte (aucun autre serveur web).
@@ -38,6 +38,7 @@ Toutes les variables sont décrites dans `.env.example`. Le fichier `.env` n'est
 | `BASE_NOM` | facultative (défaut `backyard`) | nom de la base |
 | `BASE_UTILISATEUR` | facultative (défaut `backyard`) | utilisateur de la base |
 | `BASE_MOT_DE_PASSE` | **obligatoire**, non vide | mot de passe de la base |
+| `VERSION` | **obligatoire** en production | version des images `api` et `web` tirées de `ghcr.io`, sans le « v » du tag (`0.4.0`, `0.4.0-rc.1`) ; ignorée en dev et en E2E |
 | `DOMAINE` | **obligatoire** | nom de domaine servi en HTTPS |
 | `CONNEXION_ECHECS_MAX` | facultative (défaut `5`, entier ≥ 1) | échecs de connexion consécutifs sur un même pseudo avant blocage temporaire |
 | `CONNEXION_BLOCAGE_SECONDES` | facultative (défaut `900`, entier ≥ 1) | durée du blocage, et délai au-delà duquel des échecs partiels sont oubliés |
@@ -103,6 +104,7 @@ $PROD logs api | grep "Admin master"
    chmod 600 .env
    ```
 3. Renseigner dans `.env` :
+   - `VERSION=` la version à déployer, sans le « v » (ex. `0.4.0`) ;
    - `DOMAINE=` le nom de domaine (ex. `backyard.example.org`) ;
    - `BASE_MOT_DE_PASSE=` la sortie de `openssl rand -hex 24` ;
    - `ADMIN_MASTER_PSEUDO=` le pseudo de l'admin master (ex. `Patron`) ;
@@ -111,15 +113,16 @@ $PROD logs api | grep "Admin master"
    ```sh
    $PROD config --quiet
    ```
-5. Construire et lancer :
+5. Tirer les images (voir « Accès du VPS aux images ») et lancer :
    ```sh
-   $PROD up -d --build
+   $PROD pull
+   $PROD up -d
    ```
 6. Attendre environ 90 s puis vérifier que les trois services sont `healthy` :
    ```sh
    $PROD ps
    ```
-7. Vérifier le site : `curl https://<domaine>/api/sante` répond `{"status":"UP"}`, et `http://<domaine>/` redirige (308) vers HTTPS.
+7. Vérifier le site : `curl https://<domaine>/api/sante` répond `{"status":"UP"}`, `curl https://<domaine>/api/version` indique la version déployée (`app.version`, doit valoir celle de `.env`), et `http://<domaine>/` redirige (308) vers HTTPS.
 8. Vérifier l'admin master : `$PROD logs api | grep "Admin master"` affiche « Admin master créé (compte <identifiant>) », puis se connecter sur `https://<domaine>/connexion` avec ses identifiants : arrivée sur l'espace d'administration.
 
 Le certificat Let's Encrypt est obtenu au premier démarrage puis renouvelé automatiquement par Caddy. En cas d'échec (DNS non propagé, port 80 ou 443 fermé), la cause figure dans `$PROD logs web` ; le site reste inaccessible en HTTPS mais `web` reste `healthy` (sa santé ne dépend pas du certificat). Les certificats sont conservés dans le volume `donnees-caddy` : ne pas le supprimer sans raison, Let's Encrypt limite le nombre d'émissions.
@@ -131,19 +134,55 @@ Le certificat Let's Encrypt est obtenu au premier démarrage puis renouvelé aut
 - En local, repartir d'un volume vide : `docker compose down -v` (**supprime les données**).
 - Sur le VPS, ne jamais supprimer le volume : restaurer une sauvegarde dans une base créée avec le bon mot de passe (voir Restauration), ou changer le mot de passe dans PostgreSQL (`ALTER USER ... PASSWORD ...`) avant de modifier `.env`.
 
+## Publier une version
+
+Les images de production sont construites par la CI, jamais sur le VPS. Une version se publie par un tag `vX.Y.Z` (ou `vX.Y.Z-rc.N` pour une pré-version de test) :
+
+1. Sur une branche `release/X.Y.Z`, mettre à jour les versions : `version` de `backend/pom.xml` (sans `-SNAPSHOT`), de `frontend/package.json` et de `e2e/package.json` (et leurs `package-lock.json`), puis ajouter la section `## [X.Y.Z]` de `CHANGELOG.md`.
+2. Ouvrir la pull request, attendre la CI verte, la merger sur `main`. Pour tester avant, poser un tag `vX.Y.Z-rc.1` sur la tête de la branche de release : les versions des sources sont celles de `X.Y.Z`, le suffixe `-rc.N` est ignoré par la vérification.
+3. Poser le tag sur `main` et le pousser :
+   ```sh
+   git switch main && git pull
+   git tag vX.Y.Z && git push origin vX.Y.Z
+   ```
+4. Suivre le workflow `Release` (`gh run watch`, onglet *Actions*). Il rejoue la CI complète, vérifie que le tag correspond aux versions des sources et à `CHANGELOG.md`, construit les images `linux/amd64`, les pousse, puis crée la GitHub Release (notes reprises de `CHANGELOG.md`, pré-version pour un tag `-rc`). Si un job échoue, aucune image n'est publiée.
+5. Retrouver les images sur GHCR (page *Packages* du dépôt) : `ghcr.io/quenaultthomas/backyard-ultra-tracker-api` et `ghcr.io/quenaultthomas/backyard-ultra-tracker-web`, taguées `X.Y.Z` (ou `X.Y.Z-rc.N`) et par SHA court du commit. Il n'y a jamais de tag `latest`.
+
+Un tag publié n'est jamais déplacé : pour corriger, publier la version suivante.
+
+## Accès du VPS aux images
+
+Le dépôt est **public**. Les packages créés par le workflow sont en revanche **privés** par défaut. Après la première publication, pour chacun des deux packages (`backyard-ultra-tracker-api` et `backyard-ultra-tracker-web`) : page du package sur GitHub, *Package settings*, *Danger Zone*, *Change visibility*, **Public**. Le VPS peut alors tirer les images sans authentification :
+
+```sh
+docker pull ghcr.io/quenaultthomas/backyard-ultra-tracker-api:<version>
+docker pull ghcr.io/quenaultthomas/backyard-ultra-tracker-web:<version>
+```
+
+Si l'on préfère garder les packages privés : créer un jeton GitHub (*Settings*, *Developer settings*, *Personal access tokens*) limité à la portée `read:packages` (jeton classic ; un jeton fine-grained ne gère pas les packages), puis sur le VPS :
+
+```sh
+echo "<jeton>" | docker login ghcr.io -u <utilisateur-github> --password-stdin
+```
+
+Le jeton est stocké dans `~/.docker/config.json` : ne jamais le commiter et lui donner une expiration.
+
 ## Mise à jour
 
 1. Faire une sauvegarde (voir ci-dessous).
-2. Récupérer la nouvelle version :
+2. Récupérer les fichiers de déploiement de la nouvelle version (compose, `.env.example`, ce document) :
    ```sh
    git pull
    ```
 3. Comparer `.env.example` avec `.env` et ajouter les nouvelles variables éventuelles (depuis 1.4 : `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE`, obligatoires ; ignorées si l'admin master existe déjà ; depuis la correction de l'audit du 2026-10-16 : `HACHAGE_CONCURRENCE_MAX`, `API_MEMOIRE_MAX`, `BASE_MEMOIRE_MAX` et `WEB_MEMOIRE_MAX`, toutes facultatives).
-4. Reconstruire et relancer (les migrations Liquibase s'appliquent au démarrage de `api`) :
+4. Passer `VERSION` à la nouvelle version dans `.env`, tirer les images et relancer (les migrations Liquibase s'appliquent au démarrage de `api`) :
    ```sh
-   $PROD up -d --build
+   $PROD pull
+   $PROD up -d
    $PROD ps
+   curl https://<domaine>/api/version
    ```
+   Pour revenir en arrière, remettre l'ancienne valeur de `VERSION` et relancer `$PROD up -d` (les migrations Liquibase déjà appliquées ne sont pas annulées : restaurer la sauvegarde si le schéma a changé).
 5. Facultatif, libérer l'espace des anciennes images : `docker image prune -f`.
 
 Ne jamais utiliser `down -v` en production : cette option supprime les volumes, donc la base et les certificats.
@@ -205,7 +244,11 @@ cp .env.example .env.prod
 # dans .env.prod : DOMAINE=localhost, BASE_MOT_DE_PASSE=<sortie de openssl rand -hex 24>,
 #                  ADMIN_MASTER_PSEUDO=Patron et ADMIN_MASTER_MOT_DE_PASSE=<sortie de openssl rand -base64 18>
 P="docker compose -p backyard-prod --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml"
-$P up -d --build
+# La production tire ses images de ghcr.io : en local, construire des images de test portant les mêmes noms.
+# Dans .env.prod : VERSION=local
+docker build --build-arg VERSION=local -t ghcr.io/quenaultthomas/backyard-ultra-tracker-api:local backend
+docker build --build-arg VERSION=local -t ghcr.io/quenaultthomas/backyard-ultra-tracker-web:local frontend
+$P up -d
 $P ps                           # 3 services healthy, ports publiés uniquement sur web
 curl -k https://localhost/api/sante   # {"status":"UP"}
 curl -sI http://localhost/            # 308, Location: https://localhost/
@@ -270,7 +313,7 @@ Connecté en admin master, `https://<domaine>/api/test/horloge` doit répondre 4
 
 ## Intégration continue
 
-Le workflow `.github/workflows/ci.yml` vérifie la définition de « fini » sur chaque pull request et à chaque push sur `main`. Il ne requiert aucun secret : les identifiants de l'admin master du job `e2e` sont des valeurs de test écrites dans le workflow. Les exécutions obsolètes d'une même PR sont annulées (`concurrency`).
+Le workflow `.github/workflows/release.yml` réutilise ce workflow (`workflow_call`) avant de publier les images (voir « Publier une version »). Le workflow `.github/workflows/ci.yml` vérifie la définition de « fini » sur chaque pull request et à chaque push sur `main`. Il ne requiert aucun secret : les identifiants de l'admin master du job `e2e` sont des valeurs de test écrites dans le workflow. Les exécutions obsolètes d'une même PR sont annulées (`concurrency`).
 
 | Job | Ce qu'il fait |
 |---|---|

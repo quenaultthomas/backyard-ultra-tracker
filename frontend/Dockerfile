@@ -6,6 +6,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
+# Version affichée en pied de page : écrase src/app/version.ts (valeur `dev` en développement local).
+ARG VERSION=dev
+RUN printf "export const VERSION = '%s';\n" "$VERSION" > src/app/version.ts
 RUN npm run build
 
 # Étape d'exécution : Caddy sert le build et relaie /api vers le service api.
