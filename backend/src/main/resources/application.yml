@@ -56,6 +56,11 @@ backyard:
     # echecs consecutifs avant blocage, puis duree du blocage et de l'oubli des echecs partiels.
     echecs-max: ${CONNEXION_ECHECS_MAX:5}
     blocage-secondes: ${CONNEXION_BLOCAGE_SECONDES:900}
+  hachage:
+    # Plafond des calculs Argon2id simultanes (connexion, creation de compte, changement de mot de passe) :
+    # environ 19 Mio de memoire chacun. Au-dela, attente bornee puis 503 SERVICE_SATURE (SEC-06).
+    concurrence-max: ${HACHAGE_CONCURRENCE_MAX:4}
+    attente-max-millisecondes: 1000
   admin-master:
     # Admin master cree au demarrage s'il n'existe pas (ignorees ensuite). Defaut vide : aucun admin cree.
     # Valeurs validees par le domaine (pseudo 3 a 30 caracteres, mot de passe 12 a 128), jamais journalisees.

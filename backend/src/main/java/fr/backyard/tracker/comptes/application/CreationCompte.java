@@ -18,6 +18,10 @@ import java.util.stream.Stream;
 /**
  * Déroulé commun de la création d'un compte depuis une saisie (coureur, admin) : validation complète,
  * puis unicité du pseudo, puis hachage et enregistrement. Le rôle est fixé par la fabrique du domaine.
+ *
+ * <p>Sans transaction englobante (SEC-06) : le hachage Argon2id a lieu entre la lecture d'unicité et
+ * l'enregistrement, sans connexion du pool tenue. Seul l'enregistrement est transactionnel (dépôt) ; un doublon
+ * concurrent passé entre les deux est refusé par la contrainte d'unicité, traduite en {@link PseudoDejaUtiliseException}.
  */
 final class CreationCompte {
 

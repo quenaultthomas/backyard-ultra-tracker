@@ -5,6 +5,7 @@ import fr.backyard.tracker.comptes.domaine.ConnexionBloqueeException;
 import fr.backyard.tracker.comptes.domaine.DepotComptes;
 import fr.backyard.tracker.comptes.domaine.DonneesCompteInvalidesException;
 import fr.backyard.tracker.comptes.domaine.EncodeurMotDePasse;
+import fr.backyard.tracker.comptes.domaine.HachageSatureException;
 import fr.backyard.tracker.comptes.domaine.IdentifiantsInvalidesException;
 import fr.backyard.tracker.comptes.domaine.MotDePasse;
 import fr.backyard.tracker.comptes.domaine.PolitiqueBlocage;
@@ -17,13 +18,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Connexion d'un compte par pseudo et mot de passe. Tous les échecs d'identification sont
  * indiscernables : même exception et, hors saisie hors bornes, une vérification d'empreinte complète.
  * Les échecs dans les bornes sont comptés par pseudo normalisé ; pendant un blocage, la tentative est
  * refusée sans interroger le dépôt ni vérifier d'empreinte. Journal sans pseudo ni mot de passe.
+ *
+ * <p>Sans transaction (SEC-06) : la lecture du compte libère sa connexion avant la vérification Argon2id, qui ne
+ * monopolise donc jamais le pool pendant une rafale de tentatives. Rien n'est écrit en base.
  */
 @Service
 public class Connecter {
@@ -49,8 +52,8 @@ public class Connecter {
      * @throws DonneesCompteInvalidesException pseudo et/ou mot de passe absents
      * @throws ConnexionBloqueeException      saisie dans les bornes pendant un blocage du pseudo
      * @throws IdentifiantsInvalidesException  pour tout autre échec, quelle qu'en soit la cause
+     * @throws HachageSatureException       trop de vérifications simultanées : aucun échec n'est compté
      */
-    @Transactional(readOnly = true)
     public Compte executer(String saisiePseudo, String saisieMotDePasse) {
         verifierPresence(saisiePseudo, saisieMotDePasse);
         if (Pseudo.excedeLongueurMax(saisiePseudo) || MotDePasse.excedeLongueurMax(saisieMotDePasse)) {

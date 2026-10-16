@@ -1,8 +1,17 @@
 name: backyard-ultra-tracker
 
+# Journaux Docker bornés pour tous les services (DEP-05) : 5 fichiers de 10 Mo au plus par conteneur, rotation par
+# Docker (sinon le pilote json-file grossit sans limite et peut remplir le disque du VPS).
+x-journaux: &journaux
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   base:
     image: postgres:17.11-alpine
+    logging: *journaux
     environment:
       POSTGRES_DB: ${BASE_NOM:-backyard}
       POSTGRES_USER: ${BASE_UTILISATEUR:-backyard}
@@ -19,6 +28,7 @@ services:
   api:
     build:
       context: ./backend
+    logging: *journaux
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://base:5432/${BASE_NOM:-backyard}
       SPRING_DATASOURCE_USERNAME: ${BASE_UTILISATEUR:-backyard}
@@ -26,6 +36,8 @@ services:
       # Limitation des tentatives de connexion (entiers >= 1, sinon api ne demarre pas).
       CONNEXION_ECHECS_MAX: ${CONNEXION_ECHECS_MAX:-5}
       CONNEXION_BLOCAGE_SECONDES: ${CONNEXION_BLOCAGE_SECONDES:-900}
+      # Calculs Argon2id simultanes (~19 Mio chacun) ; au-dela, 503 SERVICE_SATURE (entier >= 1).
+      HACHAGE_CONCURRENCE_MAX: ${HACHAGE_CONCURRENCE_MAX:-4}
       # Admin master cree au premier demarrage (facultatives en dev, obligatoires en production).
       ADMIN_MASTER_PSEUDO: ${ADMIN_MASTER_PSEUDO:-}
       ADMIN_MASTER_MOT_DE_PASSE: ${ADMIN_MASTER_MOT_DE_PASSE:-}
@@ -53,6 +65,7 @@ services:
   web:
     build:
       context: ./frontend
+    logging: *journaux
     depends_on:
       api:
         condition: service_healthy

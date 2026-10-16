@@ -21,4 +21,7 @@ WORKDIR /application
 COPY --from=build --chown=backyard:backyard /construction/application.jar application.jar
 USER backyard:backyard
 EXPOSE 8080
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/application/application.jar"]
+# Tas plafonné à 60 % de la mémoire du conteneur (mem_limit en production) : le reste couvre la mémoire hors tas
+# (métaspace, piles des threads, tampons) sans dépasser le plafond. Sortie immédiate sur OutOfMemoryError :
+# Docker relance api (restart: unless-stopped) au lieu de laisser une JVM dégradée.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=60", "-XX:+ExitOnOutOfMemoryError", "-jar", "/application/application.jar"]

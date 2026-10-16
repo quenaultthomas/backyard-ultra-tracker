@@ -28,7 +28,12 @@ public class CompteJpaAdapter implements DepotComptes {
     @PersistenceContext
     private EntityManager entityManager;
 
+    /**
+     * Lecture transactionnelle propre (ou rejoint celle de l'appelant) : appelée hors transaction par la connexion et
+     * la création de compte (SEC-06), elle rend sa connexion au pool dès la lecture faite, avant tout hachage.
+     */
     @Override
+    @Transactional(readOnly = true)
     public boolean existeParPseudoNormalise(String pseudoNormalise) {
         return !entityManager
                 .createQuery("select c.id from CompteJpaEntity c where c.pseudoNormalise = :pseudoNormalise",
@@ -49,7 +54,9 @@ public class CompteJpaAdapter implements DepotComptes {
                 .isEmpty();
     }
 
+    /** Même cadre que {@link #existeParPseudoNormalise} : le flux de résultats est lu dans la transaction. */
     @Override
+    @Transactional(readOnly = true)
     public Optional<Compte> trouverParPseudoNormalise(String pseudoNormalise) {
         return entityManager
                 .createQuery("select c from CompteJpaEntity c where c.pseudoNormalise = :pseudoNormalise",
