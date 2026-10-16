@@ -21,6 +21,7 @@ import {
   sinscrireParApi,
 } from './aide-coureur';
 import { ouvrirMenuCompte } from './aide-entete';
+import { capturerReponse } from './aide-reponse';
 import {
   AIDES_PAGE,
   ECRANS,
@@ -1124,9 +1125,9 @@ test.describe('Parcours coureur de bout en bout', () => {
     await expect(ligne).toBeVisible();
     await expect(ligne.getByTestId('coureur-course-parametres')).toHaveText('6706 m · 60 min · 120 m D+');
     await ligne.getByTestId('coureur-bouton-sinscrire').scrollIntoViewIfNeeded();
-    const inscription = page.waitForResponse((r) => r.request().method() === 'POST' && r.url().endsWith(`/api/coureur/courses/${course.id}/inscriptions`));
+    const inscription = await capturerReponse(page, (r) => r.method() === 'POST' && r.url().endsWith(`/api/coureur/courses/${course.id}/inscriptions`));
     await ligne.getByTestId('coureur-bouton-sinscrire').click();
-    const corps = (await (await inscription).json()) as { id: string; dossard: number };
+    const corps = JSON.parse((await inscription.attendre).corps) as { id: string; dossard: number };
     expect(corps.dossard).toBe(1);
     await expect(page.getByTestId('coureur-message-inscription')).toHaveText(`Vous êtes inscrit à ${course.nom} avec le dossard 1.`);
     await expect(ligne.getByTestId('coureur-dossard')).toHaveText('Dossard 1');
