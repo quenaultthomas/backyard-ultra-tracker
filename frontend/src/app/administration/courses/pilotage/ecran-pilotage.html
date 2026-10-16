@@ -127,6 +127,10 @@
                     data-testid="pilotage-vainqueur-boucles-terminees"
                   >
                     {{ vainqueur.nombreBouclesTerminees }}
+                    <app-badge-corrige
+                      [nombre]="vainqueur.nombreBouclesCorrigees"
+                      testId="pilotage-vainqueur-corrige"
+                    />
                   </td>
                 </tr>
               }
@@ -210,6 +214,10 @@
                     data-testid="pilotage-inscrit-boucles-terminees"
                   >
                     {{ inscrit.nombreBouclesTerminees }}
+                    <app-badge-corrige
+                      [nombre]="inscrit.nombreBouclesCorrigees"
+                      testId="pilotage-inscrit-corrige"
+                    />
                   </td>
                   @if (actionsPossibles) {
                     <td data-libelle="Action">
@@ -217,12 +225,15 @@
                         #boutonAbandonner
                         type="button"
                         class="bouton bouton--danger-contour"
-                        [disabled]="abandon.envoiEnCours()"
-                        [attr.aria-expanded]="abandon.cibleId() === inscrit.inscriptionId"
+                        [disabled]="abandonManuel.envoiEnCours()"
+                        [attr.aria-expanded]="abandonManuel.cibleId() === inscrit.inscriptionId"
                         [attr.aria-label]="
                           'Abandonner le coureur n° ' + inscrit.dossard + ' ' + inscrit.pseudo
                         "
-                        (click)="abandon.ouvrir(inscrit.inscriptionId, boutonAbandonner)"
+                        (click)="
+                          reintegration.fermer();
+                          abandonManuel.ouvrir(inscrit.inscriptionId, boutonAbandonner)
+                        "
                         data-testid="pilotage-inscrit-abandonner"
                       >
                         Abandonner
@@ -234,11 +245,13 @@
             </tbody>
           </table>
         }
-        <app-abandon-coureur #abandon [courseId]="id()" />
+        <app-abandon-coureur #abandonManuel [courseId]="id()" />
       </section>
 
       <section class="formulaire inscrits" aria-labelledby="titre-abandons">
-        <h2 id="titre-abandons" class="sous-titre">Coureurs en abandon</h2>
+        <h2 #titreAbandons id="titre-abandons" class="sous-titre" tabindex="-1">
+          Coureurs en abandon
+        </h2>
         <p class="message resume">
           <span class="resume__compteur" data-testid="pilotage-compteur-abandons">{{
             compteurAbandons()
@@ -255,6 +268,9 @@
                 <th scope="col">Boucle d'abandon</th>
                 <th scope="col">Motif</th>
                 <th scope="col">Boucles terminées</th>
+                @if (actionsPossibles) {
+                  <th scope="col" data-testid="pilotage-abandons-colonne-action">Action</th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -285,12 +301,42 @@
                     data-testid="pilotage-abandon-boucles-terminees"
                   >
                     {{ abandon.nombreBouclesTerminees }}
+                    <app-badge-corrige
+                      [nombre]="abandon.nombreBouclesCorrigees"
+                      testId="pilotage-abandon-corrige"
+                    />
                   </td>
+                  @if (actionsPossibles) {
+                    <td data-libelle="Action">
+                      <button
+                        #boutonReintegrer
+                        type="button"
+                        class="bouton bouton--secondaire"
+                        [disabled]="reintegration.envoiEnCours()"
+                        [attr.aria-expanded]="reintegration.cibleId() === abandon.inscriptionId"
+                        [attr.aria-label]="
+                          'Réintégrer le coureur n° ' + abandon.dossard + ' ' + abandon.pseudo
+                        "
+                        (click)="
+                          abandonManuel.fermer();
+                          reintegration.ouvrir(abandon.inscriptionId, boutonReintegrer)
+                        "
+                        data-testid="pilotage-abandon-reintegrer"
+                      >
+                        Réintégrer
+                      </button>
+                    </td>
+                  }
                 </tr>
               }
             </tbody>
           </table>
         }
+        <app-reintegration-coureur
+          #reintegration
+          [courseId]="id()"
+          [repliFocusAnnulation]="titreAbandons"
+        />
       </section>
     } @else if (rafraichissement.echec()) {
       <h1 id="pilotage-titre" class="titre">Pilotage de la course</h1>

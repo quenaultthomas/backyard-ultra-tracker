@@ -1,0 +1,55 @@
+@if (succes(); as message) {
+  <p class="message--succes" role="status" data-testid="pilotage-reintegrer-succes">
+    {{ message }}
+  </p>
+}
+@if (erreur(); as message) {
+  <p class="message--erreur" role="alert" data-testid="pilotage-reintegrer-erreur">
+    {{ message }}
+  </p>
+}
+
+@if (cible(); as c) {
+  <div
+    class="confirmation confirmation--neutre"
+    role="group"
+    (keydown.escape)="annuler()"
+    aria-labelledby="titre-reintegration"
+    data-testid="pilotage-reintegrer-confirmation"
+  >
+    <h3
+      #titre
+      id="titre-reintegration"
+      class="confirmation__titre"
+      tabindex="-1"
+      data-testid="pilotage-reintegrer-titre"
+    >
+      Réintégrer le coureur n° {{ c.dossard }} {{ c.pseudo }} ?
+    </h3>
+    <p class="confirmation__texte">
+      Le coureur sera remis en course. Les boucles qu'il a manquées seront enregistrées comme
+      passages corrigés, ce qui ne peut pas être annulé. Il devra scanner normalement la boucle en
+      cours.
+    </p>
+    <div class="confirmation__actions">
+      <button
+        type="button"
+        class="bouton"
+        [disabled]="envoiEnCours()"
+        (click)="confirmer()"
+        data-testid="pilotage-reintegrer-confirmer"
+      >
+        Confirmer la réintégration
+      </button>
+      <button
+        type="button"
+        class="bouton bouton--secondaire"
+        [disabled]="envoiEnCours()"
+        (click)="annuler()"
+        data-testid="pilotage-reintegrer-annuler"
+      >
+        Annuler
+      </button>
+    </div>
+  </div>
+}

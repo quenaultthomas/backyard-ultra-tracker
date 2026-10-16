@@ -10,8 +10,10 @@ import java.util.OptionalInt;
  *
  * @param nombreBouclesTerminees nombre de Passages de l'Inscription (numéros contigus de 1 à ce nombre)
  * @param boucleCouranteTerminee l'Inscription a un Passage sur la Boucle courante ; vide sans Boucle courante
+ * @param nombreBouclesCorrigees nombre de Passages CORRECTION de l'Inscription (badge « corrigé »)
  */
-public record ProgressionCoureur(int nombreBouclesTerminees, Optional<Boolean> boucleCouranteTerminee) {
+public record ProgressionCoureur(int nombreBouclesTerminees, Optional<Boolean> boucleCouranteTerminee,
+                                 int nombreBouclesCorrigees) {
 
     /**
      * @param passagesDeLInscription Passages d'une seule Inscription
@@ -21,7 +23,10 @@ public record ProgressionCoureur(int nombreBouclesTerminees, Optional<Boolean> b
         Optional<Boolean> aBoucle = boucleCourante.isPresent()
                 ? Optional.of(aUnPassageSur(passagesDeLInscription, boucleCourante.getAsInt()))
                 : Optional.empty();
-        return new ProgressionCoureur(passagesDeLInscription.size(), aBoucle);
+        int corrigees = (int) passagesDeLInscription.stream()
+                .filter(passage -> passage.origine() == OriginePassage.CORRECTION)
+                .count();
+        return new ProgressionCoureur(passagesDeLInscription.size(), aBoucle, corrigees);
     }
 
     /** Vrai seulement si la Boucle courante est connue et que le coureur a bouclé. */

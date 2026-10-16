@@ -13,6 +13,8 @@ export interface InscritEnCourse {
   nombreBouclesTerminees: number;
   /** Passage sur la Boucle courante, selon le serveur ; `null` si `boucleCourante` est `null`. */
   boucleCouranteTerminee: boolean | null;
+  /** Nombre de Passages `CORRECTION` de l'Inscription (badge « corrigé » dès 1). */
+  nombreBouclesCorrigees: number;
 }
 
 /** Motif d'abandon d'une Inscription (langage ubiquitaire). */
@@ -53,6 +55,21 @@ export interface AbandonManuel {
   statutCourse: Exclude<StatutCourse, 'EN_PREPARATION'>;
 }
 
+/** Réponse 200 de la réintégration (`POST` sans corps) : ni jeton QR, ni identifiant de Compte, ni pseudo. */
+export interface Reintegration {
+  inscriptionId: string;
+  dossard: number;
+  /** Toujours `EN_COURSE`. */
+  statut: StatutInscription;
+  /** Boucles pour lesquelles un Passage `CORRECTION` vient d'être créé, ordre croissant ; vide si aucune. */
+  bouclesCorrigees: number[];
+}
+
+/** « 0 boucle corrigée », « 1 boucle corrigée », « 2 boucles corrigées » (accord seulement). */
+export function libelleBouclesCorrigees(nombre: number): string {
+  return nombre > 1 ? `${nombre} boucles corrigées` : `${nombre} boucle corrigée`;
+}
+
 /** Ligne de `PilotageCourse.inscritsEnAbandon` : jamais de jeton QR ni d'identifiant de Compte. */
 export interface InscritEnAbandon {
   inscriptionId: string;
@@ -66,6 +83,8 @@ export interface InscritEnAbandon {
   boucleAbandon: number | null;
   /** `null` pour un abandon sans motif enregistré (affiché « — »). */
   motifAbandon: MotifAbandon | null;
+  /** Nombre de Passages `CORRECTION` de l'Inscription (badge « corrigé » dès 1). */
+  nombreBouclesCorrigees: number;
 }
 
 /** Ligne de `PilotageCourse.inscritsVainqueurs` : jamais de jeton QR ni d'identifiant de Compte. */
@@ -77,6 +96,8 @@ export interface InscritVainqueur {
   statut: StatutInscription;
   /** Nombre de Passages de l'Inscription (`SCAN` et `CORRECTION`). */
   nombreBouclesTerminees: number;
+  /** Nombre de Passages `CORRECTION` de l'Inscription (badge « corrigé » dès 1). */
+  nombreBouclesCorrigees: number;
 }
 
 /**

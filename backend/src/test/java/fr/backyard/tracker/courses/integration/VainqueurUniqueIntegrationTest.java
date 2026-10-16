@@ -59,7 +59,7 @@ class VainqueurUniqueIntegrationTest {
             "dureeEcouleeMillisecondes", "nombreInscrits", "nombreAyantBoucle", "nombreEnBoucle", "inscritsEnCourse",
             "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs", "inscritsVainqueurs");
     static final List<String> CHAMPS_VAINQUEUR = List.of("inscriptionId", "dossard", "pseudo", "statut",
-            "nombreBouclesTerminees");
+            "nombreBouclesTerminees", "nombreBouclesCorrigees");
 
     @Container
     @ServiceConnection
@@ -419,7 +419,7 @@ class VainqueurUniqueIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA8 : Patron lit le pilotage de X terminée : 200, no-store, exactement 23 champs (statut TERMINEE, boucleCourante null, inscritsEnCourse vide, 2 abandons, 3 inscrits) plus 1 vainqueur à 5 champs ; Nadia obtient le même corps")
+    @DisplayName("CA8 : Patron lit le pilotage de X terminée : 200, no-store, exactement 23 champs (statut TERMINEE, boucleCourante null, inscritsEnCourse vide, 2 abandons, 3 inscrits) plus 1 vainqueur à 6 champs ; Nadia obtient le même corps")
     void ca8_pilotage_course_terminee() throws Exception {
         String x = courseTermineeAvecBrunoVainqueur();
 
@@ -444,7 +444,7 @@ class VainqueurUniqueIntegrationTest {
         JsonNode vainqueurs = corps.get("inscritsVainqueurs");
         assertThat(vainqueurs).hasSize(1);
         JsonNode bruno = vainqueurs.get(0);
-        assertThat(bruno.propertyNames()).hasSize(5).containsExactlyInAnyOrderElementsOf(CHAMPS_VAINQUEUR);
+        assertThat(bruno.propertyNames()).hasSize(6).containsExactlyInAnyOrderElementsOf(CHAMPS_VAINQUEUR);
         assertThat(bruno.get("inscriptionId").asString()).isEqualTo(decor.idInscription(x, decor.idBruno));
         assertThat(bruno.get("dossard").asInt()).isEqualTo(1);
         assertThat(bruno.get("pseudo").asString()).isEqualTo("Bruno");
