@@ -193,7 +193,8 @@ class PilotageCourseIntegrationTest {
         assertThat(inscrits).extracting(n -> n.get("pseudo").asString()).containsExactly("Bruno", "Chloé");
         assertThat(inscrits).extracting(n -> n.get("statut").asString()).containsOnly("EN_COURSE");
         assertThat(inscrits).allSatisfy(n -> assertThat(n.propertyNames()).containsExactlyInAnyOrder(
-                "inscriptionId", "dossard", "pseudo", "statut", "nombreBouclesTerminees", "boucleCouranteTerminee"));
+                "inscriptionId", "dossard", "pseudo", "statut", "nombreBouclesTerminees", "boucleCouranteTerminee",
+                "nombreBouclesCorrigees"));
         assertThat(corps.get("nombreAyantBoucle").asInt()).isZero();
         assertThat(corps.get("nombreEnBoucle").asInt()).isEqualTo(2);
         assertThat(inscrits).extracting(n -> n.get("inscriptionId").asString()).containsExactly(

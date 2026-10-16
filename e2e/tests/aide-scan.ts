@@ -119,6 +119,18 @@ export function lirePassagesEnBase(courseId: string): string[] {
   return sortie === '' ? [] : sortie.split('\n');
 }
 
+/**
+ * Passages de la Course avec leur origine et la présence de `scanne_le` (4.12) : lignes
+ * « dossard:boucle:origine:avecDate|sansDate », triées. Un Passage `CORRECTION` n'a jamais de date.
+ */
+export function lirePassagesDetailEnBase(courseId: string): string[] {
+  if (!/^[0-9a-f-]{36}$/.test(courseId)) throw new Error('identifiant de course invalide');
+  const sortie = executerSql(
+    `select i.dossard || ':' || p.numero_boucle || ':' || p.origine || ':' || case when p.scanne_le is null then 'sansDate' else 'avecDate' end from passage p join inscription i on i.id = p.inscription_id where i.course_id = '${courseId}' order by i.dossard, p.numero_boucle`,
+  );
+  return sortie === '' ? [] : sortie.split('\n');
+}
+
 export interface InscriptionEnBase {
   statut: string;
   motifAbandon: string;

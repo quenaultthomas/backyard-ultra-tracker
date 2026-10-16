@@ -45,7 +45,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @RestControllerAdvice(assignableTypes = {CourseController.class, LogoCourseController.class,
         FicheCourseController.class, CoursesDuBenevoleController.class, InscriptionsCoureurController.class,
-        MesInscriptionsController.class, PassageController.class, AbandonManuelController.class})
+        MesInscriptionsController.class, PassageController.class, AbandonManuelController.class,
+        ReintegrationController.class})
 @Order(0)
 public class GestionnaireErreursCourses {
 

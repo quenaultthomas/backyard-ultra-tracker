@@ -64,6 +64,10 @@ public class ConsulterPilotage {
             return progression.boucleCouranteTerminee();
         }
 
+        public int nombreBouclesCorrigees() {
+            return progression.nombreBouclesCorrigees();
+        }
+
         /** Identifiant et dossard uniquement : jamais de pseudo dans le journal. */
         @Override
         public String toString() {
@@ -75,8 +79,8 @@ public class ConsulterPilotage {
      * Ligne d'un inscrit en abandon : Boucle et motif vides pour un abandon enregistré sans eux (données antérieures).
      * Jamais de jeton QR, d'identifiant de Compte ni de détail de Passage.
      */
-    public record InscritEnAbandon(Inscrit inscrit, int nombreBouclesTerminees, Optional<Integer> boucleAbandon,
-                                   Optional<MotifAbandon> motifAbandon) {
+    public record InscritEnAbandon(Inscrit inscrit, int nombreBouclesTerminees, int nombreBouclesCorrigees,
+                                   Optional<Integer> boucleAbandon, Optional<MotifAbandon> motifAbandon) {
 
         public UUID inscriptionId() {
             return inscrit.inscriptionId();
@@ -102,7 +106,7 @@ public class ConsulterPilotage {
     }
 
     /** Ligne d'un vainqueur. Jamais de jeton QR, d'identifiant de Compte ni de détail de Passage. */
-    public record InscritVainqueur(Inscrit inscrit, int nombreBouclesTerminees) {
+    public record InscritVainqueur(Inscrit inscrit, int nombreBouclesTerminees, int nombreBouclesCorrigees) {
 
         public UUID inscriptionId() {
             return inscrit.inscriptionId();
@@ -199,22 +203,28 @@ public class ConsulterPilotage {
                 .toList();
         List<InscritVainqueur> vainqueurs = parDossard.stream()
                 .filter(i -> i.statut() == StatutInscription.VAINQUEUR)
-                .map(inscrit -> new InscritVainqueur(inscrit, bouclesTerminees(inscrit, passages)))
+                .map(inscrit -> enVainqueur(inscrit, passages))
                 .toList();
         return new Pilotage(course, maintenant, chronometrage, inscriptions.size(), inscrits,
                 Bouclage.de(inscrits.stream().map(InscritEnCourse::progression).toList(), boucleCourante), abandons,
                 vainqueurs);
     }
 
-    private static int bouclesTerminees(Inscrit inscrit, Map<UUID, List<Passage>> passages) {
-        return ProgressionCoureur.de(passages.getOrDefault(inscrit.inscriptionId(), List.of()), OptionalInt.empty())
-                .nombreBouclesTerminees();
+    private static ProgressionCoureur progressionHorsBoucle(Inscrit inscrit, Map<UUID, List<Passage>> passages) {
+        return ProgressionCoureur.de(passages.getOrDefault(inscrit.inscriptionId(), List.of()), OptionalInt.empty());
     }
 
     private static InscritEnAbandon enAbandon(Inscrit inscrit, Inscription inscription,
                                               Map<UUID, List<Passage>> passages) {
-        return new InscritEnAbandon(inscrit, bouclesTerminees(inscrit, passages), inscription.boucleAbandon(),
-                inscription.motifAbandon());
+        ProgressionCoureur progression = progressionHorsBoucle(inscrit, passages);
+        return new InscritEnAbandon(inscrit, progression.nombreBouclesTerminees(),
+                progression.nombreBouclesCorrigees(), inscription.boucleAbandon(), inscription.motifAbandon());
+    }
+
+    private static InscritVainqueur enVainqueur(Inscrit inscrit, Map<UUID, List<Passage>> passages) {
+        ProgressionCoureur progression = progressionHorsBoucle(inscrit, passages);
+        return new InscritVainqueur(inscrit, progression.nombreBouclesTerminees(),
+                progression.nombreBouclesCorrigees());
     }
 
     private Map<UUID, List<Passage>> passagesParInscription(Collection<UUID> inscriptionIds) {

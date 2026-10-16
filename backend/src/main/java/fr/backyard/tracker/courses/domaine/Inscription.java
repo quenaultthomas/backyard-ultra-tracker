@@ -110,6 +110,19 @@ public final class Inscription {
         return new Inscription(id, courseId, compteId, dossard, jetonQr, StatutInscription.VAINQUEUR, null, null);
     }
 
+    /**
+     * Réintégration décidée par un admin : l'Inscription renvoyée est EN_COURSE, sans motif ni Boucle d'abandon ;
+     * celle-ci n'est pas affectée. Seule une Inscription en abandon, quel que soit son motif, est réintégrable.
+     *
+     * @throws InscriptionNonEnAbandonException l'Inscription est EN_COURSE ou VAINQUEUR
+     */
+    public Inscription reintegrer() {
+        if (statut != StatutInscription.ABANDON) {
+            throw new InscriptionNonEnAbandonException(statut);
+        }
+        return new Inscription(id, courseId, compteId, dossard, jetonQr, StatutInscription.EN_COURSE, null, null);
+    }
+
     public UUID id() {
         return id;
     }
