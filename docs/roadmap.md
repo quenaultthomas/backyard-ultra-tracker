@@ -17,14 +17,12 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 | Jalon | Contenu | Incréments | À la fin du jalon, tu peux… |
 |---|---|---|---|
 | 0 | Socle | 0.1 → 0.4 | lancer la stack et voir la page d'accueil |
-| 1 | Comptes et sécurité | 1.1 → 1.6b | créer des comptes, te connecter avec chaque rôle |
-| 2 | Courses | 2.1a → 2.5 | déclarer une course complète avec logo et bénévoles |
+| 1 | Comptes et sécurité | 1.1 → 1.6 | créer des comptes, te connecter avec chaque rôle |
+| 2 | Courses | 2.1 → 2.5 | déclarer une course complète avec logo et bénévoles |
 | 3 | Inscriptions | 3.1 → 3.6 | inscrire des coureurs et voir leurs dossards et QR |
-| R | Refonte graphique | R.1 → R.9 | naviguer dans une application au thème backyard, avec menu burger et liste de courses en cartes |
 | 4 | Course en direct | 4.1 → 4.12 | faire tourner une course de bout en bout |
-| 5 | Scan hors ligne | 5.1a → 5.2 | scanner sans réseau sans perdre de passage |
+| 5 | Scan hors ligne | 5.1 → 5.2 | scanner sans réseau sans perdre de passage |
 | 6 | Suivi public | 6.1 → 6.4 | projeter le suivi d'une course |
-| A | Durcissement post-audit | A.1 → A.3 | tenir la charge d'une course réelle avec un transport et une gestion d'erreurs durcis |
 
 ---
 
@@ -70,34 +68,24 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 - **Livré** : l'admin master crée et liste les admins.
 - **Tu testes** : créer un admin, s'y connecter. Un admin (non master) ne voit pas cette fonction et l'API lui répond 403.
 
-### 1.6a Créer des comptes bénévoles
-- **Livré** : les admins (et l'admin master) créent et listent les bénévoles ; écran d'accueil bénévole (vide) vers lequel un bénévole est redirigé après connexion.
-- **Tu testes** : créer un bénévole, s'y connecter (écran d'accueil bénévole vide).
-
-### 1.6b Changer son mot de passe
-- **Livré** : écran « Mon compte » avec changement de mot de passe pour tous les rôles ; les autres sessions du compte sont fermées au changement ; les échecs comptent dans le blocage de connexion.
-- **Tu testes** : changer son mot de passe, se reconnecter avec le nouveau.
-- **Découpage** : l'ancien 1.6 dépassait la cible de 400 lignes, il a été scindé en 1.6a et 1.6b.
+### 1.6 Créer des comptes bénévoles et changer son mot de passe
+- **Livré** : les admins (et l'admin master) créent et listent les bénévoles ; écran « Mon compte » avec changement de mot de passe pour tous les rôles.
+- **Tu testes** : créer un bénévole, s'y connecter (écran d'accueil bénévole vide). Changer son mot de passe, se reconnecter avec le nouveau.
 
 ---
 
 ## Jalon 2 : Courses
 
-### 2.1a Déclarer une course
-- **Livré** : formulaire admin (nom, date, distance d'une boucle en m, durée en min, dénivelé en m, nombre max de participants, nombre max de boucles), liste des courses avec statut `EN_PREPARATION`. Le dénivelé peut valoir 0 (boucle plate) ; les autres valeurs nulles ou négatives sont refusées.
+### 2.1 Déclarer une course
+- **Livré** : formulaire admin (nom, date, distance d'une boucle en m, durée en min, dénivelé en m, nombre max de participants, nombre max de boucles), liste des courses avec statut `EN_PREPARATION`. Démarrage de `scripts/donnees-demo.sh`.
 - **Tu testes** : créer une course, la retrouver dans la liste. Valeurs nulles ou négatives refusées.
-
-### 2.1b Données de démo
-- **Livré** : `scripts/donnees-demo.sh`, qui crée par l'API les comptes et courses nécessaires au test manuel.
-- **Tu testes** : lancer le script, retrouver les comptes et les courses ; le relancer ne duplique rien.
-- **Découpage** : l'ancien 2.1 dépassait la cible de 400 lignes, il a été scindé en 2.1a et 2.1b.
 
 ### 2.2 Modifier une course
 - **Livré** : modification de tous les champs tant que la course est `EN_PREPARATION`.
 - **Tu testes** : modifier la durée de boucle, vérifier dans la liste.
 
 ### 2.3 Logo de course
-- **Livré** : envoi d'un logo (PNG, JPEG ou WebP, 2 Mo maximum), remplacement et suppression tant que la course est `EN_PREPARATION`, stockage en base PostgreSQL (sauvegardé avec `pg_dump`, pas de volume `logos`), affichage dans la liste et la fiche de la course. Le fichier est servi en lecture publique pour l'écran de suivi.
+- **Livré** : envoi d'un logo (formats et taille limités), stockage sur le volume `logos`, affichage dans la liste et la fiche de la course.
 - **Tu testes** : envoyer un PNG → affiché. Fichier trop lourd ou non image → refusé. `docker compose down` puis `up` → le logo est toujours là.
 
 ### 2.4 Affecter des bénévoles
@@ -138,56 +126,6 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 
 ---
 
-## Jalon R : Refonte graphique
-
-Refonte purement visuelle, sans aucun changement de règle métier ni de contrat d'API. Les tests E2E existants sont adaptés (sélecteurs, textes), jamais supprimés ni affaiblis. Pas de dépendance lourde : SVG et CSS maison, polices auto-hébergées. Responsive (téléphone d'abord), contrastes AA, navigation clavier et attributs ARIA sur les menus. Univers visuel : une boucle de 6,7 km refaite toutes les heures, de jour comme de nuit, en forêt (vert forêt profond, orange balise/frontale, crème, courbes de niveau avec boucle fermée, sapins, dossards, chronomètre).
-
-### R.1 Charte graphique et fondations du thème
-- **Livré** : `docs/design.md` (palette, typographie, espacements, rayons, ombres, motif de fond, pastilles de statut) ; variables CSS globales ; styles de base partagés (boutons principal, secondaire et danger, champs, cartes, messages, pastilles de statut) ; polices auto-hébergées ; nouvelle palette et nouveau fond appliqués à l'en-tête et au corps de page, sans changement de structure ni de texte.
-- **Tu testes** : tous les écrans existants affichent la nouvelle palette et la nouvelle typographie, sans régression. Une section illustrée de `docs/design.md` montre chaque composant. Les tests E2E existants passent.
-
-### R.2 Menu burger visiteur
-- **Livré** : composant d'en-tête partagé avec menu burger en haut à droite pour le visiteur non connecté : icône « tête », menu avec « Se connecter » et « Créer un compte ». Fermeture au clic extérieur et à Échap, navigation clavier, adapté au téléphone. Le lien « Se connecter » actuel disparaît.
-- **Tu testes** : déconnecté, titre à gauche et icône à droite ; le menu propose les deux entrées et mène aux bons écrans ; Échap et clic extérieur le ferment ; utilisable au clavier et sur écran étroit.
-
-### R.3 Menu burger utilisateur connecté
-- **Livré** : burger contenant le pseudo (en tête, non cliquable), puis par rôle : `COUREUR` : Espace coureur, Mes inscriptions, Mon compte, Se déconnecter ; `ADMIN` / `ADMIN_MASTER` : Administration, Mon compte, Se déconnecter ; `BENEVOLE` : ses entrées actuelles, Mon compte, Se déconnecter. Les liens alignés dans l'en-tête disparaissent.
-- **Tu testes** : se connecter avec chaque rôle (script de démo) → bonnes entrées et pseudo ; déconnexion fonctionnelle ; un coureur ne voit pas « Administration ».
-
-### R.4 Accueil : suppression de l'indicateur API et décor backyard
-- **Livré** : suppression de l'indicateur « API : disponible » et de l'appel de santé côté page d'accueil ; titre, accroche et décor de fond backyard (courbes de niveau, boucle, sapins), identique pour le visiteur et l'utilisateur connecté. Test E2E de la page d'accueil mis à jour.
-- **Tu testes** : http://localhost affiche le décor, plus aucune mention de l'API ; identique une fois connecté ; texte lisible sur le décor, y compris sur téléphone.
-
-### R.5 Écrans de connexion et de création de compte
-- **Livré** : les deux écrans au nouveau thème (carte centrée sur le décor de fond), sans changement de comportement ni de messages. À reprendre de R.2 (point ouvert 13) : le titre de l'écran de connexion déborde de sa carte avec un texte à 200 % à 320 px ; à corriger ici.
-- **Tu testes** : création de compte → connexion → déconnexion ; erreurs (mauvais mot de passe, pseudo pris, mot de passe trop court) toujours affichées.
-
-### R.6 Mon compte : changement de mot de passe repliable
-- **Livré** : l'écran affiche pseudo et rôle ; le formulaire de changement de mot de passe est replié par défaut sous une section dépliable (`aria-expanded`), se referme après un changement réussi, reste déplié en cas d'erreur.
-- **Tu testes** : à l'ouverture, pas de formulaire visible ; un clic le déploie ; changement réussi → refermé avec confirmation ; erreur → formulaire visible avec le message.
-
-### R.7 Gestion des courses : liste en cartes
-- **Livré** : liste admin en grille de cartes : visuel avec le logo (ou visuel de substitution au thème à la place de « Aucun logo »), nom, date mise en avant, pastille de statut, indicateurs avec icônes (distance, durée, dénivelé, participants max, boucles max), actions « Fiche » et « Modifier », « Choisir un logo » intégré à la carte. Plusieurs colonnes sur grand écran, une sur téléphone. État vide soigné.
-- **Tu testes** : avec le script de démo, la liste s'affiche en cartes avec toutes les données de l'ancienne liste ; logo, fiche et modification fonctionnent comme avant ; lisible sur téléphone.
-
-### R.8a Thème des écrans coureur
-- **Livré** : Espace coureur en cartes, Mes inscriptions (dossard et QR mis en valeur façon dossard), états vides. Aucun changement de comportement ni de messages.
-- **Tu testes** : parcourir `/coureur` et `/coureur/inscriptions` avec un compte coureur : cohérence visuelle, QR lisible au téléphone, aucune régression.
-
-### R.8b Thème des écrans bénévole et gestion des comptes
-- **Livré** : Espace bénévole en cartes, gestion des comptes admins et bénévoles au thème (liste, formulaire de création, états vides).
-- **Tu testes** : parcourir chaque écran avec le rôle concerné : cohérence visuelle, aucune régression.
-
-### R.9a Thème de la fiche de course et du formulaire de course
-- **Livré** : fiche de course (identité visuelle, statut en pastille, bénévoles affectés, inscrits) et formulaire de déclaration et de modification au thème ; factorisation des styles partagés (`.encart`, `.indicateurs`, `.masque`, `.etat-vide`).
-- **Tu testes** : parcours admin complet (créer, modifier, fiche, logo, bénévoles) sur ordinateur et téléphone.
-
-### R.9b Finition et charte pour les jalons 4 à 6
-- **Livré** : passe de cohérence globale (espacements, titres, focus clavier, contrastes, écrans étroits), dédoublonnage des feuilles R.8a et R.8b ; `docs/design.md` complété avec les règles à suivre pour les écrans des jalons 4 à 6 (pilotage, scan, suivi public, y compris grand format projeté).
-- **Tu testes** : revue visuelle de tous les écrans sur ordinateur et téléphone ; `docs/design.md` à jour.
-
----
-
 ## Jalon 4 : Course en direct
 
 ### 4.1 Démarrer une course
@@ -199,27 +137,19 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 - **Tu testes** : course à boucles de 1 min → la boucle courante change à chaque minute, le compte à rebours repart.
 
 ### 4.3 Horloge pilotable en test
-- **Livré** : dans un profil Spring `e2e` uniquement, une horloge pilotable et un endpoint `/api/test/horloge` (admin master) pour avancer le temps ; tous les cas d'usage lisent l'heure via ce `Clock`. Hors profil `e2e`, l'endpoint n'existe pas (vérifié par un test d'intégration) et l'horloge est l'horloge système. Un fichier `docker-compose.e2e.yml` active le profil pour les tests Playwright ; `api` refuse de démarrer si le profil `e2e` est combiné à la production.
-- **Tu testes** : lancer la stack avec le profil `e2e`, démarrer une course de 60 min, avancer l'horloge de 60 min → l'écran de pilotage passe à la boucle 2. Sur la stack normale, `/api/test/horloge` répond 404 à l'admin master (401 ou 403 aux autres, comme toute route inconnue).
+- **Livré** : dans un profil Spring `e2e` uniquement, une horloge pilotable et un endpoint `/api/test/horloge` pour avancer le temps ; le planificateur d'abandon s'appuie sur cette horloge. Hors profil `e2e`, l'endpoint n'existe pas (vérifié par un test d'intégration) et l'horloge est l'horloge système. Un fichier `docker-compose.e2e.yml` active le profil pour les tests Playwright.
+- **Tu testes** : lancer la stack avec le profil `e2e`, démarrer une course de 60 min, avancer l'horloge de 60 min → l'écran de pilotage passe à la boucle 2. Sur la stack normale, `/api/test/horloge` répond 404.
 
-### 4.4a API de passage
-- **Livré** : passage (migration, unicité par inscription et boucle), endpoint de scan réservé aux bénévoles affectés, boucle calculée côté serveur, idempotence par identifiant de scan, tous les refus métier (contrat définitif, réutilisé par 4.6 et 5.1), continuité des boucles.
-- **Tu testes** : en bénévole affecté, envoyer le jeton d'un coureur à l'API (jeton lu en base ou via `/api/coureur/inscriptions`) → passage créé en base sur la boucle courante ; renvoyer le même scan → rejeu sans doublon ; nouveau scan du même coureur → refusé « déjà enregistré ».
-
-### 4.4b Écran de scan (saisie du jeton)
-- **Livré** : bouton « Scanner » sur les courses en cours de l'accueil bénévole, écran de scan avec saisie du jeton au clavier, retour visuel vert avec dossard et pseudo, message d'erreur générique en cas de refus ; Léo affecté à « Backyard du jour » dans les données de démo.
-- **Tu testes** : saisir le jeton d'un coureur → vert avec dossard et pseudo ; le ressaisir → refus. Les passages apparaissent au pilotage en 4.7.
+### 4.4 Scanner un passage (saisie du jeton)
+- **Livré** : écran de scan bénévole avec choix de la course, saisie du jeton au clavier, enregistrement du passage pour la boucle courante, retour visuel vert avec dossard et pseudo.
+- **Tu testes** : copier le jeton d'un coureur, le saisir → passage accepté, visible côté pilotage.
 
 ### 4.5 Scanner à la caméra
 - **Livré** : lecture du QR code à la caméra sur l'écran de scan.
 - **Tu testes** : sur ton ordinateur avec webcam (http://localhost est accepté par le navigateur), présenter le QR affiché sur ton téléphone. Pour un test sur téléphone, passer par la configuration HTTPS de 0.4.
 
-### 4.5b Dossard imprimable (admin)
-- **Livré** : depuis la liste des inscrits d'une course (fiche), l'admin ouvre le dossard d'un coureur (numéro, pseudo, nom de la course, QR code), prêt à imprimer ou à montrer sur téléphone, pour redonner son dossard à un coureur qui l'a oublié. Décision à trancher avec le `fonctionnel` : exposition du jeton QR à l'admin (réservé `ADMIN_MASTER` et `ADMIN`, jamais dans le DOM de la liste, relu à la demande).
-- **Tu testes** : en admin, fiche d'une course > inscrits > « Dossard » d'un coureur → page imprimable avec QR code ; le scanner à la caméra (4.5) enregistre le passage de ce coureur.
-
 ### 4.6 Scans refusés
-- **Livré** : à l'écran, refus avec retour visuel rouge et motif (les refus existent dans l'API depuis 4.4a) : passage déjà enregistré pour cette boucle, coureur en abandon, course non démarrée, bénévole non affecté, jeton inconnu. Anti-doublon : délai minimal entre deux passages d'un même coureur (valeur à fixer), contre un re-scan accidentel juste après un départ.
+- **Livré** : refus avec retour visuel rouge et motif : passage déjà enregistré pour cette boucle, coureur en abandon, course non démarrée, bénévole non affecté, jeton inconnu.
 - **Tu testes** : scanner deux fois le même coureur sur la même boucle → « déjà passé ». Scanner pour une course où le bénévole n'est pas affecté → refusé.
 
 ### 4.7 Passages sur l'écran de pilotage
@@ -227,7 +157,7 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 - **Tu testes** : scanner deux coureurs sur trois → le troisième apparaît « en boucle ».
 
 ### 4.8 Abandon automatique
-- **Livré** : au départ de chaque boucle, les inscriptions sans passage sur la boucle précédente passent en `ABANDON` (`HORS_DELAI`). Planificateur côté serveur, indépendant par course, qui décide sur l'horloge applicative (`Clock`, pilotable en profil `e2e` depuis 4.3).
+- **Livré** : au départ de chaque boucle, les inscriptions sans passage sur la boucle précédente passent en `ABANDON` (`HORS_DELAI`). Planificateur côté serveur, indépendant par course.
 - **Tu testes** : course à 1 min, scanner un coureur sur deux → au départ suivant, l'autre passe en abandon avec la boucle d'abandon.
 
 ### 4.9 Vainqueur unique
@@ -250,17 +180,13 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 
 ## Jalon 5 : Scan hors ligne
 
-### 5.1a File de scan hors ligne
-- **Livré** : chaque scan est enregistré localement (IndexedDB) avant tout envoi, puis envoyé dans l'ordre avec nouvelles tentatives ; compteur de scans en attente ; session expirée (file en pause), isolation par compte ; API idempotente sur l'identifiant de scan (un rejeu ne crée pas de doublon). Contrat d'API inchangé.
+### 5.1 File de scan hors ligne
+- **Livré** : chaque scan est enregistré localement puis envoyé, avec nouvelles tentatives ; compteur de scans en attente ; API idempotente sur (inscription, boucle).
 - **Tu testes** : dans les outils de développement du navigateur, passer hors ligne, scanner 3 coureurs → « 3 en attente ». Repasser en ligne → envoyés, visibles au pilotage, sans doublon.
 
-### 5.1b Scans à vérifier et déconnexion
-- **Livré** : liste persistante « Scans à vérifier » pour les scans refusés à l'envoi différé (avec bouton « Compris »), totaux sur l'accueil bénévole, confirmation à la déconnexion quand des scans sont en attente.
-- **Tu testes** : scanner hors ligne un coureur déjà passé, repasser en ligne → le refus apparaît dans « Scans à vérifier » ; se déconnecter avec des scans en attente → confirmation.
-
 ### 5.2 Application installable
-- **Livré** : manifeste PWA et service worker : l'écran de scan s'installe et s'ouvre sans réseau.
-- **Tu testes** : installer l'application depuis le navigateur, couper le réseau, la rouvrir → l'écran de scan s'affiche.
+- **Livré** : manifeste PWA et service worker : l'écran de scan s'installe et s'ouvre sans réseau. Icône de l'application : visuel source SVG issu de la charte (documenté dans `docs/design.md`, remplace le favicon Angular), icônes PNG 192 et 512 px (`any`), 512 px `maskable` (motif dans la zone de sécurité), `apple-touch-icon` 180 px sans transparence pour iOS ; nom, nom court, couleurs de thème et de fond issues des jetons de la charte. Manifeste servi en `application/manifest+json`, compatible avec la CSP du `Caddyfile`.
+- **Tu testes** : installer l'application depuis le navigateur, couper le réseau, la rouvrir → l'écran de scan s'affiche. Sur un téléphone Android et un iPhone (stack HTTPS de 0.4), l'icône de l'application apparaît sur l'écran d'accueil et au lancement (désinstaller toute ancienne installation et vider les données du site avant). Chaque icône déclarée répond en `image/png` (une icône absente renverrait sinon `index.html` sans erreur visible) ; l'onglet Application de Chrome n'affiche aucun avertissement sur le manifeste.
 
 ---
 
@@ -284,40 +210,14 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 
 ---
 
-## Jalon A : Durcissement post-audit
-
-Issu de `docs/audits/audit-2026-10-16-backend-securite-performance.md`. SEC-06 (limite de débit, hachage hors transaction) et DEP-05 (journaux et mémoire) sont traités à part, avant le premier déploiement. Le reste est planifié ici, sans bloquer les jalons 5 et 6.
-
-### A.1 Planificateur d'abandon allégé
-- **Livré** : le planificateur ne prend le verrou pessimiste d'une course et ne relit inscrits et passages que lorsqu'une échéance de boucle est atteinte ; les scans n'attendent plus ce verrou à chaque seconde ; fin des requêtes N+1 sur les deux listes signalées (PER-04).
-- **Tu testes** : une course de démo avec une trentaine de coureurs tourne, l'abandon automatique et la fin de course se déclenchent comme avant ; les scans restent fluides.
-
-### A.2 Règles d'erreur et de validation dans le bon calque
-- **Livré** : la borne de 24 h de l'âge d'un scan passe de `PassageRequete` au domaine (ARC-03) ; `GestionnaireErreursCourses` couvre tous les contrôleurs, un contrôleur oublié ne répond plus 500 (ARC-07).
-- **Tu testes** : un scan trop ancien est refusé avec le même message qu'avant ; une erreur métier sur n'importe quel écran affiche un message exploitable.
-
-### A.3 En-têtes de transport et blocage de connexion
-- **Livré** : en-tête HSTS dans le `Caddyfile`, cookie `Secure` indépendant de `X-Forwarded-Proto` (SEC-04) ; le blocage de connexion tient compte de l'origine en plus du pseudo, pour que l'admin master ne puisse pas être bloqué par un tiers (SEC-06, reste).
-- **Tu testes** : les en-têtes de réponse en HTTPS ; des échecs répétés depuis une origine ne bloquent pas la connexion légitime de l'admin master.
-
----
-
 ## Décisions prises
 
 | Sujet | Décision | Incrément |
 |---|---|---|
 | Maîtrise du temps pour les tests E2E | Horloge pilotable activée uniquement dans le profil `e2e`. Les vrais essais en temps réel se font en recette sur le terrain. | 4.3 |
-| Continuité des boucles au scan | Un passage sur la boucle N exige un passage valide (scan ou correction) sur la boucle N-1 ; anti-doublon (délai minimal entre deux passages) reporté à 4.6. | 4.4a |
-| Horloge pilotable : accès et garde-fous | Endpoint réservé à l'admin master (session + CSRF) ; `BACKYARD_ENVIRONNEMENT=production` fixé par `docker-compose.prod.yml` interdit le profil `e2e` en production ; toute la suite Playwright tourne sur la stack `e2e`. | 4.3 |
 | Suppression d'un compte ayant couru | Anonymisation : le compte ne peut plus se connecter, son pseudo est remplacé, ses résultats sont conservés. | 3.6 |
 | Suppression d'une course | Par l'admin master uniquement, tant que la course est `EN_PREPARATION`. | 2.5 |
-| Thème graphique | Charte `docs/design.md` appliquée à tous les écrans, y compris ceux des jalons 4 à 6 | R.1 |
-| Idempotence du scan | Idempotence sur l'identifiant de scan généré par le client ; un autre scan pour la même (inscription, boucle) reste refusé en doublon (audit MET-04). | 5.1a |
-| Scan fait dans les temps mais reçu après la fin de boucle ou de course | Refusé définitivement (contrat figé) ; rattrapage par la réintégration admin (4.12). Pas de tolérance de réception côté serveur. | 5.1a |
-| Abandon manuel du dernier coureur en course | La course passe `TERMINEE` sans vainqueur, dans la même transaction (avertissement dans la confirmation). | 4.11 |
 
 ## Décisions en attente
 
-- Aucune pour l'instant. (Direction artistique tranchée pour R.1 : thème clair sur fond crème, Inter auto-hébergée, courbes de niveau et boucle fermée ; voir `docs/specs/increment-R.1.md`.)
-
-Toute nouvelle question est ajoutée ici et tranchée avant l'incrément concerné.
+Aucune pour l'instant. Toute nouvelle question est ajoutée ici et tranchée avant l'incrément concerné.
