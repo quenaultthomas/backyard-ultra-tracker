@@ -26,16 +26,19 @@ import {
 import { LIBELLES_MOTIF_ABANDON, PASTILLES_BOUCLAGE } from '../pilotage-course';
 import { formaterCompteARebours, formaterDureeEcoulee } from './formats-duree';
 import { AbandonCoureur } from './abandon-coureur/abandon-coureur';
+import { BadgeCorrige } from './badge-corrige/badge-corrige';
+import { ReintegrationCoureur } from './reintegration-coureur/reintegration-coureur';
 import { RafraichissementPilotage } from './rafraichissement-pilotage';
 
 /**
  * Pilotage d'une Course démarrée (admins et admin master) : Boucle courante, compte à rebours,
  * durée écoulée, vainqueur(s), inscrits `EN_COURSE` et leur bouclage, inscrits en abandon, tels
- * que calculés par le serveur ; abandon manuel d'un coureur en course.
+ * que calculés par le serveur ; abandon manuel d'un coureur en course, réintégration d'un coureur
+ * en abandon, badge « corrigé ».
  */
 @Component({
   selector: 'app-ecran-pilotage',
-  imports: [RouterLink, DatePipe, AbandonCoureur],
+  imports: [RouterLink, DatePipe, AbandonCoureur, ReintegrationCoureur, BadgeCorrige],
   providers: [RafraichissementPilotage],
   templateUrl: './ecran-pilotage.html',
   styleUrls: [

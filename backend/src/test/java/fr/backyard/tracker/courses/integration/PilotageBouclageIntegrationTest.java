@@ -72,7 +72,7 @@ class PilotageBouclageIntegrationTest {
             "dureeEcouleeMillisecondes", "nombreInscrits", "nombreAyantBoucle", "nombreEnBoucle", "inscritsEnCourse",
             "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs", "inscritsVainqueurs");
     static final List<String> CHAMPS_INSCRIT = List.of("inscriptionId", "dossard", "pseudo", "statut",
-            "nombreBouclesTerminees", "boucleCouranteTerminee");
+            "nombreBouclesTerminees", "boucleCouranteTerminee", "nombreBouclesCorrigees");
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final String INSERTION_COURSE = "insert into course (id, nom, date_course, statut, distance_boucle_metres, "
@@ -171,7 +171,7 @@ class PilotageBouclageIntegrationTest {
     // ---------------------------------------------------------------- CA3
 
     @Test
-    @DisplayName("CA3 : Patron lit le pilotage à t0 + 90 s (Bruno 1 et 2, Chloé 1, Tom aucun) : 200, no-store, 19 champs, 17 d'origine inchangés, 1 / 2, inscrits triés à 6 champs, aucune fuite, aucune écriture")
+    @DisplayName("CA3 : Patron lit le pilotage à t0 + 90 s (Bruno 1 et 2, Chloé 1, Tom aucun) : 200, no-store, 19 champs, 17 d'origine inchangés, 1 / 2, inscrits triés à 7 champs, aucune fuite, aucune écriture")
     void ca3_instantane_avec_bouclage() throws Exception {
         String x = courseXDemarree();
         poserPassage(x, idBruno, 1, "SCAN");
@@ -211,7 +211,7 @@ class PilotageBouclageIntegrationTest {
         assertThat(corps.get("nombreEnBoucle").asInt()).isEqualTo(2);
         JsonNode inscrits = corps.get("inscritsEnCourse");
         assertThat(inscrits).hasSize(3);
-        assertThat(inscrits).allSatisfy(n -> assertThat(n.propertyNames()).hasSize(6)
+        assertThat(inscrits).allSatisfy(n -> assertThat(n.propertyNames()).hasSize(7)
                 .containsExactlyInAnyOrderElementsOf(CHAMPS_INSCRIT));
         assertThat(inscrits).extracting(n -> n.get("dossard").asInt()).containsExactly(1, 2, 3);
         assertThat(inscrits).extracting(n -> n.get("pseudo").asString()).containsExactly("Bruno", "Chloé", "Tom");

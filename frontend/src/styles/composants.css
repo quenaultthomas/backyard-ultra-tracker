@@ -210,6 +210,21 @@ app-qr-code > .erreur {
   color: var(--couleur-orange-fonce);
 }
 
+/* Badge « corrigé » (Passage d'origine `CORRECTION`) : texte encre-douce sur sable (5,89), sans
+   puce ; il accompagne toujours une valeur en texte, jamais seul à porter l'information. */
+.badge-corrige {
+  display: inline-block;
+  margin-inline-start: var(--espace-2);
+  padding: 0 var(--espace-2);
+  border: 1px solid var(--couleur-trait);
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-sable);
+  color: var(--couleur-encre-douce);
+  font-size: var(--taille-petite);
+  font-weight: var(--poids-gras);
+  white-space: nowrap;
+}
+
 /* Pastilles de statut : libellé en texte, puce décorative en CSS. */
 .pastille-statut {
   display: inline-flex;
