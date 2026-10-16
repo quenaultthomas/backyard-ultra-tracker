@@ -19,6 +19,7 @@ import {
 } from './aide-admin';
 import { connecterCoureur, ligneCoureur, placerStatutCourseEnBase, sinscrireParApi } from './aide-coureur';
 import { fermerMenuCompte, ouvrirMenuCompte } from './aide-entete';
+import { capturerReponse } from './aide-reponse';
 
 type PlaywrightLib = PlaywrightWorkerArgs['playwright'];
 
@@ -98,13 +99,13 @@ test.describe('Inscription à une course', () => {
       if (f === page.mainFrame()) navigations++;
     });
     const requete = page.waitForRequest(estInscription);
-    const reponse = page.waitForResponse((r) => estInscription(r.request()));
+    const reponse = await capturerReponse(page, estInscription);
     await l.getByTestId('coureur-bouton-sinscrire').click();
     expect(new URL((await requete).url()).pathname).toBe(`/api/coureur/courses/${course.id}/inscriptions`);
-    // Corps lu dès la réponse reçue : il n'est plus disponible une fois la page passée à autre chose.
-    const reponseInscription = await reponse;
-    expect(reponseInscription.status()).toBe(201);
-    expect(JSON.parse(await reponseInscription.text())).not.toHaveProperty('jetonQr');
+    // Corps lu avant d'être transmis à la page : il n'est plus disponible une fois la page passée à autre chose.
+    const reponseInscription = await reponse.attendre;
+    expect(reponseInscription.status).toBe(201);
+    expect(JSON.parse(reponseInscription.corps)).not.toHaveProperty('jetonQr');
 
     await expect(l.getByTestId('coureur-dossard')).toHaveText('Dossard 1');
     await expect(l.getByTestId('coureur-statut-inscription')).toHaveText('Inscrit');
