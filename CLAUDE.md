@@ -53,7 +53,7 @@ Principe : les passages sont une donnée brute immuable. Boucle courante, nombre
 - **Abandon manuel** : action admin avec confirmation, jamais via le scan QR.
 - **Réintégration** : action admin. Recrée les passages manquants (origine `CORRECTION`, scanneLe null) pour chaque boucle entre boucleAbandon et la boucle courante, et remet l'inscription `EN_COURSE`. Ces passages sont exclus du calcul d'allure et affichés avec un badge « corrigé ».
 - **Scan** : un passage est refusé s'il existe déjà pour cette inscription et cette boucle, ou si l'inscription n'est pas `EN_COURSE`.
-- **Filet réseau** : côté bénévole, le scan est d'abord enregistré localement (file d'attente + nouvelles tentatives), puis envoyé à l'API. L'API est idempotente sur (inscription, boucle).
+- **Filet réseau** : côté bénévole, le scan est d'abord enregistré localement (file d'attente + nouvelles tentatives), puis envoyé à l'API. L'API est idempotente sur l'identifiant de scan (généré par le client) : un rejeu du même scan renvoie le même résultat sans doublon ; un autre scan pour la même (inscription, boucle) reste refusé.
 - **Désinscription** : possible uniquement tant que la course est `EN_PREPARATION`.
 - **Suppression d'une course** : uniquement par l'admin master, et uniquement tant que la course est `EN_PREPARATION`.
 - **Suppression d'un compte coureur** : les inscriptions aux courses `EN_PREPARATION` sont annulées ; le compte est anonymisé (pseudo remplacé, mot de passe effacé, connexion impossible) et ses inscriptions et passages aux courses `EN_COURS` ou `TERMINEE` sont conservés pour ne pas fausser les résultats. Le pseudo libéré peut être réutilisé.

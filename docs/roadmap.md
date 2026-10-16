@@ -251,7 +251,7 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 ## Jalon 5 : Scan hors ligne
 
 ### 5.1 File de scan hors ligne
-- **Livré** : chaque scan est enregistré localement puis envoyé, avec nouvelles tentatives ; compteur de scans en attente ; API idempotente sur (inscription, boucle).
+- **Livré** : chaque scan est enregistré localement puis envoyé, avec nouvelles tentatives ; compteur de scans en attente ; API idempotente sur l'identifiant de scan (un rejeu ne crée pas de doublon).
 - **Tu testes** : dans les outils de développement du navigateur, passer hors ligne, scanner 3 coureurs → « 3 en attente ». Repasser en ligne → envoyés, visibles au pilotage, sans doublon.
 
 ### 5.2 Application installable
@@ -308,11 +308,11 @@ Issu de `docs/audits/audit-2026-10-16-backend-securite-performance.md`. SEC-06 (
 | Suppression d'un compte ayant couru | Anonymisation : le compte ne peut plus se connecter, son pseudo est remplacé, ses résultats sont conservés. | 3.6 |
 | Suppression d'une course | Par l'admin master uniquement, tant que la course est `EN_PREPARATION`. | 2.5 |
 | Thème graphique | Charte `docs/design.md` appliquée à tous les écrans, y compris ceux des jalons 4 à 6 | R.1 |
+| Idempotence du scan | Idempotence sur l'identifiant de scan généré par le client ; un autre scan pour la même (inscription, boucle) reste refusé en doublon (audit MET-04). | 5.1 |
 | Abandon manuel du dernier coureur en course | La course passe `TERMINEE` sans vainqueur, dans la même transaction (avertissement dans la confirmation). | 4.11 |
 
 ## Décisions en attente
 
-- **Idempotence du scan (avant 5.1, MET-04)** : l'API est idempotente sur l'identifiant de scan, alors que CLAUDE.md l'annonce sur (inscription, boucle). À trancher : aligner le code sur (inscription, boucle), ou garder l'identifiant de scan et corriger CLAUDE.md. À traiter dans la spec 5.1.
-- (Direction artistique tranchée pour R.1 : thème clair sur fond crème, Inter auto-hébergée, courbes de niveau et boucle fermée ; voir `docs/specs/increment-R.1.md`.)
+- Aucune pour l'instant. (Direction artistique tranchée pour R.1 : thème clair sur fond crème, Inter auto-hébergée, courbes de niveau et boucle fermée ; voir `docs/specs/increment-R.1.md`.)
 
 Toute nouvelle question est ajoutée ici et tranchée avant l'incrément concerné.
