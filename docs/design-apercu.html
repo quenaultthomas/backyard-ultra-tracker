@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/entete-course.css" />
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/fiche/inscrits-course/inscrits-course.css" />
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/ecran-pilotage.css" />
+    <!-- Abandon manuel (4.11) : confirmation en ligne et panneau d'abandon, feuilles réelles. -->
+    <link rel="stylesheet" href="../frontend/src/app/partage/confirmation-en-ligne.css" />
+    <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/abandon-coureur/abandon-coureur.css" />
     <!-- Scan (4.4b) : feuille réelle de l'écran, sans copie. -->
     <link rel="stylesheet" href="../frontend/src/app/scan/ecran-scan/ecran-scan.css" />
     <!-- Scan à la caméra (4.5) : feuille réelle du composant, sans copie. -->
@@ -269,6 +272,33 @@
                 <tr><td class="dossard">4</td><td>Chloé</td><td>—</td><td>—</td><td>1</td></tr>
               </tbody>
             </table>
+          </div>
+          <div class="formulaire inscrits" data-composant="pilotage-abandon-manuel">
+            <h3 class="sous-titre">Coureurs en course</h3>
+            <table class="tableau">
+              <thead><tr><th scope="col">Dossard</th><th scope="col">Coureur</th><th scope="col">Statut</th><th scope="col">Boucles terminées</th><th scope="col">Action</th></tr></thead>
+              <tbody>
+                <tr><td class="dossard">3</td><td>Tom</td><td><span class="pastille-statut pastille-statut--en-course">En course</span></td><td>0</td><td><button type="button" class="bouton bouton--danger-contour" aria-expanded="true" data-composant="pilotage-inscrit-abandonner">Abandonner</button></td></tr>
+              </tbody>
+            </table>
+            <p class="message--succes" data-composant="pilotage-abandonner-succes">Abandon enregistré : coureur n° 2 Chloé.</p>
+            <form class="confirmation" aria-labelledby="apercu-titre-abandon" data-composant="pilotage-abandonner-confirmation">
+              <h4 id="apercu-titre-abandon" class="confirmation__titre">Abandonner le coureur n° 3 Tom ?</h4>
+              <p class="confirmation__texte">Le coureur sera mis en abandon et son QR code ne sera plus accepté au scan.</p>
+              <p class="message--avertissement">C'est le dernier coureur en course : la course sera terminée, sans vainqueur.</p>
+              <fieldset class="motifs-abandon" aria-describedby="apercu-erreur-motif">
+                <legend class="motifs-abandon__legende">Motif de l'abandon</legend>
+                <div class="motif-abandon"><input type="radio" id="apercu-motif-volontaire" name="apercu-motif" checked /><label for="apercu-motif-volontaire">Volontaire</label></div>
+                <div class="motif-abandon"><input type="radio" id="apercu-motif-manuel" name="apercu-motif" /><label for="apercu-motif-manuel">Manuel</label></div>
+                <div class="motif-abandon"><input type="radio" id="apercu-motif-autre" name="apercu-motif" /><label for="apercu-motif-autre">Autre</label></div>
+              </fieldset>
+              <p id="apercu-erreur-motif" class="erreur">Choisissez un motif d'abandon.</p>
+              <div class="confirmation__actions">
+                <button type="button" class="bouton bouton--danger">Confirmer l'abandon</button>
+                <button type="button" class="bouton bouton--secondaire">Annuler</button>
+              </div>
+            </form>
+            <p class="message--info" data-composant="pilotage-aucun-vainqueur">Aucun vainqueur : tous les coureurs ont abandonné.</p>
           </div>
           <div class="formulaire inscrits" data-composant="pilotage-aucun-abandon">
             <h3 class="sous-titre">Coureurs en abandon</h3>

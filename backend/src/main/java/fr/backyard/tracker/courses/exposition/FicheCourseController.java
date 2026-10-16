@@ -32,8 +32,6 @@ public class FicheCourseController {
 
     private static final Logger JOURNAL = LoggerFactory.getLogger(FicheCourseController.class);
 
-    private static final UUID AUCUNE_INSCRIPTION = new UUID(0L, 0L);
-
     private final LireFicheCourse lireFicheCourse;
     private final AffecterBenevoles affecterBenevoles;
     private final ListerCourses listerCourses;
@@ -85,7 +83,8 @@ public class FicheCourseController {
     public ResponseEntity<DossardReponse> lireDossard(@PathVariable("id") String id,
                                                       @PathVariable("inscriptionId") String inscriptionId) {
         UUID courseId = IdentifiantCourse.deCourse(id);
-        LireDossard.Dossard dossard = lireDossard.executer(courseId, identifiantInscription(inscriptionId));
+        UUID idInscription = IdentifiantCourse.dInscriptionApresCourse(inscriptionId);
+        LireDossard.Dossard dossard = lireDossard.executer(courseId, idInscription);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(DossardReponse.depuis(dossard));
     }
 
@@ -105,15 +104,6 @@ public class FicheCourseController {
         Course course = demarrerCourse.executer(IdentifiantCourse.deCourse(id));
         JOURNAL.info("Course démarrée (course {})", course.id());
         return reponse(LireFicheCourse.Fiche.de(course));
-    }
-
-    /**
-     * Un identifiant d'Inscription qui n'est pas un UUID devient l'UUID nul, que les Inscriptions (UUID aléatoires
-     * de version 4) ne portent jamais : le cas d'usage contrôle ainsi la Course avant de répondre
-     * INSCRIPTION_INTROUVABLE (RG8).
-     */
-    private static UUID identifiantInscription(String inscriptionId) {
-        return IdentifiantCourse.lire(inscriptionId).orElse(AUCUNE_INSCRIPTION);
     }
 
     private FicheCourseReponse reponse(LireFicheCourse.Fiche fiche) {

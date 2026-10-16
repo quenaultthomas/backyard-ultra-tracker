@@ -35,6 +35,11 @@
 
       @if (p.statut === 'TERMINEE') {
         <p class="message--info" data-testid="pilotage-message-terminee">La course est terminée.</p>
+        @if (p.nombreVainqueurs === 0) {
+          <p class="message--info" data-testid="pilotage-aucun-vainqueur">
+            Aucun vainqueur : tous les coureurs ont abandonné.
+          </p>
+        }
       } @else if (p.boucleCourante === null) {
         <p class="message--info" data-testid="pilotage-message-sans-depart">
           Heure de départ inconnue : le pilotage chronométré n'est pas disponible.
@@ -130,6 +135,7 @@
         </section>
       }
 
+      @let actionsPossibles = p.statut === 'EN_COURS';
       <section class="formulaire inscrits" aria-labelledby="titre-coureurs">
         <h2 id="titre-coureurs" class="sous-titre">Coureurs en course</h2>
         <p class="message resume">
@@ -167,6 +173,9 @@
                 <th scope="col" data-testid="pilotage-colonne-boucles-terminees">
                   Boucles terminées
                 </th>
+                @if (actionsPossibles) {
+                  <th scope="col" data-testid="pilotage-colonne-action">Action</th>
+                }
               </tr>
             </thead>
             <tbody>
@@ -202,11 +211,30 @@
                   >
                     {{ inscrit.nombreBouclesTerminees }}
                   </td>
+                  @if (actionsPossibles) {
+                    <td data-libelle="Action">
+                      <button
+                        #boutonAbandonner
+                        type="button"
+                        class="bouton bouton--danger-contour"
+                        [disabled]="abandon.envoiEnCours()"
+                        [attr.aria-expanded]="abandon.cibleId() === inscrit.inscriptionId"
+                        [attr.aria-label]="
+                          'Abandonner le coureur n° ' + inscrit.dossard + ' ' + inscrit.pseudo
+                        "
+                        (click)="abandon.ouvrir(inscrit.inscriptionId, boutonAbandonner)"
+                        data-testid="pilotage-inscrit-abandonner"
+                      >
+                        Abandonner
+                      </button>
+                    </td>
+                  }
                 </tr>
               }
             </tbody>
           </table>
         }
+        <app-abandon-coureur #abandon [courseId]="id()" />
       </section>
 
       <section class="formulaire inscrits" aria-labelledby="titre-abandons">

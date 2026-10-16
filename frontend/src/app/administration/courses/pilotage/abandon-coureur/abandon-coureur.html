@@ -1,0 +1,93 @@
+@if (succes(); as message) {
+  <p class="message--succes" role="status" data-testid="pilotage-abandonner-succes">
+    {{ message }}
+  </p>
+}
+@if (erreur(); as message) {
+  <p class="message--erreur" role="alert" data-testid="pilotage-abandonner-erreur">
+    {{ message }}
+  </p>
+}
+
+@if (cible(); as c) {
+  <form
+    class="confirmation"
+    [formGroup]="formulaire"
+    (ngSubmit)="confirmer()"
+    (keydown.escape)="annuler()"
+    novalidate
+    aria-labelledby="titre-abandon"
+    data-testid="pilotage-abandonner-confirmation"
+  >
+    <h3
+      #titre
+      id="titre-abandon"
+      class="confirmation__titre"
+      tabindex="-1"
+      data-testid="pilotage-abandonner-titre"
+    >
+      Abandonner le coureur n° {{ c.dossard }} {{ c.pseudo }} ?
+    </h3>
+    <p class="confirmation__texte">
+      Le coureur sera mis en abandon et son QR code ne sera plus accepté au scan.
+    </p>
+    @if (dernier()) {
+      <p class="message--avertissement" data-testid="pilotage-abandonner-avertissement-dernier">
+        C'est le dernier coureur en course : la course sera terminée, sans vainqueur.
+      </p>
+    }
+
+    @let messageMotif = erreurMotif();
+    <fieldset
+      class="motifs-abandon"
+      [attr.aria-describedby]="messageMotif ? 'erreur-motif-abandon' : null"
+      data-testid="pilotage-abandonner-motifs"
+    >
+      <legend class="motifs-abandon__legende">Motif de l'abandon</legend>
+      @for (motif of motifs; track motif) {
+        <div class="motif-abandon">
+          <input
+            type="radio"
+            [id]="'motif-abandon-' + motif"
+            name="motif-abandon"
+            formControlName="motif"
+            [value]="motif"
+            [attr.aria-invalid]="messageMotif ? true : null"
+            [attr.data-testid]="'pilotage-abandonner-motif-' + motif"
+          />
+          <label [for]="'motif-abandon-' + motif">{{ libellesMotif[motif] }}</label>
+        </div>
+      }
+    </fieldset>
+    @if (messageMotif) {
+      <p
+        id="erreur-motif-abandon"
+        class="erreur"
+        role="alert"
+        data-testid="pilotage-abandonner-erreur-motif"
+      >
+        {{ messageMotif }}
+      </p>
+    }
+
+    <div class="confirmation__actions">
+      <button
+        type="submit"
+        class="bouton bouton--danger"
+        [disabled]="envoiEnCours()"
+        data-testid="pilotage-abandonner-confirmer"
+      >
+        Confirmer l'abandon
+      </button>
+      <button
+        type="button"
+        class="bouton bouton--secondaire"
+        [disabled]="envoiEnCours()"
+        (click)="annuler()"
+        data-testid="pilotage-abandonner-annuler"
+      >
+        Annuler
+      </button>
+    </div>
+  </form>
+}

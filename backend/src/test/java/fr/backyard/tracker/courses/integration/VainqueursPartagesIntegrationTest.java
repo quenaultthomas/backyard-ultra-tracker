@@ -245,7 +245,7 @@ class VainqueursPartagesIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA4 : Course sans Inscription EN_COURSE (toutes ABANDON) : aucune décision, la Course reste EN_COURS")
+    @DisplayName("CA4 : Course EN_COURS sans Inscription EN_COURSE (état posé par SQL : depuis 4.11 l'abandon manuel du dernier coureur termine la Course) : aucune décision du contrôle, la Course reste EN_COURS")
     void ca4_aucune_inscription_en_course() throws Exception {
         String x = decor.courseXDemarree();
         decor.jdbc.update("update inscription set statut = 'ABANDON', motif_abandon = 'HORS_DELAI', "

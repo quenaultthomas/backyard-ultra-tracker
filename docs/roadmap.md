@@ -289,6 +289,7 @@ Refonte purement visuelle, sans aucun changement de règle métier ni de contrat
 | Suppression d'un compte ayant couru | Anonymisation : le compte ne peut plus se connecter, son pseudo est remplacé, ses résultats sont conservés. | 3.6 |
 | Suppression d'une course | Par l'admin master uniquement, tant que la course est `EN_PREPARATION`. | 2.5 |
 | Thème graphique | Charte `docs/design.md` appliquée à tous les écrans, y compris ceux des jalons 4 à 6 | R.1 |
+| Abandon manuel du dernier coureur en course | La course passe `TERMINEE` sans vainqueur, dans la même transaction (avertissement dans la confirmation). | 4.11 |
 
 ## Décisions en attente
 
