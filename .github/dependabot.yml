@@ -17,6 +17,16 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+    ignore:
+      # TypeScript est imposé par Angular (@angular/build exige ">=6.0 <6.1") : il monte via `ng update`.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+      # Le projet tourne sur Node 24 : on reste sur les types de cette version.
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: docker
     directories:
@@ -27,6 +37,15 @@ updates:
     groups:
       docker:
         patterns: ["*"]
+    ignore:
+      # Java 25 est le choix LTS du projet : pas de version non LTS (26).
+      - dependency-name: eclipse-temurin
+        update-types:
+          - version-update:semver-major
+      # Node 24 est le choix LTS du projet : pas de montée de majeure automatique.
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /
