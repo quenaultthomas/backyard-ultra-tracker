@@ -1,4 +1,4 @@
-/* En-tête : fond forêt, filet orange balise ; message d'erreur : style global. */
+/* En-tête : fond forêt, filet orange balise ; message d'erreur et avertissement : styles globaux. */
 .entete {
   display: flex;
   flex-wrap: wrap;
@@ -48,4 +48,34 @@
 
 .entete__erreur {
   flex-basis: 100%;
+}
+
+/*
+ * Confirmation de déconnexion avec des scans en attente (5.1b) : avertissement sur toute la ligne,
+ * boutons de 44 px empilés sur téléphone ; focus orange foncé sur le fond orange pâle.
+ */
+.entete__confirmation {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  overflow-wrap: anywhere;
+}
+
+.entete__confirmation p {
+  margin: 0;
+}
+
+.entete__confirmation :focus-visible {
+  outline-color: var(--couleur-focus);
+}
+
+.entete__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-3);
+}
+
+.entete__actions > .bouton {
+  flex: 1 1 12rem;
 }

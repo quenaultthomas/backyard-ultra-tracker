@@ -1,0 +1,56 @@
+/*
+ * Scans à vérifier (docs/design.md, section 11 « Scan ») : sous le formulaire, une ligne
+ * `.message--avertissement` par scan, libellé + pictogramme, mots coupés, sans animation.
+ */
+.a-verifier {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  font-size: var(--taille-moyenne);
+  overflow-wrap: anywhere;
+}
+
+.a-verifier p,
+.a-verifier__titre {
+  margin: 0;
+  min-width: 0;
+}
+
+.a-verifier__titre {
+  font-size: var(--taille-grande);
+}
+
+.a-verifier__compteur {
+  font-weight: var(--poids-gras);
+  color: var(--couleur-orange-fonce);
+}
+
+.a-verifier__liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.a-verifier__ligne {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-1);
+}
+
+.a-verifier__motif,
+.a-verifier__dossard {
+  font-weight: var(--poids-gras);
+}
+
+.a-verifier__aide {
+  padding-top: var(--espace-1);
+  font-weight: var(--poids-moyen);
+}
+
+.a-verifier__ligne > .bouton {
+  align-self: stretch;
+  margin-top: var(--espace-2);
+}

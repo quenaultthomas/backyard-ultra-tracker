@@ -5,7 +5,7 @@ import { installerCameraSimulee, presenterQr, retirerQr } from './aide-camera';
 import { placerStatutCourseEnBase, placerStatutInscriptionEnBase } from './aide-coureur';
 import { avecApi } from './aide-horloge';
 import { saisir } from './aide-connexion';
-import { seDeconnecterParLeMenu } from './aide-entete';
+import { seDeconnecterMalgreLesScansEnAttente, seDeconnecterParLeMenu } from './aide-entete';
 import {
   MESSAGE_ATTENTE,
   MESSAGE_HORS_LIGNE,
@@ -53,6 +53,9 @@ const envoyes = (page: Page) => page.getByTestId('scan-message-envoyes');
 const refus = (page: Page) => page.getByTestId('scan-refus');
 const motifRefus = (page: Page) => page.getByTestId('scan-refus-motif');
 const detailRefus = (page: Page) => page.getByTestId('scan-resultat-erreur');
+const liste = (page: Page) => page.getByTestId('scan-a-verifier');
+const lignes = (page: Page) => page.getByTestId('scan-a-verifier-ligne');
+const AIDE_REINTEGRATION = 'Si ce scan a été fait dans les temps, demandez à un administrateur de réintégrer le coureur.';
 
 const IDENTIFIANTS_DOSSARDS = ['scan-resultat-dossard', 'scan-resultat-pseudo', 'scan-refus-dossard', 'scan-refus-pseudo'];
 
@@ -326,7 +329,7 @@ test.describe('File de scan, nouvelles tentatives', () => {
 
     await scannerParEntree(page, un.jeton);
     await expect(compteur(page)).toHaveText('1 en attente');
-    await expect.poll(async () => Math.max(0, ...(await lireFile(page)).map((e) => e.tentatives))).toBe(1);
+    await expect.poll(async () => Math.max(0, ...(await lireFile(page)).map((e) => e.tentatives ?? 0))).toBe(1);
     await renvoyer(page).click();
     await expect.poll(() => releve.instants.length).toBe(2);
     // La deuxième panne arrive après un envoi manuel : l'attente repart de 2 s, pas de 4 s.
@@ -343,7 +346,7 @@ test.describe('File de scan, nouvelles tentatives', () => {
 
     await scannerParEntree(page, un.jeton);
     await expect(compteur(page)).toHaveText('1 en attente');
-    await expect.poll(async () => Math.max(0, ...(await lireFile(page)).map((e) => e.tentatives))).toBe(1);
+    await expect.poll(async () => Math.max(0, ...(await lireFile(page)).map((e) => e.tentatives ?? 0))).toBe(1);
     await simulerRetourEnLigne(page.context());
     await expect.poll(() => releve.instants.length).toBe(2);
     await avancerJusquaRequete(page, releve, 3, 1.6, 2.4);
@@ -368,7 +371,7 @@ test.describe('File de scan, nouvelles tentatives', () => {
 });
 
 test.describe('File de scan, refus reçus en différé', () => {
-  test('CA7 - un doublon hors ligne est refusé sans être rejoué, ne bloque pas la file et s\'affiche en zone rouge', async ({ page, playwright }) => {
+  test('CA7 (5.1b CA1) - un doublon hors ligne est refusé sans être rejoué, ne bloque pas la file et s\'affiche dans « Scans à vérifier », pas en zone rouge', async ({ page, playwright }) => {
     const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 2 });
     const [un, deux] = course.coureurs;
     await installerHorloge(page, course);
@@ -378,37 +381,38 @@ test.describe('File de scan, refus reçus en différé', () => {
     await scannerEnFile(page, [un.jeton, un.jeton, deux.jeton]);
     await page.context().setOffline(false);
 
-    await expect(envoyes(page)).toHaveText('2 scans envoyés');
+    await expect(envoyes(page)).toHaveText('2 scans envoyés, dont 1 à vérifier');
     await expect(compteur(page)).toHaveCount(0);
-    await expect(refus(page)).toBeVisible();
-    await expect(motifRefus(page)).toHaveText('Déjà passé');
-    await expect(page.getByTestId('scan-refus-dossard')).toHaveText('Dossard 1');
-    await expect(page.getByTestId('scan-refus-pseudo')).toHaveText(un.pseudo);
-    await expect(page.getByTestId('scan-refus-boucle')).toHaveText('Boucle 1');
-    await expect(detailRefus(page)).toHaveText('Ce coureur a déjà un passage sur la boucle 1.');
+    await expect(refus(page)).toHaveCount(0);
+    await expect(lignes(page)).toHaveCount(1);
+    await expect(page.getByTestId('scan-a-verifier-motif')).toHaveText('Déjà passé');
+    await expect(page.getByTestId('scan-a-verifier-dossard')).toHaveText('Dossard 1');
+    await expect(page.getByTestId('scan-a-verifier-pseudo')).toHaveText(un.pseudo);
+    await expect(page.getByTestId('scan-a-verifier-boucle')).toHaveText('Boucle 1');
+    await expect(page.getByTestId('scan-a-verifier-detail')).toHaveText('Ce coureur a déjà un passage sur la boucle 1.');
     await page.clock.runFor(10_000);
     await laisserPasserLeReseau(page);
     expect(requetes.map((r) => r.jetonQr)).toEqual([un.jeton, un.jeton, deux.jeton]);
     expect(new Set(requetes.map((r) => r.identifiantScan)).size).toBe(3);
     expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN', '2:1:SCAN']);
     await attendreFileVide(page);
-    await expect(page.getByTestId('scan-a-verifier')).toHaveCount(0);
-    await expect(refus(page)).toBeVisible();
+    await expect(refus(page)).toHaveCount(0);
   });
 
-  test('CA7 - le refus différé d\'un doublon placé en dernier s\'affiche en zone rouge avec le coureur, la Boucle et le détail', async ({ page, playwright }) => {
+  test('CA7 (5.1b CA1) - le refus différé d\'un doublon placé en dernier laisse la zone rouge vide et crée une ligne « à vérifier »', async ({ page, playwright }) => {
     const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 1 });
     const [un] = course.coureurs;
     await ouvrirHorsLigne(page, course);
     await scannerEnFile(page, [un.jeton, un.jeton]);
     await page.context().setOffline(false);
 
-    await expect(envoyes(page)).toHaveText('1 scan envoyé');
-    await expect(motifRefus(page)).toHaveText('Déjà passé');
-    await expect(page.getByTestId('scan-refus-dossard')).toHaveText('Dossard 1');
-    await expect(page.getByTestId('scan-refus-pseudo')).toHaveText(un.pseudo);
-    await expect(page.getByTestId('scan-refus-boucle')).toHaveText('Boucle 1');
-    await expect(detailRefus(page)).toHaveText('Ce coureur a déjà un passage sur la boucle 1.');
+    await expect(envoyes(page)).toHaveText('1 scan envoyé, dont 1 à vérifier');
+    await expect(refus(page)).toHaveCount(0);
+    await expect(page.getByTestId('scan-a-verifier-motif')).toHaveText('Déjà passé');
+    await expect(page.getByTestId('scan-a-verifier-dossard')).toHaveText('Dossard 1');
+    await expect(page.getByTestId('scan-a-verifier-pseudo')).toHaveText(un.pseudo);
+    await expect(page.getByTestId('scan-a-verifier-boucle')).toHaveText('Boucle 1');
+    await expect(page.getByTestId('scan-a-verifier-detail')).toHaveText('Ce coureur a déjà un passage sur la boucle 1.');
     expect(lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN']);
     await attendreFileVide(page);
   });
@@ -420,6 +424,7 @@ test.describe('File de scan, refus reçus en différé', () => {
     motif: string;
     detail: string;
     coureurIdentifie: boolean;
+    aide: boolean;
   }> = [
     {
       nom: 'coureur passé en abandon',
@@ -428,6 +433,7 @@ test.describe('File de scan, refus reçus en différé', () => {
       motif: 'Coureur en abandon',
       detail: 'Ce coureur n\'est plus en course.',
       coureurIdentifie: true,
+      aide: true,
     },
     {
       nom: 'course terminée',
@@ -436,6 +442,7 @@ test.describe('File de scan, refus reçus en différé', () => {
       motif: 'Course terminée',
       detail: 'La course est terminée.',
       coureurIdentifie: false,
+      aide: true,
     },
     {
       nom: 'jeton inconnu',
@@ -444,6 +451,7 @@ test.describe('File de scan, refus reçus en différé', () => {
       motif: 'Jeton inconnu',
       detail: 'Jeton inconnu pour cette course.',
       coureurIdentifie: false,
+      aide: false,
     },
     {
       nom: 'course repassée en préparation',
@@ -452,10 +460,11 @@ test.describe('File de scan, refus reçus en différé', () => {
       motif: 'Course non démarrée',
       detail: 'La course n\'est pas démarrée.',
       coureurIdentifie: false,
+      aide: false,
     },
   ];
   for (const cas of refusesParLeServeur) {
-    test(`CA8 - ${cas.nom} : refus définitif affiché en zone rouge, aucun passage, aucune relance, entrée supprimée`, async ({ page, playwright }) => {
+    test(`CA8 (5.1b CA2) - ${cas.nom} : refus définitif en ligne « à vérifier », aucun passage, aucune relance, jeton effacé`, async ({ page, playwright }) => {
       const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 1 });
       await installerHorloge(page, course);
       await ouvrirHorsLigne(page, course);
@@ -464,22 +473,27 @@ test.describe('File de scan, refus reçus en différé', () => {
       cas.preparer(course);
       await page.context().setOffline(false);
 
-      await expect(motifRefus(page)).toHaveText(cas.motif);
-      await expect(detailRefus(page)).toHaveText(cas.detail);
-      await expect(detailRefus(page)).toHaveAttribute('role', 'alert');
+      await expect(page.getByTestId('scan-a-verifier-motif')).toHaveText(cas.motif);
+      await expect(page.getByTestId('scan-a-verifier-detail')).toHaveText(cas.detail);
+      await expect(refus(page)).toHaveCount(0);
       if (cas.nom === 'jeton inconnu') {
-        for (const testid of ['scan-refus-dossard', 'scan-refus-pseudo', 'scan-refus-boucle']) await expect(page.getByTestId(testid)).toHaveCount(0);
+        for (const testid of ['dossard', 'pseudo', 'boucle']) await expect(page.getByTestId(`scan-a-verifier-${testid}`)).toHaveCount(0);
       }
       if (cas.nom === 'coureur passé en abandon') {
-        await expect(page.getByTestId('scan-refus-dossard')).toHaveText('Dossard 1');
+        await expect(page.getByTestId('scan-a-verifier-dossard')).toHaveText('Dossard 1');
       }
-      expect(await page.getByTestId('scan-refus').innerText()).not.toMatch(/réintégr/i);
+      if (cas.aide) await expect(page.getByTestId('scan-a-verifier-aide')).toHaveText(AIDE_REINTEGRATION);
+      else await expect(page.getByTestId('scan-a-verifier-aide')).toHaveCount(0);
       await page.clock.runFor(30_000);
       await laisserPasserLeReseau(page);
       expect(requetes).toHaveLength(1);
       expect(lirePassagesEnBase(course.id)).toEqual([]);
       await attendreFileVide(page);
       await expect(compteur(page)).toHaveCount(0);
+      const entrees = await lireFile(page);
+      expect(entrees).toHaveLength(1);
+      expect(entrees[0].etat).toBe('A_VERIFIER');
+      expect('jetonQr' in entrees[0]).toBe(false);
     });
   }
 
@@ -495,13 +509,14 @@ test.describe('File de scan, refus reçus en différé', () => {
     await expect(motifRefus(page)).toHaveText('Scan refusé');
     await expect(detailRefus(page)).toHaveText('Le serveur a refusé ce scan.');
     await expect(page.getByTestId('scan-resultat-attente')).toHaveCount(0);
+    await expect(liste(page)).toHaveCount(0);
     await page.clock.runFor(60_000);
     await laisserPasserLeReseau(page);
     expect(requetes).toHaveLength(1);
     await attendreFileVide(page);
   });
 
-  test('CA8 - un refus d\'une entrée d\'une autre Course que celle de l\'écran ouvert n\'est pas affiché', async ({ page, playwright }) => {
+  test('CA8 (5.1b CA5) - un refus d\'une entrée d\'une autre Course que celle de l\'écran ouvert n\'y est pas affiché mais est gardé pour sa Course', async ({ page, playwright }) => {
     const x = await preparerCourseDeScan(playwright, { nombreCoureurs: 1 });
     const w = await preparerCourseDeScan(playwright, { nombreCoureurs: 1, benevole: x.benevole });
     await ouvrirEcranDeScan(page, w);
@@ -522,7 +537,11 @@ test.describe('File de scan, refus reçus en différé', () => {
     await attendreFileVide(page);
     expect(envoyesApresLeRetour).toEqual(['abc']);
     await expect(refus(page)).toHaveCount(0);
+    await expect(liste(page)).toHaveCount(0);
     expect(lirePassagesEnBase(w.id)).toEqual([]);
+    await page.goto(urlScan(w.id));
+    await expect(lignes(page)).toHaveCount(1);
+    await expect(page.getByTestId('scan-a-verifier-motif')).toHaveText('Jeton inconnu');
   });
 });
 
@@ -666,7 +685,7 @@ test.describe('File de scan, session, comptes et stockage', () => {
     await attendreFileVide(page);
   });
 
-  test('CA13 - « Se déconnecter » est immédiat et garde la file ; Marc ne voit rien ; Léo retrouve ses deux scans et ils partent', async ({ page, playwright }) => {
+  test('CA13 (5.1b CA6) - « Se déconnecter » demande confirmation et garde la file ; Marc ne voit rien ; Léo retrouve ses deux scans et ils partent', async ({ page, playwright }) => {
     const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 2 });
     const marc = await creerBenevole(playwright);
     await avecApi(playwright, (ctx) => affecterBenevolesParApi(ctx, course.id, [course.benevole, marc]));
@@ -678,7 +697,7 @@ test.describe('File de scan, session, comptes et stockage', () => {
     await scannerParEntree(page, course.coureurs[1].jeton);
     await expect(compteur(page)).toHaveText('2 en attente');
 
-    await seDeconnecterParLeMenu(page);
+    await seDeconnecterMalgreLesScansEnAttente(page);
     await expect(page.getByTestId('entete-pseudo')).toHaveCount(0);
     await expect(page.getByTestId('bouton-menu')).toBeVisible();
     expect(await lireFile(page)).toHaveLength(2);
@@ -701,7 +720,7 @@ test.describe('File de scan, session, comptes et stockage', () => {
     await expect.poll(() => lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN', '2:1:SCAN']);
   });
 
-  test('CA10 - un scan resté 25 h hors ligne n\'est pas envoyé : « Scan trop ancien », sans dossard, entrée supprimée', async ({ page, playwright }) => {
+  test('CA10 (5.1b CA4) - un scan resté 25 h hors ligne n\'est pas envoyé : ligne « Scan trop ancien », sans dossard ni aide, jeton supprimé', async ({ page, playwright }) => {
     const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 1 });
     const [un] = course.coureurs;
     await installerHorloge(page, course);
@@ -711,17 +730,21 @@ test.describe('File de scan, session, comptes et stockage', () => {
 
     await page.clock.fastForward('25:00:00');
     await page.context().setOffline(false);
-    await expect(motifRefus(page)).toHaveText('Scan trop ancien');
-    await expect(detailRefus(page)).toHaveText('Ce scan date de plus de 24 heures et n\'a pas été envoyé.');
-    for (const testid of ['scan-refus-dossard', 'scan-refus-pseudo', 'scan-refus-boucle']) await expect(page.getByTestId(testid)).toHaveCount(0);
+    await expect(page.getByTestId('scan-a-verifier-motif')).toHaveText('Scan trop ancien');
+    await expect(page.getByTestId('scan-a-verifier-detail')).toHaveText('Ce scan date de plus de 24 heures et n\'a pas été envoyé.');
+    await expect(refus(page)).toHaveCount(0);
+    for (const testid of ['dossard', 'pseudo', 'boucle', 'aide']) await expect(page.getByTestId(`scan-a-verifier-${testid}`)).toHaveCount(0);
     await attendreFileVide(page);
     await expect(compteur(page)).toHaveCount(0);
     await laisserPasserLeReseau(page);
     expect(requetes).toHaveLength(0);
     expect(lirePassagesEnBase(course.id)).toEqual([]);
+    const entrees = await lireFile(page);
+    expect(entrees.map((e) => e.etat)).toEqual(['A_VERIFIER']);
+    expect('jetonQr' in entrees[0]).toBe(false);
   });
 
-  test('CA10 - un scan de 23 h 59 min est encore envoyé, avec un âge d\'au plus 86 400 000 ms', async ({ page, playwright }) => {
+  test('CA10 (5.1b CA4) - un scan de 23 h 59 min est encore envoyé, avec un âge d\'au plus 86 400 000 ms', async ({ page, playwright }) => {
     const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 1 });
     const [un] = course.coureurs;
     await installerHorloge(page, course);
@@ -735,12 +758,13 @@ test.describe('File de scan, session, comptes et stockage', () => {
     expect(requetes[0].ageDuScanMillisecondes).toBeGreaterThan(86_300_000);
     expect(requetes[0].ageDuScanMillisecondes).toBeLessThanOrEqual(86_400_000);
     // Placé avant le départ de la Course : le serveur le refuse, la file n'a pas décidé à sa place.
-    await expect(motifRefus(page)).toBeVisible();
-    await expect(motifRefus(page)).not.toHaveText('Scan trop ancien');
+    await expect(page.getByTestId('scan-a-verifier-motif')).toBeVisible();
+    await expect(page.getByTestId('scan-a-verifier-motif')).not.toHaveText('Scan trop ancien');
+    await expect(refus(page)).toHaveCount(0);
     await attendreFileVide(page);
   });
 
-  test('CA10 - au rechargement, une entrée de plus de 24 h (de Léo ou d\'un autre Compte) est supprimée sans affichage ni envoi', async ({ page, playwright }) => {
+  test('CA10 (5.1b CA4) - au rechargement, une entrée de plus de 24 h de Léo devient une ligne « Scan trop ancien », celle d\'un autre Compte est supprimée, sans envoi', async ({ page, playwright }) => {
     const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 1 });
     await ouvrirEcranDeScan(page, course);
     const requetes = suivrePassages(page);
@@ -769,8 +793,13 @@ test.describe('File de scan, session, comptes et stockage', () => {
 
     await page.reload();
     await expect(champ(page)).toBeVisible();
-    await expect.poll(async () => (await lireFile(page)).map((e) => e.identifiantScan)).toEqual([recenteAutre]);
+    await expect.poll(async () => (await lireFile(page)).map((e) => e.identifiantScan).sort()).toEqual([ancienneDeLeo, recenteAutre].sort());
     await expect(refus(page)).toHaveCount(0);
+    await expect(lignes(page)).toHaveCount(1);
+    await expect(page.getByTestId('scan-a-verifier-motif')).toHaveText('Scan trop ancien');
+    const aVerifier = (await lireFile(page)).filter((e) => e.etat === 'A_VERIFIER');
+    expect(aVerifier.map((e) => e.identifiantScan)).toEqual([ancienneDeLeo]);
+    expect('jetonQr' in aVerifier[0]).toBe(false);
     await expect(compteur(page)).toHaveCount(0);
     await laisserPasserLeReseau(page);
     expect(requetes).toHaveLength(0);
@@ -833,7 +862,7 @@ test.describe('File de scan, session, comptes et stockage', () => {
 });
 
 test.describe('File de scan, plusieurs Courses', () => {
-  test('CA14 - compteurs par Course, aucun total à l\'accueil, envoi de toutes les Courses depuis l\'accueil, refus affiché sur l\'écran de sa Course', async ({ page, playwright }) => {
+  test('CA14 (5.1b CA5) - compteurs par Course, totaux à l\'accueil, envoi de toutes les Courses depuis l\'accueil, refus gardé dans la liste de sa Course', async ({ page, playwright }) => {
     const x = await preparerCourseDeScan(playwright, { nombreCoureurs: 2 });
     const w = await preparerCourseDeScan(playwright, { nombreCoureurs: 2, benevole: x.benevole });
     await ouvrirEcranDeScan(page, x);
@@ -860,7 +889,8 @@ test.describe('File de scan, plusieurs Courses', () => {
     await expect(page).toHaveURL(/\/benevole$/);
     await expect(champ(page)).toHaveCount(0);
     await expect(compteur(page)).toHaveCount(0);
-    await expect(page.locator('body')).not.toContainText('en attente');
+    await expect(page.getByTestId('benevole-en-attente')).toHaveText('3 scans en attente');
+    await expect(page.getByTestId('benevole-a-verifier')).toHaveCount(0);
 
     const envoyesApresLeRetour: string[] = [];
     await page.route(MOTIF_PASSAGES, (route) => {
@@ -872,15 +902,17 @@ test.describe('File de scan, plusieurs Courses', () => {
     await expect.poll(() => lirePassagesEnBase(w.id)).toEqual(['1:1:SCAN', '2:1:SCAN']);
     expect(envoyesApresLeRetour).toEqual([x.coureurs[0].jeton, w.coureurs[0].jeton, w.coureurs[1].jeton]);
     await attendreFileVide(page);
+    await expect(page.getByTestId('benevole-en-attente')).toHaveCount(0);
 
-    // Un jeton de W scanné dans X est refusé pour X : le refus s'affiche sur l'écran de X.
+    // Un jeton de W scanné dans X est refusé pour X : la ligne « à vérifier » s'affiche sur l'écran de X.
     await page.goto(urlScan(x.id));
     await expect(champ(page)).toBeVisible();
     await page.context().setOffline(true);
     await expect(horsLigne(page)).toBeVisible();
     await scannerEnFile(page, [w.coureurs[0].jeton]);
     await page.context().setOffline(false);
-    await expect(motifRefus(page)).toHaveText('Jeton inconnu');
+    await expect(page.getByTestId('scan-a-verifier-motif')).toHaveText('Jeton inconnu');
+    await expect(refus(page)).toHaveCount(0);
     await attendreFileVide(page);
   });
 });

@@ -1,4 +1,5 @@
 import { tirerIdentifiantScan } from '../identifiant-scan';
+import { RefusScan } from '../refus-scan';
 
 /** Âge maximal accepté par l'API (`ageDuScanMillisecondes`) : 24 heures. */
 export const AGE_MAXIMAL_MILLISECONDES = 86_400_000;
@@ -31,6 +32,49 @@ export interface ScanEnFile {
   sessionPage: string;
   etat: EtatScanEnFile;
   tentatives: number;
+}
+
+/**
+ * Scan en attente refusé définitivement (ou trop ancien) : gardé sur l'appareil, sans jeton,
+ * jusqu'à « Compris ». Champs du refus tels que fournis par l'API (jamais déduits).
+ */
+export interface ScanAVerifier {
+  identifiantScan: string;
+  compteId: string;
+  courseId: string;
+  sequence: number;
+  etat: 'A_VERIFIER';
+  /** `code` du `ProblemDetail` ; absent pour « Scan trop ancien » ou un 4xx sans corps. */
+  code?: string;
+  motif: string;
+  detail: string;
+  dossard?: number;
+  pseudo?: string;
+  numeroBoucle?: number;
+}
+
+/** Entrée de la base locale : scan à envoyer, ou scan à vérifier. */
+export type EntreeFile = ScanEnFile | ScanAVerifier;
+
+export function estAVerifier(entree: EntreeFile): entree is ScanAVerifier {
+  return entree.etat === 'A_VERIFIER';
+}
+
+/** Remplace l'entrée par sa version « à vérifier » : le jeton et les mesures disparaissent. */
+export function mettreAVerifier(scan: ScanEnFile, refus: RefusScan): ScanAVerifier {
+  const { identifiantScan, compteId, courseId, sequence } = scan;
+  return {
+    identifiantScan,
+    compteId,
+    courseId,
+    sequence,
+    etat: 'A_VERIFIER',
+    motif: refus.motif,
+    detail: refus.detail,
+    ...(refus.code !== undefined && { code: refus.code }),
+    ...(refus.coureur && { dossard: refus.coureur.dossard, pseudo: refus.coureur.pseudo }),
+    ...(refus.numeroBoucle !== undefined && { numeroBoucle: refus.numeroBoucle }),
+  };
 }
 
 let derniereSequence = 0;

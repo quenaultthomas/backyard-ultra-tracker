@@ -140,9 +140,14 @@ export class MenuBurger {
     };
   }
 
+  /** Rend le focus au bouton du menu (confirmation de l'en-tête refermée). */
+  rendreLeFocus(): void {
+    this.bouton().nativeElement.focus();
+  }
+
   private fermerEtRendreLeFocus(): void {
     this.fermer();
-    this.bouton().nativeElement.focus();
+    this.rendreLeFocus();
   }
 
   private contient(cible: EventTarget | null): boolean {

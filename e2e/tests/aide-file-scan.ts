@@ -20,13 +20,21 @@ export interface EntreeFile {
   identifiantScan: string;
   compteId: string;
   courseId: string;
-  jetonQr: string;
+  /** Absent d'une entrée `A_VERIFIER` (5.1b RG1 : le jeton est supprimé). */
+  jetonQr?: string;
   sequence: number;
-  creeLeMural: number;
-  creeLeMonotone: number;
-  sessionPage: string;
-  etat: 'EN_ENVOI' | 'EN_ATTENTE';
-  tentatives: number;
+  creeLeMural?: number;
+  creeLeMonotone?: number;
+  sessionPage?: string;
+  etat: 'EN_ENVOI' | 'EN_ATTENTE' | 'A_VERIFIER';
+  tentatives?: number;
+  /** Renseignés pour une entrée `A_VERIFIER` (5.1b RG1). */
+  code?: string;
+  motif?: string;
+  detail?: string;
+  dossard?: number;
+  pseudo?: string;
+  numeroBoucle?: number;
 }
 
 export const probleme = (status: number, code: string, detail = 'Détail simulé.', entetes: Record<string, string> = {}) => ({
@@ -129,8 +137,16 @@ export async function identifiantDuCompte(page: Page): Promise<string> {
   return page.evaluate(async () => ((await (await fetch('/api/comptes/moi')).json()) as { id: string }).id);
 }
 
-/** Attend que la file locale ne contienne plus aucune entrée. */
+/**
+ * Attend que la file n'ait plus aucun scan à envoyer (`EN_ATTENTE` ou `EN_ENVOI`). Depuis 5.1b, les refus définitifs
+ * restent en IndexedDB à l'état `A_VERIFIER` jusqu'à « Compris » : ils ne comptent pas.
+ */
 export async function attendreFileVide(page: Page): Promise<void> {
+  await expect.poll(() => lireFile(page).then((e) => e.filter((x) => x.etat !== 'A_VERIFIER').length)).toBe(0);
+}
+
+/** Attend qu'IndexedDB ne contienne plus aucune entrée, `A_VERIFIER` comprises (après « Compris »). */
+export async function attendreBaseLocaleVide(page: Page): Promise<void> {
   await expect.poll(() => lireFile(page).then((e) => e.length)).toBe(0);
 }
 
@@ -195,7 +211,7 @@ export async function avancerJusquaRequete(
   const precedent = releve.instants[attendu - 2];
   // La panne est enregistrée (tentatives + 1) juste avant la planification de la nouvelle tentative.
   await expect
-    .poll(async () => Math.max(0, ...(await lireFile(page)).map((e) => e.tentatives)))
+    .poll(async () => Math.max(0, ...(await lireFile(page)).map((e) => e.tentatives ?? 0)))
     .toBeGreaterThanOrEqual(attendu - 1);
   await page.clock.runFor(Math.max(0, minimumSecondes * 1000 - 300));
   await laisserPasserLeReseau(page);

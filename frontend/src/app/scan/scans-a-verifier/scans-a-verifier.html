@@ -1,0 +1,53 @@
+@if (lignes().length > 0) {
+  <section class="a-verifier" aria-labelledby="scan-a-verifier-titre" data-testid="scan-a-verifier">
+    <h2 id="scan-a-verifier-titre" class="a-verifier__titre">Scans à vérifier</h2>
+    <p
+      class="a-verifier__compteur message-pictogramme pictogramme-a-verifier"
+      role="status"
+      data-testid="scan-a-verifier-compteur"
+    >
+      {{ lignes().length }} à vérifier
+    </p>
+    <ul class="a-verifier__liste">
+      @for (ligne of lignes(); track ligne.identifiantScan; let index = $index) {
+        <li class="message--avertissement a-verifier__ligne" data-testid="scan-a-verifier-ligne">
+          <p
+            class="a-verifier__motif message-pictogramme pictogramme-a-verifier"
+            [id]="'scan-a-verifier-motif-' + ligne.identifiantScan"
+            data-testid="scan-a-verifier-motif"
+          >
+            {{ ligne.motif }}
+          </p>
+          @if (ligne.dossard !== undefined) {
+            <p class="a-verifier__dossard" data-testid="scan-a-verifier-dossard">
+              Dossard {{ ligne.dossard }}
+            </p>
+          }
+          @if (ligne.pseudo !== undefined) {
+            <p data-testid="scan-a-verifier-pseudo">{{ ligne.pseudo }}</p>
+          }
+          @if (ligne.numeroBoucle !== undefined) {
+            <p data-testid="scan-a-verifier-boucle">Boucle {{ ligne.numeroBoucle }}</p>
+          }
+          <p data-testid="scan-a-verifier-detail">{{ ligne.detail }}</p>
+          @if (proposeLaReintegration(ligne.code)) {
+            <p class="a-verifier__aide" data-testid="scan-a-verifier-aide">
+              Si ce scan a été fait dans les temps, demandez à un administrateur de réintégrer le
+              coureur.
+            </p>
+          }
+          <button
+            #compris
+            type="button"
+            class="bouton bouton--secondaire"
+            [attr.aria-describedby]="'scan-a-verifier-motif-' + ligne.identifiantScan"
+            (click)="comprendre(ligne, index)"
+            data-testid="scan-a-verifier-compris"
+          >
+            Compris
+          </button>
+        </li>
+      }
+    </ul>
+  </section>
+}

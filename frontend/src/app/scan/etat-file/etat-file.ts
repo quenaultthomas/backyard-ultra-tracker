@@ -2,9 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 
 import { FileScansService } from '../file-scans/file-scans.service';
 
+function scans(nombre: number): string {
+  return nombre > 1 ? `${nombre} scans` : `${nombre} scan`;
+}
+
 /**
  * État de la file de scans sur l'écran d'une Course : hors ligne, stockage indisponible, session
- * expirée, compteur « N en attente » avec « Renvoyer maintenant », et fin d'envoi.
+ * expirée, compteur « N en attente » avec « Renvoyer maintenant », et fin d'envoi (dont scans à
+ * vérifier).
  */
 @Component({
   selector: 'app-etat-file',
@@ -27,10 +32,15 @@ export class EtatFile {
     return `Votre session a expiré. Reconnectez-vous pour envoyer ${scans}.`;
   });
   protected readonly messageEnvoyes = computed(() => {
-    const nombre = this.file.scansEnvoyes();
-    if (!nombre) {
+    const bilan = this.file.scansEnvoyes();
+    if (!bilan) {
       return null;
     }
-    return nombre > 1 ? `${nombre} scans envoyés` : '1 scan envoyé';
+    const { envoyes, aVerifier } = bilan;
+    if (envoyes === 0) {
+      return `${scans(aVerifier)} à vérifier`;
+    }
+    const message = `${scans(envoyes)} ${envoyes > 1 ? 'envoyés' : 'envoyé'}`;
+    return aVerifier > 0 ? `${message}, dont ${aVerifier} à vérifier` : message;
   });
 }

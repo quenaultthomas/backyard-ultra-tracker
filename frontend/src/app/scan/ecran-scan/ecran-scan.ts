@@ -23,6 +23,7 @@ import { BenevoleApiService } from '../benevole-api.service';
 import { CameraScan } from '../camera-scan/camera-scan';
 import { CourseBenevoleReponse } from '../course-benevole';
 import { EtatFile } from '../etat-file/etat-file';
+import { ScansAVerifier } from '../scans-a-verifier/scans-a-verifier';
 import { EvenementScan, FileScansService } from '../file-scans/file-scans.service';
 import { PassageReponse } from '../passage';
 import { RefusScan } from '../refus-scan';
@@ -49,7 +50,7 @@ interface DernierScan {
  */
 @Component({
   selector: 'app-ecran-scan',
-  imports: [ReactiveFormsModule, RouterLink, CameraScan, EtatFile],
+  imports: [ReactiveFormsModule, RouterLink, CameraScan, EtatFile, ScansAVerifier],
   templateUrl: './ecran-scan.html',
   styleUrls: [
     '../../partage/page-carte.css',
@@ -151,23 +152,24 @@ export class EcranScan implements OnInit {
   }
 
   /**
-   * Seul le dernier scan pilote la zone de retour ; tout refus la remplace. Un refus en différé
-   * (entrée qui a été en attente) y reste : le dernier scan ne pilote plus la zone ensuite.
+   * Seul le dernier scan pilote la zone de retour ; tout refus en direct la remplace. Un refus
+   * différé va dans la liste « Scans à vérifier » : s'il concerne le dernier scan, la zone est vidée.
    */
   private suivre(evenement: EvenementScan): void {
     const estDernier = evenement.identifiantScan === this.dernierScan?.identifiantScan;
     if (evenement.type === 'refus') {
       this.retour.set({ type: 'refus', refus: evenement.refus });
-      if (estDernier && evenement.enDirect) {
+      if (estDernier) {
         this.rendreLaSaisie(this.dernierScan?.saisie ?? null);
-      }
-      if (estDernier || !evenement.enDirect) {
         this.dernierScan = null;
       }
     } else if (!estDernier) {
       return;
     } else if (evenement.type === 'succes') {
       this.retour.set({ type: 'succes', passage: evenement.passage });
+      this.dernierScan = null;
+    } else if (evenement.type === 'a-verifier') {
+      this.retour.set(null);
       this.dernierScan = null;
     } else {
       this.retour.set({ type: 'attente' });

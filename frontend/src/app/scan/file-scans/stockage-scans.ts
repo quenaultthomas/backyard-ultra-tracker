@@ -1,27 +1,27 @@
 import { Injectable, signal } from '@angular/core';
 
-import { ScanEnFile } from './scan-en-file';
+import { EntreeFile } from './scan-en-file';
 
 const NOM_BASE = 'backyard-ultra-tracker';
 const VERSION_BASE = 1;
 const MAGASIN = 'scans-en-file';
 
 /**
- * Stockage de la file de scans dans IndexedDB, base propre à l'application. Une copie en mémoire
+ * Stockage de la file de scans (et des scans à vérifier) dans IndexedDB, base propre à l'application. Une copie en mémoire
  * est tenue à jour : si IndexedDB est indisponible ou échoue, la file continue en mémoire seule
  * (perdue au rechargement) et `persistant` passe à faux. Aucune méthode ne rejette.
  */
 @Injectable({ providedIn: 'root' })
 export class StockageScans {
-  private readonly copie = new Map<string, ScanEnFile>();
+  private readonly copie = new Map<string, EntreeFile>();
   private base: Promise<IDBDatabase | null> | null = null;
   private readonly estPersistant = signal(true);
 
   readonly persistant = this.estPersistant.asReadonly();
 
   /** Toutes les entrées, de tous les Comptes, dans l'ordre de création. */
-  async lister(): Promise<ScanEnFile[]> {
-    const lues = await this.executer<ScanEnFile[]>('readonly', (magasin) => magasin.getAll());
+  async lister(): Promise<EntreeFile[]> {
+    const lues = await this.executer<EntreeFile[]>('readonly', (magasin) => magasin.getAll());
     if (lues) {
       this.copie.clear();
       lues.forEach((scan) => this.copie.set(scan.identifiantScan, scan));
@@ -29,7 +29,7 @@ export class StockageScans {
     return [...this.copie.values()].sort((a, b) => a.sequence - b.sequence);
   }
 
-  async enregistrer(scan: ScanEnFile): Promise<void> {
+  async enregistrer(scan: EntreeFile): Promise<void> {
     this.copie.set(scan.identifiantScan, scan);
     await this.executer('readwrite', (magasin) => magasin.put(scan));
   }

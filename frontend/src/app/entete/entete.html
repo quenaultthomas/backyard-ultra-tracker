@@ -24,6 +24,36 @@
     }
   </div>
 
+  @if (confirmation(); as message) {
+    <div
+      class="entete__confirmation message--avertissement"
+      role="alert"
+      (keydown.escape)="resterConnecte()"
+      data-testid="entete-deconnexion-confirmation"
+    >
+      <p class="message-pictogramme pictogramme-attente">{{ message }}</p>
+      <div class="entete__actions">
+        <button
+          #rester
+          type="button"
+          class="bouton"
+          (click)="resterConnecte()"
+          data-testid="entete-deconnexion-annuler"
+        >
+          Rester connecté
+        </button>
+        <button
+          type="button"
+          class="bouton bouton--secondaire"
+          (click)="confirmerDeconnexion()"
+          data-testid="entete-deconnexion-confirmer"
+        >
+          Me déconnecter quand même
+        </button>
+      </div>
+    </div>
+  }
+
   @if (erreur(); as message) {
     <p class="entete__erreur" role="alert" data-testid="entete-erreur">{{ message }}</p>
   }

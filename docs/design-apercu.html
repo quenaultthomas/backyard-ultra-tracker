@@ -22,6 +22,9 @@
     <link rel="stylesheet" href="../frontend/src/app/scan/camera-scan/camera-scan.css" />
     <!-- File de scans (5.1a) : feuille réelle du composant, sans copie (`:host` sans effet ici : colonne en ligne). -->
     <link rel="stylesheet" href="../frontend/src/app/scan/etat-file/etat-file.css" />
+    <!-- Scans à vérifier et totaux de l'accueil bénévole (5.1b) : feuilles réelles, sans copie. -->
+    <link rel="stylesheet" href="../frontend/src/app/scan/scans-a-verifier/scans-a-verifier.css" />
+    <link rel="stylesheet" href="../frontend/src/app/scan/accueil-benevole/accueil-benevole.css" />
     <!-- Dossard imprimable (4.5b) : feuilles réelles de l'écran et du QR code, sans copie. -->
     <link rel="stylesheet" href="../frontend/src/app/inscriptions/qr-code/qr-code.css" />
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/dossard/ecran-dossard.css" />
@@ -335,6 +338,10 @@
       <section aria-labelledby="titre-scan">
         <h2 id="titre-scan">Scan</h2>
         <div class="grille">
+          <div style="display: flex; flex-direction: column; gap: var(--espace-3)" data-composant="benevole-totaux">
+            <p class="message--avertissement message-pictogramme pictogramme-attente total">3 scans en attente</p>
+            <p class="message--avertissement message-pictogramme pictogramme-a-verifier total">1 à vérifier</p>
+          </div>
           <div class="carte-liste" data-composant="carte-benevole-scanner">
             <div class="carte-liste__visuel"><div class="visuel-substitution" aria-hidden="true"></div></div>
             <div class="carte-liste__entete">
@@ -345,6 +352,16 @@
             <a class="bouton" href="#titre-scan">Scanner</a>
           </div>
         </div>
+        <header class="entete" data-composant="entete-deconnexion-confirmation">
+          <a class="entete__titre" href="#titre-scan">Backyard Ultra Tracker</a>
+          <div class="entete__confirmation message--avertissement" role="alert">
+            <p class="message-pictogramme pictogramme-attente">2 scans ne sont pas encore envoyés. Si vous vous déconnectez, ils resteront sur cet appareil et ne partiront qu'à votre prochaine connexion avec ce compte.</p>
+            <div class="entete__actions">
+              <button type="button" class="bouton">Rester connecté</button>
+              <button type="button" class="bouton bouton--secondaire">Me déconnecter quand même</button>
+            </div>
+          </div>
+        </header>
         <div class="carte" style="max-width: 30rem">
           <header class="scan-entete" data-composant="scan-entete">
             <h3 class="titre">Backyard du jour</h3>
@@ -371,13 +388,34 @@
           <p class="message--avertissement resultat pictogramme-attente" data-composant="scan-resultat-attente">Scan gardé sur l'appareil. Il sera envoyé dès que possible.</p>
           <p class="message--info" data-composant="scan-resultat-envoi">Envoi…</p>
           <div style="display: flex; flex-direction: column; gap: var(--espace-3)" data-composant="scan-etat-file">
-            <p class="message--avertissement avertissement pictogramme-hors-ligne">Hors ligne : les scans sont gardés sur cet appareil.</p>
+            <p class="message--avertissement message-pictogramme pictogramme-hors-ligne">Hors ligne : les scans sont gardés sur cet appareil.</p>
             <div class="file">
               <p class="file__compteur">2 en attente</p>
               <button type="button" class="bouton bouton--secondaire">Renvoyer maintenant</button>
             </div>
             <p class="message--succes">3 scans envoyés</p>
+            <p class="message--succes">2 scans envoyés, dont 1 à vérifier</p>
           </div>
+          <section class="a-verifier" aria-labelledby="apercu-titre-a-verifier" data-composant="scan-a-verifier">
+            <h3 id="apercu-titre-a-verifier" class="a-verifier__titre">Scans à vérifier</h3>
+            <p class="a-verifier__compteur message-pictogramme pictogramme-a-verifier">2 à vérifier</p>
+            <ul class="a-verifier__liste">
+              <li class="message--avertissement a-verifier__ligne">
+                <p class="a-verifier__motif message-pictogramme pictogramme-a-verifier">Coureur en abandon</p>
+                <p class="a-verifier__dossard">Dossard 2</p>
+                <p>Sophie</p>
+                <p>Boucle 3</p>
+                <p>Ce coureur n'est plus en course.</p>
+                <p class="a-verifier__aide">Si ce scan a été fait dans les temps, demandez à un administrateur de réintégrer le coureur.</p>
+                <button type="button" class="bouton bouton--secondaire">Compris</button>
+              </li>
+              <li class="message--avertissement a-verifier__ligne">
+                <p class="a-verifier__motif message-pictogramme pictogramme-a-verifier">Scan trop ancien</p>
+                <p>Ce scan date de plus de 24 heures et n'a pas été envoyé.</p>
+                <button type="button" class="bouton bouton--secondaire">Compris</button>
+              </li>
+            </ul>
+          </section>
           <section class="camera" data-composant="scan-camera-arretee">
             <p class="camera__etat">Caméra arrêtée</p>
             <p class="message--erreur">L'accès à la caméra est refusé. Autorisez-la dans les réglages du navigateur, ou saisissez le jeton ci-dessous.</p>

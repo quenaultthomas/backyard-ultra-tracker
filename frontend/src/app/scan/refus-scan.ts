@@ -2,6 +2,8 @@ import { ErreurScan } from './passage';
 
 /** Refus définitif d'un scan, tel qu'affiché : le serveur décide, l'écran met en forme. */
 export interface RefusScan {
+  /** `code` du `ProblemDetail`, s'il est fourni. */
+  code?: string;
   motif: string;
   /** `detail` de l'API, affiché tel quel. */
   detail: string;
@@ -32,6 +34,7 @@ const MOTIFS_PAR_STATUT: Readonly<Record<NonNullable<ErreurScan['statut']>, stri
 export function lireRefusScan(probleme: ErreurScan): RefusScan {
   const { dossard, pseudo, numeroBoucle } = probleme;
   return {
+    code: probleme.code,
     motif: motifDe(probleme),
     detail: probleme.detail,
     coureur: dossard !== undefined && pseudo !== undefined ? { dossard, pseudo } : undefined,
@@ -44,4 +47,16 @@ function motifDe(probleme: ErreurScan): string {
     return MOTIFS_PAR_STATUT[probleme.statut] ?? MOTIF_PAR_DEFAUT;
   }
   return (probleme.code && MOTIFS_PAR_CODE[probleme.code]) || MOTIF_PAR_DEFAUT;
+}
+
+/** Codes pour lesquels un scan fait dans les temps se rattrape par la réintégration admin (4.12). */
+const CODES_AIDE_REINTEGRATION: readonly string[] = [
+  'INSCRIPTION_NON_EN_COURSE',
+  'COURSE_TERMINEE',
+  'TEMPS_DE_COURSE_ECOULE',
+];
+
+/** Aide d'affichage, choisie par `code` comme le motif. */
+export function proposeLaReintegration(code: string | undefined): boolean {
+  return code !== undefined && CODES_AIDE_REINTEGRATION.includes(code);
 }

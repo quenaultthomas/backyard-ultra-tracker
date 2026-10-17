@@ -120,5 +120,7 @@
         Vous n'êtes pas affecté à cette course.
       </p>
     }
+    <!-- Données locales : affichées quel que soit l'état de la Course (terminée, non affectée…). -->
+    <app-scans-a-verifier [courseId]="courseId()" />
   </section>
 </main>

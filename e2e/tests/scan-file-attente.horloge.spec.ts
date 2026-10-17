@@ -20,7 +20,7 @@ test.beforeAll(() => {
 });
 
 test.describe('File de scan et Boucles (horloge applicative pilotée)', () => {
-  test('CA9 - un scan fait dans les temps mais reçu après l\'abandon automatique est refusé ; la réintégration admin rétablit le coureur', async ({ page, playwright }) => {
+  test('CA9 (5.1b CA3) - un scan fait dans les temps mais reçu après l\'abandon automatique devient une ligne « à vérifier » avec l\'aide de réintégration ; la réintégration admin rétablit le coureur', async ({ page, playwright }) => {
     // Trois coureurs : avec un seul passant sur la Boucle 1 il serait VAINQUEUR et la Course se terminerait (4.9), et
     // sans passant tous seraient vainqueurs partagés. Deux coureurs bouclent en ligne, le troisième est scanné hors ligne.
     const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 3, nombreMaxBoucles: 5, dureeBoucleMinutes: 1 });
@@ -46,8 +46,12 @@ test.describe('File de scan et Boucles (horloge applicative pilotée)', () => {
     });
 
     await page.context().setOffline(false);
-    await expect(page.getByTestId('scan-refus-motif')).toHaveText('Coureur en abandon');
-    await expect(page.getByTestId('scan-resultat-erreur')).toHaveText('Ce coureur n\'est plus en course.');
+    await expect(page.getByTestId('scan-a-verifier-motif')).toHaveText('Coureur en abandon');
+    await expect(page.getByTestId('scan-a-verifier-detail')).toHaveText('Ce coureur n\'est plus en course.');
+    await expect(page.getByTestId('scan-a-verifier-aide')).toHaveText(
+      'Si ce scan a été fait dans les temps, demandez à un administrateur de réintégrer le coureur.',
+    );
+    await expect(page.getByTestId('scan-refus')).toHaveCount(0);
     await attendreFileVide(page);
     expect(lirePassagesEnBase(course.id)).toEqual(['2:1:SCAN', '3:1:SCAN']);
     expect(lireInscriptionEnBase(course.id, hors.dossard).statut).toBe('ABANDON');

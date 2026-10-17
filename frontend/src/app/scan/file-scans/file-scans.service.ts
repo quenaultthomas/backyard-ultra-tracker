@@ -12,11 +12,15 @@ import { PassageReponse } from '../passage';
 import { RefusScan } from '../refus-scan';
 import { IssueEnvoi, REFUS_TROP_ANCIEN, attenteApresPanne, classerErreur } from './issue-envoi';
 import {
+  EntreeFile,
+  ScanAVerifier,
   ScanEnFile,
   ageDuScan,
   creerScanEnFile,
+  estAVerifier,
   estDeCetteSessionDePage,
   estTropAncien,
+  mettreAVerifier,
 } from './scan-en-file';
 import { StockageScans } from './stockage-scans';
 
@@ -25,9 +29,11 @@ const DELAI_REQUETE_MILLISECONDES = 10_000;
 /** Le message de session expirée reste lisible avant la redirection vers la connexion. */
 const DELAI_AVANT_RECONNEXION_MILLISECONDES = 2_000;
 
+/** `refus` : refus en direct (première tentative) ; `a-verifier` : refus différé, mis dans la liste. */
 type IssueScan =
   | { type: 'succes'; passage: PassageReponse }
-  | { type: 'refus'; refus: RefusScan; enDirect: boolean }
+  | { type: 'refus'; refus: RefusScan }
+  | { type: 'a-verifier' }
   | { type: 'attente' };
 
 /** Ce qui arrive à un scan de la file, pour l'écran de sa Course. */
@@ -39,6 +45,12 @@ export interface ScanAjoute {
   ecrit: Promise<void>;
 }
 
+/** Fin d'une attente : scans envoyés et scans passés « à vérifier » pendant le cycle. */
+export interface FinEnvoi {
+  envoyes: number;
+  aVerifier: number;
+}
+
 interface Pause {
   cause: 'SESSION_EXPIREE' | 'ACCES_REFUSE';
   enAttente: number;
@@ -47,7 +59,8 @@ interface Pause {
 /**
  * File locale des scans du bénévole connecté : chaque scan est écrit avant d'être envoyé, puis
  * envoyé un à la fois dans l'ordre de création, avec nouvelles tentatives après une panne.
- * Le serveur décide de tout (Boucle, refus) ; la file ne fait que classer ses réponses.
+ * Le serveur décide de tout (Boucle, refus) ; la file ne fait que classer ses réponses. Un refus
+ * reçu en différé (ou un scan trop ancien) reste sur l'appareil, sans jeton, « à vérifier ».
  * Le cycle d'envoi tourne sur toute page de l'application.
  */
 @Injectable({ providedIn: 'root' })
@@ -60,25 +73,37 @@ export class FileScansService {
   private readonly router = inject(Router);
   private readonly document = inject(DOCUMENT);
 
-  /** Entrées du Compte connecté, dans l'ordre d'envoi. */
+  /** Entrées à envoyer du Compte connecté, dans l'ordre d'envoi. */
   private readonly scans = signal<ScanEnFile[]>([]);
+  /** Scans à vérifier du Compte connecté, toutes Courses confondues, dans l'ordre de création. */
+  private readonly scansAVerifier = signal<ScanAVerifier[]>([]);
   /** Entrées créées dont l'écriture locale n'est pas terminée : pas encore comptées. */
   private readonly nonEcrits = signal<ReadonlySet<string>>(new Set());
   private readonly enLigne = signal(navigator.onLine);
   private readonly pause = signal<Pause | null>(null);
-  private readonly envoyes = signal<number | null>(null);
+  private readonly finEnvoi = signal<FinEnvoi | null>(null);
   private readonly evenements = new Subject<EvenementScan>();
 
   readonly horsLigne = computed(() => !this.enLigne());
   readonly stockagePersistant = this.stockage.persistant;
-  /** Nombre de scans envoyés quand la file vient de se vider après une attente. */
-  readonly scansEnvoyes = this.envoyes.asReadonly();
+  /** Bilan de la file quand elle vient de se vider après une attente. */
+  readonly scansEnvoyes = this.finEnvoi.asReadonly();
   /** Nombre de scans en attente quand la session a expiré pendant un envoi. */
   readonly sessionExpiree = computed(() => {
     const pause = this.pause();
     return pause?.cause === 'SESSION_EXPIREE' ? pause.enAttente : null;
   });
   readonly evenements$: Observable<EvenementScan> = this.evenements.asObservable();
+  /** Entrées en attente, une fois écrites sur l'appareil (la première tentative n'en est pas). */
+  private readonly enAttenteEcrits = computed(() => {
+    const nonEcrits = this.nonEcrits();
+    return this.scans().filter(
+      (scan) => scan.etat === 'EN_ATTENTE' && !nonEcrits.has(scan.identifiantScan),
+    );
+  });
+  /** Total du Compte connecté, toutes Courses confondues. */
+  readonly totalEnAttente = computed(() => this.enAttenteEcrits().length);
+  readonly totalAVerifier = computed(() => this.scansAVerifier().length);
 
   private compteId: string | null = null;
   private ecritures: Promise<void> = Promise.resolve();
@@ -90,6 +115,7 @@ export class FileScansService {
   private redirection: ReturnType<typeof setTimeout> | undefined;
   private attenteConstatee = false;
   private succesDepuisAttente = 0;
+  private aVerifierDepuisAttente = 0;
 
   constructor() {
     const fenetre = this.document.defaultView;
@@ -109,18 +135,25 @@ export class FileScansService {
     });
   }
 
-  /**
-   * Entrées en attente du Compte connecté pour une Course, une fois écrites sur l'appareil (la
-   * première tentative n'en est pas).
-   */
+  /** Entrées en attente du Compte connecté pour une Course. */
   enAttente(courseId: string): number {
-    const nonEcrits = this.nonEcrits();
-    return this.scans().filter(
-      (scan) =>
-        scan.courseId === courseId &&
-        scan.etat === 'EN_ATTENTE' &&
-        !nonEcrits.has(scan.identifiantScan),
-    ).length;
+    return this.enAttenteEcrits().filter((scan) => scan.courseId === courseId).length;
+  }
+
+  /** Scans à vérifier du Compte connecté pour une Course. */
+  aVerifier(courseId: string): ScanAVerifier[] {
+    return this.scansAVerifier().filter((scan) => scan.courseId === courseId);
+  }
+
+  /** « Compris » : la ligne disparaît de la liste et de l'appareil (Compte connecté seulement). */
+  marquerCompris(identifiantScan: string): void {
+    if (!this.scansAVerifier().some((scan) => scan.identifiantScan === identifiantScan)) {
+      return;
+    }
+    this.scansAVerifier.update((scans) =>
+      scans.filter((scan) => scan.identifiantScan !== identifiantScan),
+    );
+    this.ecritures = this.ecritures.then(() => this.stockage.supprimer(identifiantScan));
   }
 
   /**
@@ -160,7 +193,7 @@ export class FileScansService {
   }
 
   effacerMessageEnvoyes(): void {
-    this.envoyes.set(null);
+    this.finEnvoi.set(null);
   }
 
   private marquerEcrit(identifiantScan: string): void {
@@ -175,9 +208,11 @@ export class FileScansService {
     clearTimeout(this.minuterie);
     this.compteId = compteId;
     this.scans.set([]);
-    this.envoyes.set(null);
+    this.scansAVerifier.set([]);
+    this.finEnvoi.set(null);
     this.attenteConstatee = false;
     this.succesDepuisAttente = 0;
+    this.aVerifierDepuisAttente = 0;
     if (compteId !== null) {
       clearTimeout(this.redirection);
       this.pause.set(null);
@@ -227,8 +262,7 @@ export class FileScansService {
     let jetonCsrfObtenu = false;
     for (let scan = await this.relire(); scan && this.peutEnvoyer(); scan = await this.relire()) {
       if (estTropAncien(scan)) {
-        await this.retirer(scan);
-        this.emettre(scan, { type: 'refus', refus: REFUS_TROP_ANCIEN, enDirect: false });
+        await this.mettreDeCote(scan, REFUS_TROP_ANCIEN);
         continue;
       }
       if (!jetonCsrfObtenu && !(await this.obtenirJetonCsrf())) {
@@ -242,35 +276,46 @@ export class FileScansService {
     }
   }
 
-  /** Relit la base locale (autres onglets compris) ; renvoie la plus ancienne entrée du Compte. */
+  /**
+   * Relit la base locale (autres onglets compris) : scans à envoyer et à vérifier du Compte ;
+   * renvoie la plus ancienne entrée à envoyer.
+   */
   private async relire(): Promise<ScanEnFile | null> {
-    let tous: ScanEnFile[];
+    let tous: EntreeFile[];
     let ecritures: Promise<void>;
     do {
       ecritures = this.ecritures;
       await ecritures;
       tous = await this.stockage.lister();
     } while (ecritures !== this.ecritures);
-    const miens = tous
-      .filter((scan) => scan.compteId === this.compteId)
+    const miens = tous.filter((entree) => entree.compteId === this.compteId);
+    const aEnvoyer = miens
+      .filter((entree): entree is ScanEnFile => !estAVerifier(entree))
       .map((scan): ScanEnFile =>
         estDeCetteSessionDePage(scan) ? scan : { ...scan, etat: 'EN_ATTENTE' },
       );
-    this.scans.set(miens);
-    return miens[0] ?? null;
+    this.scansAVerifier.set(miens.filter(estAVerifier));
+    this.scans.set(aEnvoyer);
+    return aEnvoyer[0] ?? null;
   }
 
-  /** Au démarrage : toute entrée de plus de 24 h, de tout Compte, est supprimée sans affichage. */
+  /**
+   * Au démarrage : une entrée à envoyer de plus de 24 h devient « à vérifier » (sans jeton) pour
+   * le Compte courant et est supprimée pour un autre Compte. Les scans à vérifier sont gardés.
+   */
   private async purgerAuDemarrage(): Promise<void> {
     if (this.purgeFaite) {
       return;
     }
     this.purgeFaite = true;
     const tropAnciens = (await this.stockage.lister()).filter(
-      (scan) => !estDeCetteSessionDePage(scan) && estTropAncien(scan),
+      (entree): entree is ScanEnFile =>
+        !estAVerifier(entree) && !estDeCetteSessionDePage(entree) && estTropAncien(entree),
     );
     for (const scan of tropAnciens) {
-      await this.stockage.supprimer(scan.identifiantScan);
+      await (scan.compteId === this.compteId
+        ? this.stockage.enregistrer(mettreAVerifier(scan, REFUS_TROP_ANCIEN))
+        : this.stockage.supprimer(scan.identifiantScan));
     }
   }
 
@@ -322,8 +367,12 @@ export class FileScansService {
         return true;
       case 'refus':
         this.pannesConsecutives = 0;
+        if (scan.etat === 'EN_ATTENTE') {
+          await this.mettreDeCote(scan, issue.refus);
+          return true;
+        }
         await this.retirer(scan);
-        this.emettre(scan, { ...issue, enDirect: scan.etat === 'EN_ENVOI' });
+        this.emettre(scan, issue);
         return true;
       case 'session-expiree':
       case 'acces-refuse':
@@ -388,18 +437,40 @@ export class FileScansService {
     this.emettre(scan, { type: 'attente' });
   }
 
-  /** Supprime l'entrée (et son jeton) ; annonce les scans envoyés quand la file se vide. */
+  /** Supprime l'entrée (et son jeton). */
   private async retirer(scan: ScanEnFile): Promise<void> {
     await this.stockage.supprimer(scan.identifiantScan);
+    this.sortirDeLaFile(scan);
+  }
+
+  /**
+   * Refus différé ou scan trop ancien : l'entrée devient « à vérifier » (son jeton est effacé),
+   * jamais retentée.
+   */
+  private async mettreDeCote(scan: ScanEnFile, refus: RefusScan): Promise<void> {
+    const aVerifier = mettreAVerifier(scan, refus);
+    await this.stockage.enregistrer(aVerifier);
+    this.scansAVerifier.update((scans) => [...scans, aVerifier]);
+    this.aVerifierDepuisAttente += this.attenteConstatee ? 1 : 0;
+    this.sortirDeLaFile(scan);
+    this.emettre(scan, { type: 'a-verifier' });
+  }
+
+  /** Annonce le bilan (envoyés, à vérifier) quand la file se vide après une attente. */
+  private sortirDeLaFile(scan: ScanEnFile): void {
     this.scans.update((scans) => scans.filter((s) => s.identifiantScan !== scan.identifiantScan));
     if (this.scans().length > 0 || !this.attenteConstatee) {
       return;
     }
-    if (this.succesDepuisAttente > 0) {
-      this.envoyes.set(this.succesDepuisAttente);
+    if (this.succesDepuisAttente > 0 || this.aVerifierDepuisAttente > 0) {
+      this.finEnvoi.set({
+        envoyes: this.succesDepuisAttente,
+        aVerifier: this.aVerifierDepuisAttente,
+      });
     }
     this.attenteConstatee = false;
     this.succesDepuisAttente = 0;
+    this.aVerifierDepuisAttente = 0;
   }
 
   private emettre(scan: ScanEnFile, issue: IssueScan): void {
