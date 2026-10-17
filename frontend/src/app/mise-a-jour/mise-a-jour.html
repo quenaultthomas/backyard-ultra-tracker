@@ -1,0 +1,29 @@
+@if (etat(); as etatCourant) {
+  <div class="mise-a-jour message--info" role="status" data-testid="mise-a-jour-bandeau">
+    <p class="message-pictogramme pictogramme-mise-a-jour" data-testid="mise-a-jour-message">
+      @if (etatCourant === 'NOUVELLE_VERSION') {
+        Une nouvelle version de l'application est disponible.
+      } @else {
+        L'application doit être rechargée.
+      }
+    </p>
+    <div class="mise-a-jour__actions">
+      <button
+        type="button"
+        class="bouton"
+        (click)="appliquer()"
+        data-testid="mise-a-jour-appliquer"
+      >
+        Mettre à jour
+      </button>
+      <button
+        type="button"
+        class="bouton bouton--secondaire"
+        (click)="plusTard()"
+        data-testid="mise-a-jour-plus-tard"
+      >
+        Plus tard
+      </button>
+    </div>
+  </div>
+}

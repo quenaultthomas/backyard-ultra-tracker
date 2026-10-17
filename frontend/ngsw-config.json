@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "coque",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/index.html",
+          "/manifest.webmanifest",
+          "/favicon.ico",
+          "/icones/**",
+          "/*.css",
+          "/*.js",
+          "/**/*.woff2",
+          "/**/*.svg",
+          "/licences/**"
+        ]
+      }
+    }
+  ],
+  "navigationUrls": ["/**", "!/api/**", "!/**/*.*", "!/**/*__*", "!/**/*__*/**"]
+}

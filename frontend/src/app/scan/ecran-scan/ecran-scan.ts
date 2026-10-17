@@ -4,6 +4,7 @@ import {
   DestroyRef,
   ElementRef,
   OnInit,
+  computed,
   inject,
   input,
   signal,
@@ -19,9 +20,10 @@ import {
   PASTILLES_STATUT_COURSE,
 } from '../../administration/courses/course';
 import { RefusAccesService } from '../../comptes/refus-acces.service';
-import { BenevoleApiService } from '../benevole-api.service';
 import { CameraScan } from '../camera-scan/camera-scan';
 import { CourseBenevoleReponse } from '../course-benevole';
+import { CoursesBenevoleService, CoursesDuBenevole } from '../courses-benevole.service';
+import { DonneesHorsLigne } from '../donnees-hors-ligne/donnees-hors-ligne';
 import { EtatFile } from '../etat-file/etat-file';
 import { ScansAVerifier } from '../scans-a-verifier/scans-a-verifier';
 import { EvenementScan, FileScansService } from '../file-scans/file-scans.service';
@@ -50,7 +52,14 @@ interface DernierScan {
  */
 @Component({
   selector: 'app-ecran-scan',
-  imports: [ReactiveFormsModule, RouterLink, CameraScan, EtatFile, ScansAVerifier],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    CameraScan,
+    DonneesHorsLigne,
+    EtatFile,
+    ScansAVerifier,
+  ],
   templateUrl: './ecran-scan.html',
   styleUrls: [
     '../../partage/page-carte.css',
@@ -60,7 +69,7 @@ interface DernierScan {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EcranScan implements OnInit {
-  private readonly benevoleApi = inject(BenevoleApiService);
+  private readonly coursesBenevole = inject(CoursesBenevoleService);
   private readonly fileScans = inject(FileScansService);
   private readonly refusAcces = inject(RefusAccesService);
   private readonly destroyRef = inject(DestroyRef);
@@ -73,6 +82,16 @@ export class EcranScan implements OnInit {
   protected readonly pastillesStatut = PASTILLES_STATUT_COURSE;
   /** `undefined` pendant le chargement, `null` si la Course n'est pas dans la liste du bénévole. */
   protected readonly course = signal<CourseBenevoleReponse | null | undefined>(undefined);
+  /** Date de la liste lue sur l'appareil, hors ligne ; `null` si elle vient du serveur. */
+  protected readonly enregistreLe = signal<string | null>(null);
+  /**
+   * Hors ligne, le statut mémorisé a pu changer : le formulaire reste ouvert sauf pour une Course
+   * terminée, le serveur tranchera à l'envoi.
+   */
+  protected readonly scanOuvert = computed(() => {
+    const statut = this.course()?.statut;
+    return statut === 'EN_COURS' || (statut === 'EN_PREPARATION' && this.enregistreLe() !== null);
+  });
   protected readonly erreurChargement = signal(false);
   protected readonly formulaire = new FormGroup({
     jeton: new FormControl('', { nonNullable: true }),
@@ -82,12 +101,11 @@ export class EcranScan implements OnInit {
   private dernierScan: DernierScan | null = null;
 
   ngOnInit(): void {
-    this.benevoleApi
-      .listerMesCourses()
+    this.coursesBenevole
+      .suivre()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (courses) =>
-          this.course.set(courses.find((course) => course.id === this.courseId()) ?? null),
+        next: (liste) => this.afficher(liste),
         error: (erreur: unknown) => {
           if (!this.refusAcces.rediriger(erreur, `/benevole/courses/${this.courseId()}/scan`)) {
             this.erreurChargement.set(true);
@@ -100,6 +118,11 @@ export class EcranScan implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((evenement) => this.suivre(evenement));
+  }
+
+  private afficher({ courses, enregistreLe }: CoursesDuBenevole): void {
+    this.enregistreLe.set(enregistreLe);
+    this.course.set(courses.find((course) => course.id === this.courseId()) ?? null);
   }
 
   /** Une nouvelle saisie efface le retour précédent. */

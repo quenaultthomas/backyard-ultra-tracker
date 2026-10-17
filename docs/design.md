@@ -485,6 +485,13 @@ Règles générales de l'écran (refus plein cadre par motif en 4.6, compteur ho
 - **À l'impression** (`@media print`) : en-tête du site, motif de fond, titre, avertissement, bouton et lien masqués ; seule la feuille reste, noire sur papier blanc, sans fond, bordure ni ombre, en haut de la page et centrée (`break-inside: avoid`, `print-color-adjust: exact`). Taille de page laissée au choix (A4 ou A5) : `@page { margin: 10mm }`, seule valeur en dur de la charte (`@page` ne voit pas les variables de `:root`). Aucune URL ni jeton imprimés.
 - **Lien d'accès** : dans la section « Inscrits » de la fiche, lien texte « Dossard » par ligne (`.lien-dossard`, hauteur `--cible-min`), dans une colonne d'en-tête masqué « Actions ».
 
+### Application installable
+
+Notices hors ligne et bandeau de mise à jour (5.2), tous en `.message--info` (encre sur sable, 12,06) avec un pictogramme CSS `.message-pictogramme` (masque teinté `currentColor`, `CanvasText` en contraste forcé) : jamais la couleur seule.
+- **Liste mémorisée** (`app-donnees-hors-ligne`, `scan/donnees-hors-ligne/`) : accueil bénévole et écran de scan, `donnees-hors-ligne` (`role="status"`, `.pictogramme-hors-ligne`, `--taille-moyenne`, mots coupés) « Hors ligne : liste des courses enregistrée le JJ/MM à HH:mm. Le statut de la course a pu changer. », sous le titre.
+- **Connexion hors ligne** : `connexion-hors-ligne` (`role="status"`, `.pictogramme-hors-ligne`) « Vous êtes hors ligne. Connectez-vous dès que le réseau est revenu. », au-dessus du formulaire, qui reste utilisable.
+- **Bandeau de mise à jour** (`app-mise-a-jour`, `mise-a-jour/mise-a-jour.css`) : dans le flux, entre l'en-tête et la page (il ne recouvre ni l'en-tête ni la confirmation de déconnexion), `margin: var(--espace-4) var(--espace-4) 0`, colonne à `gap: var(--espace-3)`, `--taille-moyenne`, mots coupés. Texte avec `.pictogramme-mise-a-jour` (flèche de téléchargement), puis « Mettre à jour » en `.bouton` et « Plus tard » en `.bouton--secondaire`, 44 px au moins, côte à côte puis empilés sur téléphone (`flex: 1 1 12rem`). Aucune animation.
+
 ### Suivi public et grand format projeté
 
 Écran public d'une Course (jalon 6), pensé pour être projeté.
@@ -496,3 +503,42 @@ Règles générales de l'écran (refus plein cadre par motif en 4.6, compteur ho
 - **Abandons** : liste avec la Boucle et le motif en texte.
 - Aucune cible tactile exigée en projection ; hors projection, les contrôles gardent 44 px.
 - `prefers-reduced-motion` respecté ; aucune animation décorative.
+
+## 12. Icône de l'application
+
+Icône de l'application installable (5.2), uniquement en jetons de la palette : fond `--couleur-foret` `#14352A` plein cadre ; **boucle fermée** (le yard) en trait `--couleur-creme` `#F7F1E3` de 30 px (≈ 6 % de la largeur), extrémités et jonctions arrondies ; **sapin** stylisé en `--couleur-foret-survol` `#1F5A43` au centre ; **balise** (disque) `--couleur-orange` `#F28C28` posée sur la boucle, détourée d'un filet forêt. Aucun texte. Le manifeste reprend `theme_color` `#14352A` (`--couleur-foret`) et `background_color` `#F7F1E3` (`--couleur-creme`).
+
+| Fichier (`frontend/public/`) | Taille | Usage |
+|---|---|---|
+| `icones/icone.svg` | viewBox 512 | source, favicon SVG ; motif plein cadre |
+| `icones/icone-maskable.svg` | viewBox 512 | source de la maskable : même motif réduit à 80 % autour du centre, dans le cercle de sécurité (diamètre 410 px) ; fond plein cadre |
+| `icones/icone-192.png`, `icones/icone-512.png` | 192, 512 | manifeste, `purpose: any` |
+| `icones/icone-512-maskable.png` | 512 | manifeste, `purpose: maskable` |
+| `icones/apple-touch-icon.png` | 180 | iOS |
+| `favicon.ico` | 32 | favicon (une image PNG dans un conteneur ICO) |
+
+Tous les PNG sont **opaques, sans canal alpha** (type de couleur 2) : iOS remplirait sinon la transparence en noir.
+
+`icone.svg` :
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#14352A"/>
+  <path fill="#1F5A43" d="M256 136 326 236H296L350 318H276V372H236V318H162L216 236H186Z"/>
+  <path fill="none" stroke="#F7F1E3" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" d="M80 262C76 168 160 100 268 104C374 108 436 176 428 268C420 362 340 414 244 410C150 406 84 352 80 262Z"/>
+  <circle cx="391" cy="153" r="36" fill="#F28C28" stroke="#14352A" stroke-width="10"/>
+</svg>
+```
+
+`icone-maskable.svg` : même fond, et les trois formes ci-dessus dans un groupe `<g transform="translate(256 256) scale(0.8) translate(-256 -256)">`.
+
+**Génération** (une fois, après toute modification d'un SVG ; les fichiers produits sont commités, rien n'est généré au build ni installé sur la machine hôte) : script `scripts/generer-icones.mjs` (sharp), lancé à la racine du dépôt dans un conteneur éphémère :
+
+```sh
+docker run --rm -v "$PWD/frontend/public:/travail/public" \
+  -v "$PWD/scripts/generer-icones.mjs:/outil/generer-icones.mjs:ro" -w /outil \
+  node:24.21.0-alpine3.24 \
+  sh -c "npm install --no-save --no-audit --no-fund sharp@0.34.5 && node generer-icones.mjs /travail/public"
+```
+
+Vérification : `file frontend/public/icones/*.png frontend/public/favicon.ico` doit annoncer les tailles ci-dessus en `8-bit/color RGB`.

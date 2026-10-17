@@ -7,7 +7,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "test": "playwright test --project=chromium --project=camera --grep-invert \"base neuve\" && playwright test --project=horloge --no-deps --workers=1"
+    "test": "playwright test --project=chromium --project=camera --project=pwa --grep-invert \"base neuve\" && playwright test --project=horloge --no-deps --workers=1"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
