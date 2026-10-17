@@ -14,6 +14,9 @@
       >
     </header>
 
+    @if (enregistreLe(); as date) {
+      <app-donnees-hors-ligne [enregistreLe]="date" />
+    }
     @if (erreurChargement()) {
       <p class="message--erreur" role="alert" data-testid="scan-erreur-chargement">
         Impossible de charger la course. Réessayez plus tard.
@@ -22,98 +25,94 @@
       <p class="message" role="status" data-testid="scan-chargement">Chargement…</p>
     } @else if (course(); as c) {
       <app-etat-file [courseId]="courseId()" />
-      @switch (c.statut) {
-        @case ('EN_PREPARATION') {
-          <p class="message--info" data-testid="scan-message-etat">La course n'est pas démarrée.</p>
-        }
-        @case ('TERMINEE') {
-          <p class="message--info" data-testid="scan-message-etat">La course est terminée.</p>
-        }
-        @default {
-          @if (retour(); as r) {
-            @switch (r.type) {
-              @case ('envoi') {
-                <p class="message--info" role="status" data-testid="scan-resultat-envoi">Envoi…</p>
-              }
-              @case ('attente') {
-                <p
-                  class="message--avertissement resultat pictogramme-attente"
-                  role="status"
-                  data-testid="scan-resultat-attente"
-                >
-                  Scan gardé sur l'appareil. Il sera envoyé dès que possible.
+      @if (c.statut === 'TERMINEE') {
+        <p class="message--info" data-testid="scan-message-etat">La course est terminée.</p>
+      } @else if (!scanOuvert()) {
+        <p class="message--info" data-testid="scan-message-etat">La course n'est pas démarrée.</p>
+      } @else {
+        @if (retour(); as r) {
+          @switch (r.type) {
+            @case ('envoi') {
+              <p class="message--info" role="status" data-testid="scan-resultat-envoi">Envoi…</p>
+            }
+            @case ('attente') {
+              <p
+                class="message--avertissement resultat pictogramme-attente"
+                role="status"
+                data-testid="scan-resultat-attente"
+              >
+                Scan gardé sur l'appareil. Il sera envoyé dès que possible.
+              </p>
+            }
+            @case ('succes') {
+              <div
+                class="message--succes resultat"
+                role="status"
+                data-testid="scan-resultat-succes"
+              >
+                <p class="resultat__libelle">Passage enregistré</p>
+                <p class="resultat__dossard" data-testid="scan-resultat-dossard">
+                  Dossard {{ r.passage.dossard }}
                 </p>
-              }
-              @case ('succes') {
-                <div
-                  class="message--succes resultat"
-                  role="status"
-                  data-testid="scan-resultat-succes"
-                >
-                  <p class="resultat__libelle">Passage enregistré</p>
-                  <p class="resultat__dossard" data-testid="scan-resultat-dossard">
-                    Dossard {{ r.passage.dossard }}
+                <p data-testid="scan-resultat-pseudo">{{ r.passage.pseudo }}</p>
+                <p data-testid="scan-resultat-boucle">Boucle {{ r.passage.numeroBoucle }}</p>
+              </div>
+            }
+            @case ('refus') {
+              <div class="message--erreur refus" data-testid="scan-refus">
+                <p class="refus__motif" data-testid="scan-refus-motif">{{ r.refus.motif }}</p>
+                @if (r.refus.coureur; as coureur) {
+                  <p class="resultat__dossard" data-testid="scan-refus-dossard">
+                    Dossard {{ coureur.dossard }}
                   </p>
-                  <p data-testid="scan-resultat-pseudo">{{ r.passage.pseudo }}</p>
-                  <p data-testid="scan-resultat-boucle">Boucle {{ r.passage.numeroBoucle }}</p>
-                </div>
-              }
-              @case ('refus') {
-                <div class="message--erreur refus" data-testid="scan-refus">
-                  <p class="refus__motif" data-testid="scan-refus-motif">{{ r.refus.motif }}</p>
-                  @if (r.refus.coureur; as coureur) {
-                    <p class="resultat__dossard" data-testid="scan-refus-dossard">
-                      Dossard {{ coureur.dossard }}
-                    </p>
-                    <p data-testid="scan-refus-pseudo">{{ coureur.pseudo }}</p>
-                  }
-                  @if (r.refus.numeroBoucle !== undefined) {
-                    <p data-testid="scan-refus-boucle">Boucle {{ r.refus.numeroBoucle }}</p>
-                  }
-                  <p class="refus__detail" role="alert" data-testid="scan-resultat-erreur">
-                    {{ r.refus.detail }}
-                  </p>
-                </div>
-              }
+                  <p data-testid="scan-refus-pseudo">{{ coureur.pseudo }}</p>
+                }
+                @if (r.refus.numeroBoucle !== undefined) {
+                  <p data-testid="scan-refus-boucle">Boucle {{ r.refus.numeroBoucle }}</p>
+                }
+                <p class="refus__detail" role="alert" data-testid="scan-resultat-erreur">
+                  {{ r.refus.detail }}
+                </p>
+              </div>
             }
           }
-
-          <app-camera-scan (jetonLu)="scannerJeton($event)" />
-
-          <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
-            <div class="champ">
-              <label for="scan-jeton">Jeton du coureur</label>
-              <input
-                #champJeton
-                id="scan-jeton"
-                type="text"
-                formControlName="jeton"
-                (input)="effacerResultat()"
-                autocomplete="off"
-                autocapitalize="off"
-                autocorrect="off"
-                spellcheck="false"
-                enterkeyhint="send"
-                aria-describedby="scan-erreur-saisie"
-                [attr.aria-invalid]="erreurSaisie() ? true : null"
-                data-testid="scan-champ-jeton"
-              />
-              @if (erreurSaisie(); as message) {
-                <p
-                  id="scan-erreur-saisie"
-                  class="erreur"
-                  role="alert"
-                  data-testid="scan-erreur-saisie"
-                >
-                  {{ message }}
-                </p>
-              }
-            </div>
-            <button type="submit" class="bouton" data-testid="scan-bouton-enregistrer">
-              Enregistrer le passage
-            </button>
-          </form>
         }
+
+        <app-camera-scan (jetonLu)="scannerJeton($event)" />
+
+        <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="enregistrer()" novalidate>
+          <div class="champ">
+            <label for="scan-jeton">Jeton du coureur</label>
+            <input
+              #champJeton
+              id="scan-jeton"
+              type="text"
+              formControlName="jeton"
+              (input)="effacerResultat()"
+              autocomplete="off"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+              enterkeyhint="send"
+              aria-describedby="scan-erreur-saisie"
+              [attr.aria-invalid]="erreurSaisie() ? true : null"
+              data-testid="scan-champ-jeton"
+            />
+            @if (erreurSaisie(); as message) {
+              <p
+                id="scan-erreur-saisie"
+                class="erreur"
+                role="alert"
+                data-testid="scan-erreur-saisie"
+              >
+                {{ message }}
+              </p>
+            }
+          </div>
+          <button type="submit" class="bouton" data-testid="scan-bouton-enregistrer">
+            Enregistrer le passage
+          </button>
+        </form>
       }
     } @else {
       <p class="message--info" data-testid="scan-message-etat">

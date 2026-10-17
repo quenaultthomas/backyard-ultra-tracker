@@ -24,13 +24,14 @@ Toute la suite tourne sur la stack lancée avec `docker-compose.e2e.yml` (profil
 
 - `chromium` : tous les tests, en parallèle, sauf les fichiers `*.horloge.spec.ts` et `*.camera.spec.ts`. Aucun ne doit avancer l'horloge. La caméra y est simulée par script (`tests/aide-camera.ts`, canevas `captureStream` + QR généré par la dépendance `qrcode`).
 - `camera` : les fichiers `*.camera.spec.ts` (4.5 CA13), Chromium lancé avec la caméra factice (`--use-fake-device-for-media-stream`, `--use-fake-ui-for-media-stream`) et la permission `camera` : vraie chaîne de capture, sans simulation de script.
-- `horloge` : les fichiers `*.horloge.spec.ts`, qui avancent l'horloge applicative (`aide-horloge.ts`). Le décalage étant **global à toute l'application**, ce projet s'exécute après `chromium`, avec un seul worker et des fichiers en mode `serial` ; une fixture automatique remet l'horloge à zéro avant et après chaque test (échec « horloge non réinitialisée : tests concurrents ? » sinon). Ne jamais lancer deux suites en même temps sur la même stack.
+- `pwa` : les fichiers `*.pwa.spec.ts` (5.2, application installable), seuls à tourner avec le service worker actif (`serviceWorkers: 'allow'`), un seul worker, après `chromium` et `camera`. Tous les autres projets bloquent le service worker (`serviceWorkers: 'block'`). Un test `pwa` utilise un contexte neuf (cache vide) et coupe le réseau par `context.setOffline`. Une session CDP ouverte neutralise `setOffline` : la détacher avant.
+- `horloge` : les fichiers `*.horloge.spec.ts`, qui avancent l'horloge applicative (`aide-horloge.ts`). Le décalage étant **global à toute l'application**, ce projet s'exécute après `chromium`, `camera` et `pwa`, avec un seul worker et des fichiers en mode `serial` ; une fixture automatique remet l'horloge à zéro avant et après chaque test (échec « horloge non réinitialisée : tests concurrents ? » sinon). Ne jamais lancer deux suites en même temps sur la même stack.
 
-`npm test` lance `chromium` et `camera` (sans le scénario « base neuve », voir ci-dessous) puis `horloge --workers=1`. Pour un seul projet : `npx playwright test --project=chromium` ou `npx playwright test --project=horloge --no-deps --workers=1`.
+`npm test` lance `chromium`, `camera` et `pwa` (sans le scénario « base neuve », voir ci-dessous) puis `horloge --workers=1`. Pour un seul projet : `npx playwright test --project=chromium`, `npx playwright test --project=pwa --no-deps` ou `npx playwright test --project=horloge --no-deps --workers=1`.
 
 ## En CI
 
-Le job `e2e-tests` de `.github/workflows/ci.yml` répartit la suite sur 4 runners, chacun avec sa propre stack : 3 shards (`--shard=i/3`) des projets `chromium` et `camera`, et un job `horloge` (1 worker). Le job `e2e` agrège le résultat. Équivaut à `npm test`, en parallèle.
+Le job `e2e-tests` de `.github/workflows/ci.yml` répartit la suite sur 5 runners, chacun avec sa propre stack : 3 shards (`--shard=i/3`) des projets `chromium` et `camera`, un job `pwa` (1 worker) et un job `horloge` (1 worker). Le job `e2e` agrège le résultat. Équivaut à `npm test`, en parallèle.
 
 ## Base neuve
 

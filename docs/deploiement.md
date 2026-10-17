@@ -191,6 +191,10 @@ Les sessions de connexion sont conservées en mémoire par `api` (expiration apr
 
 Les compteurs d'échecs de connexion et les blocages temporaires sont aussi en mémoire : un redémarrage de `api` les remet à zéro (c'est aussi le moyen de débloquer un pseudo avant la fin du délai). L'application est prévue pour une seule instance de `api`.
 
+### Après une mise à jour : application installée
+
+L'application est installable et garde sa coque en cache (service worker, incrément 5.2). Après un déploiement, chaque appareil télécharge la nouvelle version en arrière-plan : elle s'applique au prochain lancement complet de l'application, ou tout de suite par le bandeau « Une nouvelle version de l'application est disponible. » > « Mettre à jour ». Elle ne s'applique jamais toute seule, et les scans en attente sont conservés. Aucune purge de cache n'est à demander aux bénévoles. Le service worker exige HTTPS (sauf `localhost`) : en production, l'application doit être servie par le domaine (`DOMAINE`), jamais par l'adresse IP en HTTP.
+
 ## Sauvegarde
 
 Sauvegarde de la base au format personnalisé de `pg_dump`, lancée dans le conteneur `base` (l'utilisateur et la base sont lus depuis le conteneur, pas depuis l'hôte) :

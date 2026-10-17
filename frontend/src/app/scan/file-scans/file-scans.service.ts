@@ -7,6 +7,7 @@ import { RefusAccesService } from '../../comptes/refus-acces.service';
 import { estBenevole } from '../../comptes/roles';
 import { SessionService } from '../../comptes/session.service';
 import { CsrfService } from '../../partage/csrf.service';
+import { ReseauService } from '../../partage/reseau.service';
 import { BenevoleApiService } from '../benevole-api.service';
 import { PassageReponse } from '../passage';
 import { RefusScan } from '../refus-scan';
@@ -79,12 +80,11 @@ export class FileScansService {
   private readonly scansAVerifier = signal<ScanAVerifier[]>([]);
   /** Entrées créées dont l'écriture locale n'est pas terminée : pas encore comptées. */
   private readonly nonEcrits = signal<ReadonlySet<string>>(new Set());
-  private readonly enLigne = signal(navigator.onLine);
   private readonly pause = signal<Pause | null>(null);
   private readonly finEnvoi = signal<FinEnvoi | null>(null);
   private readonly evenements = new Subject<EvenementScan>();
 
-  readonly horsLigne = computed(() => !this.enLigne());
+  readonly horsLigne = inject(ReseauService).horsLigne;
   readonly stockagePersistant = this.stockage.persistant;
   /** Bilan de la file quand elle vient de se vider après une attente. */
   readonly scansEnvoyes = this.finEnvoi.asReadonly();
@@ -119,11 +119,7 @@ export class FileScansService {
 
   constructor() {
     const fenetre = this.document.defaultView;
-    fenetre?.addEventListener('online', () => {
-      this.enLigne.set(true);
-      this.relancer();
-    });
-    fenetre?.addEventListener('offline', () => this.enLigne.set(false));
+    fenetre?.addEventListener('online', () => this.relancer());
     this.document.addEventListener('visibilitychange', () => {
       if (this.document.visibilityState === 'visible') {
         this.relancer();
@@ -205,6 +201,10 @@ export class FileScansService {
   }
 
   private changerDeCompte(compteId: string | null): void {
+    if (compteId === this.compteId) {
+      // Même Compte relu (revalidation au retour du réseau) : la file et son bilan continuent.
+      return;
+    }
     clearTimeout(this.minuterie);
     this.compteId = compteId;
     this.scans.set([]);
@@ -296,6 +296,8 @@ export class FileScansService {
       );
     this.scansAVerifier.set(miens.filter(estAVerifier));
     this.scans.set(aEnvoyer);
+    // Une entrée d'avant le rechargement (ou d'un autre onglet) était en attente : le bilan sera annoncé.
+    this.attenteConstatee ||= aEnvoyer.some((scan) => !estDeCetteSessionDePage(scan));
     return aEnvoyer[0] ?? null;
   }
 
@@ -400,6 +402,10 @@ export class FileScansService {
       return;
     }
     this.pause.set({ cause: 'SESSION_EXPIREE', enAttente: this.scans().length });
+    if (this.session.etat() === 'ANONYME') {
+      // Session déjà constatée expirée (revalidation au retour du réseau) : la redirection est faite.
+      return;
+    }
     this.redirection = setTimeout(
       () => this.refusAcces.rediriger(erreur, ecran),
       DELAI_AVANT_RECONNEXION_MILLISECONDES,

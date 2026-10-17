@@ -12,6 +12,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { CsrfService } from '../../partage/csrf.service';
+import { ReseauService } from '../../partage/reseau.service';
 import {
   ErreursFormulaireCompte,
   ErreursSpecifiques,
@@ -49,6 +50,8 @@ export class Connexion implements OnInit {
     motDePasse: ['', Validators.required],
   });
 
+  /** Le formulaire reste utilisable hors ligne : l'envoi échouera avec le message existant. */
+  protected readonly horsLigne = inject(ReseauService).horsLigne;
   protected readonly envoiEnCours = signal(false);
   protected readonly soumis = signal(false);
   protected readonly erreursServeur = signal<ErreursFormulaireCompte>({});

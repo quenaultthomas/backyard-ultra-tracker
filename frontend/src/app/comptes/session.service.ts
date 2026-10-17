@@ -1,8 +1,11 @@
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { Observable, catchError, concatMap, filter, map, of, take, tap, timeout } from 'rxjs';
 
 import { CsrfService } from '../partage/csrf.service';
+import { CLE_DERNIER_BENEVOLE, MemoireLocaleService } from '../partage/memoire-locale.service';
+import { estSansReponseDuServeur } from '../partage/reseau.service';
 import {
   ChangerMotDePasseRequete,
   CompteReponse,
@@ -15,25 +18,33 @@ import { estAdminMaster, estAdministrateur, estBenevole, estCoureur } from './ro
 /** `INCONNU` tant que `GET /api/comptes/moi` n'a pas répondu. */
 export type EtatSession = 'INCONNU' | 'ANONYME' | 'CONNECTE';
 
+/** Compte connecté tel que l'application l'utilise (sans `creeLe`, absent d'un Compte mémorisé). */
+export type CompteConnecte = Pick<CompteReponse, 'id' | 'pseudo' | 'role'>;
+
 /** Fin de session volontaire, annoncée une fois par l'écran de connexion. */
 export type FinSession = 'DECONNEXION' | 'SUPPRESSION_COMPTE';
 
 const DELAI_MAX_RESTAURATION_MS = 5000;
 
 /**
- * État connecté de l'application, gardé en mémoire uniquement : la seule source de vérité est
- * la session serveur, relue par `GET /api/comptes/moi` à chaque chargement.
+ * État connecté de l'application : la seule source de vérité est la session serveur, relue par
+ * `GET /api/comptes/moi` à chaque chargement. Seul un Compte bénévole est mémorisé sur l'appareil,
+ * pour rouvrir l'espace bénévole quand le serveur ne répond pas (`horsLigne`).
  */
 @Injectable({ providedIn: 'root' })
 export class SessionService {
   private readonly comptesApi = inject(ComptesApiService);
   private readonly csrf = inject(CsrfService);
+  private readonly memoire = inject(MemoireLocaleService);
 
   /** `undefined` : état inconnu ; `null` : anonyme. */
-  private readonly compteCourant = signal<CompteReponse | null | undefined>(undefined);
+  private readonly compteCourant = signal<CompteConnecte | null | undefined>(undefined);
+  private readonly compteMemorise = signal(false);
   private readonly finSessionRecente = signal<FinSession | null>(null);
 
   readonly compte = this.compteCourant.asReadonly();
+  /** Vrai quand le Compte vient de l'appareil, le serveur n'ayant pas répondu : à revalider. */
+  readonly horsLigne = this.compteMemorise.asReadonly();
   readonly etat = computed<EtatSession>(() => {
     const compte = this.compteCourant();
     if (compte === undefined) {
@@ -60,24 +71,27 @@ export class SessionService {
   });
   private readonly compte$ = toObservable(this.compteCourant);
 
-  /** Relit le Compte courant ; toute erreur (401, réseau, 5xx, délai) vaut état anonyme. */
+  /**
+   * Relit le Compte courant. Sans réponse du serveur, le bénévole mémorisé reste connecté hors
+   * ligne ; toute autre erreur vaut état anonyme (un 401 efface la mémoire).
+   */
   restaurer(): Observable<void> {
     return this.comptesApi.lireCompteCourant().pipe(
       timeout(DELAI_MAX_RESTAURATION_MS),
-      catchError(() => of(null)),
-      map((compte) => this.compteCourant.set(compte)),
+      map((compte) => this.etablir(compte)),
+      catchError((erreur: unknown) => of(this.constaterEchec(erreur))),
     );
   }
 
   /** Émet une fois l'état connu : le Compte connecté, ou `null` si anonyme. */
-  compteUneFoisConnu(): Observable<CompteReponse | null> {
+  compteUneFoisConnu(): Observable<CompteConnecte | null> {
     // Lecture synchrone du signal : `toObservable` émet via un effet, donc en retard d'une mise à jour.
     const compte = this.compteCourant();
     if (compte !== undefined) {
       return of(compte);
     }
     return this.compte$.pipe(
-      filter((compte): compte is CompteReponse | null => compte !== undefined),
+      filter((compte): compte is CompteConnecte | null => compte !== undefined),
       take(1),
     );
   }
@@ -89,14 +103,14 @@ export class SessionService {
 
   /** La session serveur n'existe plus (401) : l'état local devient anonyme. */
   oublierSessionExpiree(): void {
-    this.compteCourant.set(null);
+    this.oublier();
   }
 
   /** Le jeton CSRF n'est pas garanti après connexion ou déconnexion : on en redemande un. */
   connecter(requete: ConnexionRequete): Observable<CompteReponse> {
     return this.comptesApi.connecter(requete).pipe(
       concatMap((compte) => this.csrf.renouvelerJeton().pipe(map(() => compte))),
-      tap((compte) => this.compteCourant.set(compte)),
+      tap((compte) => this.etablir(compte)),
     );
   }
 
@@ -134,9 +148,53 @@ export class SessionService {
       source.pipe(
         concatMap(() => this.csrf.renouvelerJeton()),
         tap(() => {
-          this.compteCourant.set(null);
+          this.oublier();
           this.finSessionRecente.set(fin);
         }),
       );
+  }
+
+  /** Compte confirmé par le serveur : un bénévole est mémorisé, tout autre rôle efface la mémoire. */
+  private etablir(compte: CompteConnecte): void {
+    if (estBenevole(compte.role)) {
+      const memorise = this.lireBenevoleMemorise();
+      if (memorise?.id !== compte.id) {
+        this.memoire.oublier();
+      }
+      this.memoire.ecrire(CLE_DERNIER_BENEVOLE, {
+        id: compte.id,
+        pseudo: compte.pseudo,
+        role: compte.role,
+      });
+    } else {
+      this.memoire.oublier();
+    }
+    this.compteMemorise.set(false);
+    this.compteCourant.set(compte);
+  }
+
+  private constaterEchec(erreur: unknown): void {
+    if (erreur instanceof HttpErrorResponse && erreur.status === HttpStatusCode.Unauthorized) {
+      this.oublier();
+      return;
+    }
+    const memorise = estSansReponseDuServeur(erreur) ? this.lireBenevoleMemorise() : null;
+    this.compteMemorise.set(memorise !== null);
+    this.compteCourant.set(memorise);
+  }
+
+  private oublier(): void {
+    this.memoire.oublier();
+    this.compteMemorise.set(false);
+    this.compteCourant.set(null);
+  }
+
+  private lireBenevoleMemorise(): CompteConnecte | null {
+    const valeur = this.memoire.lire(CLE_DERNIER_BENEVOLE) as Partial<CompteConnecte> | null;
+    return typeof valeur?.id === 'string' &&
+      typeof valeur.pseudo === 'string' &&
+      valeur.role === 'BENEVOLE'
+      ? { id: valeur.id, pseudo: valeur.pseudo, role: valeur.role }
+      : null;
   }
 }

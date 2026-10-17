@@ -28,6 +28,7 @@
     <!-- Dossard imprimable (4.5b) : feuilles réelles de l'écran et du QR code, sans copie. -->
     <link rel="stylesheet" href="../frontend/src/app/inscriptions/qr-code/qr-code.css" />
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/dossard/ecran-dossard.css" />
+    <link rel="stylesheet" href="../frontend/src/app/mise-a-jour/mise-a-jour.css" />
     <style>
       /* Mise en page de l'aperçu seulement : jamais embarquée dans l'application. */
       .apercu {
@@ -443,6 +444,23 @@
             </div>
             <button type="submit" class="bouton">Enregistrer le passage</button>
           </form>
+        </div>
+      </section>
+
+      <section aria-labelledby="titre-installable">
+        <h2 id="titre-installable">Application installable</h2>
+        <div class="mise-a-jour message--info" role="status" data-composant="mise-a-jour-bandeau">
+          <p class="message-pictogramme pictogramme-mise-a-jour">Une nouvelle version de l'application est disponible.</p>
+          <div class="mise-a-jour__actions">
+            <button type="button" class="bouton">Mettre à jour</button>
+            <button type="button" class="bouton bouton--secondaire">Plus tard</button>
+          </div>
+        </div>
+        <div class="carte" style="max-width: 30rem">
+          <p class="message--info message-pictogramme pictogramme-hors-ligne" data-composant="donnees-hors-ligne">Hors ligne : liste des courses enregistrée le 17/10 à 09:12. Le statut de la course a pu changer.</p>
+          <p class="message--info message-pictogramme pictogramme-hors-ligne" data-composant="connexion-hors-ligne">Vous êtes hors ligne. Connectez-vous dès que le réseau est revenu.</p>
+          <!-- Icône de l'application (section 12) : illustration de la documentation, pas un décor de l'application. -->
+          <img src="../frontend/public/icones/icone-512.png" alt="Icône de l'application" width="96" height="96" data-composant="icone-application" />
         </div>
       </section>
 

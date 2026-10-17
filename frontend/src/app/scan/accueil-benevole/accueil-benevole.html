@@ -25,7 +25,11 @@
       <p class="message--erreur" role="alert" data-testid="accueil-benevole-erreur">
         Impossible de charger vos courses. Réessayez plus tard.
       </p>
-    } @else if (courses(); as liste) {
+    } @else if (courses(); as resultat) {
+      @let liste = resultat.courses;
+      @if (resultat.enregistreLe; as enregistreLe) {
+        <app-donnees-hors-ligne [enregistreLe]="enregistreLe" />
+      }
       @if (liste.length === 0) {
         <div class="etat-vide">
           <div class="etat-vide__visuel visuel-substitution" aria-hidden="true"></div>
@@ -68,7 +72,11 @@
                 data-testid="benevole-course-statut"
                 >{{ libellesStatut[course.statut] }}</span
               >
-              @if (course.statut === 'EN_COURS') {
+              <!-- Hors ligne, le statut a pu changer : seule une Course terminée n'est plus proposée. -->
+              @if (
+                course.statut === 'EN_COURS' ||
+                (resultat.enregistreLe && course.statut === 'EN_PREPARATION')
+              ) {
                 <a
                   class="bouton"
                   [routerLink]="['/benevole/courses', course.id, 'scan']"

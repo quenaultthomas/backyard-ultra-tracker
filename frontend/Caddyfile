@@ -58,9 +58,21 @@
 		# Fichiers empreintes par le build (scripts, styles, police ; svg prévu par la charte) : contenu immuable.
 		@ressourcesVersionnees path_regexp \-[A-Z0-9]{8}\.(js|css|woff2|svg)$
 		header @ressourcesVersionnees Cache-Control "public, max-age=31536000, immutable"
+		# Tout le reste (index.html, manifeste, service worker, icônes) est revalidé à chaque chargement.
 		header ?Cache-Control no-cache
-		try_files {path} /index.html
-		file_server
+
+		# Fichiers de l'application installable (5.2) : servis sans repli, un fichier absent répond 404
+		# (et non index.html en 200 text/html, qui casserait le service worker ou l'installation).
+		@fichiersPwa path /manifest.webmanifest /ngsw.json /ngsw-worker.js /safety-worker.js /worker-basic.min.js /icones/* /favicon.*
+		handle @fichiersPwa {
+			header /manifest.webmanifest Content-Type application/manifest+json
+			file_server
+		}
+
+		handle {
+			try_files {path} /index.html
+			file_server
+		}
 	}
 }
 

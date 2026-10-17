@@ -66,6 +66,9 @@ jobs:
           - nom: shard 3/3
             artefact: shard-3
             commande: npx playwright test --project=chromium --project=camera --grep-invert "base neuve" --shard=3/3
+          - nom: pwa
+            artefact: pwa
+            commande: npx playwright test --project=pwa --no-deps --workers=1
           - nom: horloge
             artefact: horloge
             commande: npx playwright test --project=horloge --no-deps --workers=1

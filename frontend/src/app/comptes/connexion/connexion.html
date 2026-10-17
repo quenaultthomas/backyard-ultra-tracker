@@ -2,6 +2,16 @@
   <section class="carte" aria-labelledby="titre-connexion">
     <h1 id="titre-connexion" class="titre" data-testid="titre-connexion">Se connecter</h1>
 
+    @if (horsLigne()) {
+      <p
+        class="message--info message-pictogramme pictogramme-hors-ligne"
+        role="status"
+        data-testid="connexion-hors-ligne"
+      >
+        Vous êtes hors ligne. Connectez-vous dès que le réseau est revenu.
+      </p>
+    }
+
     @switch (finSessionRecente()) {
       @case ('DECONNEXION') {
         <p class="message--info" role="status" data-testid="message-deconnexion">

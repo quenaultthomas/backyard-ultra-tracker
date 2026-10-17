@@ -15,8 +15,8 @@ import {
   PASTILLES_STATUT_COURSE,
 } from '../../administration/courses/course';
 import { RefusAccesService } from '../../comptes/refus-acces.service';
-import { BenevoleApiService } from '../benevole-api.service';
-import { CourseBenevoleReponse } from '../course-benevole';
+import { CoursesBenevoleService, CoursesDuBenevole } from '../courses-benevole.service';
+import { DonneesHorsLigne } from '../donnees-hors-ligne/donnees-hors-ligne';
 import { FileScansService } from '../file-scans/file-scans.service';
 
 const ECRAN_ACCUEIL_BENEVOLE = '/benevole';
@@ -27,13 +27,13 @@ const ECRAN_ACCUEIL_BENEVOLE = '/benevole';
  */
 @Component({
   selector: 'app-accueil-benevole',
-  imports: [RouterLink],
+  imports: [RouterLink, DonneesHorsLigne],
   templateUrl: './accueil-benevole.html',
   styleUrls: ['../../partage/page-carte.css', './accueil-benevole.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccueilBenevole implements OnInit {
-  private readonly benevoleApi = inject(BenevoleApiService);
+  private readonly coursesBenevole = inject(CoursesBenevoleService);
   private readonly refusAcces = inject(RefusAccesService);
   private readonly destroyRef = inject(DestroyRef);
   /** Totaux du Compte connecté, relus dans la base locale à chaque cycle d'envoi. */
@@ -43,12 +43,12 @@ export class AccueilBenevole implements OnInit {
   protected readonly pastillesStatut = PASTILLES_STATUT_COURSE;
   protected readonly formaterDate = formaterDateCourse;
   /** `null` tant que la liste n'est pas chargée. */
-  protected readonly courses = signal<CourseBenevoleReponse[] | null>(null);
+  protected readonly courses = signal<CoursesDuBenevole | null>(null);
   protected readonly erreurChargement = signal(false);
 
   ngOnInit(): void {
-    this.benevoleApi
-      .listerMesCourses()
+    this.coursesBenevole
+      .suivre()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (courses) => this.courses.set(courses),

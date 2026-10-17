@@ -2,13 +2,15 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 import { Entete } from './entete/entete';
+import { MiseAJour } from './mise-a-jour/mise-a-jour';
 import { VERSION } from './version';
 
 @Component({
   selector: 'app-root',
-  imports: [Entete, RouterOutlet],
+  imports: [Entete, MiseAJour, RouterOutlet],
   template: `
     <app-entete />
+    <app-mise-a-jour />
     <router-outlet />
     <footer class="version">v{{ version }}</footer>
   `,

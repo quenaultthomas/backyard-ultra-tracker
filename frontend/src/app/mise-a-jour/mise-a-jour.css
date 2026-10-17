@@ -1,0 +1,26 @@
+/*
+ * Bandeau de mise à jour (5.2) : dans le flux sous l'en-tête, sans le recouvrir ; boutons de 44 px
+ * côte à côte puis empilés sur téléphone ; mots coupés, aucune animation.
+ */
+.mise-a-jour {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  margin: var(--espace-4) var(--espace-4) 0;
+  font-size: var(--taille-moyenne);
+  overflow-wrap: anywhere;
+}
+
+.mise-a-jour p {
+  margin: 0;
+}
+
+.mise-a-jour__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-3);
+}
+
+.mise-a-jour__actions > .bouton {
+  flex: 1 1 12rem;
+}
