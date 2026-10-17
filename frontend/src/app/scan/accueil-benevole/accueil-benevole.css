@@ -5,3 +5,9 @@
 .statut {
   align-self: flex-start;
 }
+
+/* Totaux de scans (5.1b) : en attente et à vérifier, toutes Courses confondues ; mots coupés. */
+.total {
+  font-size: var(--taille-moyenne);
+  overflow-wrap: anywhere;
+}

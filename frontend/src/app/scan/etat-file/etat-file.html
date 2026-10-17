@@ -1,6 +1,6 @@
 @if (!file.stockagePersistant()) {
   <p
-    class="message--avertissement avertissement pictogramme-attente"
+    class="message--avertissement message-pictogramme pictogramme-attente"
     role="alert"
     data-testid="scan-avertissement-stockage"
   >
@@ -12,7 +12,7 @@
 }
 @if (file.horsLigne()) {
   <p
-    class="message--avertissement avertissement pictogramme-hors-ligne"
+    class="message--avertissement message-pictogramme pictogramme-hors-ligne"
     data-testid="scan-hors-ligne"
   >
     Hors ligne : les scans sont gardés sur cet appareil.
@@ -36,5 +36,15 @@
   </div>
 }
 @if (messageEnvoyes(); as message) {
-  <p class="message--succes" role="status" data-testid="scan-message-envoyes">{{ message }}</p>
+  <p
+    [class]="
+      file.scansEnvoyes()?.envoyes
+        ? 'message--succes'
+        : 'message--avertissement message-pictogramme pictogramme-a-verifier'
+    "
+    role="status"
+    data-testid="scan-message-envoyes"
+  >
+    {{ message }}
+  </p>
 }

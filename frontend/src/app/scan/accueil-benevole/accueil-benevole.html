@@ -3,6 +3,24 @@
     <h1 id="accueil-benevole-titre" class="titre" data-testid="accueil-benevole-titre">
       Espace bénévole
     </h1>
+    @if (file.totalEnAttente(); as nombre) {
+      <p
+        class="message--avertissement message-pictogramme pictogramme-attente total"
+        role="status"
+        data-testid="benevole-en-attente"
+      >
+        {{ nombre }} {{ nombre > 1 ? 'scans' : 'scan' }} en attente
+      </p>
+    }
+    @if (file.totalAVerifier(); as nombre) {
+      <p
+        class="message--avertissement message-pictogramme pictogramme-a-verifier total"
+        role="status"
+        data-testid="benevole-a-verifier"
+      >
+        {{ nombre }} à vérifier
+      </p>
+    }
     @if (erreurChargement()) {
       <p class="message--erreur" role="alert" data-testid="accueil-benevole-erreur">
         Impossible de charger vos courses. Réessayez plus tard.

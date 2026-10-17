@@ -17,10 +17,14 @@ import {
 import { RefusAccesService } from '../../comptes/refus-acces.service';
 import { BenevoleApiService } from '../benevole-api.service';
 import { CourseBenevoleReponse } from '../course-benevole';
+import { FileScansService } from '../file-scans/file-scans.service';
 
 const ECRAN_ACCUEIL_BENEVOLE = '/benevole';
 
-/** Accueil d'un bénévole : Courses auxquelles il est affecté, action « Scanner » sur celles en cours. */
+/**
+ * Accueil d'un bénévole : totaux de scans en attente et à vérifier, Courses auxquelles il est
+ * affecté, action « Scanner » sur celles en cours.
+ */
 @Component({
   selector: 'app-accueil-benevole',
   imports: [RouterLink],
@@ -32,6 +36,8 @@ export class AccueilBenevole implements OnInit {
   private readonly benevoleApi = inject(BenevoleApiService);
   private readonly refusAcces = inject(RefusAccesService);
   private readonly destroyRef = inject(DestroyRef);
+  /** Totaux du Compte connecté, relus dans la base locale à chaque cycle d'envoi. */
+  protected readonly file = inject(FileScansService);
 
   protected readonly libellesStatut = LIBELLES_STATUT_COURSE;
   protected readonly pastillesStatut = PASTILLES_STATUT_COURSE;

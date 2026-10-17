@@ -30,3 +30,13 @@ export async function seDeconnecterParLeMenu(page: Page): Promise<void> {
   await ouvrirMenuCompte(page);
   await page.getByTestId('bouton-deconnexion').click();
 }
+
+/**
+ * Ouvre le menu puis active « Se déconnecter » quand le Compte a des scans en attente (5.1b RG4) : attend la
+ * confirmation, puis active « Me déconnecter quand même ».
+ */
+export async function seDeconnecterMalgreLesScansEnAttente(page: Page): Promise<void> {
+  await seDeconnecterParLeMenu(page);
+  await expect(page.getByTestId('entete-deconnexion-confirmation')).toBeVisible();
+  await page.getByTestId('entete-deconnexion-confirmer').click();
+}
