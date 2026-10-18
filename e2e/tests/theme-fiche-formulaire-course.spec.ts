@@ -748,8 +748,9 @@ test('CA9 - la fiche et le formulaire se parcourent au clavier dans l\'ordre du 
   expect(idsDom.length).toBeGreaterThanOrEqual(2);
   expect(idsDom).toContain(`fiche-benevole-${await idDe(page, b1)}`);
   const arrets = (await tabulerJusqua(page, 600, (a) => a.testid === 'fiche-lien-retour')).filter((a) => !a.dansEntete);
+  // 6.1 : le lien « Suivi public » suit le bouton Enregistrer.
   // 4.1 : la section « Démarrage » (course en préparation) précède les cases des bénévoles dans l'ordre du DOM.
-  expect(arrets.map((a) => a.testid)).toEqual(['fiche-bouton-demarrer', ...idsDom.map(() => 'fiche-benevole-case'), 'fiche-bouton-enregistrer', 'fiche-lien-retour']);
+  expect(arrets.map((a) => a.testid)).toEqual(['fiche-bouton-demarrer', ...idsDom.map(() => 'fiche-benevole-case'), 'fiche-bouton-enregistrer', 'fiche-lien-suivi', 'fiche-lien-retour']);
   expect(arrets.slice(1, idsDom.length + 1).map((a) => a.id)).toEqual(idsDom);
   for (const a of arrets) {
     expect(a.outline, a.testid ?? '').toBe(`solid 3px ${FOCUS}`);
@@ -757,7 +758,7 @@ test('CA9 - la fiche et le formulaire se parcourent au clavier dans l\'ordre du 
   }
 
   const titres = await page.locator('main').evaluate((m) => Array.from(m.querySelectorAll('h1, h2, h3')).map((h) => `${h.tagName} ${h.textContent!.trim()}`));
-  expect(titres).toEqual([`H1 ${c.nom}`, 'H2 Démarrage', 'H2 Bénévoles', 'H2 Inscrits']);
+  expect(titres).toEqual([`H1 ${c.nom}`, 'H2 Démarrage', 'H2 Bénévoles', 'H2 Inscrits', 'H2 Suivi public']);
 
   // Sans bénévole : « Gérer les bénévoles » remplace les cases.
   await page.route('**/api/administration/benevoles', (route) =>
@@ -766,7 +767,7 @@ test('CA9 - la fiche et le formulaire se parcourent au clavier dans l\'ordre du 
   const nue = await creerCourse(playwright);
   await ouvrirFiche(page, nue.id);
   const sans = (await tabulerJusqua(page, 60, (a) => a.testid === 'fiche-lien-retour')).filter((a) => !a.dansEntete);
-  expect(sans.map((a) => a.testid)).toEqual(['fiche-bouton-demarrer', 'fiche-lien-benevoles', 'fiche-bouton-enregistrer', 'fiche-lien-retour']);
+  expect(sans.map((a) => a.testid)).toEqual(['fiche-bouton-demarrer', 'fiche-lien-benevoles', 'fiche-bouton-enregistrer', 'fiche-lien-suivi', 'fiche-lien-retour']);
   await page.unroute('**/api/administration/benevoles');
 
   // Formulaire en modification : champs puis boutons.

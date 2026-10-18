@@ -24,7 +24,10 @@ import {
   MESSAGE_COURSE_INTROUVABLE,
 } from '../erreurs-course';
 import { LIBELLES_MOTIF_ABANDON, PASTILLES_BOUCLAGE } from '../pilotage-course';
-import { formaterCompteARebours, formaterDureeEcoulee } from './formats-duree';
+import {
+  formaterCompteARebours,
+  formaterDureeEcoulee,
+} from '../../../partage/chronometrage/formats-duree';
 import { AbandonCoureur } from './abandon-coureur/abandon-coureur';
 import { BadgeCorrige } from './badge-corrige/badge-corrige';
 import { ReintegrationCoureur } from './reintegration-coureur/reintegration-coureur';
@@ -46,6 +49,7 @@ import { RafraichissementPilotage } from './rafraichissement-pilotage';
     '../../../comptes/formulaire-compte.css',
     '../entete-course.css',
     '../fiche/inscrits-course/inscrits-course.css',
+    '../../../partage/chronometrage/chronometrage.css',
     './ecran-pilotage.css',
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,0 +1,98 @@
+<main class="page page--cartes">
+  <section class="carte" aria-labelledby="suivi-titre">
+    @if (introuvable()) {
+      <h1 id="suivi-titre" class="titre">Suivi de la course</h1>
+      <p class="message--erreur" role="alert" data-testid="suivi-introuvable">
+        Cette course n'existe pas.
+      </p>
+    } @else if (suivi(); as s) {
+      <header class="fiche-entete">
+        <div class="fiche-visuel" data-testid="suivi-logo">
+          @if (logoAffiche(); as url) {
+            <img
+              class="logo"
+              [src]="url"
+              [alt]="'Logo de ' + s.nom"
+              (error)="signalerLogoEnErreur(url)"
+            />
+          } @else {
+            <div class="visuel-substitution" aria-hidden="true"></div>
+          }
+        </div>
+        <div class="entete-course__nom">
+          <h1 id="suivi-titre" class="titre" data-testid="suivi-nom">{{ s.nom }}</h1>
+          <span [class]="pastillesStatut[s.statut]" data-testid="suivi-statut">{{
+            libellesStatut[s.statut]
+          }}</span>
+        </div>
+      </header>
+
+      @if (rafraichissement.echec()) {
+        <p
+          class="message--avertissement"
+          role="alert"
+          data-testid="suivi-avertissement-actualisation"
+        >
+          Actualisation impossible, nouvelle tentative…
+        </p>
+      }
+
+      @if (s.statut === 'TERMINEE') {
+        <p class="message--info" data-testid="suivi-message-terminee">La course est terminée.</p>
+      } @else if (s.statut === 'EN_PREPARATION') {
+        <p class="message--info" data-testid="suivi-message-non-demarree">
+          La course n'a pas encore démarré.
+        </p>
+      } @else if (s.boucleCourante === null) {
+        <p class="message--info" data-testid="suivi-message-sans-depart">
+          Le chronométrage n'est pas disponible.
+        </p>
+      } @else {
+        <section class="chronometrage" aria-label="Chronométrage">
+          <p class="chronometrage__boucle" data-testid="suivi-boucle">
+            Boucle {{ s.boucleCourante }} sur {{ s.nombreMaxBoucles }}
+          </p>
+          <dl class="chronometrage__durees">
+            <div>
+              <dt data-testid="suivi-libelle-compte-a-rebours">
+                {{ s.derniereBoucle ? 'Fin de la dernière boucle dans' : 'Prochain départ dans' }}
+              </dt>
+              <dd class="chronometrage__valeur" data-testid="suivi-compte-a-rebours">
+                {{ compteARebours() }}
+              </dd>
+            </div>
+            <div>
+              <dt>Durée écoulée</dt>
+              <dd class="chronometrage__valeur" data-testid="suivi-duree-ecoulee">
+                {{ dureeEcoulee() }}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        @if (s.boucleMaxTerminee) {
+          <p class="message--avertissement" data-testid="suivi-message-boucle-max-terminee">
+            Le temps de la dernière boucle est écoulé. La fin de course sera constatée
+            automatiquement.
+          </p>
+        } @else if (s.derniereBoucle) {
+          <p class="message--info" data-testid="suivi-message-derniere-boucle">
+            Dernière boucle autorisée.
+          </p>
+        }
+      }
+    } @else if (rafraichissement.echec()) {
+      <h1 id="suivi-titre" class="titre">Suivi de la course</h1>
+      <p class="message--erreur" role="alert" data-testid="suivi-erreur">
+        {{ messageIndisponible }}
+      </p>
+    } @else {
+      <h1 id="suivi-titre" class="titre">Suivi de la course</h1>
+      <p class="message" role="status" data-testid="suivi-chargement">Chargement du suivi…</p>
+    }
+
+    <p class="masque" role="status" data-testid="suivi-annonce-boucle">
+      {{ rafraichissement.annonce() }}
+    </p>
+  </section>
+</main>

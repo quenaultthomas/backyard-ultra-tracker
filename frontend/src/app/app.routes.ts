@@ -115,6 +115,11 @@ export const routes: Routes = [
     title: 'Mes inscriptions - Backyard Ultra Tracker',
   },
   {
+    path: 'courses/:id/suivi',
+    loadComponent: () => import('./suivi/suivi-course/suivi-course').then((m) => m.SuiviCourse),
+    title: 'Suivi de la course - Backyard Ultra Tracker',
+  },
+  {
     path: 'acces-refuse',
     loadComponent: () => import('./comptes/acces-refuse/acces-refuse').then((m) => m.AccesRefuse),
     title: 'Accès refusé - Backyard Ultra Tracker',
