@@ -18,8 +18,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Lecture publique du logo d'une Course (seule route publique sous /api/courses, ouverte par la politique de
- * sécurité). Le type servi est celui reconnu par le serveur, jamais celui déclaré à l'envoi ; le navigateur revalide
+ * Lecture publique du logo d'une Course (avec le suivi, seules lectures publiques sous /api/courses, ouvertes par
+ * la politique de sécurité). Le type servi est celui reconnu par le serveur, jamais celui déclaré à l'envoi ; le navigateur revalide
  * à chaque usage par l'ETag (304 si inchangé, traité par Spring à partir de l'ETag de la réponse).
  */
 @RestController

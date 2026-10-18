@@ -1,0 +1,5 @@
+/* Suivi public d'une Course (docs/design.md, section 11 « Suivi public ») : carte de 44rem.
+   Mode projection (jetons --taille-projection-*) : 6.3. */
+.page {
+  --carte-largeur: 44rem;
+}

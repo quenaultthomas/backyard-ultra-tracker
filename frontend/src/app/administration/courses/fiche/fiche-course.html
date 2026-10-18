@@ -157,6 +157,17 @@
       </section>
 
       <app-inscrits-course [inscrits]="inscrits()" [erreur]="erreurInscrits()" />
+
+      <section class="formulaire" aria-labelledby="titre-suivi-public">
+        <h2 id="titre-suivi-public" class="sous-titre">Suivi public</h2>
+        <a
+          class="bouton bouton--secondaire"
+          [routerLink]="['/courses', c.id, 'suivi']"
+          data-testid="fiche-lien-suivi"
+        >
+          Ouvrir le suivi public
+        </a>
+      </section>
     } @else {
       <h1 id="fiche-titre" class="titre">Fiche de la course</h1>
       <p class="message" role="status">Chargement…</p>

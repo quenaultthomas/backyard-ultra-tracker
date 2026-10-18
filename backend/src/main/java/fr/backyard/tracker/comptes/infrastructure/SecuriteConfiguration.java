@@ -61,8 +61,8 @@ public class SecuriteConfiguration {
                         // Suppression de son propre Compte : COUREUR seul (3.6 RG3).
                         .requestMatchers(HttpMethod.POST, "/api/comptes/moi/suppression")
                         .hasRole(Role.COUREUR.name())
-                        // Logo d'une Course : seule lecture publique sous /api/courses (écrans publics).
-                        .requestMatchers(HttpMethod.GET, "/api/courses/*/logo").permitAll()
+                        // Logo et suivi d'une Course : seules lectures publiques sous /api/courses (écrans publics).
+                        .requestMatchers(HttpMethod.GET, "/api/courses/*/logo", "/api/courses/*/suivi").permitAll()
                         // Horloge pilotable (4.3 RG7) : ADMIN_MASTER seul, quel que soit le profil (404 hors profil e2e).
                         .requestMatchers("/api/test/**").hasRole(Role.ADMIN_MASTER.name())
                         .requestMatchers("/api/**").authenticated()

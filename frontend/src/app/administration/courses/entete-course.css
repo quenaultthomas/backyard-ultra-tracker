@@ -1,4 +1,4 @@
-/* En-tête de Course partagé par la fiche et le pilotage (docs/design.md, sections 7 et 11). */
+/* En-tête de Course partagé par la fiche, le pilotage et le suivi public (docs/design.md, sections 7 et 11). */
 
 /* En-tête : visuel 16 / 9 à gauche du nom, qui passe dessous quand la place manque. */
 .fiche-entete {
@@ -35,4 +35,14 @@
 .fiche-entete > .titre {
   flex: 1 1 12rem;
   min-width: 0;
+}
+
+/* Nom puis pastille de statut, à droite du visuel (dessous quand la place manque). */
+.entete-course__nom {
+  flex: 1 1 12rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espace-2);
 }
