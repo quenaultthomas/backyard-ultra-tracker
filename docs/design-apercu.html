@@ -14,6 +14,8 @@
     <!-- Chronométrage partagé par le pilotage et le suivi public (6.1). -->
     <link rel="stylesheet" href="../frontend/src/app/partage/chronometrage/chronometrage.css" />
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/ecran-pilotage.css" />
+    <!-- Listes du suivi public (6.2) : bandeau vainqueur, lignes de coureur et d'abandon. -->
+    <link rel="stylesheet" href="../frontend/src/app/suivi/coureurs-suivi/coureurs-suivi.css" />
     <!-- Abandon manuel (4.11) : confirmation en ligne et panneau d'abandon, feuilles réelles. -->
     <link rel="stylesheet" href="../frontend/src/app/partage/confirmation-en-ligne.css" />
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/confirmation-pilotage.css" />
@@ -335,6 +337,33 @@
             <p class="message--erreur" data-composant="pilotage-reintegrer-erreur">Ce coureur n'est plus en abandon.</p>
           </div>
           <a href="#titre-pilotage">Retour à la fiche de la course</a>
+        </div>
+      </section>
+
+      <section aria-labelledby="titre-suivi">
+        <h2 id="titre-suivi">Suivi public</h2>
+        <div class="carte" style="max-width: 44rem">
+          <section class="vainqueurs" data-composant="suivi-vainqueurs">
+            <h3 class="sous-titre">Vainqueur</h3>
+            <ul class="lignes">
+              <li class="ligne"><span class="ligne__dossard">Dossard 1</span><span class="ligne__pseudo">Alice</span></li>
+            </ul>
+          </section>
+          <section class="section-coureurs" data-composant="suivi-coureurs-en-course">
+            <h3 class="sous-titre">Coureurs en course (2)</h3>
+            <ul class="lignes">
+              <li class="ligne"><span class="ligne__dossard">Dossard 1</span><span class="ligne__pseudo">Alice</span></li>
+              <li class="ligne"><span class="ligne__dossard">Dossard 4</span><span class="ligne__pseudo">Coureur anonyme</span></li>
+            </ul>
+          </section>
+          <section class="section-coureurs" data-composant="suivi-abandons">
+            <h3 class="sous-titre">Abandons (2)</h3>
+            <ul class="lignes">
+              <li class="ligne"><span class="ligne__dossard">Dossard 3</span><span class="ligne__pseudo">Karim</span><span class="ligne__detail">Boucle 2</span><span class="pastille-statut pastille-statut--abandon">Hors délai</span></li>
+              <li class="ligne"><span class="ligne__dossard">Dossard 2</span><span class="ligne__pseudo">Bruno</span><span class="ligne__detail">Boucle non renseignée</span><span class="ligne__detail">Motif non renseigné</span></li>
+            </ul>
+          </section>
+          <p class="message--info" data-composant="suivi-message-aucun-vainqueur">Course terminée sans vainqueur.</p>
         </div>
       </section>
 

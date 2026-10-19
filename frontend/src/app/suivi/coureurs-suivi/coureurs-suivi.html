@@ -1,0 +1,80 @@
+@let s = suivi();
+@if (s.statut === 'TERMINEE') {
+  @if (s.vainqueurs.length > 0) {
+    <section
+      class="vainqueurs"
+      aria-labelledby="suivi-titre-vainqueurs"
+      data-testid="suivi-vainqueurs"
+    >
+      <h2 id="suivi-titre-vainqueurs" class="sous-titre">
+        {{ s.vainqueurs.length > 1 ? 'Vainqueurs' : 'Vainqueur' }}
+      </h2>
+      <ul class="lignes">
+        @for (vainqueur of s.vainqueurs; track vainqueur.dossard) {
+          <li class="ligne" [attr.data-testid]="'suivi-vainqueur-' + vainqueur.dossard">
+            <span class="ligne__dossard">Dossard {{ vainqueur.dossard }}</span>
+            <span class="ligne__pseudo">{{ vainqueur.pseudo }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+  } @else {
+    <p class="message--info" data-testid="suivi-message-aucun-vainqueur">
+      Course terminée sans vainqueur.
+    </p>
+  }
+} @else {
+  <section class="section-coureurs" aria-labelledby="suivi-titre-en-course">
+    <h2 id="suivi-titre-en-course" class="sous-titre">
+      Coureurs en course (<span data-testid="suivi-nombre-en-course">{{
+        s.coureursEnCourse.length
+      }}</span
+      >)
+    </h2>
+    @if (s.coureursEnCourse.length === 0) {
+      <p class="section-coureurs__vide" data-testid="suivi-message-aucun-coureur-en-course">
+        Aucun coureur en course.
+      </p>
+    } @else {
+      <ul class="lignes">
+        @for (coureur of s.coureursEnCourse; track coureur.dossard) {
+          <li class="ligne" [attr.data-testid]="'suivi-coureur-' + coureur.dossard">
+            <span class="ligne__dossard">Dossard {{ coureur.dossard }}</span>
+            <span class="ligne__pseudo">{{ coureur.pseudo }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}
+
+<section class="section-coureurs" aria-labelledby="suivi-titre-abandons">
+  <h2 id="suivi-titre-abandons" class="sous-titre">
+    Abandons (<span data-testid="suivi-nombre-abandons">{{ s.abandons.length }}</span
+    >)
+  </h2>
+  @if (s.abandons.length === 0) {
+    <p class="section-coureurs__vide" data-testid="suivi-message-aucun-abandon">Aucun abandon.</p>
+  } @else {
+    <ul class="lignes">
+      @for (abandon of s.abandons; track abandon.dossard) {
+        <li class="ligne" [attr.data-testid]="'suivi-abandon-' + abandon.dossard">
+          <span class="ligne__dossard">Dossard {{ abandon.dossard }}</span>
+          <span class="ligne__pseudo">{{ abandon.pseudo }}</span>
+          <span class="ligne__detail">
+            {{
+              abandon.boucleAbandon === null
+                ? 'Boucle non renseignée'
+                : 'Boucle ' + abandon.boucleAbandon
+            }}
+          </span>
+          @if (abandon.motifAbandon; as motif) {
+            <span class="pastille-statut pastille-statut--abandon">{{ libellesMotif[motif] }}</span>
+          } @else {
+            <span class="ligne__detail">Motif non renseigné</span>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

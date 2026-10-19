@@ -1,5 +1,6 @@
 package fr.backyard.tracker.courses.domaine;
 
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,6 +13,15 @@ import java.util.function.IntPredicate;
 public final class Inscription {
 
     private static final int PREMIER_DOSSARD = 1;
+
+    /**
+     * Ordre public des abandons : Boucle d'abandon décroissante (les plus tardifs d'abord, sans Boucle en dernier),
+     * puis dossard croissant. Unique définition de cet ordre.
+     */
+    public static final Comparator<Inscription> ORDRE_DES_ABANDONS = Comparator
+            .comparing((Inscription inscription) -> inscription.boucleAbandon,
+                    Comparator.nullsLast(Comparator.<Integer>reverseOrder()))
+            .thenComparingInt(Inscription::dossard);
 
     private final UUID id;
     private final UUID courseId;

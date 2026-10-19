@@ -40,7 +40,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Contrat de l'incrément 6.1 (suivi public d'une Course) : CA6 à CA10, serveur réel. Le contrat est celui de la
- * spec : GET /api/courses/{id}/suivi, public, liste fermée de 11 champs, no-store, 404 COURSE_INTROUVABLE.
+ * spec : GET /api/courses/{id}/suivi, public, liste fermée de 14 champs (6.2 RG1), no-store, 404 COURSE_INTROUVABLE.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "backyard.admin-master.pseudo=Patron", "backyard.admin-master.mot-de-passe=mot-de-passe-patron-1"})
@@ -56,8 +56,9 @@ class SuiviPublicIntegrationTest {
     static final long HEURE = 3_600_000L;
     static final List<String> CHAMPS = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur",
             "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee",
-            "tempsAvantFinBoucleMillisecondes", "dureeEcouleeMillisecondes");
-    static final List<String> INTERDITS = List.of("inscrits", "pseudo", "dossard", "jeton", "benevole", "demarreeLe",
+            "tempsAvantFinBoucleMillisecondes", "dureeEcouleeMillisecondes", "coureursEnCourse", "abandons",
+            "vainqueurs");
+    static final List<String> INTERDITS = List.of("inscrits", "jeton", "benevole", "demarreeLe",
             "distance", "denivele", "date", "nombreInscrits", "compte");
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
@@ -131,7 +132,7 @@ class SuiviPublicIntegrationTest {
     // ---------------------------------------------------------------- CA6
 
     @Test
-    @DisplayName("CA6 : X en Boucle 2 lue sans session : 200, no-store, aucun Set-Cookie, 11 champs exactement, valeurs conformes au Clock, aucune fuite d'inscrit, aucune écriture")
+    @DisplayName("CA6 : X en Boucle 2 lue sans session : 200, no-store, aucun Set-Cookie, 14 champs exactement, valeurs conformes au Clock, aucune fuite d'inscrit, aucune écriture")
     void ca6_suivi_public_sans_session() throws Exception {
         UUID x = courseXAvecInscritEtAffectation();
         horloge.fixer(T0.plusMillis(65 * 60_000L + 250));
@@ -147,7 +148,7 @@ class SuiviPublicIntegrationTest {
                 c -> assertThat(c).contains("no-store"));
         assertThat(reponse.headers().allValues("set-cookie")).isEmpty();
         JsonNode corps = json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(11).containsExactlyInAnyOrderElementsOf(CHAMPS);
+        assertThat(corps.propertyNames()).hasSize(14).containsExactlyInAnyOrderElementsOf(CHAMPS);
         assertThat(corps.get("courseId").asString()).isEqualTo(x.toString());
         assertThat(corps.get("nom").asString()).isEqualTo(NOM_X);
         assertThat(corps.get("logoUrl").isNull()).isTrue();
@@ -160,6 +161,10 @@ class SuiviPublicIntegrationTest {
         assertThat(corps.get("tempsAvantFinBoucleMillisecondes").asLong()).isEqualTo(2 * HEURE - 65 * 60_000L - 250);
         assertThat(corps.get("dureeEcouleeMillisecondes").asLong()).isEqualTo(65 * 60_000L + 250);
         assertAucuneFuite(reponse.body());
+        assertThat(corps.get("coureursEnCourse")).hasSize(1);
+        assertThat(corps.get("coureursEnCourse").get(0).get("dossard").asInt()).isEqualTo(7);
+        assertThat(corps.get("coureursEnCourse").get(0).get("pseudo").asString()).isEqualTo("Alice");
+        assertThat(reponse.body()).doesNotContain(jdbc.queryForObject("select jeton_qr from inscription", String.class));
 
         assertThat(jdbc.queryForList("select * from course order by id")).isEqualTo(coursesAvant);
         assertThat(jdbc.queryForList("select * from inscription order by id")).isEqualTo(inscriptionsAvant);
@@ -210,7 +215,8 @@ class SuiviPublicIntegrationTest {
     void ca6_to_string_limite_a_l_identifiant() {
         UUID id = UUID.randomUUID();
         SuiviCourseReponse reponse = new SuiviCourseReponse(id, "Nom secret", "/api/courses/x/logo?v=1",
-                StatutCourse.EN_COURS, "2026-10-09T14:03:27.000Z", 5, 2, false, false, 10L, 20L);
+                StatutCourse.EN_COURS, "2026-10-09T14:03:27.000Z", 5, 2, false, false, 10L, 20L, List.of(), List.of(),
+                List.of());
 
         assertThat(reponse.toString()).contains(id.toString()).doesNotContain("Nom secret", "logo", "14:03");
     }
@@ -362,7 +368,7 @@ class SuiviPublicIntegrationTest {
         HttpResponse<String> reponse = suivi(id.toString(), Map.of());
         assertThat(reponse.statusCode()).as(statut).isEqualTo(200);
         JsonNode corps = json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(11).containsExactlyInAnyOrderElementsOf(CHAMPS);
+        assertThat(corps.propertyNames()).hasSize(14).containsExactlyInAnyOrderElementsOf(CHAMPS);
         assertThat(corps.get("courseId").asString()).isEqualTo(id.toString());
         assertThat(corps.get("statut").asString()).isEqualTo(statut);
         assertThat(corps.get("boucleCourante").isNull()).isTrue();
@@ -390,7 +396,8 @@ class SuiviPublicIntegrationTest {
     private void assertAucuneFuite(String corps) {
         assertThat(corps.toLowerCase(Locale.ROOT)).doesNotContain(INTERDITS.stream()
                 .map(s -> "\"" + s.toLowerCase(Locale.ROOT)).toList().toArray(new String[0]));
-        assertThat(corps).doesNotContain("Alice", "Léo", idAlice.toString(), idLeo.toString());
+        // 6.2 RG4 : dossard et pseudo des lignes de coureur sont désormais exposés ; le reste reste interdit
+        assertThat(corps).doesNotContain("Léo", idAlice.toString(), idLeo.toString());
     }
 
     private UUID insererCompte(String pseudo, String role) {
