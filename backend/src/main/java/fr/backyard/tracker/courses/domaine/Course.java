@@ -391,6 +391,14 @@ public final class Course {
     }
 
     /**
+     * Les coureurs d'une Course (dossard, pseudo, statut) ne sont publics qu'une fois la Course démarrée : jamais tant
+     * qu'elle est EN_PREPARATION. Unique définition de cette règle.
+     */
+    public boolean exposeSesCoureursAuPublic() {
+        return statut != StatutCourse.EN_PREPARATION;
+    }
+
+    /**
      * Une Inscription ne peut être supprimée (désinscription, annulation à la suppression du Compte) que tant que la
      * Course est EN_PREPARATION. Unique définition de cette règle.
      */

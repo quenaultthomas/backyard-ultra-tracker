@@ -1,0 +1,86 @@
+/* Listes publiques du suivi (docs/design.md, section 11 « Suivi public ») : vainqueur(s) en bandeau,
+   coureurs en course et abandons en lignes. Aucune animation : lignes suivies par dossard. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-5);
+}
+
+/* Section séparée de la précédente par un filet, comme au pilotage. */
+.section-coureurs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  padding-top: var(--espace-4);
+  border-top: 1px solid var(--couleur-trait);
+}
+
+.section-coureurs__vide {
+  margin: 0;
+  color: var(--couleur-encre);
+}
+
+/* Vainqueur(s) : bandeau forêt à texte crème (11,86), filet orange en aplat, jamais d'orange en texte. */
+.vainqueurs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  padding: var(--espace-4);
+  border-top: var(--espace-1) solid var(--couleur-orange);
+  border-radius: var(--rayon-m);
+  background-color: var(--couleur-foret);
+  color: var(--couleur-creme);
+}
+
+.vainqueurs .sous-titre {
+  color: var(--couleur-creme);
+}
+
+.lignes {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Ligne : dossard, pseudo puis détails, passés à la ligne quand la place manque ; un pseudo sans
+   espace est coupé (320 px, texte à 200 %). */
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espace-1) var(--espace-3);
+  min-width: 0;
+  padding: var(--espace-2) 0;
+  border-bottom: 1px solid var(--couleur-trait);
+  overflow-wrap: anywhere;
+}
+
+.ligne:last-child {
+  border-bottom: none;
+}
+
+.ligne__dossard {
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
+}
+
+.ligne__pseudo {
+  flex: 1 1 8rem;
+  min-width: 0;
+  font-weight: var(--poids-moyen);
+}
+
+.ligne__detail {
+  color: var(--couleur-encre);
+}
+
+.vainqueurs .ligne {
+  font-size: var(--taille-grande);
+  border-bottom-color: var(--couleur-foret-survol);
+}
+
+.vainqueurs .ligne__dossard {
+  color: var(--couleur-creme);
+}

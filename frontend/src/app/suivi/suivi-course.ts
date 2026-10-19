@@ -1,4 +1,22 @@
 import { StatutCourse } from '../administration/courses/course';
+import { MotifAbandon } from '../administration/courses/pilotage-course';
+
+/** Ligne publique d'un coureur en course ou vainqueur (`CoureurSuivi`) : dossard et pseudo seulement. */
+export interface CoureurSuivi {
+  dossard: number;
+  /** Pseudo tel que renvoyé par l'API (« Coureur anonyme », « Compte inconnu ») : affiché en texte. */
+  pseudo: string;
+}
+
+/** Ligne publique d'un abandon (`AbandonSuivi`). */
+export interface AbandonSuivi {
+  dossard: number;
+  pseudo: string;
+  /** Boucle non terminée ; `null` pour un abandon enregistré sans Boucle. */
+  boucleAbandon: number | null;
+  /** `null` pour un abandon enregistré sans motif. */
+  motifAbandon: MotifAbandon | null;
+}
 
 /**
  * Réponse publique de `GET /api/courses/{id}/suivi` (`SuiviCourseReponse`), calculée par le serveur.
@@ -19,4 +37,10 @@ export interface SuiviCourse {
   boucleMaxTerminee: boolean;
   tempsAvantFinBoucleMillisecondes: number | null;
   dureeEcouleeMillisecondes: number | null;
+  /** Inscriptions `EN_COURSE`, triées par le serveur ; vide en `EN_PREPARATION` et `TERMINEE`. */
+  coureursEnCourse: CoureurSuivi[];
+  /** Inscriptions `ABANDON`, triées par le serveur ; vide en `EN_PREPARATION`. */
+  abandons: AbandonSuivi[];
+  /** Inscriptions `VAINQUEUR`, triées par le serveur ; vide sauf `TERMINEE` avec vainqueur. */
+  vainqueurs: CoureurSuivi[];
 }

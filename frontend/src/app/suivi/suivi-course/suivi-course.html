@@ -81,6 +81,10 @@
           </p>
         }
       }
+
+      @if (s.statut !== 'EN_PREPARATION') {
+        <app-coureurs-suivi [suivi]="s" />
+      }
     } @else if (rafraichissement.echec()) {
       <h1 id="suivi-titre" class="titre">Suivi de la course</h1>
       <p class="message--erreur" role="alert" data-testid="suivi-erreur">
@@ -94,5 +98,6 @@
     <p class="masque" role="status" data-testid="suivi-annonce-boucle">
       {{ rafraichissement.annonce() }}
     </p>
+    <p class="masque" role="status" data-testid="suivi-annonce-fin">{{ annonceFin() }}</p>
   </section>
 </main>

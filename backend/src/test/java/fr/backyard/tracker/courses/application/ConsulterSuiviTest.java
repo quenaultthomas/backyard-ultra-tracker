@@ -23,7 +23,9 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests de l'incrément 6.1 : cas d'usage ConsulterSuivi (CA1 à CA5 ; RG3, RG4, RG5, RG6).
- * Signatures attendues : {@code ConsulterSuivi(DepotCourses, Clock)} ; {@code Suivi executer(UUID courseId)} où
+ * Mis à jour en 6.2 : le constructeur devient {@code ConsulterSuivi(DepotCourses, DepotInscriptions, AnnuairePseudos, Clock)}
+ * (les Inscriptions sont vides ici ; les nouveautés sont dans ConsulterSuiviCoureursTest).
+ * Signatures attendues en 6.1 : {@code ConsulterSuivi(DepotCourses, Clock)} ; {@code Suivi executer(UUID courseId)} où
  * {@code Suivi} (record imbriqué) expose {@code course()} (Course), {@code heureServeur()} (Instant, lu une seule
  * fois sur le Clock) et {@code chronometrage()} ({@code Optional<Chronometrage>}, issu de
  * {@code Course.chronometrage(heureServeur)}). Le logo est complété à part, par l'exposition
@@ -106,7 +108,7 @@ class ConsulterSuiviTest {
     void doit_lire_le_clock_une_seule_fois() {
         ClockAvanceALaLecture clock = new ClockAvanceALaLecture(T0.plusMillis(60_000), Duration.ofSeconds(7));
 
-        var suivi = new ConsulterSuivi(depotCourses, clock).executer(X);
+        var suivi = new ConsulterSuivi(depotCourses, new DepotInscriptionsEspionDeTest().port, new AnnuaireSuiviDeTest(), clock).executer(X);
 
         assertThat(clock.lectures.get()).isEqualTo(1);
         assertThat(suivi.heureServeur()).isEqualTo(T0.plusMillis(60_000));
@@ -301,7 +303,8 @@ class ConsulterSuiviTest {
     }
 
     private ConsulterSuivi consulterA(Instant maintenant) {
-        return new ConsulterSuivi(depotCourses, Clock.fixed(maintenant, ZoneOffset.UTC));
+        return new ConsulterSuivi(depotCourses, new DepotInscriptionsEspionDeTest().port, new AnnuaireSuiviDeTest(),
+                Clock.fixed(maintenant, ZoneOffset.UTC));
     }
 
     private static Course course(UUID id, String nom, StatutCourse statut, int dureeBoucleMinutes, int maxBoucles,
