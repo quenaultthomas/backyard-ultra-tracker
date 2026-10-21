@@ -29,3 +29,21 @@
   color: var(--couleur-encre);
   overflow-wrap: anywhere;
 }
+
+/* Rubriques des Courses : largeur des écrans en cartes, texte aligné à gauche ; conteneur `cartes` (repli étroit de cartes.css). */
+.courses {
+  container: cartes / inline-size;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-6);
+  width: 100%;
+  max-width: 64rem;
+  min-width: 0;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+
+.reessayer {
+  align-self: flex-start;
+}

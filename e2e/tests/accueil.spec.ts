@@ -77,12 +77,18 @@ test.describe('Accueil', () => {
 
     await expect(page.getByTestId('titre')).toHaveText(TITRE);
     await expect(page.getByTestId('accroche')).toHaveText(ACCROCHE);
-    await expect(page.locator('main > *')).toHaveCount(2);
+    // 6.4 RG8 : sous le titre et l'accroche (inchangés), un conteneur unique pour les rubriques de courses
+    await expect(page.getByTestId('accueil-chargement')).toHaveCount(0);
+    await expect(page.locator('main > *')).toHaveCount(3);
     await expect(page.locator('main > *').nth(0)).toHaveJSProperty('tagName', 'H1');
     await expect(page.locator('main > *').nth(1)).toHaveJSProperty('tagName', 'P');
+    await expect(page.locator('main > *').nth(2)).toHaveJSProperty('tagName', 'DIV');
     await expect(page.getByTestId('etat-api')).toHaveCount(0);
     await expect(page.getByTestId('lien-creer-compte')).toHaveCount(0);
-    await expect(page.locator('main [role="status"], main [aria-live], main a, main button')).toHaveCount(0);
+    // 6.4 : les cartes de courses portent des liens « Voir le suivi » ; aucun autre lien ni bouton, aucune zone vivante
+    await expect(page.locator('main [role="status"], main [aria-live], main [role="alert"]')).toHaveCount(0);
+    await expect(page.locator('main button')).toHaveCount(0);
+    await expect(page.locator('main a:not([data-testid="accueil-course-lien-suivi"])')).toHaveCount(0);
     await expect(page.locator('h1')).toHaveCount(1);
     await expect(page).toHaveTitle(TITRE);
     const texte = await page.evaluate(() => document.body.innerText);
@@ -214,7 +220,8 @@ test.describe('Accueil', () => {
         repetition: cs.backgroundRepeat,
         positionY: cs.backgroundPositionY,
         taille: cs.backgroundSize,
-        formes: e.querySelectorAll('svg, img, canvas, picture, video').length,
+        // 6.4 : les logos des cartes de courses sont des contenus, pas du décor
+        formes: e.querySelectorAll('svg, canvas, picture, video, img:not([data-testid="accueil-course-logo"] img)').length,
       };
     });
     expect(style.couleur).toBe('rgb(247, 241, 227)');
@@ -225,7 +232,7 @@ test.describe('Accueil', () => {
     expect(style.positionY.split(',')[0].trim()).toBe('100%');
     expect(style.taille.split(',')[0].trim()).toBe('auto 96px');
     expect(style.formes).toBe(0);
-    await expect(page.locator('main svg, main img, main canvas, main picture, main video')).toHaveCount(0);
+    await expect(page.locator('main svg, main canvas, main picture, main video, main img:not([data-testid="accueil-course-logo"] img)')).toHaveCount(0);
 
     const [sapins, courbes] = svgs;
     for (const svg of svgs) {
@@ -309,6 +316,9 @@ test.describe('Accueil', () => {
       test(`R.4 CA5 - à ${v.width} x ${v.height} la page tient dans l'écran, centrée, sapins au bas de la fenêtre`, async ({ page }) => {
         await page.setViewportSize({ width: v.width, height: v.height });
         await chargerAccueil(page);
+        await expect(page.getByTestId('accueil-chargement')).toHaveCount(0);
+        // 6.4 : la liste des courses fait défiler la page verticalement ; l'ajustement à l'écran ne vaut que sans carte
+        const sansCarte = (await page.getByTestId('accueil-course').count()) === 0;
         const m = await page.evaluate(() => {
           const racine = document.documentElement;
           const main = document.querySelector('main')!.getBoundingClientRect();
@@ -331,7 +341,7 @@ test.describe('Accueil', () => {
           expect(r.droite, `${id} droite`).toBeLessThanOrEqual(m.largeurFenetre);
         }
         expect(m.basMain).toBeGreaterThanOrEqual(m.hauteurFenetre - 1);
-        if (v.sansDefilement) expect(m.scrollHeight).toBeLessThanOrEqual(m.clientHeight);
+        if (v.sansDefilement && sansCarte) expect(m.scrollHeight).toBeLessThanOrEqual(m.clientHeight);
         const titre = await rect(page, 'titre');
         expect(Math.abs(titre.x + titre.width / 2 - m.centreMain)).toBeLessThanOrEqual(1);
         expect(Math.abs(m.taillePoliceTitre - attendue(v.width))).toBeLessThanOrEqual(0.1);
@@ -428,7 +438,7 @@ test.describe('Accueil', () => {
   });
 
   for (const mode of ['abort', 'fulfill 503'] as const) {
-    test(`R.4 CA8 - API injoignable (${mode}) : l'accueil s'affiche à l'identique, sans message`, async ({ page }) => {
+    test(`R.4 CA8 - API injoignable (${mode}) : l'accueil garde titre, accroche et décor ; seul le message d'erreur des courses s'ajoute (6.4 RG10)`, async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 800 });
       const requetes: string[] = [];
       const erreurs: Error[] = [];
@@ -441,7 +451,9 @@ test.describe('Accueil', () => {
       await expect(page.getByTestId('accroche')).toHaveText(ACCROCHE);
       const image = await page.locator('main').evaluate((e) => getComputedStyle(e).backgroundImage);
       expect(extraireSvg(image).svgs).toHaveLength(2);
-      await expect(page.locator('main [role="alert"], main [role="status"]')).toHaveCount(0);
+      // 6.4 RG10 : l'échec du chargement des courses est annoncé, et lui seul
+      await expect(page.getByTestId('accueil-erreur')).toBeVisible();
+      await expect(page.locator('main [role="alert"], main [role="status"]')).toHaveCount(1);
       expect(requetes.filter((u) => u.includes('/api/sante'))).toEqual([]);
       expect(erreurs.map((e) => e.message)).toEqual([]);
     });

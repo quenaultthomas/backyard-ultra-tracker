@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
-# Données de démonstration pour le test manuel (incréments 2.1b, 2.4, 3.5, 4.1 et 4.4b). À NE PAS UTILISER EN PRODUCTION.
+# Données de démonstration pour le test manuel (incréments 2.1b, 2.4, 3.5, 4.1, 4.4b et 6.4). À NE PAS UTILISER EN PRODUCTION.
 #
 # Crée par l'API de l'application lancée (jamais d'accès direct à la base), dans cet ordre :
 #   - admin Nadia, bénévoles Léo et Marc (session de l'admin master) ;
-#   - Courses « Backyard de démo » (J+30), « Backyard express » (J+7), « Backyard mini » (J+14) et
-#     « Backyard du jour » (date du jour à Paris, 400 m, 1 min, 5 m, 10 participants, 5 Boucles max), seule
-#     démarrable le jour même (4.1) ; les dates sont calculées dans le fuseau Europe/Paris, celui de l'API ;
+#   - Courses « Backyard de démo » (J+30), « Backyard express » (J+7), « Backyard mini » (J+14),
+#     « Backyard du jour » (date du jour à Paris, 400 m, 1 min, 5 m, 10 participants, 5 Boucles max) et
+#     « Backyard du soir » (date du jour, 400 m, 5 min, 5 m, 10 participants, 5 Boucles max), seules
+#     démarrables le jour même (4.1) : « du jour » se termine vite, « du soir » reste en cours au moins
+#     5 minutes, ce qui montre à la fois les rubriques « En cours » et « Terminées » de l'accueil (6.4) ;
+#     les dates sont calculées dans le fuseau Europe/Paris, celui de l'API ;
 #   - affectations du bénévole Léo à « Backyard de démo » et à « Backyard du jour » (les autres bénévoles
-#     déjà affectés sont conservés) ;
+#     déjà affectés sont conservés ; Léo n'est pas affecté à « Backyard du soir ») ;
 #   - coureurs Alice, Karim, Sophie et Tom (session anonyme) ;
 #   - Inscriptions, chacune dans la session de son coureur et dans cet ordre : Karim, Sophie, Tom à
 #     « Backyard de démo » ; Karim, Sophie à « Backyard express » ; Karim, Sophie, Tom (dossards 1, 2, 3) à
-#     « Backyard du jour ». Alice et « Backyard mini » n'en reçoivent aucune.
-# Soit 21 éléments : 7 Comptes, 4 Courses, 2 affectations, 8 Inscriptions.
+#     « Backyard du jour » ; Karim à « Backyard du soir ». Alice et « Backyard mini » n'en reçoivent aucune.
+# Soit 23 éléments : 7 Comptes, 5 Courses, 2 affectations, 9 Inscriptions.
 # Mots de passe connus : Nadia mot-de-passe-admin-1, Léo et Marc mot-de-passe-benevole-1,
 #   Alice, Karim, Sophie et Tom un-mot-de-passe-12.
 #
@@ -32,9 +35,9 @@
 #   - Léo déjà affecté à une Course : rien n'est envoyé pour cette Course ;
 #   - une Inscription déjà existante (409 INSCRIPTION_DEJA_EXISTANTE) est « déjà présente » ; une Course qui n'est
 #     plus ouverte aux inscriptions (EN_COURS, TERMINEE) fait échouer le script ;
-#   - « Backyard du jour » garde la date de sa première création : un autre jour, elle n'est plus démarrable
-#     (repartir d'une base neuve par docker compose down -v, ou changer sa date par « Modifier ») ; une fois
-#     démarrée, la relance du script échoue sur ses inscriptions.
+#   - « Backyard du jour » et « Backyard du soir » gardent la date de leur première création : un autre jour,
+#     elles ne sont plus démarrables (repartir d'une base neuve par docker compose down -v, ou changer leur date
+#     par « Modifier ») ; une fois démarrées, la relance du script échoue sur leurs inscriptions.
 # Aucun mot de passe n'est affiché ni écrit sur disque ; les cookies vont dans un répertoire temporaire
 # supprimé en sortie. Prérequis : bash, curl, date GNU (Linux) ou BSD (macOS).
 set -euo pipefail
@@ -145,6 +148,7 @@ declarer_courses() {
   declarer_course "Backyard express" 7 400 1 5 10 5
   declarer_course "Backyard mini" 14 1000 2 10 2 2
   declarer_course "Backyard du jour" 0 400 1 5 10 5
+  declarer_course "Backyard du soir" 0 400 5 5 10 5
 }
 
 # identifiant FICHIER CHAMP VALEUR : id du premier objet (plat) du tableau JSON dont CHAMP vaut VALEUR.
@@ -225,6 +229,6 @@ for coureur in Alice Karim Sophie Tom; do
   creer_compte /api/comptes "$coureur" "$MOT_DE_PASSE_COUREUR" COUREUR
 done
 
-inscrire Karim "Backyard de démo" "Backyard express" "Backyard du jour"
+inscrire Karim "Backyard de démo" "Backyard express" "Backyard du jour" "Backyard du soir"
 inscrire Sophie "Backyard de démo" "Backyard express" "Backyard du jour"
 inscrire Tom "Backyard de démo" "Backyard du jour"

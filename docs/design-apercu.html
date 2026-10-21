@@ -19,6 +19,8 @@
     <!-- Suivi public (6.3) : statistiques, bouton plein écran et mode projection, feuilles réelles. -->
     <link rel="stylesheet" href="../frontend/src/app/suivi/statistiques-suivi/statistiques-suivi.css" />
     <link rel="stylesheet" href="../frontend/src/app/suivi/suivi-course/suivi-course.css" />
+    <!-- Rubriques de l'accueil public (6.4) : feuille réelle, sans copie. -->
+    <link rel="stylesheet" href="../frontend/src/app/accueil/rubrique-courses/rubrique-courses.css" />
     <!-- Abandon manuel (4.11) : confirmation en ligne et panneau d'abandon, feuilles réelles. -->
     <link rel="stylesheet" href="../frontend/src/app/partage/confirmation-en-ligne.css" />
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/confirmation-pilotage.css" />
@@ -340,6 +342,29 @@
             <p class="message--erreur" data-composant="pilotage-reintegrer-erreur">Ce coureur n'est plus en abandon.</p>
           </div>
           <a href="#titre-pilotage">Retour à la fiche de la course</a>
+        </div>
+      </section>
+
+      <section aria-labelledby="titre-accueil-public">
+        <h2 id="titre-accueil-public">Accueil public</h2>
+        <div style="max-width: 64rem; display: flex; flex-direction: column; gap: var(--espace-6)">
+          <section class="rubrique" data-composant="accueil-rubrique">
+            <h3 class="rubrique__titre">En cours <span class="rubrique__nombre">(1)</span></h3>
+            <ul class="grille-cartes">
+              <li class="carte-liste">
+                <div class="carte-liste__visuel"><div class="visuel-substitution" aria-hidden="true"></div></div>
+                <div class="carte-liste__entete">
+                  <time class="carte-liste__date" datetime="2026-10-21">21/10/2026</time>
+                  <h4 class="carte-liste__titre">Backyard du soir</h4>
+                </div>
+                <a class="bouton bouton--secondaire carte-liste__pied" href="#titre-accueil-public" aria-label="Voir le suivi de Backyard du soir">Voir le suivi</a>
+              </li>
+            </ul>
+          </section>
+          <section class="rubrique" data-composant="accueil-rubrique-vide">
+            <h3 class="rubrique__titre">Terminées <span class="rubrique__nombre">(0)</span></h3>
+            <p class="message--info">Aucune course terminée.</p>
+          </section>
         </div>
       </section>
 

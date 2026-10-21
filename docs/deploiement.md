@@ -275,8 +275,12 @@ Pour finir : `$P down -v` (supprime uniquement les volumes du projet `backyard-p
 |---|---|
 | Admin | `Nadia` / `mot-de-passe-admin-1` |
 | Bénévoles | `Léo` et `Marc` / `mot-de-passe-benevole-1` |
-| Coureur | `Alice` / `un-mot-de-passe-12` |
-| Courses (`EN_PREPARATION`) | « Backyard de démo » (J+30, 6706 m, 60 min, 120 m, 50 participants, 24 boucles), « Backyard express » (J+7, 400 m, 1 min, 5 m, 10, 5), « Backyard mini » (J+14, 1000 m, 2 min, 10 m, 2, 2) |
+| Coureurs | `Alice`, `Karim`, `Sophie` et `Tom` / `un-mot-de-passe-12` |
+| Courses (`EN_PREPARATION`) | « Backyard de démo » (J+30, 6706 m, 60 min, 120 m, 50 participants, 24 boucles), « Backyard express » (J+7, 400 m, 1 min, 5 m, 10, 5), « Backyard mini » (J+14, 1000 m, 2 min, 10 m, 2, 2), « Backyard du jour » (jour même, 400 m, 1 min, 5 m, 10, 5), « Backyard du soir » (jour même, 400 m, 5 min, 5 m, 10, 5) |
+| Affectations | `Léo` à « Backyard de démo » et « Backyard du jour » |
+| Inscriptions | `Karim` : démo, express, du jour, du soir ; `Sophie` : démo, express, du jour ; `Tom` : démo, du jour |
+
+Soit 23 éléments (7 Comptes, 5 Courses, 2 affectations, 9 Inscriptions). Les deux Courses du jour sont démarrables le jour de leur création : « du jour » se termine en une à deux minutes, « du soir » reste en cours au moins 5 minutes, ce qui montre ensemble les rubriques « En cours » et « Terminées » de l'accueil.
 
 ```sh
 docker compose up -d --build     # stack de dev, .env avec ADMIN_MASTER_PSEUDO et ADMIN_MASTER_MOT_DE_PASSE
