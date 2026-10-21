@@ -7,8 +7,11 @@ import fr.backyard.tracker.courses.domaine.Course;
 import fr.backyard.tracker.courses.domaine.CourseIntrouvableException;
 import fr.backyard.tracker.courses.domaine.DepotCourses;
 import fr.backyard.tracker.courses.domaine.DepotInscriptions;
+import fr.backyard.tracker.courses.domaine.DepotPassages;
 import fr.backyard.tracker.courses.domaine.Inscription;
 import fr.backyard.tracker.courses.domaine.MotifAbandon;
+import fr.backyard.tracker.courses.domaine.Passage;
+import fr.backyard.tracker.courses.domaine.StatistiquesCourse;
 import fr.backyard.tracker.courses.domaine.StatutInscription;
 import java.time.Clock;
 import java.time.Instant;
@@ -23,11 +26,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Suivi public d'une Course : la Course, son chronométrage à l'instant de l'horloge (lu une seule fois) et ses
- * coureurs répartis selon le statut enregistré de leur Inscription (jamais recalculé). Au plus trois lectures, dans
- * cet ordre : la Course, puis ses Inscriptions, puis les pseudos ; aucune Inscription lue tant que la Course n'expose
- * pas ses coureurs (EN_PREPARATION), aucun Passage lu. Lire la Course avant les Inscriptions garantit qu'une Course
- * TERMINEE est vue avec ses statuts finaux (écrits dans la même transaction). Lecture seule, aucun journal en
- * fonctionnement normal (lecture fréquente et publique).
+ * coureurs répartis selon le statut enregistré de leur Inscription (jamais recalculé), et ses statistiques calculées
+ * par le domaine ({@link Course#statistiques}). Au plus quatre lectures : la Course d'abord, puis ses Inscriptions,
+ * les pseudos et les Passages de toutes ses Inscriptions en une seule lecture groupée (pseudos et Passages omis sans
+ * Inscription) ; rien d'autre n'est lu tant que la Course n'expose pas ses coureurs (EN_PREPARATION). Lire la Course
+ * avant les Inscriptions garantit qu'une Course TERMINEE est vue avec ses statuts finaux (écrits dans la même
+ * transaction). Lecture seule, aucun journal en fonctionnement normal (lecture fréquente et publique).
  */
 @Service
 public class ConsulterSuivi {
@@ -55,11 +59,11 @@ public class ConsulterSuivi {
 
     /**
      * Instantané : chronométrage vide hors EN_COURS ou sans heure de départ ; en course et vainqueurs par dossard,
-     * abandons selon {@link Inscription#ORDRE_DES_ABANDONS}.
+     * abandons selon {@link Inscription#ORDRE_DES_ABANDONS} ; statistiques de la Course à {@code heureServeur}.
      */
     public record Suivi(Course course, Instant heureServeur, Optional<Chronometrage> chronometrage,
                         List<CoureurSuivi> coureursEnCourse, List<AbandonSuivi> abandons,
-                        List<CoureurSuivi> vainqueurs) {
+                        List<CoureurSuivi> vainqueurs, StatistiquesCourse statistiques) {
 
         public Suivi {
             coureursEnCourse = List.copyOf(coureursEnCourse);
@@ -77,13 +81,15 @@ public class ConsulterSuivi {
     private final DepotCourses depotCourses;
     private final DepotInscriptions depotInscriptions;
     private final AnnuairePseudos annuairePseudos;
+    private final DepotPassages depotPassages;
     private final Clock horloge;
 
     public ConsulterSuivi(DepotCourses depotCourses, DepotInscriptions depotInscriptions,
-                          AnnuairePseudos annuairePseudos, Clock horloge) {
+                          AnnuairePseudos annuairePseudos, DepotPassages depotPassages, Clock horloge) {
         this.depotCourses = depotCourses;
         this.depotInscriptions = depotInscriptions;
         this.annuairePseudos = annuairePseudos;
+        this.depotPassages = depotPassages;
         this.horloge = horloge;
     }
 
@@ -94,12 +100,22 @@ public class ConsulterSuivi {
         Instant maintenant = horloge.instant();
         Optional<Chronometrage> chronometrage = course.chronometrage(maintenant);
         if (!course.exposeSesCoureursAuPublic()) {
-            return new Suivi(course, maintenant, chronometrage, List.of(), List.of(), List.of());
+            return new Suivi(course, maintenant, chronometrage, List.of(), List.of(), List.of(),
+                    course.statistiques(maintenant, List.of()));
         }
         List<Inscription> inscriptions = depotInscriptions.parCourse(courseId);
         List<Inscrit> parDossard = ListerInscritsCourse.inscritsParDossard(inscriptions, annuairePseudos);
         return new Suivi(course, maintenant, chronometrage, coureurs(parDossard, StatutInscription.EN_COURSE),
-                abandons(inscriptions, parDossard), coureurs(parDossard, StatutInscription.VAINQUEUR));
+                abandons(inscriptions, parDossard), coureurs(parDossard, StatutInscription.VAINQUEUR),
+                course.statistiques(maintenant, passagesDe(inscriptions)));
+    }
+
+    /** Une seule lecture groupée des Passages de toutes les Inscriptions, omise sans Inscription. */
+    private List<Passage> passagesDe(List<Inscription> inscriptions) {
+        if (inscriptions.isEmpty()) {
+            return List.of();
+        }
+        return depotPassages.parInscriptions(inscriptions.stream().map(Inscription::id).toList());
     }
 
     private static List<CoureurSuivi> coureurs(List<Inscrit> parDossard, StatutInscription statut) {

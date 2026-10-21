@@ -89,6 +89,12 @@ export const AUTRES_VARIABLES: Record<string, string> = {
   '--impression-taille-dossard': '72pt',
   '--impression-taille-pseudo': '24pt',
   '--impression-taille-texte': '16pt',
+  // Incrément 6.3 : statistiques et mode projection du suivi public (docs/design.md section 11).
+  '--taille-statistique': 'var(--taille-grande)',
+  '--taille-projection-texte': '1.5rem',
+  '--taille-projection-titre': '2.25rem',
+  '--taille-projection-statistique': '3rem',
+  '--taille-projection-chronometre': '5rem',
 };
 
 export function hexVersRgb(hex: string): string {

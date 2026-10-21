@@ -85,6 +85,13 @@ export function reponseSuivi(surcharge: Record<string, unknown> = {}): string {
     boucleMaxTerminee: false,
     tempsAvantFinBoucleMillisecondes: 3_600_000,
     dureeEcouleeMillisecondes: 0,
+    distanceBoucleMetres: 6700,
+    denivelePositifBoucleMetres: 35,
+    bouclesTerminees: 0,
+    distanceCumuleeMetres: 0,
+    denivelePositifCumuleMetres: 0,
+    allureSecondesParKilometre: null,
+    dureeFinaleMillisecondes: null,
     ...surcharge,
   });
 }
