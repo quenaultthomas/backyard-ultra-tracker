@@ -363,8 +363,8 @@ class LogoCourseIntegrationTest {
         Map<String, String> connecte = alice.entetes();
 
         assertThat(lireLogoPublic(x, Map.of()).statusCode()).isEqualTo(200);
-        List<String[]> requetes = List.of(new String[] {"GET", "/api/courses"},
-                new String[] {"GET", "/api/courses/" + x}, new String[] {"GET", "/api/courses/" + x + "/logo/extra"},
+        List<String[]> requetes = List.of(
+                new String[] {"GET", "/api/courses/" + x},new String[] {"GET", "/api/courses/" + x + "/logo/extra"},
                 new String[] {"HEAD", "/api/courses/" + x + "/logo"},
                 new String[] {"POST", "/api/courses/" + x + "/logo"},
                 new String[] {"PUT", "/api/courses/" + x + "/logo"},

@@ -1,4 +1,42 @@
 <main class="accueil decor-backyard">
   <h1 class="titre" data-testid="titre">Backyard Ultra Tracker</h1>
   <p class="accroche" data-testid="accroche">Une boucle après l'autre, jusqu'au dernier debout.</p>
+  <div class="courses">
+    @if (erreur()) {
+      <p class="message--erreur" role="alert" data-testid="accueil-erreur">
+        Les courses ne peuvent pas être chargées pour le moment.
+      </p>
+      <button
+        type="button"
+        class="bouton reessayer"
+        (click)="charger()"
+        data-testid="accueil-reessayer"
+      >
+        Réessayer
+      </button>
+    } @else if (courses(); as liste) {
+      <app-rubrique-courses
+        cle="en-cours"
+        titre="En cours"
+        messageVide="Aucune course en cours."
+        [courses]="liste.enCours"
+      />
+      <app-rubrique-courses
+        cle="a-venir"
+        titre="À venir"
+        messageVide="Aucune course à venir."
+        [courses]="liste.aVenir"
+      />
+      <app-rubrique-courses
+        cle="terminees"
+        titre="Terminées"
+        messageVide="Aucune course terminée."
+        [courses]="liste.terminees"
+      />
+    } @else {
+      <p class="message--info" role="status" data-testid="accueil-chargement">
+        Chargement des courses…
+      </p>
+    }
+  </div>
 </main>

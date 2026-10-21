@@ -1,0 +1,50 @@
+<section
+  class="rubrique"
+  [attr.aria-labelledby]="'accueil-rubrique-titre-' + cle()"
+  [attr.data-testid]="'accueil-rubrique-' + cle()"
+>
+  <h2
+    class="rubrique__titre"
+    [id]="'accueil-rubrique-titre-' + cle()"
+    [attr.data-testid]="'accueil-rubrique-titre-' + cle()"
+  >
+    {{ titre() }} <span class="rubrique__nombre">({{ courses().length }})</span>
+  </h2>
+  @if (courses().length === 0) {
+    <p class="message--info" [attr.data-testid]="'accueil-vide-' + cle()">{{ messageVide() }}</p>
+  } @else {
+    <ul class="grille-cartes" [attr.aria-label]="titre()">
+      @for (course of courses(); track course.id) {
+        <li class="carte-liste" data-testid="accueil-course">
+          <div class="carte-liste__visuel" data-testid="accueil-course-logo">
+            @if (logoAffiche(course); as url) {
+              <img
+                [src]="url"
+                [alt]="'Logo de ' + course.nom"
+                (error)="signalerLogoEnErreur(url)"
+              />
+            } @else {
+              <div class="visuel-substitution" aria-hidden="true"></div>
+            }
+          </div>
+          <div class="carte-liste__entete">
+            <time
+              class="carte-liste__date"
+              [attr.datetime]="course.date"
+              data-testid="accueil-course-date"
+              >{{ formaterDate(course.date) }}</time
+            >
+            <h3 class="carte-liste__titre" data-testid="accueil-course-nom">{{ course.nom }}</h3>
+          </div>
+          <a
+            class="bouton bouton--secondaire carte-liste__pied"
+            [routerLink]="['/courses', course.id, 'suivi']"
+            [attr.aria-label]="'Voir le suivi de ' + course.nom"
+            data-testid="accueil-course-lien-suivi"
+            >Voir le suivi</a
+          >
+        </li>
+      }
+    </ul>
+  }
+</section>

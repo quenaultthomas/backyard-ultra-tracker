@@ -1,0 +1,19 @@
+/* Rubrique de l'accueil : titre avec le nombre de Courses, puis grille de cartes (cartes.css). */
+.rubrique {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  min-width: 0;
+}
+
+.rubrique__titre {
+  margin: 0;
+  font-size: var(--taille-grande);
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
+  overflow-wrap: anywhere;
+}
+
+.rubrique__nombre {
+  color: var(--couleur-encre);
+}

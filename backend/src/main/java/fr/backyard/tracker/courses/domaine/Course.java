@@ -28,6 +28,11 @@ public final class Course {
             .thenComparing(Course::nom, String.CASE_INSENSITIVE_ORDER)
             .thenComparing(course -> course.id().toString());
 
+    /** Ordre des Courses à venir : date croissante (la prochaine d'abord), puis nom sans casse, puis id. */
+    public static final Comparator<Course> ORDRE_A_VENIR = Comparator.comparing(Course::date)
+            .thenComparing(Course::nom, String.CASE_INSENSITIVE_ORDER)
+            .thenComparing(course -> course.id().toString());
+
     /** Délai minimal entre deux Passages d'une même Inscription, avant plafonnement par la durée de Boucle. */
     public static final Duration DELAI_MINIMAL_ENTRE_PASSAGES = Duration.ofMinutes(2);
 
