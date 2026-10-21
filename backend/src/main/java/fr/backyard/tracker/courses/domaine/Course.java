@@ -9,9 +9,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.IntFunction;
+import java.util.stream.LongStream;
 
 /**
  * Racine d'agrégat : une édition de backyard. Une Course ne se crée que par {@link #declarer} et ne change que par
@@ -253,11 +255,11 @@ public final class Course {
         if (statut != StatutCourse.EN_COURS || demarreeLe == null) {
             return Optional.empty();
         }
-        Duration dureeBoucle = Duration.ofMinutes(parametresBoucle.dureeMinutes());
+        Duration dureeBoucle = dureeBoucle();
         Instant instantCompte = instantCompte(maintenant);
         Duration dureeEcoulee = Duration.between(demarreeLe, instantCompte);
         int boucleCourante = (int) Math.min(dureeEcoulee.dividedBy(dureeBoucle) + 1, nombreMaxBoucles);
-        Instant debutBoucle = demarreeLe.plus(dureeBoucle.multipliedBy(boucleCourante - 1L));
+        Instant debutBoucle = debutBoucle(boucleCourante);
         Instant finBoucle = debutBoucle.plus(dureeBoucle);
         Duration tempsAvantFin = finBoucle.isAfter(instantCompte) ? Duration.between(instantCompte, finBoucle)
                 : Duration.ZERO;
@@ -275,6 +277,62 @@ public final class Course {
         return chronometrage(maintenant)
                 .map(chrono -> chrono.boucleMaxTerminee() ? nombreMaxBoucles : chrono.boucleCourante() - 1)
                 .orElse(0);
+    }
+
+    /**
+     * Statistiques de la Course à {@code maintenant}. Boucles terminées : {@link #bouclesTerminees} hors TERMINEE ;
+     * pour une Course TERMINEE, le plus grand numéro de Boucle des Passages (0 sans Passage), indépendant de
+     * l'instant. Cumuls : Boucles terminées x paramètres de Boucle. Durée finale (TERMINEE seulement) : Boucles
+     * terminées x durée de Boucle. Allure : moyenne pondérée des Passages SCAN (voir allureMoyenne). Unique définition
+     * de ces calculs.
+     *
+     * @param maintenant instant lu une seule fois sur l'horloge par l'appelant
+     * @param passages Passages (toute origine) de toutes les Inscriptions de la Course
+     */
+    public StatistiquesCourse statistiques(Instant maintenant, Collection<Passage> passages) {
+        boolean terminee = statut == StatutCourse.TERMINEE;
+        int boucles = terminee ? plusGrandeBoucle(passages) : bouclesTerminees(maintenant);
+        OptionalLong dureeFinale = terminee ? OptionalLong.of(dureeBoucle().multipliedBy(boucles).toMillis())
+                : OptionalLong.empty();
+        return StatistiquesCourse.cumulees(boucles, parametresBoucle, allureMoyenne(passages), dureeFinale);
+    }
+
+    private static int plusGrandeBoucle(Collection<Passage> passages) {
+        return passages.stream().mapToInt(Passage::numeroBoucle).max().orElse(0);
+    }
+
+    /**
+     * Allure moyenne en secondes par kilomètre, pondérée par Passage : somme des temps mis par chaque Passage SCAN
+     * depuis le départ de sa Boucle, divisée par (nombre de ces Passages x distance d'une Boucle), arrondie au
+     * demi supérieur. Les Passages CORRECTION et les écarts négatifs sont exclus. Vide sans heure de départ, hors
+     * Course démarrée ou sans Passage retenu.
+     */
+    private OptionalLong allureMoyenne(Collection<Passage> passages) {
+        if (statut == StatutCourse.EN_PREPARATION || demarreeLe == null) {
+            return OptionalLong.empty();
+        }
+        long[] ecarts = passages.stream().filter(passage -> passage.origine() == OriginePassage.SCAN)
+                .mapToLong(this::ecartDepuisDebutDeBoucle).filter(ecart -> ecart >= 0).toArray();
+        if (ecarts.length == 0) {
+            return OptionalLong.empty();
+        }
+        long totalMillisecondes = LongStream.of(ecarts).sum();
+        long metres = (long) ecarts.length * parametresBoucle.distanceMetres();
+        return OptionalLong.of((2 * totalMillisecondes + metres) / (2 * metres));
+    }
+
+    private long ecartDepuisDebutDeBoucle(Passage passage) {
+        Instant scanneLe = passage.scanneLe().orElseThrow();
+        return Duration.between(debutBoucle(passage.numeroBoucle()), scanneLe).toMillis();
+    }
+
+    /** Départ de la Boucle {@code numeroBoucle} : {@code demarreeLe + (numeroBoucle - 1) x durée}. */
+    private Instant debutBoucle(int numeroBoucle) {
+        return demarreeLe.plus(dureeBoucle().multipliedBy(numeroBoucle - 1L));
+    }
+
+    private Duration dureeBoucle() {
+        return Duration.ofMinutes(parametresBoucle.dureeMinutes());
     }
 
     /**

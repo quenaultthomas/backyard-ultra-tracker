@@ -23,7 +23,12 @@
       Course terminée sans vainqueur.
     </p>
   }
-} @else {
+}
+
+<!-- Statistiques (6.3) : après le bandeau vainqueur, avant « Coureurs en course ». -->
+<ng-content />
+
+@if (s.statut !== 'TERMINEE') {
   <section class="section-coureurs" aria-labelledby="suivi-titre-en-course">
     <h2 id="suivi-titre-en-course" class="sous-titre">
       Coureurs en course (<span data-testid="suivi-nombre-en-course">{{

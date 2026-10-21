@@ -19,15 +19,26 @@ final class DepotPassagesEnMemoireDeTest implements DepotPassages {
     int nombreDEnregistrements;
     RuntimeException echecAEnregistrer;
     int nombreDeLecturesGroupees;
+    /** 6.3 : identifiants reçus à chaque lecture groupée, dans l'ordre des appels. */
+    final List<java.util.Collection<UUID>> appelsGroupes = new ArrayList<>();
+    /** 6.3 : lectures unitaires (existe, parInscriptionEtBoucle) : ne doivent jamais servir au suivi. */
+    int nombreDeLecturesParBoucle;
+    /** 6.3 : si posé, reçoit "passages" à chaque lecture groupée (ordre des lectures). */
+    List<String> journalDesLectures;
 
     /** Pose un Passage préexistant, sans compter d'écriture du cas d'usage. */
     void poser(Passage passage) {
         passages.add(passage);
     }
 
-    /** Lecture groupée de 4.7 (port DepotPassages.parInscriptions, nom supposé). */
+    /** Lecture groupée du port DepotPassages.parInscriptions. */
+    @Override
     public List<Passage> parInscriptions(java.util.Collection<UUID> inscriptionIds) {
         nombreDeLecturesGroupees++;
+        appelsGroupes.add(List.copyOf(inscriptionIds));
+        if (journalDesLectures != null) {
+            journalDesLectures.add("passages");
+        }
         return passages.stream().filter(p -> inscriptionIds.contains(p.inscriptionId())).toList();
     }
 
@@ -38,6 +49,7 @@ final class DepotPassagesEnMemoireDeTest implements DepotPassages {
 
     @Override
     public boolean existe(UUID inscriptionId, int numeroBoucle) {
+        nombreDeLecturesParBoucle++;
         if (echecAEnregistrer != null) {
             return false;
         }
@@ -47,6 +59,7 @@ final class DepotPassagesEnMemoireDeTest implements DepotPassages {
 
     @Override
     public Optional<Passage> parInscriptionEtBoucle(UUID inscriptionId, int numeroBoucle) {
+        nombreDeLecturesParBoucle++;
         return passages.stream()
                 .filter(p -> p.inscriptionId().equals(inscriptionId) && p.numeroBoucle() == numeroBoucle)
                 .findFirst();

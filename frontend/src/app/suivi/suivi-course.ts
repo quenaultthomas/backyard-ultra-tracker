@@ -43,4 +43,15 @@ export interface SuiviCourse {
   abandons: AbandonSuivi[];
   /** Inscriptions `VAINQUEUR`, triées par le serveur ; vide sauf `TERMINEE` avec vainqueur. */
   vainqueurs: CoureurSuivi[];
+  /** Paramètres de Boucle de la Course, renseignés pour tous les statuts. */
+  distanceBoucleMetres: number;
+  denivelePositifBoucleMetres: number;
+  /** Statistiques de la Course calculées par le serveur, affichées telles quelles (jamais recalculées). */
+  bouclesTerminees: number;
+  distanceCumuleeMetres: number;
+  denivelePositifCumuleMetres: number;
+  /** `null` sans Passage scanné ou sans heure de départ. */
+  allureSecondesParKilometre: number | null;
+  /** Non `null` seulement pour une Course `TERMINEE`. */
+  dureeFinaleMillisecondes: number | null;
 }

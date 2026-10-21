@@ -51,7 +51,9 @@ class SuiviPublicCoureursIntegrationTest {
     static final List<String> CHAMPS = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur",
             "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee",
             "tempsAvantFinBoucleMillisecondes", "dureeEcouleeMillisecondes", "coureursEnCourse", "abandons",
-            "vainqueurs");
+            "vainqueurs", "distanceBoucleMetres", "denivelePositifBoucleMetres", "bouclesTerminees",
+            "distanceCumuleeMetres", "denivelePositifCumuleMetres", "allureSecondesParKilometre",
+            "dureeFinaleMillisecondes");
     static final List<String> CHAMPS_COUREUR = List.of("dossard", "pseudo");
     static final List<String> CHAMPS_ABANDON = List.of("dossard", "pseudo", "boucleAbandon", "motifAbandon");
     static final String ANONYME = "Coureur anonyme";
@@ -102,7 +104,7 @@ class SuiviPublicCoureursIntegrationTest {
     // ---------------------------------------------------------------- CA8
 
     @Test
-    @DisplayName("CA8 : X EN_COURS (Alice 1 et Bruno 2 EN_COURSE, Karim 3 ABANDON Boucle 1 VOLONTAIRE) sans session : 200, no-store, aucun Set-Cookie, 14 champs exactement, lignes à 2 et 4 champs, aucune fuite, aucune écriture")
+    @DisplayName("CA8 : X EN_COURS (Alice 1 et Bruno 2 EN_COURSE, Karim 3 ABANDON Boucle 1 VOLONTAIRE) sans session : 200, no-store, aucun Set-Cookie, 21 champs exactement (6.3 RG1), lignes à 2 et 4 champs, aucune fuite, aucune écriture")
     void ca8_suivi_public_avec_trois_listes() throws Exception {
         UUID x = courseEnCours("X");
         UUID alice = inscrire(x, decor.idAlice, 1, "EN_COURSE");
@@ -121,7 +123,7 @@ class SuiviPublicCoureursIntegrationTest {
                 c -> assertThat(c).contains("no-store"));
         assertThat(reponse.headers().allValues("set-cookie")).isEmpty();
         JsonNode corps = decor.json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(14).containsExactlyInAnyOrderElementsOf(CHAMPS);
+        assertThat(corps.propertyNames()).hasSize(21).containsExactlyInAnyOrderElementsOf(CHAMPS);
         assertThat(corps.get("coureursEnCourse")).hasSize(2);
         for (JsonNode ligne : corps.get("coureursEnCourse")) {
             assertThat(ligne.propertyNames()).containsExactlyInAnyOrderElementsOf(CHAMPS_COUREUR);
@@ -140,7 +142,7 @@ class SuiviPublicCoureursIntegrationTest {
                 decor.idAlice.toString(), karim.toString(), alice.toString(), decor.jeton(x.toString(), decor.idAlice),
                 decor.jeton(x.toString(), decor.idBruno), decor.jeton(x.toString(), karim));
         assertThat(reponse.body()).doesNotContain("EN_COURSE", "\"ABANDON\"", "VAINQUEUR", "SCAN", "CORRECTION",
-                "nombreInscrits", "nombreBoucles", "dureeBoucle", "distance", "denivele");
+                "nombreInscrits", "nombreBoucles", "dureeBoucle");
         assertThat(decor.jdbc.queryForList("select * from inscription order by id")).isEqualTo(inscriptionsAvant);
         assertThat(decor.jdbc.queryForList("select * from course order by id")).isEqualTo(coursesAvant);
         assertThat(decor.jdbc.queryForList("select * from passage order by id")).isEqualTo(passagesAvant);
@@ -173,7 +175,7 @@ class SuiviPublicCoureursIntegrationTest {
 
         assertThat(reponse.statusCode()).isEqualTo(200);
         JsonNode corps = decor.json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(14);
+        assertThat(corps.propertyNames()).hasSize(21);
         assertThat(corps.get("statut").asString()).isEqualTo("EN_PREPARATION");
         for (String liste : List.of("coureursEnCourse", "abandons", "vainqueurs")) {
             assertThat(corps.get(liste).isArray()).as(liste).isTrue();
@@ -315,7 +317,7 @@ class SuiviPublicCoureursIntegrationTest {
     // ---------------------------------------------------------------- CA12
 
     @Test
-    @DisplayName("CA12 : 3 puis 60 Inscriptions de Comptes distincts : même nombre d'instructions SQL, exactement 2 de plus qu'en EN_PREPARATION (absentes de celle-ci), aucune lecture de Passage")
+    @DisplayName("CA12 : 3 puis 60 Inscriptions de Comptes distincts : même nombre d'instructions SQL, exactement 3 de plus qu'en EN_PREPARATION (6.3 CA14 remplace 2 par 3 : Passages en plus), lecture de Passage groupée")
     void ca12_nombre_de_requetes_independant_du_nombre_d_inscrits() throws Exception {
         UUID petite = courseEnCours("Petite");
         UUID grande = courseEnCours("Grande");
@@ -342,17 +344,10 @@ class SuiviPublicCoureursIntegrationTest {
         long enPreparation = requetes(statistiques, preparation);
 
         assertThat(pour60).as("même nombre d'instructions SQL pour 3 et 60 inscrits (pas de N+1)").isEqualTo(pour3);
-        assertThat(pour3 - enPreparation).as("seules les Inscriptions et les pseudos s'ajoutent").isEqualTo(2);
+        assertThat(pour3 - enPreparation).as("Inscriptions, pseudos et Passages s'ajoutent (6.3 RG9)").isEqualTo(3);
         assertThat(corps(grande).get("coureursEnCourse")).hasSize(40);
         assertThat(corps(grande).get("abandons")).hasSize(20);
-        statistiques.clear();
-        corps(grande);
-        assertThat(java.util.Arrays.stream(statistiques.getEntityNames()).filter(n -> n.contains("Passage"))
-                .map(n -> statistiques.getEntityStatistics(n).getLoadCount()
-                        + statistiques.getEntityStatistics(n).getFetchCount()).toList()).allMatch(n -> n == 0);
-        assertThat(java.util.Arrays.stream(statistiques.getQueries()).filter(q -> q.toLowerCase().contains("passage")))
-                .isEmpty();
-        // les deux instructions ajoutées (Inscriptions, pseudos) sont absentes en EN_PREPARATION
+        // les instructions ajoutées (Inscriptions, pseudos, Passages) sont absentes en EN_PREPARATION
         statistiques.clear();
         corps(preparation);
         assertThat(java.util.Arrays.stream(statistiques.getEntityNames())
