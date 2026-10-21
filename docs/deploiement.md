@@ -195,6 +195,17 @@ Les compteurs d'échecs de connexion et les blocages temporaires sont aussi en m
 
 L'application est installable et garde sa coque en cache (service worker, incrément 5.2). Après un déploiement, chaque appareil télécharge la nouvelle version en arrière-plan : elle s'applique au prochain lancement complet de l'application, ou tout de suite par le bandeau « Une nouvelle version de l'application est disponible. » > « Mettre à jour ». Elle ne s'applique jamais toute seule, et les scans en attente sont conservés. Aucune purge de cache n'est à demander aux bénévoles. Le service worker exige HTTPS (sauf `localhost`) : en production, l'application doit être servie par le domaine (`DOMAINE`), jamais par l'adresse IP en HTTP.
 
+## Fin de course et scans tardifs
+
+**Délai de grâce.** La Boucle N n'est tranchée (abandon automatique hors délai, fin de course) qu'au départ de la Boucle N+1 plus un délai de grâce de **3 minutes**, plafonné au quart de la durée de Boucle (15 s pour une Boucle de 1 min). C'est une constante de l'application, non configurable. Pendant ce délai, un scan fait pendant la Boucle N (l'application tient compte de l'âge du scan en file d'attente) est encore accepté sur la Boucle N, même s'il arrive après le départ de N+1. Suivi public et pilotage affichent alors « Contrôle de la boucle N en cours : les scans de cette boucle sont encore acceptés. » Conséquence : le vainqueur est annoncé jusqu'à 3 minutes (le délai de grâce) après la fin de la Boucle décisive.
+
+**Consignes terrain.**
+- Garder au moins un poste de scan en ligne près de la ligne d'arrivée.
+- En fin de course, avant chaque départ, vérifier que le compteur « en attente » de chaque poste de scan est à zéro.
+- Ne pas mettre à jour ni redémarrer `api` pendant une course. Si c'est inévitable, reconnecter les bénévoles (les sessions sont perdues) avant la fin du délai de grâce pour que leurs scans en attente partent à temps.
+
+**Limite.** Au-delà du délai de grâce, la Boucle est tranchée : un scan tardif est refusé. Si la course est encore en cours, un administrateur peut réintégrer le coureur. Sur une course `TERMINEE`, aucune correction n'est possible dans l'application : noter le résultat corrigé à la main.
+
 ## Sauvegarde
 
 Sauvegarde de la base au format personnalisé de `pg_dump`, lancée dans le conteneur `base` (l'utilisateur et la base sont lus depuis le conteneur, pas depuis l'hôte) :

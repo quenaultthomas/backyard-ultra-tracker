@@ -70,7 +70,7 @@ test('CA12 - Tom, sans passage sur la Boucle 1, passe en abandon « Hors délai 
   await expect(lire(page, 'pilotage-aucun-abandon')).toBeVisible();
   await expect(lire(page, 'pilotage-inscrit-boucle')).toHaveText(['A bouclé', 'A bouclé', 'En boucle'], HUIT_SECONDES);
 
-  await avancerHorloge(playwright, 'PT50M');
+  await avancerHorloge(playwright, 'PT53M');
 
   await expect(lire(page, 'pilotage-compteur-abandons')).toHaveText('1 coureur en abandon', HUIT_SECONDES);
   await expect(lire(page, 'pilotage-compteur')).toHaveText('2 coureurs en course sur 3 inscrits');
@@ -117,7 +117,7 @@ test('CA13 - deux Boucles d\'un coup : Tom et Karim en abandon Boucle 1 (rattrap
     await contexteBenevole.close();
   }
 
-  await avancerHorloge(playwright, 'PT120M');
+  await avancerHorloge(playwright, 'PT123M');
 
   await expect(lire(page, 'pilotage-compteur-abandons')).toHaveText('2 coureurs en abandon', HUIT_SECONDES);
   await expect(lire(page, 'pilotage-abandon')).toHaveCount(2);
@@ -143,7 +143,7 @@ test('CA13 - personne n\'a bouclé la Boucle 1 : aucun abandon (4.10 : les trois
   await ouvrirPilotage(page, course.id);
   await expect(lire(page, 'pilotage-aucun-abandon')).toBeVisible();
 
-  await avancerHorloge(playwright, 'PT60M');
+  await avancerHorloge(playwright, 'PT63M');
 
   await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée', HUIT_SECONDES);
   await expect(lire(page, 'pilotage-aucun-abandon')).toHaveText('Aucun abandon.');
@@ -167,7 +167,7 @@ test('CA14 - le scan de Tom en abandon est refusé « Coureur en abandon », san
     await avancerHorloge(playwright, 'PT10M');
     await scanner(scan, bruno, 1);
     await scanner(scan, chloe, 1);
-    await avancerHorloge(playwright, 'PT50M');
+    await avancerHorloge(playwright, 'PT53M');
     await expect(lire(page, 'pilotage-abandon-pseudo')).toHaveText(tom.pseudo, HUIT_SECONDES);
 
     await scannerParEntree(scan, tom.jeton);
@@ -208,12 +208,12 @@ test('CA15 - dernière Boucle autorisée (M = 2) : Chloé, sans Passage sur la B
     await scanner(scan, bruno, 1);
     await scanner(scan, chloe, 1);
     await scanner(scan, karim, 1);
-    await avancerHorloge(playwright, 'PT50M');
+    await avancerHorloge(playwright, 'PT53M');
     await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 2 sur 2', HUIT_SECONDES);
     await scanner(scan, bruno, 2);
     await scanner(scan, karim, 2);
 
-    await avancerHorloge(playwright, 'PT60M');
+    await avancerHorloge(playwright, 'PT63M');
   } finally {
     await contexteBenevole.close();
   }

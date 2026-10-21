@@ -49,13 +49,13 @@ import tools.jackson.databind.JsonNode;
 @Import(CoursesIntegrationTest.HorlogeDeTestConfiguration.class)
 class AbandonManuelIntegrationTest {
 
-    static final Instant FIN_BOUCLE_1 = DecorAbandon.T0.plusSeconds(60);
+    static final Instant DECISION_BOUCLE_1 = DecorAbandon.T0.plusSeconds(60 + DecorAbandon.GRACE_SECONDES);
     static final String ID_INCONNU = "00000000-0000-4000-8000-000000000001";
     static final List<String> CHAMPS_REPONSE = List.of("inscriptionId", "dossard", "statut", "motifAbandon",
             "boucleAbandon", "statutCourse");
     static final List<String> CHAMPS_PILOTAGE = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur",
             "demarreeLe", "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle",
-            "boucleMaxTerminee", "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
+            "boucleMaxTerminee", "boucleEnAttenteDeDecision", "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
             "dureeEcouleeMillisecondes", "nombreInscrits", "nombreAyantBoucle", "nombreEnBoucle", "inscritsEnCourse",
             "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs", "inscritsVainqueurs");
     static final String TOUT_INSCRIPTION = "select * from inscription order by id";
@@ -444,7 +444,7 @@ class AbandonManuelIntegrationTest {
     // ---------------------------------------------------------------- CA8
 
     @Test
-    @DisplayName("CA8 : Bruno et Chloé ABANDON, Patron abandonne Tom MANUEL : 200 TERMINEE ; Course TERMINEE, demarree_le inchangé, aucun VAINQUEUR ; journal « Abandon manuel » puis « Fin de course ... aucun vainqueur. » ; pilotage 23 champs, 0 vainqueur ; Course Y inchangée")
+    @DisplayName("CA8 : Bruno et Chloé ABANDON, Patron abandonne Tom MANUEL : 200 TERMINEE ; Course TERMINEE, demarree_le inchangé, aucun VAINQUEUR ; journal « Abandon manuel » puis « Fin de course ... aucun vainqueur. » ; pilotage 24 champs, 0 vainqueur ; Course Y inchangée")
     void ca8_dernier_coureur_termine_la_course() throws Exception {
         String x = decor.courseXDemarree();
         String y = decor.courseYDemarree();
@@ -549,14 +549,14 @@ class AbandonManuelIntegrationTest {
     // ---------------------------------------------------------------- CA9
 
     @Test
-    @DisplayName("CA9 : 20 essais, abandon manuel de Tom {} et contrôle automatique à 14:01:00.000Z simultanés : état cohérent (Tom MANUEL ou HORS_DELAI Boucle 1), abandon 200 ou 409, jamais 500, jamais de Course TERMINEE avec une Inscription EN_COURSE")
+    @DisplayName("CA9 : 20 essais, abandon manuel de Tom {} et contrôle automatique à 14:01:15.000Z simultanés : état cohérent (Tom MANUEL ou HORS_DELAI Boucle 1), abandon 200 ou 409, jamais 500, jamais de Course TERMINEE avec une Inscription EN_COURSE")
     void ca9_abandon_et_controle_automatique_simultanes() throws Exception {
         int manuelsGagnants = 0;
         for (int essai = 0; essai < 20; essai++) {
             String x = decor.courseDemarreeAvecMaxBoucles("Course concurrente " + essai, 5);
             decor.poserPassage(x, decor.idBruno, 1);
             decor.poserPassage(x, decor.idChloe, 1);
-            decor.horloge.fixer(FIN_BOUCLE_1);
+            decor.horloge.fixer(DECISION_BOUCLE_1);
             String tom = inscriptionDe(x, decor.idTom);
 
             List<HttpResponse<String>> resultats = lancerEnParallele(
@@ -592,7 +592,7 @@ class AbandonManuelIntegrationTest {
             String x = decor.courseDemarreeAvecMaxBoucles("Course dernier " + essai, 5);
             abandonnerParSql(x, decor.idBruno, "VOLONTAIRE", 1);
             abandonnerParSql(x, decor.idChloe, "AUTRE", 1);
-            decor.horloge.fixer(FIN_BOUCLE_1);
+            decor.horloge.fixer(DECISION_BOUCLE_1);
             String tom = inscriptionDe(x, decor.idTom);
 
             List<HttpResponse<String>> resultats = lancerEnParallele(
@@ -748,7 +748,7 @@ class AbandonManuelIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA10 : pilotage après l'abandon de Bruno {1, 2} : absent de inscritsEnCourse, présent dans inscritsEnAbandon (boucleAbandon 3, motifAbandon MANUEL, nombreBouclesTerminees 2), nombreInscrits inchangé, 23 champs")
+    @DisplayName("CA10 : pilotage après l'abandon de Bruno {1, 2} : absent de inscritsEnCourse, présent dans inscritsEnAbandon (boucleAbandon 3, motifAbandon MANUEL, nombreBouclesTerminees 2), nombreInscrits inchangé, 24 champs")
     void ca10_pilotage_apres_abandon() throws Exception {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);

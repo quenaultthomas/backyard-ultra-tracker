@@ -100,14 +100,14 @@ class AbandonAutomatiqueIntegrationTest {
     // ---------------------------------------------------------------- CA6
 
     @Test
-    @DisplayName("CA6 : à t0 + 60 s (Bruno {1}, Chloé {}, Tom {1}) Chloé passe ABANDON HORS_DELAI Boucle 1 en base, Bruno et Tom restent EN_COURSE sans motif, aucun Passage touché, Course EN_COURS, Course Y non touchée")
+    @DisplayName("CA6 : à t0 + 75 s (60 s + grâce 15 s) (Bruno {1}, Chloé {}, Tom {1}) Chloé passe ABANDON HORS_DELAI Boucle 1 en base, Bruno et Tom restent EN_COURSE sans motif, aucun Passage touché, Course EN_COURS, Course Y non touchée")
     void ca6_abandon_hors_delai_persiste() throws Exception {
         String x = decor.courseXDemarree();
         String y = decor.courseYDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
         decor.poserPassage(x, decor.idTom, 1);
         List<Map<String, Object>> passagesAvant = decor.jdbc.queryForList("select * from passage order by id");
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(75));
 
         int abandons = abandonner.executer(UUID.fromString(x)).abandons();
         int abandonsY = abandonner.executer(UUID.fromString(y)).abandons();
@@ -129,7 +129,7 @@ class AbandonAutomatiqueIntegrationTest {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
         decor.poserPassage(x, decor.idTom, 1);
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(75));
         decor.demarrerJournal();
 
         abandonner.executer(UUID.fromString(x)).abandons();
@@ -155,16 +155,16 @@ class AbandonAutomatiqueIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA6 : à t0 + 59,999 s rien n'est décidé, à t0 + 60 s Chloé est en abandon (instant exact de bascule)")
+    @DisplayName("CA6 : à t0 + 74,999 s rien n'est décidé, à t0 + 75 s (60 s + grâce 15 s) Chloé est en abandon (instant exact de bascule)")
     void ca6_bascule_exacte() throws Exception {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
-        decor.horloge.fixer(DecorAbandon.T0.plusMillis(59_999));
+        decor.horloge.fixer(DecorAbandon.T0.plusMillis(74_999));
 
         assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isZero();
         assertThat(decor.etat(x, decor.idChloe)).isEqualTo("EN_COURSE:-:-");
 
-        decor.horloge.fixer(DecorAbandon.T0.plusMillis(60_000));
+        decor.horloge.fixer(DecorAbandon.T0.plusMillis(75_000));
         assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isEqualTo(2);
         assertThat(decor.etat(x, decor.idChloe)).isEqualTo("ABANDON:HORS_DELAI:1");
         assertThat(decor.etat(x, decor.idTom)).isEqualTo("ABANDON:HORS_DELAI:1");
@@ -200,7 +200,7 @@ class AbandonAutomatiqueIntegrationTest {
     @DisplayName("CA6 (adapté 4.10 RG1) : personne n'a de Passage sur la Boucle 1 à t0 + 2 min : aucun abandon, les trois sont VAINQUEUR (partagés), la Course est TERMINEE, aucune ligne « Abandon automatique »")
     void ca6_personne_n_a_boucle_vainqueurs_partages() throws Exception {
         String x = decor.courseXDemarree();
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(120));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(135));
         decor.demarrerJournal();
 
         AbandonnerCoureursHorsDelai.Resultat resultat = abandonner.executer(UUID.fromString(x));
@@ -221,7 +221,7 @@ class AbandonAutomatiqueIntegrationTest {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
         decor.poserPassageCorrection(x, decor.idChloe, 1);
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(75));
 
         assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isEqualTo(1);
 
@@ -289,7 +289,7 @@ class AbandonAutomatiqueIntegrationTest {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
         decor.poserPassage(x, decor.idTom, 1);
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(75));
         decor.demarrerJournal();
         CyclicBarrier depart = new CyclicBarrier(2);
         Callable<Integer> execution = () -> {
@@ -312,14 +312,14 @@ class AbandonAutomatiqueIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA7 : 20 essais de scan de Chloé simultané au contrôle (t0 + 60,3 s, âge 500 ms) : soit 201 avec Passage et EN_COURSE, soit 409 INSCRIPTION_NON_EN_COURSE avec ABANDON et sans Passage, jamais les deux, jamais de 500")
+    @DisplayName("CA7 : 20 essais de scan de Chloé simultané au contrôle (t0 + 75,3 s, âge 15500 ms) : soit 201 avec Passage et EN_COURSE, soit 409 INSCRIPTION_NON_EN_COURSE avec ABANDON et sans Passage, jamais les deux, jamais de 500")
     void ca7_scan_simultane_au_controle() throws Exception {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
         decor.poserPassage(x, decor.idTom, 1);
         String jeton = decor.jeton(x, decor.idChloe);
         UUID inscriptionChloe = UUID.fromString(decor.idInscription(x, decor.idChloe));
-        decor.horloge.fixer(DecorAbandon.T0.plusMillis(60_300));
+        decor.horloge.fixer(DecorAbandon.T0.plusMillis(75_300));
         ExecutorService pool = Executors.newFixedThreadPool(2);
         try {
             for (int essai = 1; essai <= 20; essai++) {
@@ -333,7 +333,7 @@ class AbandonAutomatiqueIntegrationTest {
                 });
                 Future<HttpResponse<String>> scan = pool.submit(() -> {
                     depart.await(10, TimeUnit.SECONDS);
-                    return decor.scanner(decor.leo, x, jeton, UUID.randomUUID(), 500);
+                    return decor.scanner(decor.leo, x, jeton, UUID.randomUUID(), 15_500);
                 });
 
                 controle.get(20, TimeUnit.SECONDS);
@@ -401,7 +401,7 @@ class AbandonAutomatiqueIntegrationTest {
                 .isEqualTo(201);
         assertThat(decor.scanner(decor.leo, x, decor.jeton(x, decor.idTom), UUID.randomUUID(), 0).statusCode())
                 .isEqualTo(201);
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(75));
         assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isEqualTo(1);
         decor.jdbc.update("update inscription set statut = 'ABANDON' where course_id = ? and compte_id = ?",
                 UUID.fromString(x), decor.idTom);
@@ -442,7 +442,7 @@ class AbandonAutomatiqueIntegrationTest {
         decor.horloge.fixer(DecorAbandon.T0.plusSeconds(70));
         assertThat(decor.scanner(decor.leo, x, decor.jeton(x, decor.idBruno), UUID.randomUUID(), 0).statusCode())
                 .isEqualTo(201);
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(120));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(135));
         assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isEqualTo(2);
         assertThat(decor.etat(x, decor.idChloe)).isEqualTo("ABANDON:HORS_DELAI:2");
         // 4.9 : Bruno, seul passant de la Boucle 2, est vainqueur ; le rejeu d'un scan antérieur reste 200
@@ -460,9 +460,9 @@ class AbandonAutomatiqueIntegrationTest {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
         decor.poserPassage(x, decor.idTom, 1);
-        decor.horloge.fixer(DecorAbandon.T0.plusMillis(60_300));
+        decor.horloge.fixer(DecorAbandon.T0.plusMillis(75_300));
 
-        HttpResponse<String> sauve = decor.scanner(decor.leo, x, decor.jeton(x, decor.idChloe), UUID.randomUUID(), 500);
+        HttpResponse<String> sauve = decor.scanner(decor.leo, x, decor.jeton(x, decor.idChloe), UUID.randomUUID(), 15_500);
 
         assertThat(sauve.statusCode()).as(sauve.body()).isEqualTo(201);
         assertThat(decor.json.readTree(sauve.body()).get("numeroBoucle").asInt()).isEqualTo(1);

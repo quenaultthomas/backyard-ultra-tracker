@@ -43,7 +43,7 @@ async function jusqueAuDepartBoucle2(page: Page, scan: Page, course: CourseDeSca
   await avancerHorloge(playwright, 'PT10M');
   await scanner(scan, bruno, 1);
   await scanner(scan, chloe, 1);
-  await avancerHorloge(playwright, 'PT50M');
+  await avancerHorloge(playwright, 'PT53M');
   await expect(lire(page, 'pilotage-boucle-courante')).toContainText('Boucle 2', HUIT_SECONDES);
 }
 
@@ -142,7 +142,7 @@ test('CA15 - M = 2 : Tom réintégré et scanné en Boucle 2, les trois sont vai
     await scanner(scan, chloe, 2);
     await scanner(scan, tom, 2);
 
-    await avancerHorloge(playwright, 'PT50M');
+    await avancerHorloge(playwright, 'PT53M');
 
     await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée', HUIT_SECONDES);
     await expect(lire(page, 'pilotage-vainqueurs-titre')).toHaveText('Vainqueurs');
@@ -192,7 +192,7 @@ test('CA15 - variante : Tom réintégré mais non scanné en Boucle 2 : Bruno et
     await avancerHorloge(playwright, 'PT10M');
     await scanner(scan, bruno, 2);
     await scanner(scan, chloe, 2);
-    await avancerHorloge(playwright, 'PT50M');
+    await avancerHorloge(playwright, 'PT53M');
 
     await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée', HUIT_SECONDES);
     await expect(lire(page, 'pilotage-vainqueurs-titre')).toHaveText('Vainqueurs');
@@ -232,7 +232,7 @@ test('CA16 - course terminée (Bruno seul scanné) : aucun bouton « Réintégre
     await expect(lire(page, 'pilotage-inscrit')).toHaveCount(3);
 
     await scanner(scan, bruno, 1);
-    await avancerHorloge(playwright, 'PT60M');
+    await avancerHorloge(playwright, 'PT63M');
 
     await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée', HUIT_SECONDES);
     await expect(lire(page, 'pilotage-vainqueur')).toHaveCount(1);
@@ -262,7 +262,7 @@ test('CA16 - le POST de réintégration sur la course terminée par l\'horloge e
   } finally {
     await contexteBenevole.close();
   }
-  await avancerHorloge(playwright, 'PT60M');
+  await avancerHorloge(playwright, 'PT63M');
   await expect.poll(() => lireStatutCourseEnBase(course.id), HUIT_SECONDES).toBe('TERMINEE');
   const reponse = await avecApi(playwright, (ctx) =>
     reintegrerParApi(ctx, course.id, chloe.inscriptionId, { pseudo: PSEUDO_ADMIN_MASTER, motDePasse: MOT_DE_PASSE_ADMIN_MASTER }),

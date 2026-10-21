@@ -56,7 +56,7 @@ public final class AbandonAutomatique {
 
     /**
      * @param aUnPassageSur indique si une Inscription a un Passage (de toute origine) sur une Boucle donnée
-     * @param bouclesTerminees nombre de Boucles terminées de la Course, voir {@link Course#bouclesTerminees}
+     * @param bouclesTerminees nombre de Boucles à décider de la Course, voir {@link Course#bouclesTranchees}
      * @param nombreMaxBoucles dernière Boucle autorisée de la Course
      */
     public static Decision decider(Collection<Inscription> inscriptions,

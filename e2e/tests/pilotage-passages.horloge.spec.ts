@@ -51,7 +51,7 @@ test('CA8 - la bascule remet « En boucle » les coureurs ayant bouclé et met l
     await expect(lire(page, 'pilotage-ayant-boucle')).toHaveText('A bouclé : 3', SIX_SECONDES);
     await expect(lire(page, 'pilotage-en-boucle')).toHaveText('En boucle : 1');
 
-    await avancerHorloge(playwright, 'PT50M');
+    await avancerHorloge(playwright, 'PT53M');
     await expect(lire(page, 'pilotage-colonne-boucle')).toHaveText('Boucle 2', SIX_SECONDES);
     // 4.8 : Tom, sans Passage sur la Boucle 1, est en abandon (Hors délai, Boucle 1) ; Bruno et Chloé repartent « En boucle »
     await expect(lire(page, 'pilotage-abandon-pseudo')).toHaveText(tom.pseudo, HUIT_SECONDES);
@@ -71,7 +71,7 @@ test('CA8 - la bascule remet « En boucle » les coureurs ayant bouclé et met l
     await expect(lire(page, 'pilotage-inscrit-boucle')).toHaveText(['A bouclé', 'En boucle', 'A bouclé'], SIX_SECONDES);
     await expect(lire(page, 'pilotage-ayant-boucle')).toHaveText('A bouclé : 2');
 
-    await avancerHorloge(playwright, 'PT60M');
+    await avancerHorloge(playwright, 'PT63M');
     // 4.10 : adapté (RG14). Chloé, sans Passage sur la Boucle 2 (dernière autorisée), passe en abandon ; Bruno et Zoé,
     // seuls passants à la dernière Boucle, sont vainqueurs partagés (4.8/4.9 les laissaient « En cours »), la Course est terminée.
     await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée', HUIT_SECONDES);

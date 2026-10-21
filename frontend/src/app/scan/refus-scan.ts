@@ -49,12 +49,11 @@ function motifDe(probleme: ErreurScan): string {
   return (probleme.code && MOTIFS_PAR_CODE[probleme.code]) || MOTIF_PAR_DEFAUT;
 }
 
-/** Codes pour lesquels un scan fait dans les temps se rattrape par la réintégration admin (4.12). */
-const CODES_AIDE_REINTEGRATION: readonly string[] = [
-  'INSCRIPTION_NON_EN_COURSE',
-  'COURSE_TERMINEE',
-  'TEMPS_DE_COURSE_ECOULE',
-];
+/**
+ * Codes pour lesquels un scan fait dans les temps se rattrape par la réintégration admin (4.12).
+ * Ni `COURSE_TERMINEE` ni `TEMPS_DE_COURSE_ECOULE` : aucun recours dans l'application (7.1 RG9).
+ */
+const CODES_AIDE_REINTEGRATION: readonly string[] = ['INSCRIPTION_NON_EN_COURSE'];
 
 /** Aide d'affichage, choisie par `code` comme le motif. */
 export function proposeLaReintegration(code: string | undefined): boolean {

@@ -13,19 +13,22 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.function.Function;
 
 /**
  * Instantané de pilotage d'une Course pour l'administration. Les champs de chronométrage sont null (et les booléens
  * faux) sans chronométrage ; les nombres de bouclage et l'indicateur de bouclage de chaque inscrit sont alors null.
- * {@code heureServeur} est l'instant UTC de calcul, toujours aux millisecondes. Ni jeton QR, ni identifiant de
+ * {@code heureServeur} est l'instant UTC de calcul, toujours aux millisecondes ; {@code boucleEnAttenteDeDecision}
+ * est la Boucle terminée dont le délai de grâce court à cet instant, null sinon. Ni jeton QR, ni identifiant de
  * Compte, ni détail de Passage.
  */
 public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, StatutCourse statut,
                                     String heureServeur, Instant demarreeLe, int dureeBoucleMinutes,
                                     int nombreMaxBoucles, Integer boucleCourante, boolean derniereBoucle,
-                                    boolean boucleMaxTerminee, Instant debutBoucleCourante,
+                                    boolean boucleMaxTerminee, Integer boucleEnAttenteDeDecision,
+                                    Instant debutBoucleCourante,
                                     Instant finBoucleCourante, Long tempsAvantFinBoucleMillisecondes,
                                     Long dureeEcouleeMillisecondes, int nombreInscrits, Integer nombreAyantBoucle,
                                     Integer nombreEnBoucle, List<InscritPilotageReponse> inscritsEnCourse,
@@ -105,6 +108,7 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
                 course.nombreMaxBoucles(), valeur(chrono, Chronometrage::boucleCourante),
                 chrono.map(Chronometrage::derniereBoucle).orElse(false),
                 chrono.map(Chronometrage::boucleMaxTerminee).orElse(false),
+                enAttente(course.boucleEnAttenteDeDecision(pilotage.heureServeur())),
                 valeur(chrono, Chronometrage::debutBoucleCourante), valeur(chrono, Chronometrage::finBoucleCourante),
                 valeur(chrono, c -> millisecondes(c.tempsAvantFinBoucle())),
                 valeur(chrono, c -> millisecondes(c.dureeEcoulee())), pilotage.nombreInscrits(),
@@ -114,6 +118,10 @@ public record PilotageCourseReponse(UUID courseId, String nom, String logoUrl, S
                 pilotage.inscritsEnAbandon().stream().map(AbandonPilotageReponse::depuis).toList(),
                 pilotage.nombreVainqueurs(),
                 pilotage.inscritsVainqueurs().stream().map(VainqueurPilotageReponse::depuis).toList());
+    }
+
+    private static Integer enAttente(OptionalInt boucle) {
+        return boucle.isPresent() ? boucle.getAsInt() : null;
     }
 
     private static <T> T valeur(Optional<Chronometrage> chronometrage, Function<Chronometrage, T> champ) {

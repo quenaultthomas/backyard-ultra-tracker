@@ -43,7 +43,7 @@ class PilotageAbandonsIntegrationTest {
     static final String ID_INCONNU = "00000000-0000-0000-0000-000000000000";
     static final List<String> CHAMPS = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur", "demarreeLe",
             "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee",
-            "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
+            "boucleEnAttenteDeDecision", "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
             "dureeEcouleeMillisecondes", "nombreInscrits", "nombreAyantBoucle", "nombreEnBoucle", "inscritsEnCourse",
             "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs", "inscritsVainqueurs");
     static final List<String> CHAMPS_ABANDON = List.of("inscriptionId", "dossard", "pseudo", "statut",
@@ -113,7 +113,7 @@ class PilotageAbandonsIntegrationTest {
         assertThat(reponse.headers().firstValue("content-type")).hasValueSatisfying(
                 c -> assertThat(c).contains("application/json").doesNotContain("problem"));
         JsonNode corps = decor.json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(23).containsExactlyInAnyOrderElementsOf(CHAMPS);
+        assertThat(corps.propertyNames()).hasSize(24).containsExactlyInAnyOrderElementsOf(CHAMPS);
         assertThat(corps.get("courseId").asString()).isEqualTo(x);
         assertThat(corps.get("statut").asString()).isEqualTo("EN_COURS");
         assertThat(corps.get("boucleCourante").asInt()).isEqualTo(2);

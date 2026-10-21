@@ -40,10 +40,14 @@ import org.junit.jupiter.params.provider.EnumSource;
  *   DepotInscriptionsEnMemoireDeTest la fournit et compte les appels) ; une écriture par Inscription mise en abandon ;
  * - lecture des Passages par {@code DepotPassages.parInscriptions} ou {@code existe} (les deux sont dans le double).
  * Course X : boucles de 1 min, M = 5, t0 = 14:00:00Z.
+ * Adaptés à 7.1 (RG2, RG3) sans affaiblissement : chaque instant de contrôle est décalé de {@code GRACE}, délai de
+ * grâce d'une Boucle de 1 min (15 s) ; les attentes sont inchangées.
  */
 class AbandonnerCoureursHorsDelaiTest {
 
     private static final Instant T0 = Instant.parse("2026-10-12T14:00:00Z");
+    /** 7.1 RG1 : délai de grâce d'une Boucle de 1 min ; une Boucle n'est tranchée qu'à départ(N+1) + GRACE. */
+    private static final Duration GRACE = Duration.ofSeconds(15);
     private static final LocalDate JOUR = LocalDate.of(2026, 10, 12);
     private static final UUID X = id(1);
     private static final UUID Y = id(2);
@@ -82,7 +86,7 @@ class AbandonnerCoureursHorsDelaiTest {
     void doit_passer_en_abandon_le_coureur_sans_passage_sur_la_boucle_terminee() {
         garnirX();
 
-        int abandons = casA(T0.plusSeconds(60)).executer(X).abandons();
+        int abandons = casA(T0.plusSeconds(60).plus(GRACE)).executer(X).abandons();
 
         assertThat(abandons).isEqualTo(1);
         Inscription chloeApres = relue(chloe);
@@ -98,10 +102,10 @@ class AbandonnerCoureursHorsDelaiTest {
     @DisplayName("CA4 - RG7 : second appel au même Clock : retourne 0, aucune écriture supplémentaire")
     void doit_etre_idempotent_au_meme_instant() {
         garnirX();
-        casA(T0.plusSeconds(60)).executer(X);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
         int ecrituresAvant = inscriptions.nombreDeMisesAJour;
 
-        int abandons = casA(T0.plusSeconds(60)).executer(X).abandons();
+        int abandons = casA(T0.plusSeconds(60).plus(GRACE)).executer(X).abandons();
 
         assertThat(abandons).isZero();
         assertThat(inscriptions.nombreDeMisesAJour).isEqualTo(ecrituresAvant);
@@ -111,10 +115,10 @@ class AbandonnerCoureursHorsDelaiTest {
     @DisplayName("CA4 - RG7 : appel plus tard sans nouvelle boucle : retourne 0, aucune écriture supplémentaire")
     void doit_etre_idempotent_plus_tard_dans_la_meme_boucle() {
         garnirX();
-        casA(T0.plusSeconds(60)).executer(X);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
         int ecrituresAvant = inscriptions.nombreDeMisesAJour;
 
-        int abandons = casA(T0.plusMillis(60_001)).executer(X).abandons();
+        int abandons = casA(T0.plusSeconds(60).plus(GRACE).plusMillis(1)).executer(X).abandons();
 
         assertThat(abandons).isZero();
         assertThat(inscriptions.nombreDeMisesAJour).isEqualTo(ecrituresAvant);
@@ -125,7 +129,7 @@ class AbandonnerCoureursHorsDelaiTest {
     void doit_ne_rien_faire_une_milliseconde_avant_la_bascule() {
         garnirX();
 
-        int abandons = casA(T0.plusMillis(59_999)).executer(X).abandons();
+        int abandons = casA(T0.plusSeconds(60).plus(GRACE).minusMillis(1)).executer(X).abandons();
 
         assertThat(abandons).isZero();
         assertThat(inscriptions.nombreDeMisesAJour).isZero();
@@ -139,7 +143,7 @@ class AbandonnerCoureursHorsDelaiTest {
         bruno = inscrire(X, 1);
         chloe = inscrire(X, 2);
 
-        var resultat = casA(T0.plusSeconds(60)).executer(X);
+        var resultat = casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(resultat.abandons()).isZero();
         assertThat(resultat.vainqueurs()).isEqualTo(2);
@@ -153,7 +157,7 @@ class AbandonnerCoureursHorsDelaiTest {
         garnirX();
         passages.poser(Passage.corriger(UUID.randomUUID(), chloe, 1));
 
-        int abandons = casA(T0.plusSeconds(60)).executer(X).abandons();
+        int abandons = casA(T0.plusSeconds(60).plus(GRACE)).executer(X).abandons();
 
         assertThat(abandons).isZero();
         assertThat(relue(chloe).statut()).isEqualTo(StatutInscription.EN_COURSE);
@@ -170,7 +174,7 @@ class AbandonnerCoureursHorsDelaiTest {
         scan(bruno, 2);
         scan(chloe, 1);
 
-        int abandons = casA(T0.plus(Duration.ofMinutes(3))).executer(X).abandons();
+        int abandons = casA(T0.plus(Duration.ofMinutes(3)).plus(GRACE)).executer(X).abandons();
 
         assertThat(abandons).isEqualTo(2);
         assertThat(relue(tom).boucleAbandon()).contains(1);
@@ -184,7 +188,7 @@ class AbandonnerCoureursHorsDelaiTest {
     void doit_charger_la_course_sous_verrou() {
         garnirX();
 
-        casA(T0.plusSeconds(60)).executer(X);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(courses.nombreDeChargementsPourModification).isEqualTo(1);
         assertThat(courses.nombreDeChargementsParId).isZero();
@@ -194,7 +198,7 @@ class AbandonnerCoureursHorsDelaiTest {
     @DisplayName("CA4 - RG9 : le Clock est lu une seule fois par exécution")
     void doit_lire_le_clock_une_seule_fois() {
         garnirX();
-        var clock = new ScenarioPassageDeTest.ClockAvanceALaLecture(T0.plusSeconds(60), Duration.ofSeconds(60));
+        var clock = new ScenarioPassageDeTest.ClockAvanceALaLecture(T0.plusSeconds(60).plus(GRACE), Duration.ofSeconds(60));
 
         casAvec(clock).executer(X);
 
@@ -234,7 +238,7 @@ class AbandonnerCoureursHorsDelaiTest {
     @DisplayName("CA4 - Course introuvable : 0, aucune exception, aucune écriture")
     void doit_ignorer_une_course_introuvable() {
         assertThatCode(() -> {
-            int abandons = casA(T0.plusSeconds(60)).executer(INCONNUE).abandons();
+            int abandons = casA(T0.plusSeconds(60).plus(GRACE)).executer(INCONNUE).abandons();
             assertThat(abandons).isZero();
         }).doesNotThrowAnyException();
         assertThat(inscriptions.nombreDeMisesAJour).isZero();
@@ -249,8 +253,8 @@ class AbandonnerCoureursHorsDelaiTest {
         Inscription sophie = inscrire(Y, 2);
         scan(karim, 1);
 
-        casA(T0.plusSeconds(60)).executer(X);
-        int abandonsY = casA(T0.plusSeconds(60)).executer(Y).abandons();
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
+        int abandonsY = casA(T0.plusSeconds(60).plus(GRACE)).executer(Y).abandons();
 
         assertThat(abandonsY).isZero();
         assertThat(relue(sophie).statut()).isEqualTo(StatutInscription.EN_COURSE);
@@ -265,7 +269,7 @@ class AbandonnerCoureursHorsDelaiTest {
         courses.enregistrer(course(Y, StatutCourse.EN_COURS, 1, T0));
         Inscription sophie = inscrire(Y, 1);
 
-        casA(T0.plusSeconds(60)).executer(X);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(relue(sophie).statut()).isEqualTo(StatutInscription.EN_COURSE);
     }
@@ -276,7 +280,7 @@ class AbandonnerCoureursHorsDelaiTest {
         garnirX();
         int passagesAvant = passages.passages.size();
 
-        casA(T0.plusSeconds(60)).executer(X);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(passages.passages).hasSize(passagesAvant);
         assertThat(passages.nombreDEnregistrements).isZero();
@@ -300,7 +304,7 @@ class AbandonnerCoureursHorsDelaiTest {
         }
         courses.nombreDEnregistrements = 0;
 
-        int abandons = casA(T0.plus(Duration.ofMinutes(6))).executer(X).abandons();
+        int abandons = casA(T0.plus(Duration.ofMinutes(6)).plus(GRACE)).executer(X).abandons();
 
         assertThat(abandons).isEqualTo(1);
         assertThat(relue(chloe).boucleAbandon()).contains(5);

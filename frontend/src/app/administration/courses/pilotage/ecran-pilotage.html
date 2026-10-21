@@ -82,6 +82,12 @@
             Dernière boucle autorisée.
           </p>
         }
+        @if (p.boucleEnAttenteDeDecision !== null && !p.boucleMaxTerminee) {
+          <p class="message--info" data-testid="pilotage-message-decision-en-attente">
+            Contrôle de la boucle {{ p.boucleEnAttenteDeDecision }} en cours : les scans de cette
+            boucle sont encore acceptés.
+          </p>
+        }
       }
 
       @if (p.nombreVainqueurs >= 1) {

@@ -136,11 +136,11 @@ class AbandonAutomatiqueDemarrageIntegrationTest {
     // ---------------------------------------------------------------- CA11
 
     @Test
-    @DisplayName("CA11 : profil par défaut : planificateur présent et horloge système (une Course démarrée il y a 61 s est contrôlée en temps réel)")
+    @DisplayName("CA11 : profil par défaut : planificateur présent et horloge système (une Course démarrée il y a 76 s : 60 s + grâce 15 s est contrôlée en temps réel)")
     void ca11_profil_par_defaut_horloge_systeme() throws Exception {
         nettoyer();
         demarrer(List.of()).close();
-        UUID course = poserCourse(Instant.now().minusSeconds(61));
+        UUID course = poserCourse(Instant.now().minusSeconds(76));
 
         try (ConfigurableApplicationContext contexte = demarrer(List.of("--backyard.abandon-automatique.actif=true"))) {
             assertThat(contexte.getBeansOfType(PlanificateurAbandonAutomatique.class)).hasSize(1);
@@ -154,7 +154,7 @@ class AbandonAutomatiqueDemarrageIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA11 : profil e2e : planificateur présent, la décision utilise l'horloge décalée (avancer d'une Boucle fait abandonner Chloé, sans attendre une minute réelle)")
+    @DisplayName("CA11 : profil e2e : planificateur présent, la décision utilise l'horloge décalée (avancer d'une Boucle et de la grâce fait abandonner Chloé, sans attendre une minute réelle)")
     void ca11_profil_e2e_horloge_decalee() throws Exception {
         nettoyer();
         demarrer(List.of()).close();
@@ -166,7 +166,7 @@ class AbandonAutomatiqueDemarrageIntegrationTest {
             Thread.sleep(2_500);
             assertThat(etat(course, chloe)).as("horloge réelle : Boucle 1 non terminée").isEqualTo("EN_COURSE:-:-");
 
-            contexte.getBean(ReglageHorloge.class).avancer(Duration.ofMinutes(1));
+            contexte.getBean(ReglageHorloge.class).avancer(Duration.ofSeconds(75));
 
             assertThat(attendre(() -> etat(course, chloe).startsWith("ABANDON"))).isTrue();
         }

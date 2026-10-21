@@ -64,7 +64,8 @@ class PilotageCourseIntegrationTest {
             "dureeEcouleeMillisecondes", "nombreInscrits", "inscritsEnCourse");
     /** 4.7 RG9 (point ouvert 7) : les 17 champs d'origine plus les 2 champs de bouclage, contrat additif. */
     static final List<String> CHAMPS = Stream.concat(CHAMPS_4_2.stream(),
-            Stream.of("nombreAyantBoucle", "nombreEnBoucle", "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs", "inscritsVainqueurs")).toList();
+            Stream.of("nombreAyantBoucle", "nombreEnBoucle", "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs", "inscritsVainqueurs",
+            "boucleEnAttenteDeDecision")).toList();
     static final List<String> CHAMPS_CHRONOMETRAGE = List.of("demarreeLe", "boucleCourante", "debutBoucleCourante",
             "finBoucleCourante", "tempsAvantFinBoucleMillisecondes", "dureeEcouleeMillisecondes");
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "

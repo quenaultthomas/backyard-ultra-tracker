@@ -12,21 +12,24 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.function.Function;
 
 /**
- * Suivi public d'une Course, liste fermée de 21 champs : jamais de jeton QR, d'identifiant de Compte ou d'Inscription,
+ * Suivi public d'une Course, liste fermée de 22 champs : jamais de jeton QR, d'identifiant de Compte ou d'Inscription,
  * de statut d'Inscription, de détail ou de nombre de Passages, de bénévole ni de durée de Boucle. Les champs de
  * chronométrage sont null (et les booléens faux) sans chronométrage. {@code heureServeur} est l'instant UTC de calcul,
  * toujours aux millisecondes. Les trois listes, jamais null, gardent l'ordre établi par le cas d'usage. Les
  * statistiques viennent telles quelles du domaine : allure null sans Passage scanné retenu, durée finale null hors
- * TERMINEE.
+ * TERMINEE. {@code boucleEnAttenteDeDecision} : Boucle terminée dont le délai de grâce court à {@code heureServeur},
+ * null sinon.
  */
 public record SuiviCourseReponse(UUID courseId, String nom, String logoUrl, StatutCourse statut,
                                  String heureServeur, int nombreMaxBoucles, Integer boucleCourante,
                                  boolean derniereBoucle, boolean boucleMaxTerminee,
+                                 Integer boucleEnAttenteDeDecision,
                                  Long tempsAvantFinBoucleMillisecondes, Long dureeEcouleeMillisecondes,
                                  List<CoureurSuiviReponse> coureursEnCourse, List<AbandonSuiviReponse> abandons,
                                  List<CoureurSuiviReponse> vainqueurs, int distanceBoucleMetres,
@@ -83,6 +86,7 @@ public record SuiviCourseReponse(UUID courseId, String nom, String logoUrl, Stat
                 valeur(chrono, Chronometrage::boucleCourante),
                 chrono.map(Chronometrage::derniereBoucle).orElse(false),
                 chrono.map(Chronometrage::boucleMaxTerminee).orElse(false),
+                enAttente(course.boucleEnAttenteDeDecision(suivi.heureServeur())),
                 valeur(chrono, c -> c.tempsAvantFinBoucle().toMillis()),
                 valeur(chrono, c -> c.dureeEcoulee().toMillis()),
                 CoureurSuiviReponse.depuis(suivi.coureursEnCourse()), AbandonSuiviReponse.depuis(suivi.abandons()),
@@ -94,6 +98,10 @@ public record SuiviCourseReponse(UUID courseId, String nom, String logoUrl, Stat
 
     private static Long valeur(OptionalLong optionnel) {
         return optionnel.isPresent() ? optionnel.getAsLong() : null;
+    }
+
+    private static Integer enAttente(OptionalInt boucle) {
+        return boucle.isPresent() ? boucle.getAsInt() : null;
     }
 
     private static <T> T valeur(Optional<Chronometrage> chronometrage, Function<Chronometrage, T> champ) {

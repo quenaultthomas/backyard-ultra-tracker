@@ -117,7 +117,7 @@ export async function verifierSucces(page: Page, dossard: number, pseudo: string
   await expect(page.getByTestId('scan-resultat-boucle')).toHaveText(`Boucle ${boucle}`);
 }
 
-function executerSql(requete: string): string {
+export function executerSql(requete: string): string {
   return execFileSync(
     'docker',
     ['compose', 'exec', '-T', 'base', 'psql', '-U', process.env.E2E_BASE_UTILISATEUR ?? 'backyard', '-d', process.env.E2E_BASE_NOM ?? 'backyard', '-t', '-A', '-c', requete],

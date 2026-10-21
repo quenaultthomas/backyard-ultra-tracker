@@ -109,6 +109,12 @@
             Dernière boucle autorisée.
           </p>
         }
+        @if (s.boucleEnAttenteDeDecision !== null && !s.boucleMaxTerminee) {
+          <p class="message--info" data-testid="suivi-message-decision-en-attente">
+            Contrôle de la boucle {{ s.boucleEnAttenteDeDecision }} en cours : les scans de cette
+            boucle sont encore acceptés.
+          </p>
+        }
       }
 
       @if (s.statut !== 'EN_PREPARATION') {

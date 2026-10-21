@@ -15,6 +15,7 @@ import fr.backyard.tracker.courses.domaine.MotifAbandon;
 import fr.backyard.tracker.courses.domaine.Passage;
 import fr.backyard.tracker.courses.domaine.StatutCourse;
 import fr.backyard.tracker.courses.domaine.StatutInscription;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -27,11 +28,21 @@ import org.junit.jupiter.params.provider.EnumSource;
  * {@link ScenarioPassageDeTest} : Z est TERMINEE (boucles de 1 min, t0 = 14:03:27Z), Léo y est affecté ; X est EN_COURS
  * avec Bruno (1) et Chloé (2). Signatures supposées : celles de 4.4a ; le refus d'une Course terminée reste
  * {@link CourseTermineePourPassageException} (409 COURSE_TERMINEE), évalué avant l'état de l'Inscription.
+ * Adaptés à 7.1 (RG3, RG4) : le contrôle n'agit qu'à départ(2) + {@code GRACE} (15 s pour une Boucle de 1 min) ; les
+ * scans validés « après la décision » le sont donc après la grâce, avec un âge qui garde scanneLe à 59,8 s.
  */
 class EnregistrerPassageCourseTermineeTest {
 
     private static final UUID COMPTE_TOM = ScenarioPassageDeTest.id(0xb3);
     private static final UUID SCAN_DE_BRUNO = UUID.fromString("3b6f0d5e-0f6a-4d7b-9e1c-5a2d8c7e1f42");
+
+    /** 7.1 RG1 : délai de grâce d'une Boucle de 1 min. */
+    private static final Duration GRACE = Duration.ofSeconds(15);
+    /** 7.1 : instant du contrôle qui tranche la Boucle 1. */
+    private static final Instant DECISION_BOUCLE_1 = T0.plusSeconds(60).plus(GRACE);
+    /** 7.1 : validation 300 ms après la décision d'un scan fait à 59,8 s (âge 15 500 ms). */
+    private static final Instant VALIDATION_APRES_DECISION = DECISION_BOUCLE_1.plusMillis(300);
+    private static final long AGE_APRES_DECISION = 15_500;
 
     private final ScenarioPassageDeTest s = new ScenarioPassageDeTest();
 
@@ -94,7 +105,7 @@ class EnregistrerPassageCourseTermineeTest {
 
         var resultat = s.casA(validation).executer(X, LEO, s.chloe.jetonQr(), UUID.randomUUID(), 500);
         var controle = new AbandonnerCoureursHorsDelai(s.courses, s.inscriptions, s.passages,
-                java.time.Clock.fixed(validation, java.time.ZoneOffset.UTC)).executer(X);
+                java.time.Clock.fixed(DECISION_BOUCLE_1, java.time.ZoneOffset.UTC)).executer(X);
 
         assertThat(resultat.rejeu()).isFalse();
         assertThat(resultat.passage().numeroBoucle()).isEqualTo(1);
@@ -105,17 +116,17 @@ class EnregistrerPassageCourseTermineeTest {
     }
 
     @Test
-    @DisplayName("CA4 - RG9 : le même scan de Chloé validé après la décision (Bruno vainqueur, Chloé abandonnée, Course terminée) est refusé : Course terminée, aucun Passage de Chloé")
-    void doit_refuser_le_scan_valide_apres_la_decision_sans_delai_de_grace() {
+    @DisplayName("CA4 - RG9 (adapté 7.1) : le même scan de Chloé validé après la décision prise à la fin de la grâce (Bruno vainqueur, Chloé abandonnée, Course terminée) est refusé : Course terminée, aucun Passage de Chloé")
+    void doit_refuser_le_scan_valide_apres_la_decision_une_fois_la_grace_ecoulee() {
         s.passeSur(s.bruno, 1);
-        Instant validation = T0.plusMillis(60_300);
         new AbandonnerCoureursHorsDelai(s.courses, s.inscriptions, s.passages,
-                java.time.Clock.fixed(T0.plusSeconds(60), java.time.ZoneOffset.UTC)).executer(X);
+                java.time.Clock.fixed(DECISION_BOUCLE_1, java.time.ZoneOffset.UTC)).executer(X);
         // Le contrôle de fin de course écrit la Course une fois : seul le scan refusé ne doit rien écrire.
         s.courses.nombreDEnregistrements = 0;
 
         s.assertRefusSansEcriture(
-                () -> s.casA(validation).executer(X, LEO, s.chloe.jetonQr(), UUID.randomUUID(), 500),
+                () -> s.casA(VALIDATION_APRES_DECISION).executer(X, LEO, s.chloe.jetonQr(), UUID.randomUUID(),
+                        AGE_APRES_DECISION),
                 CourseTermineePourPassageException.class);
         assertThat(s.passages.passages).noneMatch(p -> p.inscriptionId().equals(s.chloe.id()));
     }
@@ -127,7 +138,7 @@ class EnregistrerPassageCourseTermineeTest {
 
         var resultat = s.casA(validation).executer(X, LEO, s.chloe.jetonQr(), UUID.randomUUID(), 500);
         var controle = new AbandonnerCoureursHorsDelai(s.courses, s.inscriptions, s.passages,
-                java.time.Clock.fixed(validation, java.time.ZoneOffset.UTC)).executer(X);
+                java.time.Clock.fixed(DECISION_BOUCLE_1, java.time.ZoneOffset.UTC)).executer(X);
 
         assertThat(resultat.passage().numeroBoucle()).isEqualTo(1);
         assertThat(controle.vainqueurs()).isEqualTo(1);
@@ -143,12 +154,13 @@ class EnregistrerPassageCourseTermineeTest {
     @DisplayName("CA3 - RG8 : le même scan validé après un contrôle ayant déclaré Bruno et Chloé vainqueurs partagés (personne n'a bouclé) est refusé : Course terminée, aucun Passage")
     void doit_refuser_le_scan_valide_apres_des_vainqueurs_partages() {
         new AbandonnerCoureursHorsDelai(s.courses, s.inscriptions, s.passages,
-                java.time.Clock.fixed(T0.plusSeconds(60), java.time.ZoneOffset.UTC)).executer(X);
+                java.time.Clock.fixed(DECISION_BOUCLE_1, java.time.ZoneOffset.UTC)).executer(X);
         assertThat(s.inscriptions.inscriptions).allMatch(i -> i.statut() == StatutInscription.VAINQUEUR);
         s.courses.nombreDEnregistrements = 0;
 
         s.assertRefusSansEcriture(
-                () -> s.casA(T0.plusMillis(60_300)).executer(X, LEO, s.chloe.jetonQr(), UUID.randomUUID(), 500),
+                () -> s.casA(VALIDATION_APRES_DECISION).executer(X, LEO, s.chloe.jetonQr(), UUID.randomUUID(),
+                        AGE_APRES_DECISION),
                 CourseTermineePourPassageException.class);
         assertThat(s.passages.passages).isEmpty();
     }

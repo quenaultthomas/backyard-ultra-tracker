@@ -119,6 +119,8 @@ export interface PilotageCourse {
   boucleCourante: number | null;
   derniereBoucle: boolean;
   boucleMaxTerminee: boolean;
+  /** Boucle terminée dont la décision (abandon, fin de course) est en attente ; `null` sinon. */
+  boucleEnAttenteDeDecision: number | null;
   debutBoucleCourante: string | null;
   finBoucleCourante: string | null;
   tempsAvantFinBoucleMillisecondes: number | null;

@@ -40,7 +40,7 @@ import tools.jackson.databind.JsonNode;
 /**
  * Contrat de l'incrément 4.10 : vainqueurs partagés et nombre max de boucles (CA4, CA5, CA7). Le planificateur est
  * désactivé par le socle des tests : le cas d'usage est appelé directement à l'instant du Clock de test. Le contrat
- * vient de la spec. Course X : Boucle de 1 min, 5 Boucles max, t0 = 14:00:00Z ; fin de la Boucle 1 = 14:01:00.000Z.
+ * vient de la spec. Course X : Boucle de 1 min, 5 Boucles max, t0 = 14:00:00Z ; décision de la Boucle 1 = 14:01:15.000Z (fin 14:01:00 + grâce 15 s).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "backyard.admin-master.pseudo=Patron", "backyard.admin-master.mot-de-passe=mot-de-passe-patron-1",
@@ -49,11 +49,11 @@ import tools.jackson.databind.JsonNode;
 @Import(CoursesIntegrationTest.HorlogeDeTestConfiguration.class)
 class VainqueursPartagesIntegrationTest {
 
-    static final Instant FIN_BOUCLE_1 = DecorAbandon.T0.plusSeconds(60);
-    static final Instant FIN_BOUCLE_2 = DecorAbandon.T0.plusSeconds(120);
+    static final Instant DECISION_BOUCLE_1 = DecorAbandon.T0.plusSeconds(60 + DecorAbandon.GRACE_SECONDES);
+    static final Instant DECISION_BOUCLE_2 = DecorAbandon.T0.plusSeconds(120 + DecorAbandon.GRACE_SECONDES);
     static final Resultat AUCUNE_DECISION = new Resultat(0, 0);
     static final List<String> CHAMPS = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur", "demarreeLe",
-            "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee",
+            "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee", "boucleEnAttenteDeDecision",
             "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
             "dureeEcouleeMillisecondes", "nombreInscrits", "nombreAyantBoucle", "nombreEnBoucle", "inscritsEnCourse",
             "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs", "inscritsVainqueurs");
@@ -122,19 +122,19 @@ class VainqueursPartagesIntegrationTest {
     // ---------------------------------------------------------------- CA4
 
     @Test
-    @DisplayName("CA4 : X (Bruno {}, Chloé {}, Tom {}) à 14:01:00.000Z : les trois VAINQUEUR sans motif ni Boucle, Course TERMINEE, demarree_le et Passages inchangés, Course Y non touchée ; 14:00:59.999Z : rien")
+    @DisplayName("CA4 : X (Bruno {}, Chloé {}, Tom {}) à 14:01:15.000Z : les trois VAINQUEUR sans motif ni Boucle, Course TERMINEE, demarree_le et Passages inchangés, Course Y non touchée ; 14:01:14.999Z : rien")
     void ca4_personne_n_a_boucle_trois_vainqueurs() throws Exception {
         String x = decor.courseXDemarree();
         String y = decor.courseYDemarree();
         Object demarreeLe = decor.jdbc.queryForObject("select demarree_le from course where id = ?", Timestamp.class,
                 UUID.fromString(x));
         List<Map<String, Object>> passagesAvant = decor.jdbc.queryForList("select * from passage order by id");
-        decor.horloge.fixer(FIN_BOUCLE_1.minusMillis(1));
+        decor.horloge.fixer(DECISION_BOUCLE_1.minusMillis(1));
 
         assertThat(controler(x)).isEqualTo(AUCUNE_DECISION);
         assertEtats(x, "EN_COURSE:-:-", "EN_COURSE:-:-", "EN_COURSE:-:-", "EN_COURS");
 
-        decor.horloge.fixer(FIN_BOUCLE_1);
+        decor.horloge.fixer(DECISION_BOUCLE_1);
         assertThat(controler(x)).isEqualTo(new Resultat(0, 3));
         assertThat(controler(y)).isEqualTo(AUCUNE_DECISION);
 
@@ -152,7 +152,7 @@ class VainqueursPartagesIntegrationTest {
     @DisplayName("CA4 : un second appel, puis des appels plus tardifs, ne modifient rien : aucune écriture Hibernate, état identique")
     void ca4_second_appel_sans_ecriture() throws Exception {
         String x = decor.courseXDemarree();
-        decor.horloge.fixer(FIN_BOUCLE_1);
+        decor.horloge.fixer(DECISION_BOUCLE_1);
         assertThat(controler(x)).isEqualTo(new Resultat(0, 3));
         Statistics statistiques = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
         long misesAJour = statistiques.getEntityUpdateCount();
@@ -163,9 +163,9 @@ class VainqueursPartagesIntegrationTest {
         decor.demarrerJournal();
 
         assertThat(controler(x)).isEqualTo(AUCUNE_DECISION);
-        decor.horloge.fixer(FIN_BOUCLE_1.plusMillis(1));
+        decor.horloge.fixer(DECISION_BOUCLE_1.plusMillis(1));
         assertThat(controler(x)).isEqualTo(AUCUNE_DECISION);
-        decor.horloge.fixer(FIN_BOUCLE_1.plusSeconds(600));
+        decor.horloge.fixer(DECISION_BOUCLE_1.plusSeconds(600));
         assertThat(controler(x)).isEqualTo(AUCUNE_DECISION);
 
         assertThat(statistiques.getEntityUpdateCount()).isEqualTo(misesAJour);
@@ -178,18 +178,18 @@ class VainqueursPartagesIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA4 : W (M = 2) avec Bruno {1, 2}, Chloé {1, 2}, Tom {1} à 14:02:00.000Z : Bruno et Chloé VAINQUEUR, Tom ABANDON HORS_DELAI Boucle 2, Course TERMINEE ; à 14:01:00.000Z (k < M) rien")
+    @DisplayName("CA4 : W (M = 2) avec Bruno {1, 2}, Chloé {1, 2}, Tom {1} à 14:02:15.000Z : Bruno et Chloé VAINQUEUR, Tom ABANDON HORS_DELAI Boucle 2, Course TERMINEE ; à 14:01:15.000Z (k < M) rien")
     void ca4_derniere_boucle_autorisee() throws Exception {
         String w = decor.courseDemarreeAvecMaxBoucles("Course W", 2);
         decor.poserPassage(w, decor.idBruno, 1);
         decor.poserPassage(w, decor.idChloe, 1);
         decor.poserPassage(w, decor.idTom, 1);
-        decor.horloge.fixer(FIN_BOUCLE_1);
+        decor.horloge.fixer(DECISION_BOUCLE_1);
         assertThat(controler(w)).isEqualTo(AUCUNE_DECISION);
         assertEtats(w, "EN_COURSE:-:-", "EN_COURSE:-:-", "EN_COURSE:-:-", "EN_COURS");
         decor.poserPassage(w, decor.idBruno, 2);
         decor.poserPassage(w, decor.idChloe, 2);
-        decor.horloge.fixer(FIN_BOUCLE_2);
+        decor.horloge.fixer(DECISION_BOUCLE_2);
 
         assertThat(controler(w)).isEqualTo(new Resultat(1, 2));
 
@@ -218,7 +218,7 @@ class VainqueursPartagesIntegrationTest {
         decor.poserPassage(x, decor.idChloe, 1);
         decor.poserPassage(x, decor.idChloe, 2);
         decor.poserPassage(x, decor.idTom, 1);
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(180));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(195));
 
         assertThat(controler(x)).isEqualTo(new Resultat(1, 2));
 
@@ -226,7 +226,7 @@ class VainqueursPartagesIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA4 : Z (M = 1) à 14:01:00.000Z : {1}, {1}, {} -> deux vainqueurs et Tom ABANDON Boucle 1 ; {1}, {}, {} -> Bruno unique ; {}, {}, {} -> trois vainqueurs")
+    @DisplayName("CA4 : Z (M = 1) à 14:01:15.000Z : {1}, {1}, {} -> deux vainqueurs et Tom ABANDON Boucle 1 ; {1}, {}, {} -> Bruno unique ; {}, {}, {} -> trois vainqueurs")
     void ca4_une_seule_boucle_autorisee() throws Exception {
         String deux = decor.courseDemarreeAvecMaxBoucles("Z deux", 1);
         decor.poserPassage(deux, decor.idBruno, 1);
@@ -234,7 +234,7 @@ class VainqueursPartagesIntegrationTest {
         String un = decor.courseDemarreeAvecMaxBoucles("Z un", 1);
         decor.poserPassage(un, decor.idBruno, 1);
         String aucun = decor.courseDemarreeAvecMaxBoucles("Z aucun", 1);
-        decor.horloge.fixer(FIN_BOUCLE_1);
+        decor.horloge.fixer(DECISION_BOUCLE_1);
 
         assertThat(controler(deux)).isEqualTo(new Resultat(1, 2));
         assertEtats(deux, "VAINQUEUR:-:-", "VAINQUEUR:-:-", "ABANDON:HORS_DELAI:1", "TERMINEE");
@@ -250,7 +250,7 @@ class VainqueursPartagesIntegrationTest {
         String x = decor.courseXDemarree();
         decor.jdbc.update("update inscription set statut = 'ABANDON', motif_abandon = 'HORS_DELAI', "
                 + "boucle_abandon = 1 where course_id = ?", UUID.fromString(x));
-        decor.horloge.fixer(FIN_BOUCLE_2);
+        decor.horloge.fixer(DECISION_BOUCLE_2);
 
         assertThat(controler(x)).isEqualTo(AUCUNE_DECISION);
 
@@ -269,7 +269,7 @@ class VainqueursPartagesIntegrationTest {
         decor.poserPassage(w, decor.idTom, 1);
         String unique = decor.courseDemarreeAvecMaxBoucles("Course unique journal", 5);
         decor.poserPassage(unique, decor.idBruno, 1);
-        decor.horloge.fixer(FIN_BOUCLE_2);
+        decor.horloge.fixer(DECISION_BOUCLE_2);
         decor.demarrerJournal();
 
         controler(x);
@@ -307,10 +307,10 @@ class VainqueursPartagesIntegrationTest {
     // ---------------------------------------------------------------- CA5
 
     @Test
-    @DisplayName("CA5 : deux exécutions simultanées pour la même Course (Bruno {}, Chloé {}, Tom {}) à 14:01:00.000Z : trois vainqueurs une seule fois, une seule ligne « Fin de course », aucune exception")
+    @DisplayName("CA5 : deux exécutions simultanées pour la même Course (Bruno {}, Chloé {}, Tom {}) à 14:01:15.000Z : trois vainqueurs une seule fois, une seule ligne « Fin de course », aucune exception")
     void ca5_deux_executions_simultanees() throws Exception {
         String x = decor.courseXDemarree();
-        decor.horloge.fixer(FIN_BOUCLE_1);
+        decor.horloge.fixer(DECISION_BOUCLE_1);
         decor.demarrerJournal();
         CyclicBarrier depart = new CyclicBarrier(2);
         Callable<Resultat> execution = () -> {
@@ -334,12 +334,12 @@ class VainqueursPartagesIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA5 : 20 essais de scan de Chloé (Boucle 1, âge 500 ms) simultané au contrôle à 14:01:00.300Z : soit 409 COURSE_TERMINEE (trois VAINQUEUR, aucun Passage de Chloé), soit 201 (Passage Boucle 1, puis Chloé vainqueur unique, Bruno et Tom ABANDON Boucle 1), jamais d'état mixte ni de 500")
+    @DisplayName("CA5 : 20 essais de scan de Chloé (Boucle 1, âge 15500 ms (instant réel dans la Boucle 1)) simultané au contrôle à 14:01:15.300Z : soit 409 COURSE_TERMINEE (trois VAINQUEUR, aucun Passage de Chloé), soit 201 (Passage Boucle 1, puis Chloé vainqueur unique, Bruno et Tom ABANDON Boucle 1), jamais d'état mixte ni de 500")
     void ca5_scan_simultane_au_controle() throws Exception {
         String x = decor.courseXDemarree();
         String jeton = decor.jeton(x, decor.idChloe);
         UUID course = UUID.fromString(x);
-        decor.horloge.fixer(FIN_BOUCLE_1.plusMillis(300));
+        decor.horloge.fixer(DECISION_BOUCLE_1.plusMillis(300));
         ExecutorService pool = Executors.newFixedThreadPool(2);
         try {
             for (int essai = 1; essai <= 20; essai++) {
@@ -355,7 +355,7 @@ class VainqueursPartagesIntegrationTest {
                 });
                 Future<HttpResponse<String>> scan = pool.submit(() -> {
                     depart.await(10, TimeUnit.SECONDS);
-                    return decor.scanner(decor.leo, x, jeton, UUID.randomUUID(), 500);
+                    return decor.scanner(decor.leo, x, jeton, UUID.randomUUID(), 15_500);
                 });
 
                 controle.get(20, TimeUnit.SECONDS);
@@ -387,13 +387,13 @@ class VainqueursPartagesIntegrationTest {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
         decor.poserPassage(x, decor.idChloe, 1);
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(130));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(130 + DecorAbandon.GRACE_SECONDES));
         assertThat(controler(x)).isEqualTo(new Resultat(1, 2));
         return x;
     }
 
     @Test
-    @DisplayName("CA7 : Patron lit le pilotage de X terminée à deux vainqueurs : 200, no-store, 23 champs, TERMINEE, inscritsEnCourse vide, 1 abandon, 3 inscrits, 2 vainqueurs de 6 champs triés par dossard à 1 Boucle chacun ; Nadia obtient le même corps")
+    @DisplayName("CA7 : Patron lit le pilotage de X terminée à deux vainqueurs : 200, no-store, 24 champs, TERMINEE, inscritsEnCourse vide, 1 abandon, 3 inscrits, 2 vainqueurs de 6 champs triés par dossard à 1 Boucle chacun ; Nadia obtient le même corps")
     void ca7_pilotage_deux_vainqueurs() throws Exception {
         String x = courseTermineeDeuxVainqueurs();
 
@@ -403,7 +403,7 @@ class VainqueursPartagesIntegrationTest {
         assertThat(reponse.headers().firstValue("cache-control")).hasValueSatisfying(
                 c -> assertThat(c).contains("no-store"));
         JsonNode corps = decor.json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(23).containsExactlyInAnyOrderElementsOf(CHAMPS);
+        assertThat(corps.propertyNames()).hasSize(24).containsExactlyInAnyOrderElementsOf(CHAMPS);
         assertThat(corps.get("statut").asString()).isEqualTo("TERMINEE");
         assertThat(corps.get("boucleCourante").isNull()).isTrue();
         assertThat(corps.get("inscritsEnCourse")).isEmpty();
@@ -553,7 +553,7 @@ class VainqueursPartagesIntegrationTest {
         assertThat(creation.statusCode()).as(creation.body()).isEqualTo(201);
         assertThat(decor.scanner(decor.leo, x, decor.jeton(x, decor.idChloe), UUID.randomUUID(), 0).statusCode())
                 .isEqualTo(201);
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(130)); // personne sur la Boucle 2 : Bruno et Chloé partagés
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(130 + DecorAbandon.GRACE_SECONDES)); // personne sur la Boucle 2 : Bruno et Chloé partagés
         assertThat(controler(x)).isEqualTo(new Resultat(1, 2));
         assertEtats(x, "VAINQUEUR:-:-", "VAINQUEUR:-:-", "ABANDON:HORS_DELAI:1", "TERMINEE");
         int passagesAvant = decor.jdbc.queryForObject("select count(*) from passage", Integer.class);
