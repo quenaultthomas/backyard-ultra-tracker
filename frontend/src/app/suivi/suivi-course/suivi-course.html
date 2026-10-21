@@ -1,4 +1,9 @@
-<main class="page page--cartes">
+<main
+  #racine
+  class="page page--cartes"
+  [class.suivi--projection]="projection.actif()"
+  data-testid="suivi-racine"
+>
   <section class="carte" aria-labelledby="suivi-titre">
     @if (introuvable()) {
       <h1 id="suivi-titre" class="titre">Suivi de la course</h1>
@@ -27,6 +32,20 @@
         </div>
       </header>
 
+      <button
+        type="button"
+        class="bouton bouton--secondaire suivi-bouton-projection"
+        (click)="basculerProjection()"
+        data-testid="suivi-bouton-projection"
+      >
+        {{ projection.actif() ? 'Quitter le plein écran' : 'Plein écran' }}
+      </button>
+      @if (projection.repli()) {
+        <p class="message--info" role="status" data-testid="suivi-message-plein-ecran-indisponible">
+          Plein écran indisponible sur cet appareil : affichage agrandi seulement.
+        </p>
+      }
+
       @if (rafraichissement.echec()) {
         <p
           class="message--avertissement"
@@ -39,6 +58,16 @@
 
       @if (s.statut === 'TERMINEE') {
         <p class="message--info" data-testid="suivi-message-terminee">La course est terminée.</p>
+        @if (dureeFinale(); as duree) {
+          <section class="chronometrage" aria-label="Durée de la course">
+            <dl class="chronometrage__durees">
+              <div>
+                <dt>Durée de la course</dt>
+                <dd class="chronometrage__valeur" data-testid="suivi-duree-finale">{{ duree }}</dd>
+              </div>
+            </dl>
+          </section>
+        }
       } @else if (s.statut === 'EN_PREPARATION') {
         <p class="message--info" data-testid="suivi-message-non-demarree">
           La course n'a pas encore démarré.
@@ -83,7 +112,11 @@
       }
 
       @if (s.statut !== 'EN_PREPARATION') {
-        <app-coureurs-suivi [suivi]="s" />
+        <app-coureurs-suivi [suivi]="s">
+          @if (s.statut === 'TERMINEE' || s.boucleCourante !== null) {
+            <app-statistiques-suivi [suivi]="s" />
+          }
+        </app-coureurs-suivi>
       }
     } @else if (rafraichissement.echec()) {
       <h1 id="suivi-titre" class="titre">Suivi de la course</h1>

@@ -39,12 +39,27 @@ export const urlScan = (courseId: string) => `/benevole/courses/${courseId}/scan
  */
 export async function preparerCourseDeScan(
   playwright: PlaywrightLib,
-  options: { nombreCoureurs?: number; nombreMaxBoucles?: number; dureeBoucleMinutes?: number; demarree?: boolean; benevole?: string; pseudos?: string[] } = {},
+  options: {
+    nombreCoureurs?: number;
+    nombreMaxBoucles?: number;
+    dureeBoucleMinutes?: number;
+    distanceBoucleMetres?: number;
+    denivelePositifBoucleMetres?: number;
+    demarree?: boolean;
+    benevole?: string;
+    pseudos?: string[];
+  } = {},
 ): Promise<CourseDeScan> {
   const { nombreCoureurs = 2, nombreMaxBoucles = 5, dureeBoucleMinutes = 60, demarree = true } = options;
   const benevole = options.benevole ?? pseudoBenevoleUnique();
   if (!options.benevole) await avecApi(playwright, (ctx) => creerBenevoleParApi(ctx, benevole));
-  const donnees = courseDeReference({ date: dateDansJours(0), dureeBoucleMinutes, nombreMaxBoucles });
+  const donnees = courseDeReference({
+    date: dateDansJours(0),
+    dureeBoucleMinutes,
+    nombreMaxBoucles,
+    ...(options.distanceBoucleMetres !== undefined && { distanceBoucleMetres: options.distanceBoucleMetres }),
+    ...(options.denivelePositifBoucleMetres !== undefined && { denivelePositifBoucleMetres: options.denivelePositifBoucleMetres }),
+  });
   const course = await avecApi(playwright, (ctx) => creerCourseParApi(ctx, donnees));
   const id = course['id'] as string;
   await avecApi(playwright, (ctx) => affecterBenevolesParApi(ctx, id, [benevole]));

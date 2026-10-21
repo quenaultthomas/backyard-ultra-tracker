@@ -40,7 +40,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Contrat de l'incrément 6.1 (suivi public d'une Course) : CA6 à CA10, serveur réel. Le contrat est celui de la
- * spec : GET /api/courses/{id}/suivi, public, liste fermée de 14 champs (6.2 RG1), no-store, 404 COURSE_INTROUVABLE.
+ * spec : GET /api/courses/{id}/suivi, public, liste fermée de 21 champs (6.3 RG1, qui remplace 6.2 RG1), no-store, 404 COURSE_INTROUVABLE.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "backyard.admin-master.pseudo=Patron", "backyard.admin-master.mot-de-passe=mot-de-passe-patron-1"})
@@ -57,9 +57,12 @@ class SuiviPublicIntegrationTest {
     static final List<String> CHAMPS = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur",
             "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee",
             "tempsAvantFinBoucleMillisecondes", "dureeEcouleeMillisecondes", "coureursEnCourse", "abandons",
-            "vainqueurs");
+            "vainqueurs", "distanceBoucleMetres", "denivelePositifBoucleMetres", "bouclesTerminees",
+            "distanceCumuleeMetres", "denivelePositifCumuleMetres", "allureSecondesParKilometre",
+            "dureeFinaleMillisecondes");
+    // 6.3 RG1 : distance et dénivelé de Boucle, cumuls et durée finale sont désormais des champs publics
     static final List<String> INTERDITS = List.of("inscrits", "jeton", "benevole", "demarreeLe",
-            "distance", "denivele", "date", "nombreInscrits", "compte");
+            "date", "nombreInscrits", "compte");
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "
             + "role, cree_le) values (?, ?, ?, ?, ?, ?)";
     static final String INSERTION_COURSE = "insert into course (id, nom, date_course, statut, distance_boucle_metres, "
@@ -132,7 +135,7 @@ class SuiviPublicIntegrationTest {
     // ---------------------------------------------------------------- CA6
 
     @Test
-    @DisplayName("CA6 : X en Boucle 2 lue sans session : 200, no-store, aucun Set-Cookie, 14 champs exactement, valeurs conformes au Clock, aucune fuite d'inscrit, aucune écriture")
+    @DisplayName("CA6 : X en Boucle 2 lue sans session : 200, no-store, aucun Set-Cookie, 21 champs exactement, valeurs conformes au Clock, aucune fuite d'inscrit, aucune écriture")
     void ca6_suivi_public_sans_session() throws Exception {
         UUID x = courseXAvecInscritEtAffectation();
         horloge.fixer(T0.plusMillis(65 * 60_000L + 250));
@@ -148,7 +151,7 @@ class SuiviPublicIntegrationTest {
                 c -> assertThat(c).contains("no-store"));
         assertThat(reponse.headers().allValues("set-cookie")).isEmpty();
         JsonNode corps = json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(14).containsExactlyInAnyOrderElementsOf(CHAMPS);
+        assertThat(corps.propertyNames()).hasSize(21).containsExactlyInAnyOrderElementsOf(CHAMPS);
         assertThat(corps.get("courseId").asString()).isEqualTo(x.toString());
         assertThat(corps.get("nom").asString()).isEqualTo(NOM_X);
         assertThat(corps.get("logoUrl").isNull()).isTrue();
@@ -216,7 +219,7 @@ class SuiviPublicIntegrationTest {
         UUID id = UUID.randomUUID();
         SuiviCourseReponse reponse = new SuiviCourseReponse(id, "Nom secret", "/api/courses/x/logo?v=1",
                 StatutCourse.EN_COURS, "2026-10-09T14:03:27.000Z", 5, 2, false, false, 10L, 20L, List.of(), List.of(),
-                List.of());
+                List.of(), 6700, 35, 2, 13400L, 70L, 433L, null);
 
         assertThat(reponse.toString()).contains(id.toString()).doesNotContain("Nom secret", "logo", "14:03");
     }
@@ -368,7 +371,7 @@ class SuiviPublicIntegrationTest {
         HttpResponse<String> reponse = suivi(id.toString(), Map.of());
         assertThat(reponse.statusCode()).as(statut).isEqualTo(200);
         JsonNode corps = json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(14).containsExactlyInAnyOrderElementsOf(CHAMPS);
+        assertThat(corps.propertyNames()).hasSize(21).containsExactlyInAnyOrderElementsOf(CHAMPS);
         assertThat(corps.get("courseId").asString()).isEqualTo(id.toString());
         assertThat(corps.get("statut").asString()).isEqualTo(statut);
         assertThat(corps.get("boucleCourante").isNull()).isTrue();

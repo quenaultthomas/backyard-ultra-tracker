@@ -25,7 +25,8 @@ import org.junit.jupiter.api.Test;
  * Tests de l'incrément 6.2 : ConsulterSuivi étendu (CA1 à CA7 ; RG2 à RG9, RG17).
  * Signatures attendues :
  * <ul>
- * <li>{@code ConsulterSuivi(DepotCourses, DepotInscriptions, AnnuairePseudos, Clock)}, sans DepotPassages ;</li>
+ * <li>{@code ConsulterSuivi(DepotCourses, DepotInscriptions, AnnuairePseudos, Clock)}, sans DepotPassages
+ * (REMPLACÉ en 6.3 : {@code ConsulterSuivi(DepotCourses, DepotInscriptions, AnnuairePseudos, DepotPassages, Clock)}) ;</li>
  * <li>{@code Suivi(Course course, Instant heureServeur, Optional<Chronometrage> chronometrage,
  * List<CoureurSuivi> coureursEnCourse, List<AbandonSuivi> abandons, List<CoureurSuivi> vainqueurs)} ;</li>
  * <li>{@code CoureurSuivi(int dossard, String pseudo)} ;</li>
@@ -45,8 +46,9 @@ class ConsulterSuiviCoureursTest {
     private final DepotCoursesDeTest depotCourses = new DepotCoursesDeTest();
     private final DepotInscriptionsEspionDeTest inscriptions = new DepotInscriptionsEspionDeTest();
     private final AnnuaireSuiviDeTest annuaire = new AnnuaireSuiviDeTest();
+    private final DepotPassagesEnMemoireDeTest passages = new DepotPassagesEnMemoireDeTest();
     private final ConsulterSuivi consulterSuivi = new ConsulterSuivi(depotCourses, inscriptions.port, annuaire,
-            Clock.fixed(MAINTENANT, ZoneOffset.UTC));
+            passages, Clock.fixed(MAINTENANT, ZoneOffset.UTC));
 
     @BeforeEach
     void garnir() {
@@ -83,7 +85,7 @@ class ConsulterSuiviCoureursTest {
         inscrire(X, 1, "Alice", StatutInscription.EN_COURSE);
 
         var suivi = new ConsulterSuivi(depotCourses, inscriptions.port, annuaire,
-                Clock.fixed(T0.plusSeconds(6 * 3_600), ZoneOffset.UTC)).executer(X);
+                passages, Clock.fixed(T0.plusSeconds(6 * 3_600), ZoneOffset.UTC)).executer(X);
 
         assertThat(suivi.coureursEnCourse()).extracting(c -> c.dossard()).containsExactly(1);
         assertThat(suivi.abandons()).isEmpty();
@@ -226,6 +228,7 @@ class ConsulterSuiviCoureursTest {
         assertThat(suivi.vainqueurs()).isEmpty();
         assertThat(inscriptions.appels).isEmpty();
         assertThat(annuaire.appels).isEmpty();
+        assertThat(passages.nombreDeLecturesGroupees).isZero(); // 6.3 CA8 : aucun Passage lu non plus
     }
 
     @Test
@@ -297,7 +300,7 @@ class ConsulterSuiviCoureursTest {
     // ---------- CA6 ----------
 
     @Test
-    @DisplayName("CA6 - sans DepotPassages : le cas d'usage s'exécute, et toString n'expose ni pseudo ni jeton")
+    @DisplayName("CA6 (remplacé par 6.3 CA10 pour la partie « sans DepotPassages ») - toString n'expose ni pseudo ni jeton")
     void doit_masquer_pseudos_et_jetons_dans_les_to_string() {
         Inscription alice = inscrire(X, 1, "Alice", StatutInscription.EN_COURSE);
         Inscription bruno = inscrireAbandon(X, 2, "Brunette", MotifAbandon.MANUEL, 1);
@@ -315,12 +318,13 @@ class ConsulterSuiviCoureursTest {
     // ---------- CA7 ----------
 
     @Test
-    @DisplayName("CA7 - ordre des lectures : la Course, puis les Inscriptions, puis les pseudos, une fois chacune")
+    @DisplayName("CA7 (modifié par 6.3 RG9) - la Course est lue en premier, puis Inscriptions, pseudos et Passages une fois chacun")
     void doit_lire_la_course_avant_les_inscriptions_puis_les_pseudos() {
         List<String> journal = new ArrayList<>();
         depotCourses.journalDesLectures = journal;
         inscriptions.journalDesLectures = journal;
         annuaire.journalDesLectures = journal;
+        passages.journalDesLectures = journal;
         inscrire(X, 1, "Alice", StatutInscription.EN_COURSE);
         inscrire(X, 2, "Bruno", StatutInscription.EN_COURSE);
         inscrireAbandon(X, 3, "Karim", MotifAbandon.MANUEL, 1);
@@ -328,7 +332,8 @@ class ConsulterSuiviCoureursTest {
 
         consulterSuivi.executer(X);
 
-        assertThat(journal).containsExactly("course", "inscriptions", "pseudos");
+        assertThat(journal).hasSize(4).first().isEqualTo("course");
+        assertThat(journal).containsExactlyInAnyOrder("course", "inscriptions", "pseudos", "passages");
     }
 
     @Test
@@ -345,6 +350,8 @@ class ConsulterSuiviCoureursTest {
 
         assertThat(inscriptions.appels).containsExactly("parCourse");
         assertThat(annuaire.appels).hasSize(1);
+        assertThat(passages.nombreDeLecturesGroupees).isEqualTo(1); // 6.3 RG9 : une lecture groupée, pas par ligne
+        assertThat(passages.nombreDeLecturesParBoucle).isZero();
         assertThat(depotCourses.nombreDeChargementsParId).isEqualTo(1);
         assertThat(depotCourses.nombreDeChargementsPourModification).isZero();
         assertThat(depotCourses.nombreDEnregistrements).isZero();

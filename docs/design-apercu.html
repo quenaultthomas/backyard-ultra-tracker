@@ -16,6 +16,9 @@
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/ecran-pilotage.css" />
     <!-- Listes du suivi public (6.2) : bandeau vainqueur, lignes de coureur et d'abandon. -->
     <link rel="stylesheet" href="../frontend/src/app/suivi/coureurs-suivi/coureurs-suivi.css" />
+    <!-- Suivi public (6.3) : statistiques, bouton plein écran et mode projection, feuilles réelles. -->
+    <link rel="stylesheet" href="../frontend/src/app/suivi/statistiques-suivi/statistiques-suivi.css" />
+    <link rel="stylesheet" href="../frontend/src/app/suivi/suivi-course/suivi-course.css" />
     <!-- Abandon manuel (4.11) : confirmation en ligne et panneau d'abandon, feuilles réelles. -->
     <link rel="stylesheet" href="../frontend/src/app/partage/confirmation-en-ligne.css" />
     <link rel="stylesheet" href="../frontend/src/app/administration/courses/pilotage/confirmation-pilotage.css" />
@@ -364,6 +367,54 @@
             </ul>
           </section>
           <p class="message--info" data-composant="suivi-message-aucun-vainqueur">Course terminée sans vainqueur.</p>
+          <button type="button" class="bouton bouton--secondaire suivi-bouton-projection" data-composant="suivi-bouton-projection">Plein écran</button>
+          <p class="message--info" role="status" data-composant="suivi-message-plein-ecran-indisponible">Plein écran indisponible sur cet appareil : affichage agrandi seulement.</p>
+          <section class="statistiques" data-composant="suivi-statistiques">
+            <h3 class="sous-titre">Statistiques</h3>
+            <dl class="statistiques__liste">
+              <div class="statistique"><dt>Une boucle</dt><dd class="statistique__valeur">6,70 km, 35 m D+</dd></div>
+              <div class="statistique"><dt>Boucles terminées</dt><dd class="statistique__valeur">2</dd></div>
+              <div class="statistique"><dt>Distance cumulée</dt><dd class="statistique__valeur">13,40 km</dd></div>
+              <div class="statistique"><dt>Dénivelé cumulé</dt><dd class="statistique__valeur">70 m D+</dd></div>
+              <div class="statistique"><dt>Allure moyenne</dt><dd class="statistique__valeur">7:13 /km</dd></div>
+            </dl>
+          </section>
+          <div class="chronometrage" data-composant="suivi-duree-finale">
+            <dl class="chronometrage__durees">
+              <div><dt>Durée de la course</dt><dd class="chronometrage__valeur">03:00:00</dd></div>
+            </dl>
+          </div>
+        </div>
+        <h3>Mode projection (tailles --taille-projection-*)</h3>
+        <div class="suivi--projection" data-composant="suivi-projection">
+        <div class="carte" style="max-width: none">
+          <h3 class="titre" style="margin: 0; font-size: var(--taille-titre)">Backyard des Sapins</h3>
+          <span class="pastille-statut pastille-statut--en-cours" style="align-self: flex-start">En cours</span>
+          <button type="button" class="bouton bouton--secondaire suivi-bouton-projection">Quitter le plein écran</button>
+          <div class="chronometrage">
+            <p class="chronometrage__boucle">Boucle 3 sur 5</p>
+            <dl class="chronometrage__durees">
+              <div><dt>Prochain départ dans</dt><dd class="chronometrage__valeur">00:42:17</dd></div>
+              <div><dt>Durée écoulée</dt><dd class="chronometrage__valeur">02:17:43</dd></div>
+            </dl>
+          </div>
+          <section class="statistiques" data-composant="suivi-statistiques-projection">
+            <h3 class="sous-titre">Statistiques</h3>
+            <dl class="statistiques__liste">
+              <div class="statistique"><dt>Une boucle</dt><dd class="statistique__valeur">6,70 km, 35 m D+</dd></div>
+              <div class="statistique"><dt>Boucles terminées</dt><dd class="statistique__valeur">2</dd></div>
+              <div class="statistique"><dt>Distance cumulée</dt><dd class="statistique__valeur">13,40 km</dd></div>
+              <div class="statistique"><dt>Dénivelé cumulé</dt><dd class="statistique__valeur">70 m D+</dd></div>
+              <div class="statistique"><dt>Allure moyenne</dt><dd class="statistique__valeur">125:00 /km</dd></div>
+            </dl>
+          </section>
+          <section class="section-coureurs">
+            <h3 class="sous-titre">Abandons (1)</h3>
+            <ul class="lignes">
+              <li class="ligne"><span class="ligne__dossard">Dossard 3</span><span class="ligne__pseudo">Karim</span><span class="ligne__detail">Boucle 2</span><span class="pastille-statut pastille-statut--abandon">Hors délai</span></li>
+            </ul>
+          </section>
+        </div>
         </div>
       </section>
 

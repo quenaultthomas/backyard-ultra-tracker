@@ -232,8 +232,9 @@ test('CA25 - listes responsives et accessibles : 40 lignes, 6 abandons, pseudo l
   await expect(lire(page, 'suivi-coureur-2')).toContainText(PSEUDO_HTML);
   await expect(page.locator('main b')).toHaveCount(0);
 
-  // Structure : sections en h2, listes en ul
-  await expect(page.getByRole('heading', { level: 2 })).toHaveCount(2);
+  // Structure : sections en h2 (6.3 RG12 ajoute « Statistiques » avant les listes), listes en ul
+  await expect(page.getByRole('heading', { level: 2 })).toHaveCount(3);
+  await expect(page.getByRole('heading', { level: 2, name: 'Statistiques' })).toHaveCount(1);
   await expect(page.getByRole('list')).toHaveCount(2);
   expect(await page.locator('main ul').count()).toBe(2);
   expect(await page.locator('main [aria-live]').count()).toBe(0);

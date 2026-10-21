@@ -1,0 +1,37 @@
+<section
+  class="statistiques"
+  aria-labelledby="suivi-titre-statistiques"
+  data-testid="suivi-statistiques"
+>
+  <h2 id="suivi-titre-statistiques" class="sous-titre">Statistiques</h2>
+  <dl class="statistiques__liste">
+    <div class="statistique">
+      <dt>Une boucle</dt>
+      <dd class="statistique__valeur" data-testid="suivi-parametres-boucle">
+        {{ parametresBoucle() }}
+      </dd>
+    </div>
+    <div class="statistique">
+      <dt>Boucles terminées</dt>
+      <dd class="statistique__valeur" data-testid="suivi-boucles-terminees">
+        {{ suivi().bouclesTerminees }}
+      </dd>
+    </div>
+    <div class="statistique">
+      <dt>Distance cumulée</dt>
+      <dd class="statistique__valeur" data-testid="suivi-distance-cumulee">
+        {{ distanceCumulee() }}
+      </dd>
+    </div>
+    <div class="statistique">
+      <dt>Dénivelé cumulé</dt>
+      <dd class="statistique__valeur" data-testid="suivi-denivele-cumule">
+        {{ deniveleCumule() }}
+      </dd>
+    </div>
+    <div class="statistique">
+      <dt>Allure moyenne</dt>
+      <dd class="statistique__valeur" data-testid="suivi-allure">{{ allure() }}</dd>
+    </div>
+  </dl>
+</section>
