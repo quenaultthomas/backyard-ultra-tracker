@@ -465,6 +465,8 @@ class SuiviPublicStatistiquesIntegrationTest {
     }
 
     private long requetes(Statistics statistiques, UUID course) throws Exception {
+        // 7.2 RG2 : une seconde de plus que la lecture précédente, pour que le micro-cache relise la base
+        horloge.fixer(horloge.instant().plusSeconds(1));
         long avant = statistiques.getPrepareStatementCount();
         assertThat(suivi(course.toString(), Map.of()).statusCode()).isEqualTo(200);
         return statistiques.getPrepareStatementCount() - avant;

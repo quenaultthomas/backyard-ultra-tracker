@@ -31,7 +31,7 @@ class DeploiementProfilE2eIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA11 : docker-compose.e2e.yml ne définit que api.environment.SPRING_PROFILES_ACTIVE=e2e, ni ports, ni volumes, ni restart, ni BACKYARD_ENVIRONNEMENT")
+    @DisplayName("CA11 : docker-compose.e2e.yml ne définit que api.environment.SPRING_PROFILES_ACTIVE=e2e et BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE=6000 (7.2), ni ports, ni volumes, ni restart, ni BACKYARD_ENVIRONNEMENT")
     @SuppressWarnings("unchecked")
     void ca11_compose_e2e_minimal() throws IOException {
         Map<String, Object> compose = yaml("docker-compose.e2e.yml");
@@ -42,7 +42,9 @@ class DeploiementProfilE2eIntegrationTest {
         Map<String, Object> api = service(compose, "api");
         assertThat(api.keySet()).containsExactly("environment");
         Map<String, Object> environnement = (Map<String, Object>) api.get("environment");
-        assertThat(environnement).containsOnly(Map.entry("SPRING_PROFILES_ACTIVE", "e2e"));
+        // 7.2 RG4 : limite de débit relevée à 6000 pour que les tests E2E parallèles ne s'auto-limitent pas
+        assertThat(environnement).containsOnly(Map.entry("SPRING_PROFILES_ACTIVE", "e2e"),
+                Map.entry("BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE", 6000));
         assertThat(lire("docker-compose.e2e.yml")).doesNotContain("BACKYARD_ENVIRONNEMENT");
         assertThat(lire("docker-compose.e2e.yml")).contains("docker-compose.prod.yml");
     }

@@ -1,10 +1,24 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { DestroyRef, Injectable, InjectionToken, computed, inject, signal } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
 
 const PERIODE_ACTUALISATION_MS = 3000;
+/** Aléa ajouté à chaque relance périodique, pour étaler les requêtes des écrans (RG6b). */
+const ALEA_ACTUALISATION_MS = 500;
+/** Aléa du départ de la demande de bascule au zéro du compte à rebours (RG6a). */
+const ALEA_BASCULE_MS = 1000;
 const DELAI_NOUVELLE_DEMANDE_MS = 1000;
 const PERIODE_AFFICHAGE_MS = 200;
+/** Espacement sur erreur : 3 s × 2^(k−1), plafonné à 30 s, plus 0 à 10 % d'aléa (RG7). */
+const ESPACEMENT_INITIAL_MS = 3000;
+const ESPACEMENT_MAX_MS = 30000;
+const ALEA_ESPACEMENT_RATIO = 0.1;
+
+/** Source d'aléa uniforme dans [0 ; 1[ ; remplaçable pour les essais. */
+export const ALEA_CHRONOMETRAGE = new InjectionToken<() => number>('ALEA_CHRONOMETRAGE', {
+  providedIn: 'root',
+  factory: () => Math.random,
+});
 
 /** Champs de chronométrage communs aux instantanés du pilotage et du suivi public. */
 export interface InstantaneChronometrage {
@@ -17,8 +31,9 @@ export interface InstantaneChronometrage {
 }
 
 /**
- * Actualisation d'un écran chronométré : un instantané serveur toutes les 3 s (un seul appel à la
- * fois) et, entre deux instantanés, avancement local des durées renvoyées par le serveur avec
+ * Actualisation d'un écran chronométré : un instantané serveur toutes les 3 s à 3,5 s (un seul
+ * appel à la fois, aléa pour étaler les écrans), tentatives espacées de 3 s à 30 s sur erreur
+ * temporaire, et, entre deux instantanés, avancement local des durées renvoyées par le serveur avec
  * l'horloge monotone `performance.now()`. L'heure du navigateur n'est jamais comparée à celle du
  * serveur et la Boucle courante n'est jamais recalculée ici : seul le serveur la décide.
  * Fourni par l'écran : tout s'arrête à sa destruction.
@@ -27,7 +42,7 @@ export interface InstantaneChronometrage {
 export abstract class RafraichissementChronometrage<T extends InstantaneChronometrage> {
   /** Dernier instantané appliqué, `null` avant le premier succès. */
   readonly instantane = signal<T | null>(null);
-  /** La dernière demande a échoué (réseau, 5xx) ; les tentatives continuent. */
+  /** La dernière demande a échoué (réseau, 5xx, 429…) ; les tentatives continuent. */
   readonly echec = signal(false);
   /** « Boucle N en cours », posé seulement quand la Boucle change entre deux instantanés. */
   readonly annonce = signal('');
@@ -61,6 +76,9 @@ export abstract class RafraichissementChronometrage<T extends InstantaneChronome
   /** Une actualisation immédiate a été demandée pendant une demande en cours. */
   private relanceDemandee = false;
   private arrete = false;
+  /** Échecs temporaires consécutifs (5xx, 429, réseau), remis à zéro par un succès. */
+  private echecsConsecutifs = 0;
+  private readonly alea = inject(ALEA_CHRONOMETRAGE);
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.arreter());
@@ -113,9 +131,27 @@ export abstract class RafraichissementChronometrage<T extends InstantaneChronome
       !this.basculeDemandee &&
       this.requete === null
     ) {
+      // Départ décalé pour que les écrans ne demandent pas tous la bascule au même instant.
       this.basculeDemandee = true;
-      this.demander();
+      this.planifier(this.alea() * ALEA_BASCULE_MS);
     }
+  }
+
+  /** Rythme normal : 3 s plus un aléa de 0 à 0,5 s, ou rattrapage d'une bascule attendue. */
+  private delaiSuivant(): number {
+    return this.basculeDemandee
+      ? DELAI_NOUVELLE_DEMANDE_MS
+      : PERIODE_ACTUALISATION_MS + this.alea() * ALEA_ACTUALISATION_MS;
+  }
+
+  /** Après k échecs : min(30 s, 3 s × 2^(k−1)) + 0 à 10 %, au moins `Retry-After` s'il est fourni. */
+  private delaiApresEchec(erreur: unknown): number {
+    const base = Math.min(
+      ESPACEMENT_MAX_MS,
+      ESPACEMENT_INITIAL_MS * 2 ** (this.echecsConsecutifs - 1),
+    );
+    const espacement = base * (1 + this.alea() * ALEA_ESPACEMENT_RATIO);
+    return Math.max(espacement, reessayerApresMs(erreur));
   }
 
   private planifier(delai: number): void {
@@ -151,13 +187,14 @@ export abstract class RafraichissementChronometrage<T extends InstantaneChronome
 
   private appliquer(suivant: T): void {
     this.echec.set(false);
+    this.echecsConsecutifs = 0;
     const precedent = this.instantane();
     // Instantané plus ancien que celui déjà affiché (instants du serveur entre eux) : ignoré.
     if (
       precedent !== null &&
       Date.parse(suivant.heureServeur) < Date.parse(precedent.heureServeur)
     ) {
-      this.planifier(this.basculeDemandee ? DELAI_NOUVELLE_DEMANDE_MS : PERIODE_ACTUALISATION_MS);
+      this.planifier(this.delaiSuivant());
       return;
     }
     const ancienneBoucle = precedent?.boucleCourante ?? null;
@@ -179,7 +216,7 @@ export abstract class RafraichissementChronometrage<T extends InstantaneChronome
       ancienneBoucle === nouvelleBoucle &&
       suivant.tempsAvantFinBoucleMillisecondes === 0 &&
       !suivant.boucleMaxTerminee;
-    this.planifier(this.basculeDemandee ? DELAI_NOUVELLE_DEMANDE_MS : PERIODE_ACTUALISATION_MS);
+    this.planifier(this.delaiSuivant());
   }
 
   private traiterErreur(erreur: unknown): void {
@@ -189,6 +226,37 @@ export abstract class RafraichissementChronometrage<T extends InstantaneChronome
       return;
     }
     this.echec.set(true);
-    this.planifier(PERIODE_ACTUALISATION_MS);
+    if (!estEchecTemporaire(erreur)) {
+      this.planifier(this.delaiSuivant());
+      return;
+    }
+    this.echecsConsecutifs++;
+    this.planifier(this.delaiApresEchec(erreur));
   }
+}
+
+/** Erreur réseau (statut 0 ou erreur hors HTTP), 5xx ou 429 : les tentatives s'espacent. */
+function estEchecTemporaire(erreur: unknown): boolean {
+  if (!(erreur instanceof HttpErrorResponse)) {
+    return true;
+  }
+  return (
+    erreur.status === 0 || erreur.status >= 500 || erreur.status === HttpStatusCode.TooManyRequests
+  );
+}
+
+/** Délai imposé par l'en-tête `Retry-After` d'un 429 (secondes ou date HTTP), 0 sinon. */
+function reessayerApresMs(erreur: unknown): number {
+  if (!(erreur instanceof HttpErrorResponse) || erreur.status !== HttpStatusCode.TooManyRequests) {
+    return 0;
+  }
+  const valeur = erreur.headers?.get('Retry-After')?.trim();
+  if (!valeur) {
+    return 0;
+  }
+  if (/^\d+$/.test(valeur)) {
+    return Number(valeur) * 1000;
+  }
+  const date = Date.parse(valeur);
+  return Number.isNaN(date) ? 0 : Math.max(0, date - Date.now());
 }

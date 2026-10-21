@@ -61,6 +61,14 @@ backyard:
     # environ 19 Mio de memoire chacun. Au-dela, attente bornee puis 503 SERVICE_SATURE (SEC-06).
     concurrence-max: ${HACHAGE_CONCURRENCE_MAX:4}
     attente-max-millisecondes: 1000
+  limite-debit-public:
+    # GET /api/courses et /api/courses/** : requetes par IP et par minute (fenetre fixe), refus 429 TROP_DE_REQUETES
+    # au-dela. Entier >= 0, 0 = aucune limite ; valeur invalide : l'api ne demarre pas. Defaut 1200 (~60 ecrans de
+    # suivi a 20 requetes/minute derriere une meme IP).
+    par-minute: ${BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE:1200}
+    # Nom d'hote (ou adresse) du reverse proxy dont le X-Forwarded-For est retenu pour cette limite ; vide : aucun,
+    # l'IP est celle de la connexion. docker-compose.yml le fixe a web (Caddy).
+    proxy-de-confiance: ${BACKYARD_PROXY_DE_CONFIANCE:}
   admin-master:
     # Admin master cree au demarrage s'il n'existe pas (ignorees ensuite). Defaut vide : aucun admin cree.
     # Valeurs validees par le domaine (pseudo 3 a 30 caracteres, mot de passe 12 a 128), jamais journalisees.

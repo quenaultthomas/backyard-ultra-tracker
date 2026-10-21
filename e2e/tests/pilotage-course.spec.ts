@@ -158,6 +158,11 @@ async function ouvrirSimule(page: Page, id: string, repondre: (n: number) => Rep
     }
     etat.servies = n;
   });
+  // Aléa neutralisé (7.2 RG6, RG7) : ces scénarios à horloge simulée vérifient les rythmes nominaux (3 s, 6 s...) ;
+  // le décalage aléatoire réel est observé en conditions réelles par suivi-sous-charge.spec.ts (CA12, CA13) et son projet horloge (CA14).
+  await page.addInitScript(() => {
+    Math.random = () => 0;
+  });
   await page.clock.install({ time: HORLOGE_DEPART });
   await page.goto(urlPilotage(id));
   await page.clock.pauseAt(new Date(HORLOGE_DEPART.getTime() + 1000));
@@ -520,8 +525,8 @@ test.describe('Pilotage d\'une course', () => {
       await expect(lire(page, 'pilotage-avertissement-actualisation')).toBeVisible(COURT);
     });
 
-    // succès : l'avertissement disparaît
-    await avancerSans(page, etat, 2500);
+    // succès : l'avertissement disparaît (deuxième échec consécutif : espacement de 6 s, 7.2 RG7)
+    await avancerSans(page, etat, 5500);
     await page.clock.runFor(800);
     await expect.poll(() => etat.servies).toBe(4);
     await constater(page, async () => {

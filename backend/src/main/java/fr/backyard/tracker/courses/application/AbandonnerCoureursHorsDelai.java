@@ -49,12 +49,6 @@ public class AbandonnerCoureursHorsDelai {
         this.horloge = horloge;
     }
 
-    /** Identifiants des Courses en cours, à contrôler chacune par {@link #executer} dans sa propre transaction. */
-    @Transactional(readOnly = true)
-    public List<UUID> coursesAControler() {
-        return depotCourses.idsEnCours();
-    }
-
     /**
      * Résultat d'une exécution du contrôle.
      *

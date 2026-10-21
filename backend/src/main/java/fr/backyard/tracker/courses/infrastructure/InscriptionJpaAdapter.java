@@ -7,7 +7,10 @@ import fr.backyard.tracker.courses.domaine.JetonQr;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.hibernate.exception.ConstraintViolationException;
@@ -64,6 +67,23 @@ public class InscriptionJpaAdapter implements DepotInscriptions {
                         "select count(i) from InscriptionJpaEntity i where i.courseId = :courseId", Long.class)
                 .setParameter("courseId", courseId)
                 .getSingleResult());
+    }
+
+    /** Une requête groupée pour toutes les Courses (aucune pour une liste vide) ; 0 pour une Course sans Inscrit. */
+    @Override
+    @Transactional(readOnly = true)
+    public Map<UUID, Integer> nombresInscritsParCourse(Collection<UUID> courseIds) {
+        Map<UUID, Integer> nombres = new HashMap<>();
+        courseIds.forEach(courseId -> nombres.put(courseId, 0));
+        if (courseIds.isEmpty()) {
+            return nombres;
+        }
+        entityManager.createQuery("select i.courseId, count(i) from InscriptionJpaEntity i "
+                        + "where i.courseId in :courseIds group by i.courseId", Object[].class)
+                .setParameter("courseIds", courseIds)
+                .getResultList()
+                .forEach(ligne -> nombres.put((UUID) ligne[0], Math.toIntExact((Long) ligne[1])));
+        return nombres;
     }
 
     @Override

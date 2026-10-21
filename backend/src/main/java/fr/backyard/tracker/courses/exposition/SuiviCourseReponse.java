@@ -76,12 +76,12 @@ public record SuiviCourseReponse(UUID courseId, String nom, String logoUrl, Stat
         return "SuiviCourseReponse[courseId=" + courseId + "]";
     }
 
-    static SuiviCourseReponse depuis(ConsulterSuivi.Suivi suivi, ListerCourses.CourseListee courseListee) {
+    static SuiviCourseReponse depuis(ConsulterSuivi.Suivi suivi) {
         Course course = suivi.course();
         Optional<Chronometrage> chrono = suivi.chronometrage();
         ParametresBoucle boucle = course.parametresBoucle();
         StatistiquesCourse statistiques = suivi.statistiques();
-        return new SuiviCourseReponse(course.id(), course.nom(), CourseReponse.depuis(courseListee).logoUrl(),
+        return new SuiviCourseReponse(course.id(), course.nom(), CourseReponse.depuis(new ListerCourses.CourseListee(course, suivi.empreinteLogo())).logoUrl(),
                 course.statut(), INSTANT_AUX_MILLISECONDES.format(suivi.heureServeur()), course.nombreMaxBoucles(),
                 valeur(chrono, Chronometrage::boucleCourante),
                 chrono.map(Chronometrage::derniereBoucle).orElse(false),

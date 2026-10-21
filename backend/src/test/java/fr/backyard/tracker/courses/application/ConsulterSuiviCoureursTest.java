@@ -48,7 +48,7 @@ class ConsulterSuiviCoureursTest {
     private final AnnuaireSuiviDeTest annuaire = new AnnuaireSuiviDeTest();
     private final DepotPassagesEnMemoireDeTest passages = new DepotPassagesEnMemoireDeTest();
     private final ConsulterSuivi consulterSuivi = new ConsulterSuivi(depotCourses, inscriptions.port, annuaire,
-            passages, Clock.fixed(MAINTENANT, ZoneOffset.UTC));
+            passages, new DepotLogosDeTest(), Clock.fixed(MAINTENANT, ZoneOffset.UTC));
 
     @BeforeEach
     void garnir() {
@@ -85,7 +85,7 @@ class ConsulterSuiviCoureursTest {
         inscrire(X, 1, "Alice", StatutInscription.EN_COURSE);
 
         var suivi = new ConsulterSuivi(depotCourses, inscriptions.port, annuaire,
-                passages, Clock.fixed(T0.plusSeconds(6 * 3_600), ZoneOffset.UTC)).executer(X);
+                passages, new DepotLogosDeTest(), Clock.fixed(T0.plusSeconds(6 * 3_600), ZoneOffset.UTC)).executer(X);
 
         assertThat(suivi.coureursEnCourse()).extracting(c -> c.dossard()).containsExactly(1);
         assertThat(suivi.abandons()).isEmpty();

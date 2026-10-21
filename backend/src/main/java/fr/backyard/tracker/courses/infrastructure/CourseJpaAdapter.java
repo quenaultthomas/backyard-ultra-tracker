@@ -7,6 +7,7 @@ import fr.backyard.tracker.courses.domaine.StatutCourse;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,12 +82,27 @@ public class CourseJpaAdapter implements DepotCourses {
         return versDomaine(entityManager.createQuery(COURSES_ET_BENEVOLES, CourseJpaEntity.class).getResultList());
     }
 
+    /** Une requête filtrée sur le statut, sans verrou : lue chaque seconde par le planificateur. */
     @Override
     @Transactional(readOnly = true)
-    public List<UUID> idsEnCours() {
-        return entityManager.createQuery("select c.id from CourseJpaEntity c where c.statut = :statut", UUID.class)
+    public List<Course> enCours() {
+        return versDomaine(entityManager.createQuery(COURSES_ET_BENEVOLES + " where c.statut = :statut",
+                        CourseJpaEntity.class)
                 .setParameter("statut", StatutCourse.EN_COURS)
-                .getResultList();
+                .getResultList());
+    }
+
+    /** Une seule requête pour toute la liste (aucune pour une liste vide). */
+    @Override
+    @Transactional(readOnly = true)
+    public List<Course> parIds(Collection<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return versDomaine(entityManager.createQuery(COURSES_ET_BENEVOLES + " where c.id in :ids",
+                        CourseJpaEntity.class)
+                .setParameter("ids", ids)
+                .getResultList());
     }
 
     @Override

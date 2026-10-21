@@ -6,14 +6,17 @@ import fr.backyard.tracker.courses.domaine.DepotInscriptions;
 import fr.backyard.tracker.courses.domaine.Inscription;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Inscriptions du Compte demandeur, toutes Courses et tous statuts confondus, chacune avec sa Course, dans l'ordre de
- * liste des Courses défini par le domaine. Lecture seule : les Inscriptions des autres Comptes ne sont jamais lues.
+ * liste des Courses défini par le domaine, les Courses lues en une seule fois. Lecture seule : les Inscriptions des autres Comptes ne sont jamais lues.
  */
 @Service
 public class ListerMesInscriptions {
@@ -35,15 +38,19 @@ public class ListerMesInscriptions {
 
     @Transactional(readOnly = true)
     public List<MonInscription> executer(UUID compteId) {
-        return depotInscriptions.parCompte(compteId).stream()
-                .map(this::avecSaCourse)
+        List<Inscription> inscriptions = depotInscriptions.parCompte(compteId);
+        Map<UUID, Course> courses = depotCourses.parIds(inscriptions.stream().map(Inscription::courseId).toList())
+                .stream().collect(Collectors.toMap(Course::id, Function.identity()));
+        return inscriptions.stream()
+                .map(inscription -> avecSaCourse(inscription, courses))
                 .flatMap(Optional::stream)
                 .sorted(ORDRE_DES_COURSES)
                 .toList();
     }
 
     /** Vide si la Course a disparu entre les deux lectures (suppression concurrente) : l'Inscription n'existe plus. */
-    private Optional<MonInscription> avecSaCourse(Inscription inscription) {
-        return depotCourses.parId(inscription.courseId()).map(course -> new MonInscription(course, inscription));
+    private static Optional<MonInscription> avecSaCourse(Inscription inscription, Map<UUID, Course> courses) {
+        return Optional.ofNullable(courses.get(inscription.courseId()))
+                .map(course -> new MonInscription(course, inscription));
     }
 }

@@ -38,6 +38,10 @@ services:
       CONNEXION_BLOCAGE_SECONDES: ${CONNEXION_BLOCAGE_SECONDES:-900}
       # Calculs Argon2id simultanes (~19 Mio chacun) ; au-dela, 503 SERVICE_SATURE (entier >= 1).
       HACHAGE_CONCURRENCE_MAX: ${HACHAGE_CONCURRENCE_MAX:-4}
+      # Limite de debit des routes publiques (GET /api/courses/**), par IP et par minute ; 0 = aucune limite.
+      BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE: ${BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE:-1200}
+      # Seul pair dont le X-Forwarded-For compte pour cette limite : le service web (Caddy). Valeur fixe.
+      BACKYARD_PROXY_DE_CONFIANCE: web
       # Admin master cree au premier demarrage (facultatives en dev, obligatoires en production).
       ADMIN_MASTER_PSEUDO: ${ADMIN_MASTER_PSEUDO:-}
       ADMIN_MASTER_MOT_DE_PASSE: ${ADMIN_MASTER_MOT_DE_PASSE:-}

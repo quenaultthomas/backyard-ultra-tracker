@@ -7,6 +7,7 @@ import fr.backyard.tracker.courses.application.SeDesinscrire;
 import fr.backyard.tracker.courses.domaine.Inscription;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -42,7 +43,12 @@ public class MesInscriptionsController {
 
     @GetMapping
     public List<MonInscriptionReponse> listerMesInscriptions(@AuthenticationPrincipal UUID compteId) {
-        return listerMesInscriptions.executer(compteId).stream().map(this::versReponse).toList();
+        List<MonInscription> inscriptions = listerMesInscriptions.executer(compteId);
+        List<ListerCourses.CourseListee> listees =
+                listerCourses.avecEmpreintesLogo(inscriptions.stream().map(MonInscription::course).toList());
+        return IntStream.range(0, inscriptions.size())
+                .mapToObj(rang -> MonInscriptionReponse.depuis(listees.get(rang), inscriptions.get(rang).inscription()))
+                .toList();
     }
 
     /** Un corps ou un paramètre éventuel est ignoré ; un identifiant qui n'est pas un UUID donne 404. */
@@ -52,10 +58,5 @@ public class MesInscriptionsController {
         Inscription inscription = seDesinscrire.executer(compteId, IdentifiantCourse.dInscription(id));
         JOURNAL.info("Désinscription enregistrée (course {}, dossard {})", inscription.courseId(),
                 inscription.dossard());
-    }
-
-    private MonInscriptionReponse versReponse(MonInscription monInscription) {
-        return MonInscriptionReponse.depuis(listerCourses.avecEmpreinteLogo(monInscription.course()),
-                monInscription.inscription());
     }
 }

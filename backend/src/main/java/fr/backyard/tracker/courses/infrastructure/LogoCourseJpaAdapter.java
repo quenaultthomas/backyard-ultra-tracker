@@ -60,12 +60,13 @@ public class LogoCourseJpaAdapter implements DepotLogos {
                 .collect(Collectors.toMap(ligne -> (UUID) ligne[0], ligne -> (String) ligne[1]));
     }
 
+    /** Liste et non flux : lue hors transaction (suivi public), un flux lirait un ResultSet déjà fermé. */
     @Override
     public Optional<String> empreinteParIdCourse(UUID idCourse) {
         return entityManager.createQuery(
                         "select l.empreinte from LogoCourseJpaEntity l where l.idCourse = :idCourse", String.class)
                 .setParameter("idCourse", idCourse)
-                .getResultStream()
+                .getResultList().stream()
                 .findFirst();
     }
 }
