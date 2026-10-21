@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Étape de build : compile l'application Angular en mode production.
-FROM node:24.21.0-alpine3.24 AS build
+FROM node:24.22.0-alpine3.24 AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund

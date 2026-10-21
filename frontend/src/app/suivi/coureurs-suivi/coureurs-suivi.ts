@@ -5,7 +5,8 @@ import { SuiviCourse } from '../suivi-course';
 
 /**
  * Sections publiques « Vainqueur(s) », « Coureurs en course » et « Abandons » d'une Course
- * démarrée : listes affichées dans l'ordre et selon la répartition décidés par le serveur.
+ * démarrée : listes affichées dans l'ordre et selon la répartition décidés par le serveur. Le
+ * contenu projeté (statistiques) s'insère après le bandeau vainqueur, avant « Coureurs en course ».
  */
 @Component({
   selector: 'app-coureurs-suivi',

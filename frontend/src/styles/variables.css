@@ -73,4 +73,13 @@
   --impression-taille-dossard: 72pt;
   --impression-taille-pseudo: 24pt;
   --impression-taille-texte: 16pt;
+
+  /* Taille des valeurs de statistiques du suivi public (6.3), redéfinie en projection. */
+  --taille-statistique: var(--taille-grande);
+
+  /* Mode projection du suivi public (6.3) : tailles appliquées seulement en projection. */
+  --taille-projection-texte: 1.5rem;
+  --taille-projection-titre: 2.25rem;
+  --taille-projection-statistique: 3rem;
+  --taille-projection-chronometre: 5rem;
 }

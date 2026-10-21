@@ -1,0 +1,10 @@
+/*
+ * Mode projection du suivi public (6.3, docs/design.md section 11) : `ProjectionSuivi` pose la
+ * classe sur `body`. En-tête de session (confirmation de déconnexion comprise), bandeau de mise à
+ * jour et numéro de version ne sont ni visibles ni atteignables au clavier ; leur état est conservé.
+ */
+body.suivi-projection app-entete,
+body.suivi-projection app-mise-a-jour,
+body.suivi-projection .version {
+  display: none;
+}

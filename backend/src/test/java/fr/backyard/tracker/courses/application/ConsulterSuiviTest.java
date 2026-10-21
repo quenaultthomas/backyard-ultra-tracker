@@ -23,6 +23,9 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests de l'incrément 6.1 : cas d'usage ConsulterSuivi (CA1 à CA5 ; RG3, RG4, RG5, RG6).
+ * Mis à jour en 6.3 : le constructeur devient
+ * {@code ConsulterSuivi(DepotCourses, DepotInscriptions, AnnuairePseudos, DepotPassages, Clock)} (aucune assertion
+ * modifiée : seule la construction change, les Passages sont vides ici).
  * Mis à jour en 6.2 : le constructeur devient {@code ConsulterSuivi(DepotCourses, DepotInscriptions, AnnuairePseudos, Clock)}
  * (les Inscriptions sont vides ici ; les nouveautés sont dans ConsulterSuiviCoureursTest).
  * Signatures attendues en 6.1 : {@code ConsulterSuivi(DepotCourses, Clock)} ; {@code Suivi executer(UUID courseId)} où
@@ -108,7 +111,8 @@ class ConsulterSuiviTest {
     void doit_lire_le_clock_une_seule_fois() {
         ClockAvanceALaLecture clock = new ClockAvanceALaLecture(T0.plusMillis(60_000), Duration.ofSeconds(7));
 
-        var suivi = new ConsulterSuivi(depotCourses, new DepotInscriptionsEspionDeTest().port, new AnnuaireSuiviDeTest(), clock).executer(X);
+        var suivi = new ConsulterSuivi(depotCourses, new DepotInscriptionsEspionDeTest().port, new AnnuaireSuiviDeTest(),
+                new DepotPassagesEnMemoireDeTest(), clock).executer(X);
 
         assertThat(clock.lectures.get()).isEqualTo(1);
         assertThat(suivi.heureServeur()).isEqualTo(T0.plusMillis(60_000));
@@ -304,7 +308,7 @@ class ConsulterSuiviTest {
 
     private ConsulterSuivi consulterA(Instant maintenant) {
         return new ConsulterSuivi(depotCourses, new DepotInscriptionsEspionDeTest().port, new AnnuaireSuiviDeTest(),
-                Clock.fixed(maintenant, ZoneOffset.UTC));
+                new DepotPassagesEnMemoireDeTest(), Clock.fixed(maintenant, ZoneOffset.UTC));
     }
 
     private static Course course(UUID id, String nom, StatutCourse statut, int dureeBoucleMinutes, int maxBoucles,

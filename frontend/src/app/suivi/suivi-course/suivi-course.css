@@ -1,5 +1,38 @@
-/* Suivi public d'une Course (docs/design.md, section 11 « Suivi public ») : carte de 44rem.
-   Mode projection (jetons --taille-projection-*) : 6.3. */
+/* Suivi public d'une Course (docs/design.md, section 11 « Suivi public ») : carte de 44rem. */
 .page {
   --carte-largeur: 44rem;
+}
+
+.suivi-bouton-projection {
+  align-self: flex-start;
+}
+
+/*
+ * Mode projection (6.3, jetons --taille-projection-*) : la racine redéfinit pour toute la page,
+ * composants enfants compris, les jetons de taille (texte courant à 1,5 rem au moins) et les
+ * couleurs de texte sous 7 de contraste (encre-douce, orange-foncé, danger) ; carte pleine largeur,
+ * fond opaque et défilement vertical en plein écran. Aucune animation.
+ */
+.suivi--projection {
+  --taille-petite: var(--taille-projection-texte);
+  --taille-secondaire: var(--taille-projection-texte);
+  --taille-base: var(--taille-projection-texte);
+  --taille-moyenne: var(--taille-projection-texte);
+  --taille-grande: var(--taille-projection-titre);
+  --taille-titre: var(--taille-projection-titre);
+  --taille-statistique: var(--taille-projection-statistique);
+  --couleur-encre-douce: var(--couleur-encre);
+  --couleur-orange-fonce: var(--couleur-encre);
+  --couleur-danger: var(--couleur-danger-survol);
+  --carte-largeur: none;
+
+  align-items: flex-start;
+  overflow-y: auto;
+  font-size: var(--taille-base);
+  background-color: var(--couleur-fond-page);
+}
+
+.suivi--projection .chronometrage__boucle,
+.suivi--projection .chronometrage__valeur {
+  font-size: var(--taille-projection-chronometre);
 }
