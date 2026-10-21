@@ -1,0 +1,40 @@
+/* Statistiques du suivi (docs/design.md, section 11 « Suivi public ») : libellé puis valeur, chiffres
+   tabulaires de `body`, largeur réservée en `ch` (valeurs remplacées en place, aucun saut de mise en
+   page). Colonnes en `em` et valeur en `--taille-statistique` : le mode projection les agrandit en
+   redéfinissant les jetons sur la racine de la page, sans règle propre ici. Mots coupés par la carte. */
+.statistiques {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  padding-top: var(--espace-4);
+  border-top: 1px solid var(--couleur-trait);
+}
+
+.statistiques__liste {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11em), 1fr));
+  gap: var(--espace-3) var(--espace-4);
+  margin: 0;
+  font-size: var(--taille-base);
+}
+
+.statistique {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-1);
+  min-width: 0;
+}
+
+.statistique dt {
+  font-size: var(--taille-secondaire);
+  color: var(--couleur-encre-douce);
+}
+
+.statistique__valeur {
+  min-width: min(100%, 10ch);
+  margin: 0;
+  font-size: var(--taille-statistique);
+  font-weight: var(--poids-gras);
+  line-height: var(--interligne-titre);
+  color: var(--couleur-foret);
+}

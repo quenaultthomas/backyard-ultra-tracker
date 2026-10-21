@@ -2,11 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  ElementRef,
   computed,
   inject,
   input,
   linkedSignal,
   signal,
+  viewChild,
 } from '@angular/core';
 
 import {
@@ -19,19 +21,22 @@ import {
 } from '../../partage/chronometrage/formats-duree';
 import { MESSAGE_SERVICE_INDISPONIBLE } from '../../partage/probleme';
 import { CoureursSuivi } from '../coureurs-suivi/coureurs-suivi';
+import { ProjectionSuivi } from '../projection-suivi';
 import { RafraichissementSuivi } from '../rafraichissement-suivi';
+import { StatistiquesSuivi } from '../statistiques-suivi/statistiques-suivi';
 import { SuiviCourse as InstantaneSuivi } from '../suivi-course';
 
 /**
  * Suivi public d'une Course (sans connexion) : nom, logo, statut, Boucle courante, compte à
  * rebours et durée écoulée, tels que calculés par le serveur et avancés localement entre deux
  * réponses ; vainqueur(s), coureurs en course et abandons d'une Course démarrée. L'actualisation
- * s'arrête après la première réponse `TERMINEE`, affichée en entier (listes finales).
+ * s'arrête après la première réponse `TERMINEE`, affichée en entier (listes et statistiques
+ * finales, durée de la course figée). Mode projection : plein écran de la page ou affichage agrandi.
  */
 @Component({
   selector: 'app-suivi-course',
-  imports: [CoureursSuivi],
-  providers: [RafraichissementSuivi],
+  imports: [CoureursSuivi, StatistiquesSuivi],
+  providers: [RafraichissementSuivi, ProjectionSuivi],
   templateUrl: './suivi-course.html',
   styleUrls: [
     '../../partage/page-carte.css',
@@ -43,6 +48,8 @@ import { SuiviCourse as InstantaneSuivi } from '../suivi-course';
 })
 export class SuiviCourse implements OnInit {
   protected readonly rafraichissement = inject(RafraichissementSuivi);
+  protected readonly projection = inject(ProjectionSuivi);
+  private readonly racine = viewChild.required<ElementRef<HTMLElement>>('racine');
 
   /** Paramètre de route `:id`. */
   readonly id = input.required<string>();
@@ -85,8 +92,18 @@ export class SuiviCourse implements OnInit {
     return ecoulee === null ? '' : formaterDureeEcoulee(ecoulee);
   });
 
+  /** Durée figée d'une Course `TERMINEE`, telle que renvoyée par le serveur. */
+  protected readonly dureeFinale = computed(() => {
+    const duree = this.suivi()?.dureeFinaleMillisecondes ?? null;
+    return duree === null ? '' : formaterDureeEcoulee(duree);
+  });
+
   ngOnInit(): void {
     this.rafraichissement.demarrer(this.id(), () => this.introuvable.set(true));
+  }
+
+  protected basculerProjection(): void {
+    this.projection.basculer(this.racine().nativeElement);
   }
 
   protected signalerLogoEnErreur(url: string): void {

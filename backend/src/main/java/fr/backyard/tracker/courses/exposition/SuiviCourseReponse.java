@@ -5,26 +5,34 @@ import fr.backyard.tracker.courses.application.ListerCourses;
 import fr.backyard.tracker.courses.domaine.Chronometrage;
 import fr.backyard.tracker.courses.domaine.Course;
 import fr.backyard.tracker.courses.domaine.MotifAbandon;
+import fr.backyard.tracker.courses.domaine.ParametresBoucle;
+import fr.backyard.tracker.courses.domaine.StatistiquesCourse;
 import fr.backyard.tracker.courses.domaine.StatutCourse;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.function.Function;
 
 /**
- * Suivi public d'une Course, liste fermée de 14 champs : jamais de jeton QR, d'identifiant de Compte ou d'Inscription,
- * de statut d'Inscription, de Passage, de bénévole ni de paramètre de Boucle. Les champs de chronométrage sont null
- * (et les booléens faux) sans chronométrage. {@code heureServeur} est l'instant UTC de calcul, toujours aux
- * millisecondes. Les trois listes, jamais null, gardent l'ordre établi par le cas d'usage.
+ * Suivi public d'une Course, liste fermée de 21 champs : jamais de jeton QR, d'identifiant de Compte ou d'Inscription,
+ * de statut d'Inscription, de détail ou de nombre de Passages, de bénévole ni de durée de Boucle. Les champs de
+ * chronométrage sont null (et les booléens faux) sans chronométrage. {@code heureServeur} est l'instant UTC de calcul,
+ * toujours aux millisecondes. Les trois listes, jamais null, gardent l'ordre établi par le cas d'usage. Les
+ * statistiques viennent telles quelles du domaine : allure null sans Passage scanné retenu, durée finale null hors
+ * TERMINEE.
  */
 public record SuiviCourseReponse(UUID courseId, String nom, String logoUrl, StatutCourse statut,
                                  String heureServeur, int nombreMaxBoucles, Integer boucleCourante,
                                  boolean derniereBoucle, boolean boucleMaxTerminee,
                                  Long tempsAvantFinBoucleMillisecondes, Long dureeEcouleeMillisecondes,
                                  List<CoureurSuiviReponse> coureursEnCourse, List<AbandonSuiviReponse> abandons,
-                                 List<CoureurSuiviReponse> vainqueurs) {
+                                 List<CoureurSuiviReponse> vainqueurs, int distanceBoucleMetres,
+                                 int denivelePositifBoucleMetres, int bouclesTerminees, long distanceCumuleeMetres,
+                                 long denivelePositifCumuleMetres, Long allureSecondesParKilometre,
+                                 Long dureeFinaleMillisecondes) {
 
     /** Coureur en course ou vainqueur : dossard et pseudo uniquement. */
     public record CoureurSuiviReponse(int dossard, String pseudo) {
@@ -68,6 +76,8 @@ public record SuiviCourseReponse(UUID courseId, String nom, String logoUrl, Stat
     static SuiviCourseReponse depuis(ConsulterSuivi.Suivi suivi, ListerCourses.CourseListee courseListee) {
         Course course = suivi.course();
         Optional<Chronometrage> chrono = suivi.chronometrage();
+        ParametresBoucle boucle = course.parametresBoucle();
+        StatistiquesCourse statistiques = suivi.statistiques();
         return new SuiviCourseReponse(course.id(), course.nom(), CourseReponse.depuis(courseListee).logoUrl(),
                 course.statut(), INSTANT_AUX_MILLISECONDES.format(suivi.heureServeur()), course.nombreMaxBoucles(),
                 valeur(chrono, Chronometrage::boucleCourante),
@@ -76,7 +86,14 @@ public record SuiviCourseReponse(UUID courseId, String nom, String logoUrl, Stat
                 valeur(chrono, c -> c.tempsAvantFinBoucle().toMillis()),
                 valeur(chrono, c -> c.dureeEcoulee().toMillis()),
                 CoureurSuiviReponse.depuis(suivi.coureursEnCourse()), AbandonSuiviReponse.depuis(suivi.abandons()),
-                CoureurSuiviReponse.depuis(suivi.vainqueurs()));
+                CoureurSuiviReponse.depuis(suivi.vainqueurs()), boucle.distanceMetres(),
+                boucle.denivelePositifMetres(), statistiques.bouclesTerminees(), statistiques.distanceCumuleeMetres(),
+                statistiques.denivelePositifCumuleMetres(), valeur(statistiques.allureSecondesParKilometre()),
+                valeur(statistiques.dureeFinaleMillisecondes()));
+    }
+
+    private static Long valeur(OptionalLong optionnel) {
+        return optionnel.isPresent() ? optionnel.getAsLong() : null;
     }
 
     private static <T> T valeur(Optional<Chronometrage> chronometrage, Function<Chronometrage, T> champ) {
