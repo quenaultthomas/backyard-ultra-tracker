@@ -82,13 +82,13 @@ class SqueletteIntegrationTest {
     }
 
     @Test
-    @DisplayName("Release : /actuator/info expose la version de l'application, sans détail interne")
+    @DisplayName("CA2 / Release : /actuator/info (derrière l'alias Caddy /api/version) expose la version 0.5.0, sans détail interne")
     void info_expose_la_version() throws Exception {
         HttpResponse<String> reponse = SanteHttp.get(port, "/actuator/info");
 
         assertThat(reponse.statusCode()).isEqualTo(200);
         JsonNode corps = JsonMapper.builder().build().readTree(reponse.body());
-        assertThat(corps.get("build").get("version").asString()).isEqualTo("0.4.0");
+        assertThat(corps.get("build").get("version").asString()).isEqualTo("0.5.0");
         assertThat(corps.get("app").get("version").asString()).isNotBlank();
         assertThat(reponse.body()).doesNotContain("password", "motDePasse");
     }
