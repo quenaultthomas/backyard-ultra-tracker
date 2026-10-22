@@ -1,9 +1,6 @@
 import { tirerIdentifiantScan } from '../identifiant-scan';
 import { RefusScan } from '../refus-scan';
 
-/** Âge maximal accepté par l'API (`ageDuScanMillisecondes`) : 24 heures. */
-export const AGE_MAXIMAL_MILLISECONDES = 86_400_000;
-
 /** Session de la page courante : la mesure monotone ne vaut qu'à l'intérieur d'une même session. */
 const SESSION_PAGE = tirerIdentifiantScan();
 
@@ -35,7 +32,7 @@ export interface ScanEnFile {
 }
 
 /**
- * Scan en attente refusé définitivement (ou trop ancien) : gardé sur l'appareil, sans jeton,
+ * Scan en attente refusé définitivement : gardé sur l'appareil, sans jeton,
  * jusqu'à « Compris ». Champs du refus tels que fournis par l'API (jamais déduits).
  */
 export interface ScanAVerifier {
@@ -44,7 +41,7 @@ export interface ScanAVerifier {
   courseId: string;
   sequence: number;
   etat: 'A_VERIFIER';
-  /** `code` du `ProblemDetail` ; absent pour « Scan trop ancien » ou un 4xx sans corps. */
+  /** `code` du `ProblemDetail` ; absent pour un 4xx sans corps. */
   code?: string;
   motif: string;
   detail: string;
@@ -114,8 +111,4 @@ export function ageDuScan(scan: ScanEnFile): number {
 /** Faux pour une entrée créée avant un rechargement, ou par un autre onglet. */
 export function estDeCetteSessionDePage(scan: ScanEnFile): boolean {
   return scan.sessionPage === SESSION_PAGE;
-}
-
-export function estTropAncien(scan: ScanEnFile): boolean {
-  return ageDuScan(scan) > AGE_MAXIMAL_MILLISECONDES;
 }

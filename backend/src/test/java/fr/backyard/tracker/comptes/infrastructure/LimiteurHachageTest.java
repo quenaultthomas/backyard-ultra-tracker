@@ -19,7 +19,7 @@ class LimiteurHachageTest {
     @Test
     @DisplayName("SEC-06 : un calcul sous le plafond renvoie son résultat et libère sa place")
     void doit_executer_le_calcul_et_liberer_la_place() {
-        LimiteurHachage limiteur = new LimiteurHachage(1, Duration.ZERO);
+        LimiteurHachage limiteur = new LimiteurHachage(1, 1, Duration.ZERO);
 
         assertThat(limiteur.executer(() -> "empreinte")).isEqualTo("empreinte");
         assertThat(limiteur.executer(() -> "seconde")).isEqualTo("seconde");
@@ -28,7 +28,7 @@ class LimiteurHachageTest {
     @Test
     @DisplayName("SEC-06 : la place est libérée même si le calcul échoue")
     void doit_liberer_la_place_quand_le_calcul_echoue() {
-        LimiteurHachage limiteur = new LimiteurHachage(1, Duration.ZERO);
+        LimiteurHachage limiteur = new LimiteurHachage(1, 1, Duration.ZERO);
 
         assertThatThrownBy(() -> limiteur.executer(() -> {
             throw new IllegalStateException("panne");
@@ -39,7 +39,7 @@ class LimiteurHachageTest {
     @Test
     @DisplayName("SEC-06 : au-delà du plafond, la demande est refusée après l'attente maximale")
     void doit_refuser_une_demande_au_dela_du_plafond() throws Exception {
-        LimiteurHachage limiteur = new LimiteurHachage(1, Duration.ofMillis(50));
+        LimiteurHachage limiteur = new LimiteurHachage(1, 1, Duration.ofMillis(50));
         CountDownLatch enCours = new CountDownLatch(1);
         CountDownLatch liberer = new CountDownLatch(1);
         ExecutorService executeur = Executors.newSingleThreadExecutor();
@@ -65,7 +65,7 @@ class LimiteurHachageTest {
     @Test
     @DisplayName("SEC-06 : une attente interrompue est refusée en conservant l'interruption et sa cause")
     void doit_refuser_une_attente_interrompue() {
-        LimiteurHachage limiteur = new LimiteurHachage(1, Duration.ofSeconds(5));
+        LimiteurHachage limiteur = new LimiteurHachage(1, 1, Duration.ofSeconds(5));
         Thread.currentThread().interrupt();
         try {
             assertThatThrownBy(() -> limiteur.executer(() -> "jamais"))
@@ -80,8 +80,8 @@ class LimiteurHachageTest {
     @Test
     @DisplayName("SEC-06 : une configuration invalide est refusée")
     void doit_refuser_une_configuration_invalide() {
-        assertThatThrownBy(() -> new LimiteurHachage(0, Duration.ZERO)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new LimiteurHachage(1, Duration.ofMillis(-1)))
+        assertThatThrownBy(() -> new LimiteurHachage(0, 1, Duration.ZERO)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new LimiteurHachage(1, 1, Duration.ofMillis(-1)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

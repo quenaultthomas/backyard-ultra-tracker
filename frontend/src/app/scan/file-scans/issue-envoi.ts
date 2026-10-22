@@ -13,11 +13,6 @@ export type IssueEnvoi =
   | { type: 'acces-refuse'; erreur: HttpErrorResponse }
   | { type: 'panne'; reessayerApresSecondes?: number };
 
-export const REFUS_TROP_ANCIEN: RefusScan = {
-  motif: 'Scan trop ancien',
-  detail: "Ce scan date de plus de 24 heures et n'a pas été envoyé.",
-};
-
 const DETAIL_REFUS_GENERIQUE = 'Le serveur a refusé ce scan.';
 const STATUTS_PANNE: readonly number[] = [
   HttpStatusCode.RequestTimeout,

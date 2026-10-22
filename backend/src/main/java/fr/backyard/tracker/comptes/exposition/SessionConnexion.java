@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,9 +28,16 @@ public class SessionConnexion {
 
     private final SecurityContextRepository depotContexte;
     private final SecurityContextHolderStrategy contexteCourant = SecurityContextHolder.getContextHolderStrategy();
+    private final boolean cookieSecure;
 
-    public SessionConnexion(SecurityContextRepository depotContexte) {
+    /**
+     * @param cookieSecure drapeau Secure du cookie effacé, même propriété que JSESSIONID et XSRF-TOKEN (7.3 RG2),
+     *                     validée au démarrage par la configuration de sécurité
+     */
+    public SessionConnexion(SecurityContextRepository depotContexte,
+                            @Value("${server.servlet.session.cookie.secure}") String cookieSecure) {
         this.depotContexte = depotContexte;
+        this.cookieSecure = "true".equals(cookieSecure.trim());
     }
 
     /** Renouvelle l'identifiant d'une session préexistante (anti-fixation), puis y enregistre l'identité. */
@@ -55,7 +63,7 @@ public class SessionConnexion {
             session.invalidate();
         }
         contexteCourant.clearContext();
-        reponse.addHeader(HttpHeaders.SET_COOKIE, cookieEfface(requete).toString());
+        reponse.addHeader(HttpHeaders.SET_COOKIE, cookieEfface().toString());
     }
 
     private static Authentication authentification(Compte compte) {
@@ -63,13 +71,13 @@ public class SessionConnexion {
                 List.of(new SimpleGrantedAuthority("ROLE_" + compte.role().name())));
     }
 
-    private static ResponseCookie cookieEfface(HttpServletRequest requete) {
+    private ResponseCookie cookieEfface() {
         return ResponseCookie.from(COOKIE_SESSION, "")
                 .path("/")
                 .maxAge(0)
                 .httpOnly(true)
                 .sameSite("Lax")
-                .secure(requete.isSecure())
+                .secure(cookieSecure)
                 .build();
     }
 }

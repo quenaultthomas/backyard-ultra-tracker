@@ -363,7 +363,7 @@ class CompteIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA17 : derrière le proxy HTTPS (X-Forwarded-Proto), le cookie XSRF-TOKEN est Secure")
+    @DisplayName("CA17 (contrat 7.3 RG2) : avec COOKIES_SECURE=false, X-Forwarded-Proto: https ne rend plus le cookie XSRF-TOKEN Secure")
     void ca17_cookie_secure_derriere_proxy() throws Exception {
         try (var client = java.net.http.HttpClient.newHttpClient()) {
             var requete = java.net.http.HttpRequest.newBuilder(
@@ -371,8 +371,10 @@ class CompteIntegrationTest {
                     .header("X-Forwarded-Proto", "https").GET().build();
             HttpResponse<String> reponse = client.send(requete, HttpResponse.BodyHandlers.ofString());
             assertThat(reponse.statusCode()).isEqualTo(204);
-            assertThat(reponse.headers().allValues("set-cookie")).anyMatch(
-                    c -> c.startsWith("XSRF-TOKEN=") && c.toLowerCase().contains("secure"));
+            List<String> cookies = reponse.headers().allValues("set-cookie");
+            assertThat(cookies).anyMatch(c -> c.startsWith("XSRF-TOKEN="));
+            assertThat(cookies).filteredOn(c -> c.startsWith("XSRF-TOKEN="))
+                    .noneMatch(c -> c.toLowerCase().contains("secure"));
         }
     }
 

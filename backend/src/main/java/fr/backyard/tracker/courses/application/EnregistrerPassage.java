@@ -1,5 +1,6 @@
 package fr.backyard.tracker.courses.application;
 
+import fr.backyard.tracker.courses.domaine.AgeDuScan;
 import fr.backyard.tracker.courses.domaine.AnnuairePseudos;
 import fr.backyard.tracker.courses.domaine.BenevoleNonAffecteException;
 import fr.backyard.tracker.courses.domaine.CoureurScanne;
@@ -14,6 +15,7 @@ import fr.backyard.tracker.courses.domaine.JetonQr;
 import fr.backyard.tracker.courses.domaine.Passage;
 import fr.backyard.tracker.courses.domaine.PassageDejaEnregistreException;
 import fr.backyard.tracker.courses.domaine.RefusPassageCoureurException;
+import fr.backyard.tracker.courses.domaine.ScanTropAncienException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -26,8 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Enregistrement du Passage d'un coureur par un bénévole affecté à la Course (le rôle est contrôlé avant ce cas
  * d'usage). Idempotent par identifiant de scan : le même identifiant pour la même Inscription renvoie le Passage
- * existant, quel que soit l'état actuel. Ordre des contrôles : affectation, jeton, rejeu, Course, Inscription,
- * Boucle, déjà passé, continuité, anti-doublon. Aucun journal (chemin fréquent ; ni jeton ni pseudo).
+ * existant, quel que soit l'état actuel et l'âge envoyé. Ordre des contrôles : affectation, jeton, rejeu, âge du
+ * scan, Course, Inscription, Boucle, déjà passé, continuité, anti-doublon. Aucun journal (chemin fréquent ; ni jeton ni pseudo).
  */
 @Service
 public class EnregistrerPassage {
@@ -63,6 +65,7 @@ public class EnregistrerPassage {
      * @throws BenevoleNonAffecteException bénévole non affecté ou Course inconnue
      * @throws JetonInconnuException aucune Inscription de la Course n'a ce jeton
      * @throws IdentifiantScanDejaUtiliseException l'identifiant désigne le Passage d'une autre Inscription
+     * @throws ScanTropAncienException scan nouveau de plus de 24 h, refusé quel que soit l'état de la Course
      * @throws RefusPassageCoureurException refus rapporté au coureur scanné (statut, temps écoulé, Boucle,
      *                                     anti-doublon)
      */
@@ -77,7 +80,8 @@ public class EnregistrerPassage {
         if (existant.isPresent()) {
             return rejeu(existant.get(), inscription, coureur);
         }
-        Instant scanneLe = Instant.now(horloge).minusMillis(ageDuScanMillisecondes).truncatedTo(ChronoUnit.MILLIS);
+        AgeDuScan age = AgeDuScan.de(ageDuScanMillisecondes);
+        Instant scanneLe = Instant.now(horloge).minusMillis(age.millisecondes()).truncatedTo(ChronoUnit.MILLIS);
         Passage passage = nouveauPassage(course, inscription, identifiantScan, scanneLe, coureur);
         enregistrer(passage, coureur);
         return new Resultat(passage, coureur.dossard(), coureur.pseudo(), false);

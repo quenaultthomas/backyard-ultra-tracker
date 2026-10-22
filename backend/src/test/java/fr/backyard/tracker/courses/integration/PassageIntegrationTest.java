@@ -462,10 +462,11 @@ class PassageIntegrationTest {
             verifierErreurChamp(scanner(leo, x, corps), "identifiantScan", "IDENTIFIANT_SCAN_INVALIDE",
                     "L'identifiant de scan doit être un UUID.");
         }
-        for (String age : List.of("-1", "86400001", "\"x\"", "1.5")) {
+        // Contrat 7.3 RG6 : la forme seule ; 86400001 relève du domaine (409 SCAN_TROP_ANCIEN, voir ContratScanIdempotence).
+        for (String age : List.of("-1", "\"x\"", "1.5", "true")) {
             String corps = "{\"jetonQr\":\"" + JB + "\",\"identifiantScan\":\"" + valide + "\",\"ageDuScanMillisecondes\":" + age + "}";
             verifierErreurChamp(scanner(leo, x, corps), "ageDuScanMillisecondes", "AGE_DU_SCAN_INVALIDE",
-                    "L'âge du scan doit être compris entre 0 et 86400000 millisecondes.");
+                    "L'âge du scan doit être un entier supérieur ou égal à 0 (millisecondes).");
         }
 
         HttpResponse<String> toutes = scanner(leo, x, "{\"jetonQr\":\"\",\"identifiantScan\":\"abc\",\"ageDuScanMillisecondes\":-1}");

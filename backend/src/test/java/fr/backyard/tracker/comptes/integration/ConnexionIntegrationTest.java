@@ -338,7 +338,7 @@ class ConnexionIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA17 : derrière le proxy HTTPS (X-Forwarded-Proto), le cookie de session est Secure")
+    @DisplayName("CA17 (contrat 7.3 RG2) : avec COOKIES_SECURE=false, X-Forwarded-Proto: https ne rend plus le cookie de session Secure")
     void ca17_cookie_secure_derriere_proxy() throws Exception {
         creerCompte("Alice", MOT_DE_PASSE);
         Jeton jeton = api.jetonValide();
@@ -349,7 +349,7 @@ class ConnexionIntegrationTest {
                 "application/json", ApiHttp.CORPS_VALIDE.formatted("Alice"));
 
         assertThat(reponse.statusCode()).isEqualTo(200);
-        assertThat(cookieSession(reponse)).containsIgnoringCase("Secure").containsIgnoringCase("HttpOnly")
+        assertThat(cookieSession(reponse)).doesNotContainIgnoringCase("Secure").containsIgnoringCase("HttpOnly")
                 .containsIgnoringCase("SameSite=Lax");
     }
 

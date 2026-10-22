@@ -1,5 +1,6 @@
 package fr.backyard.tracker.courses.infrastructure;
 
+import fr.backyard.tracker.partage.infrastructure.AdresseCliente;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

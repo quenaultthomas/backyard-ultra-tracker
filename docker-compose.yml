@@ -38,9 +38,14 @@ services:
       CONNEXION_BLOCAGE_SECONDES: ${CONNEXION_BLOCAGE_SECONDES:-900}
       # Calculs Argon2id simultanes (~19 Mio chacun) ; au-dela, 503 SERVICE_SATURE (entier >= 1).
       HACHAGE_CONCURRENCE_MAX: ${HACHAGE_CONCURRENCE_MAX:-4}
+      # Plafond par adresse cliente, avant le plafond global : une IP n'occupe jamais toutes les places (entier >= 1).
+      HACHAGE_CONCURRENCE_MAX_PAR_IP: ${HACHAGE_CONCURRENCE_MAX_PAR_IP:-1}
+      # Drapeau Secure des cookies de session et CSRF (true/false) : false en dev et E2E (HTTP), true impose en prod.
+      COOKIES_SECURE: ${COOKIES_SECURE:-false}
       # Limite de debit des routes publiques (GET /api/courses/**), par IP et par minute ; 0 = aucune limite.
       BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE: ${BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE:-1200}
-      # Seul pair dont le X-Forwarded-For compte pour cette limite : le service web (Caddy). Valeur fixe.
+      # Seul pair dont le X-Forwarded-For compte (limite de debit, plafond de hachage par IP) : le service web (Caddy).
+      # Valeur fixe.
       BACKYARD_PROXY_DE_CONFIANCE: web
       # Admin master cree au premier demarrage (facultatives en dev, obligatoires en production).
       ADMIN_MASTER_PSEUDO: ${ADMIN_MASTER_PSEUDO:-}

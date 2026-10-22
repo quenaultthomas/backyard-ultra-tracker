@@ -11,7 +11,7 @@ import { ReseauService } from '../../partage/reseau.service';
 import { BenevoleApiService } from '../benevole-api.service';
 import { PassageReponse } from '../passage';
 import { RefusScan } from '../refus-scan';
-import { IssueEnvoi, REFUS_TROP_ANCIEN, attenteApresPanne, classerErreur } from './issue-envoi';
+import { IssueEnvoi, attenteApresPanne, classerErreur } from './issue-envoi';
 import {
   EntreeFile,
   ScanAVerifier,
@@ -20,7 +20,6 @@ import {
   creerScanEnFile,
   estAVerifier,
   estDeCetteSessionDePage,
-  estTropAncien,
   mettreAVerifier,
 } from './scan-en-file';
 import { StockageScans } from './stockage-scans';
@@ -107,7 +106,6 @@ export class FileScansService {
 
   private compteId: string | null = null;
   private ecritures: Promise<void> = Promise.resolve();
-  private purgeFaite = false;
   private cycleEnCours = false;
   private relanceDemandee = false;
   private pannesConsecutives = 0;
@@ -258,13 +256,8 @@ export class FileScansService {
     if (this.compteId === null) {
       return;
     }
-    await this.purgerAuDemarrage();
     let jetonCsrfObtenu = false;
     for (let scan = await this.relire(); scan && this.peutEnvoyer(); scan = await this.relire()) {
-      if (estTropAncien(scan)) {
-        await this.mettreDeCote(scan, REFUS_TROP_ANCIEN);
-        continue;
-      }
       if (!jetonCsrfObtenu && !(await this.obtenirJetonCsrf())) {
         await this.constaterPanne(scan);
         return;
@@ -299,26 +292,6 @@ export class FileScansService {
     // Une entrée d'avant le rechargement (ou d'un autre onglet) était en attente : le bilan sera annoncé.
     this.attenteConstatee ||= aEnvoyer.some((scan) => !estDeCetteSessionDePage(scan));
     return aEnvoyer[0] ?? null;
-  }
-
-  /**
-   * Au démarrage : une entrée à envoyer de plus de 24 h devient « à vérifier » (sans jeton) pour
-   * le Compte courant et est supprimée pour un autre Compte. Les scans à vérifier sont gardés.
-   */
-  private async purgerAuDemarrage(): Promise<void> {
-    if (this.purgeFaite) {
-      return;
-    }
-    this.purgeFaite = true;
-    const tropAnciens = (await this.stockage.lister()).filter(
-      (entree): entree is ScanEnFile =>
-        !estAVerifier(entree) && !estDeCetteSessionDePage(entree) && estTropAncien(entree),
-    );
-    for (const scan of tropAnciens) {
-      await (scan.compteId === this.compteId
-        ? this.stockage.enregistrer(mettreAVerifier(scan, REFUS_TROP_ANCIEN))
-        : this.stockage.supprimer(scan.identifiantScan));
-    }
   }
 
   private async obtenirJetonCsrf(): Promise<boolean> {
