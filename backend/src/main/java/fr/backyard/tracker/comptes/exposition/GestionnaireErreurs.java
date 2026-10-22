@@ -88,12 +88,11 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Trop de calculs d'empreinte simultanés (SEC-06) : rien n'a été fait, la requête peut être rejouée. Journal sans
-     * pseudo ni mot de passe, en WARN pour repérer une rafale.
+     * Trop de calculs d'empreinte simultanés (SEC-06) : rien n'a été fait, la requête peut être rejouée. La ligne WARN
+     * (plafond atteint, sans adresse, pseudo ni mot de passe) est écrite par le limiteur de hachage.
      */
     @ExceptionHandler(HachageSatureException.class)
     ResponseEntity<ProblemDetail> hachageSature() {
-        JOURNAL.warn("Requête refusée : calculs d'empreinte saturés");
         ProblemDetail probleme = probleme(HttpStatus.SERVICE_UNAVAILABLE, "Service saturé",
                 "Le service est momentanément saturé. Réessayez dans quelques secondes.", "SERVICE_SATURE");
         probleme.setProperty("reessayerDansSecondes", REESSAYER_APRES_SATURATION_SECONDES);

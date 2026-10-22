@@ -21,6 +21,10 @@
 		-Server
 	}
 
+	# HSTS seulement en HTTPS (production) : jamais émis par le site :80 (dev, E2E).
+	@https protocol https
+	header @https Strict-Transport-Security "max-age=31536000"
+
 	# Alias public de la santé du back : seul /actuator/health est joignable ainsi.
 	handle /api/sante {
 		# Appliqué à l'écriture : remplace un éventuel en-tête du back, y compris sur 502/504.

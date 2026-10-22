@@ -720,7 +720,7 @@ test.describe('File de scan, session, comptes et stockage', () => {
     await expect.poll(() => lirePassagesEnBase(course.id)).toEqual(['1:1:SCAN', '2:1:SCAN']);
   });
 
-  test('CA10 (5.1b CA4) - un scan resté 25 h hors ligne n\'est pas envoyé : ligne « Scan trop ancien », sans dossard ni aide, jeton supprimé', async ({ page, playwright }) => {
+  test('CA16 (7.3) - un scan resté 25 h hors ligne est envoyé une fois, refusé 409 SCAN_TROP_ANCIEN : ligne « Scan trop ancien », sans dossard ni aide, jeton supprimé', async ({ page, playwright }) => {
     const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 1 });
     const [un] = course.coureurs;
     await installerHorloge(page, course);
@@ -737,10 +737,12 @@ test.describe('File de scan, session, comptes et stockage', () => {
     await attendreFileVide(page);
     await expect(compteur(page)).toHaveCount(0);
     await laisserPasserLeReseau(page);
-    expect(requetes).toHaveLength(0);
+    expect(requetes).toHaveLength(1);
+    expect(requetes[0].ageDuScanMillisecondes).toBeGreaterThan(86_400_000);
     expect(lirePassagesEnBase(course.id)).toEqual([]);
     const entrees = await lireFile(page);
     expect(entrees.map((e) => e.etat)).toEqual(['A_VERIFIER']);
+    expect(entrees[0].code).toBe('SCAN_TROP_ANCIEN');
     expect('jetonQr' in entrees[0]).toBe(false);
   });
 
@@ -764,17 +766,18 @@ test.describe('File de scan, session, comptes et stockage', () => {
     await attendreFileVide(page);
   });
 
-  test('CA10 (5.1b CA4) - au rechargement, une entrée de plus de 24 h de Léo devient une ligne « Scan trop ancien », celle d\'un autre Compte est supprimée, sans envoi', async ({ page, playwright }) => {
+  test('CA16 (7.3) - au rechargement, une entrée de plus de 24 h de Léo est envoyée puis devient une ligne « Scan trop ancien » ; celle d\'un autre Compte n\'est plus purgée', async ({ page, playwright }) => {
     const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 1 });
     await ouvrirEcranDeScan(page, course);
     const requetes = suivrePassages(page);
     const compteId = await identifiantDuCompte(page);
     const maintenant = Date.now();
+    const jeton = course.coureurs[0].jeton;
     const entree = (identifiantScan: string, compte: string, ageHeures: number, sequence: number): EntreeFile => ({
       identifiantScan,
       compteId: compte,
       courseId: course.id,
-      jetonQr: `jeton-${identifiantScan}`,
+      jetonQr: jeton,
       sequence,
       creeLeMural: maintenant - ageHeures * 3_600_000,
       creeLeMonotone: 0,
@@ -793,7 +796,8 @@ test.describe('File de scan, session, comptes et stockage', () => {
 
     await page.reload();
     await expect(champ(page)).toBeVisible();
-    await expect.poll(async () => (await lireFile(page)).map((e) => e.identifiantScan).sort()).toEqual([ancienneDeLeo, recenteAutre].sort());
+    await expect.poll(async () => (await lireFile(page)).filter((e) => e.etat === 'A_VERIFIER').map((e) => e.identifiantScan)).toEqual([ancienneDeLeo]);
+    expect((await lireFile(page)).map((e) => e.identifiantScan).sort()).toEqual([ancienneDeLeo, ancienneAutre, recenteAutre].sort());
     await expect(refus(page)).toHaveCount(0);
     await expect(lignes(page)).toHaveCount(1);
     await expect(page.getByTestId('scan-a-verifier-motif')).toHaveText('Scan trop ancien');
@@ -802,7 +806,7 @@ test.describe('File de scan, session, comptes et stockage', () => {
     expect('jetonQr' in aVerifier[0]).toBe(false);
     await expect(compteur(page)).toHaveCount(0);
     await laisserPasserLeReseau(page);
-    expect(requetes).toHaveLength(0);
+    expect(requetes.filter((r) => r.identifiantScan === ancienneDeLeo)).toHaveLength(1);
   });
 
   test('CA15 - IndexedDB indisponible : avertissement, le scan en ligne fonctionne, la file continue en mémoire, aucune exception', async ({ page, playwright }) => {

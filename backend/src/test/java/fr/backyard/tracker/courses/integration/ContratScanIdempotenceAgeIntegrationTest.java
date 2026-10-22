@@ -137,7 +137,7 @@ class ContratScanIdempotenceAgeIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA1 : âge 86400000 accepté par la validation (409 SCAN_ANTERIEUR_AU_DEPART), 86400001 refusé en 400 AGE_DU_SCAN_INVALIDE, aucun passage créé")
+    @DisplayName("CA1 (contrat 7.3 RG5) : âge 86400000 recevable (409 SCAN_ANTERIEUR_AU_DEPART), 86400001 refusé en 409 SCAN_TROP_ANCIEN sans dossard ni pseudo, aucun passage créé")
     void ca1_bornes_de_l_age_du_scan() throws Exception {
         horloge.fixer(T0.plusSeconds(30));
 
@@ -145,13 +145,48 @@ class ContratScanIdempotenceAgeIntegrationTest {
         assertErreur(borneHaute, 409, "SCAN_ANTERIEUR_AU_DEPART");
 
         HttpResponse<String> auDessus = scanner(corps(J2, UUID.randomUUID().toString(), 86_400_001L));
-        assertErreur(auDessus, 400, "VALIDATION_ECHOUEE");
-        JsonNode erreurs = json.readTree(auDessus.body()).get("erreurs");
-        assertThat(erreurs).hasSize(1);
-        assertThat(erreurs.get(0).get("champ").asString()).isEqualTo("ageDuScanMillisecondes");
-        assertThat(erreurs.get(0).get("code").asString()).isEqualTo("AGE_DU_SCAN_INVALIDE");
+        assertErreur(auDessus, 409, "SCAN_TROP_ANCIEN");
+        JsonNode probleme = json.readTree(auDessus.body());
+        assertThat(probleme.get("detail").asString())
+                .isEqualTo("Ce scan date de plus de 24 heures et n'a pas été envoyé.");
+        assertThat(probleme.has("dossard")).isFalse();
+        assertThat(probleme.has("pseudo")).isFalse();
 
         assertThat(compterPassagesDe(idChloe)).isZero();
+    }
+
+    @Test
+    @DisplayName("CA2 (contrat 7.3 RG5a) : rejeu d'un scan accepté avec un âge > 24 h : 200 identique sans doublon ; un autre identifiant avec ce même âge : 409 SCAN_TROP_ANCIEN")
+    void ca2_rejeu_avec_un_age_superieur_a_24h_reste_idempotent() throws Exception {
+        horloge.fixer(T0.plusSeconds(30));
+        UUID u1 = UUID.randomUUID();
+        HttpResponse<String> creation = scanner(corps(J1, u1.toString(), 0L));
+        assertThat(creation.statusCode()).as(creation.body()).isEqualTo(201);
+
+        HttpResponse<String> rejeu = scanner(corps(J1, u1.toString(), 90_000_000L));
+        assertThat(rejeu.statusCode()).as(rejeu.body()).isEqualTo(200);
+        assertThat(json.readTree(rejeu.body())).isEqualTo(json.readTree(creation.body()));
+        assertThat(compterPassagesDe(idBruno)).isEqualTo(1);
+
+        assertErreur(scanner(corps(J1, UUID.randomUUID().toString(), 90_000_000L)), 409, "SCAN_TROP_ANCIEN");
+        assertThat(compterPassagesDe(idBruno)).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("CA2 (contrat 7.3 RG5b) : avec un âge > 24 h, jeton inconnu 404 JETON_INCONNU, identifiant utilisé par une autre inscription 409 IDENTIFIANT_SCAN_DEJA_UTILISE, Course terminée 409 SCAN_TROP_ANCIEN, aucun passage écrit")
+    void ca2_priorites_du_refus_d_age() throws Exception {
+        horloge.fixer(T0.plusSeconds(30));
+        UUID u1 = UUID.randomUUID();
+        assertThat(scanner(corps(J1, u1.toString(), 0L)).statusCode()).isEqualTo(201);
+
+        assertErreur(scanner(corps("jeton-inconnu-" + J1, UUID.randomUUID().toString(), 90_000_000L)), 404,
+                "JETON_INCONNU");
+        assertErreur(scanner(corps(J2, u1.toString(), 90_000_000L)), 409, "IDENTIFIANT_SCAN_DEJA_UTILISE");
+
+        jdbc.update("update course set statut = 'TERMINEE' where id = ?", UUID.fromString(x));
+        assertErreur(scanner(corps(J2, UUID.randomUUID().toString(), 90_000_000L)), 409, "SCAN_TROP_ANCIEN");
+        assertThat(compterPassagesDe(idChloe)).isZero();
+        assertThat(compterPassagesDe(idBruno)).isEqualTo(1);
     }
 
     @Test

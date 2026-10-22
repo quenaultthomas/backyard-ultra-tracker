@@ -13,6 +13,7 @@ import fr.backyard.tracker.courses.domaine.PassagePrecedentManquantException;
 import fr.backyard.tracker.courses.domaine.PassageTropRapprocheException;
 import fr.backyard.tracker.courses.domaine.RefusPassageCoureurException;
 import fr.backyard.tracker.courses.domaine.ScanAnterieurAuDepartException;
+import fr.backyard.tracker.courses.domaine.ScanTropAncienException;
 import fr.backyard.tracker.courses.domaine.TempsDeCourseEcouleException;
 import fr.backyard.tracker.courses.domaine.CourseCompleteException;
 import fr.backyard.tracker.courses.domaine.CourseHorsDateException;
@@ -41,12 +42,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * Erreurs métier du contexte courses en ProblemDetail (même format que le reste de l'API). Le corps illisible,
  * le 404 générique et la sécurité restent traités globalement. Les messages ne reprennent jamais la valeur saisie.
  *
- * <p>Ordre explicite : consulté avant le gestionnaire de dernier recours des erreurs inattendues (500).
+ * <p>Couvre tous les contrôleurs du package (7.3 RG8), y compris ceux ajoutés plus tard ; les gestionnaires
+ * spécialisés (logo, réintégration), plus prioritaires, gardent leurs cas. Ordre explicite : consulté avant le
+ * gestionnaire de dernier recours des erreurs inattendues (500).
  */
-@RestControllerAdvice(assignableTypes = {CourseController.class, LogoCourseController.class,
-        FicheCourseController.class, CoursesDuBenevoleController.class, InscriptionsCoureurController.class,
-        MesInscriptionsController.class, PassageController.class, AbandonManuelController.class,
-        ReintegrationController.class, SuiviPublicController.class})
+@RestControllerAdvice(basePackages = "fr.backyard.tracker.courses.exposition")
 @Order(0)
 public class GestionnaireErreursCourses {
 
@@ -162,6 +162,12 @@ public class GestionnaireErreursCourses {
     @ExceptionHandler(IdentifiantScanDejaUtiliseException.class)
     ProblemDetail identifiantScanDejaUtilise() {
         return conflit("Cet identifiant de scan correspond à un autre passage.", "IDENTIFIANT_SCAN_DEJA_UTILISE");
+    }
+
+    /** Ni dossard ni pseudo : le refus ne dépend pas du coureur scanné. */
+    @ExceptionHandler(ScanTropAncienException.class)
+    ProblemDetail scanTropAncien() {
+        return conflit("Ce scan date de plus de 24 heures et n'a pas été envoyé.", "SCAN_TROP_ANCIEN");
     }
 
     @ExceptionHandler(CourseTermineePourPassageException.class)

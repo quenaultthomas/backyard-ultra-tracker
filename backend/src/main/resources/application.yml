@@ -31,7 +31,8 @@ spring:
       add-mappings: false
 
 server:
-  # Derriere Caddy : X-Forwarded-Proto rend la requete HTTPS, et les cookies XSRF-TOKEN et JSESSIONID Secure.
+  # Derriere Caddy : X-Forwarded-For est lu (adresse cliente). X-Forwarded-Proto est ignore (7.3 RG2, voir
+  # AdresseClienteConfiguration) : le drapeau Secure des cookies ne depend que de cookie.secure.
   forward-headers-strategy: native
   servlet:
     session:
@@ -44,7 +45,10 @@ server:
         path: /
         http-only: true
         same-site: lax
-        # Pas de Secure force : pose par Tomcat des que la requete est HTTPS (en-tete X-Forwarded-Proto).
+        # Drapeau Secure de JSESSIONID, XSRF-TOKEN et du cookie de session efface (7.3 RG2), independant de
+        # X-Forwarded-Proto. Booleen true/false (COOKIES_SECURE), autre valeur : l'api ne demarre pas. Defaut sur :
+        # true ; docker-compose.yml passe false (dev et E2E en HTTP), docker-compose.prod.yml impose true.
+        secure: ${COOKIES_SECURE:true}
 
 backyard:
   abandon-automatique:
@@ -60,13 +64,17 @@ backyard:
     # Plafond des calculs Argon2id simultanes (connexion, creation de compte, changement de mot de passe) :
     # environ 19 Mio de memoire chacun. Au-dela, attente bornee puis 503 SERVICE_SATURE (SEC-06).
     concurrence-max: ${HACHAGE_CONCURRENCE_MAX:4}
+    # Plafond par adresse cliente (7.3 RG3), applique avant le plafond global : une adresse n'occupe jamais plus de
+    # places. Entier >= 1, sinon l'api ne demarre pas. A relever si des benevoles derriere un meme wifi recoivent 503.
+    concurrence-max-par-ip: ${HACHAGE_CONCURRENCE_MAX_PAR_IP:1}
     attente-max-millisecondes: 1000
   limite-debit-public:
     # GET /api/courses et /api/courses/** : requetes par IP et par minute (fenetre fixe), refus 429 TROP_DE_REQUETES
     # au-dela. Entier >= 0, 0 = aucune limite ; valeur invalide : l'api ne demarre pas. Defaut 1200 (~60 ecrans de
     # suivi a 20 requetes/minute derriere une meme IP).
     par-minute: ${BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE:1200}
-    # Nom d'hote (ou adresse) du reverse proxy dont le X-Forwarded-For est retenu pour cette limite ; vide : aucun,
+    # Nom d'hote (ou adresse) du reverse proxy dont le X-Forwarded-For est retenu pour cette limite et pour le plafond
+    # de hachage par adresse ; vide : aucun,
     # l'IP est celle de la connexion. docker-compose.yml le fixe a web (Caddy).
     proxy-de-confiance: ${BACKYARD_PROXY_DE_CONFIANCE:}
   admin-master:

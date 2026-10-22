@@ -24,6 +24,7 @@ const MOTIFS_PAR_CODE: Readonly<Record<string, string>> = {
   COURSE_TERMINEE: 'Course terminée',
   BENEVOLE_NON_AFFECTE: 'Course non affectée',
   JETON_INCONNU: 'Jeton inconnu',
+  SCAN_TROP_ANCIEN: 'Scan trop ancien',
 };
 
 const MOTIFS_PAR_STATUT: Readonly<Record<NonNullable<ErreurScan['statut']>, string>> = {

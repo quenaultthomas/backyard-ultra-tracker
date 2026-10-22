@@ -30,6 +30,8 @@ class ArchitectureTest {
     private static final String ADAPTATEUR_ANNULATION = RACINE + ".assemblage.AnnulationInscriptionsAdapter";
     private static final List<String> ADAPTATEURS_NOMMES =
             List.of(ADAPTATEUR_ANNUAIRE, ADAPTATEUR_PSEUDOS, ADAPTATEUR_ANNULATION);
+    // 7.3 RG4 : AdresseCliente et ValveAdressePair, partagées entre comptes.infrastructure et courses.infrastructure
+    private static final String PARTAGE_INFRASTRUCTURE = RACINE + ".partage.infrastructure";
     private static final List<String> COUCHES = List.of("domaine", "application", "infrastructure", "exposition");
 
     private static String paquet(String contexte, String couche) {
@@ -83,6 +85,11 @@ class ArchitectureTest {
                         DescribedPredicate.describe("les adaptateurs nommés d'assemblage (bénévoles, pseudos, annulation)",
                                 (JavaClass origine) -> ADAPTATEURS_NOMMES.contains(origine.getName())),
                         DescribedPredicate.alwaysTrue())
+                // 7.3 RG4 : package technique partagé, accessible aux seules infrastructures des contextes
+                .ignoreDependency(
+                        DescribedPredicate.alwaysTrue(),
+                        DescribedPredicate.describe("le package technique partagé",
+                                (JavaClass cible) -> cible.getPackageName().startsWith(PARTAGE_INFRASTRUCTURE)))
                 .as("RG14 : dépendances uniquement vers l'intérieur")
                 .check(classes);
     }
@@ -135,9 +142,9 @@ class ArchitectureTest {
     // RG9 / RG16 : toute classe est dans <contexte>.<couche> (hors classe racine de l'application)
     @ArchTest
     static void rg09_rg16_toute_classe_est_dans_un_contexte_et_une_couche_connus(JavaClasses classes) {
-        String[] paquets = CONTEXTES.stream()
-                .flatMap(contexte -> COUCHES.stream().map(couche -> paquet(contexte, couche)))
-                .toArray(String[]::new);
+        String[] paquets = java.util.stream.Stream.concat(
+                CONTEXTES.stream().flatMap(contexte -> COUCHES.stream().map(couche -> paquet(contexte, couche))),
+                java.util.stream.Stream.of(PARTAGE_INFRASTRUCTURE + "..")).toArray(String[]::new);
         classes().that().resideInAPackage(RACINE + "..")
                 .and().doNotHaveFullyQualifiedName(BackyardUltraTrackerApplication.class.getName())
                 .and().doNotHaveFullyQualifiedName(ADAPTATEUR_ANNUAIRE)
@@ -145,6 +152,26 @@ class ArchitectureTest {
                 .and().doNotHaveFullyQualifiedName(ADAPTATEUR_ANNULATION)
                 .should().resideInAnyPackage(paquets)
                 .as("RG9/RG16 : toute classe est dans fr.backyard.tracker.<comptes|courses>.<couche>")
+                .check(classes);
+    }
+
+    // 7.3 CA6 (RG4) : le package partagé ne dépend ni de comptes ni de courses
+    @ArchTest
+    static void ca6_partage_infrastructure_ne_depend_ni_de_comptes_ni_de_courses(JavaClasses classes) {
+        classes().that().resideInAPackage(PARTAGE_INFRASTRUCTURE + "..")
+                .should().onlyDependOnClassesThat()
+                .resideOutsideOfPackages(RACINE + ".comptes..", RACINE + ".courses..")
+                .as("CA6 : partage.infrastructure ne dépend ni de comptes ni de courses")
+                .check(classes);
+    }
+
+    // 7.3 CA6 (RG4) : seules les infrastructures de comptes et de courses utilisent le package partagé
+    @ArchTest
+    static void ca6_seules_les_infrastructures_des_contextes_utilisent_partage_infrastructure(JavaClasses classes) {
+        classes().that().resideOutsideOfPackages(PARTAGE_INFRASTRUCTURE + "..", paquet("comptes", "infrastructure"),
+                        paquet("courses", "infrastructure"))
+                .should().onlyDependOnClassesThat().resideOutsideOfPackage(PARTAGE_INFRASTRUCTURE + "..")
+                .as("CA6 : seules comptes.infrastructure et courses.infrastructure dépendent de partage.infrastructure")
                 .check(classes);
     }
 }

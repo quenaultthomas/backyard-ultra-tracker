@@ -16,7 +16,6 @@ import java.util.UUID;
 public record PassageRequete(Object jetonQr, Object identifiantScan, Object ageDuScanMillisecondes) {
 
     static final int LONGUEUR_MAX_JETON = 200;
-    static final long AGE_MAX_MILLISECONDES = 86_400_000L;
 
     /** Scan valide, prêt pour le cas d'usage. */
     record Scan(JetonQr jeton, UUID identifiantScan, long ageDuScanMillisecondes) {
@@ -47,7 +46,7 @@ public record PassageRequete(Object jetonQr, Object identifiantScan, Object ageD
         }
         if (age.isEmpty()) {
             violations.add(new ViolationValidation("ageDuScanMillisecondes", "AGE_DU_SCAN_INVALIDE",
-                    "L'âge du scan doit être compris entre 0 et 86400000 millisecondes."));
+                    "L'âge du scan doit être un entier supérieur ou égal à 0 (millisecondes)."));
         }
         if (!violations.isEmpty()) {
             throw new DonneesCourseInvalidesException(violations);
@@ -78,7 +77,7 @@ public record PassageRequete(Object jetonQr, Object identifiantScan, Object ageD
         return IdentifiantCourse.lire(texte).filter(uuid -> uuid.toString().equalsIgnoreCase(texte));
     }
 
-    /** Entier de 0 à 24 h ; absent vaut 0 (scan en direct). */
+    /** Entier positif ou nul, sans borne supérieure (portée par le domaine) ; absent vaut 0 (scan en direct). */
     private Optional<Long> age() {
         if (ageDuScanMillisecondes == null) {
             return Optional.of(0L);
@@ -87,6 +86,6 @@ public record PassageRequete(Object jetonQr, Object identifiantScan, Object ageD
             return Optional.empty();
         }
         long valeur = ((Number) ageDuScanMillisecondes).longValue();
-        return valeur >= 0 && valeur <= AGE_MAX_MILLISECONDES ? Optional.of(valeur) : Optional.empty();
+        return valeur >= 0 ? Optional.of(valeur) : Optional.empty();
     }
 }

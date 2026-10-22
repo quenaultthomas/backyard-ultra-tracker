@@ -1,6 +1,7 @@
 package fr.backyard.tracker.comptes.infrastructure;
 
 import fr.backyard.tracker.comptes.domaine.Role;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -40,10 +41,13 @@ public class SecuriteConfiguration {
     static final int ARGON2_PARALLELISME = 1;
     static final int ARGON2_MEMOIRE_KIO = 19_456;
     static final int ARGON2_ITERATIONS = 2;
+    /** Drapeau Secure des cookies (7.3 RG2), partagé avec JSESSIONID (Tomcat) et le cookie de session effacé. */
+    static final String PROPRIETE_COOKIES_SECURE = "server.servlet.session.cookie.secure";
 
     @Bean
     SecurityFilterChain filtreSecurite(HttpSecurity http, ReponsesErreurSecurite reponsesErreur,
-                                       SecurityContextRepository depotContexteSecurite) {
+                                       SecurityContextRepository depotContexteSecurite,
+                                       @Value("${" + PROPRIETE_COOKIES_SECURE + "}") String cookiesSecure) {
         return http
                 .authorizeHttpRequests(autorisations -> autorisations
                         .requestMatchers(HttpMethod.GET, "/api/sante", "/api/csrf").permitAll()
@@ -70,7 +74,7 @@ public class SecuriteConfiguration {
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(depotJetonCsrf())
+                        .csrfTokenRepository(depotJetonCsrf(booleen(cookiesSecure)))
                         // Angular renvoie la valeur brute du cookie dans X-XSRF-TOKEN.
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
                 .addFilterAfter(new FiltreDejaConnecte(requetesReserveesAuxAnonymes(), reponsesErreur),
@@ -108,10 +112,19 @@ public class SecuriteConfiguration {
                 chemins.matcher(HttpMethod.POST, "/api/comptes"));
     }
 
-    /** Cookie XSRF-TOKEN lisible par Angular, SameSite=Lax, Secure si la requête (ou le proxy) est en HTTPS. */
-    private static CookieCsrfTokenRepository depotJetonCsrf() {
+    /** Cookie XSRF-TOKEN lisible par Angular, SameSite=Lax, Secure selon la configuration (jamais selon la requête). */
+    private static CookieCsrfTokenRepository depotJetonCsrf(boolean secure) {
         CookieCsrfTokenRepository depot = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        depot.setCookieCustomizer(cookie -> cookie.sameSite("Lax"));
+        depot.setCookieCustomizer(cookie -> cookie.sameSite("Lax").secure(secure));
         return depot;
+    }
+
+    private static boolean booleen(String valeur) {
+        return switch (valeur.trim()) {
+            case "true" -> true;
+            case "false" -> false;
+            default -> throw new IllegalStateException(PROPRIETE_COOKIES_SECURE
+                    + " (COOKIES_SECURE) doit valoir true ou false (reçu : « " + valeur + " »).");
+        };
     }
 }
