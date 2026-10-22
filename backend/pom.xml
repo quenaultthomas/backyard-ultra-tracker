@@ -13,7 +13,7 @@
 
     <groupId>fr.backyard</groupId>
     <artifactId>backyard-ultra-tracker</artifactId>
-    <version>0.4.0</version>
+    <version>0.5.0</version>
     <name>Backyard Ultra Tracker</name>
     <description>API de gestion de courses backyard ultra</description>
 
@@ -24,6 +24,12 @@
         <jacoco.version>0.8.15</jacoco.version>
         <!-- Requis par Argon2PasswordEncoder (Spring Security), non géré par Spring Boot. -->
         <bouncycastle.version>1.86</bouncycastle.version>
+        <!-- Montées de correctifs de sécurité au-dessus des versions gérées par Spring Boot 4.1.1 (incrément 7.4,
+             docs/deploiement.md « Contrôle des vulnérabilités ») : Tomcat 11.0.24 (CVE-2026-65182, -65905, -68525,
+             CRITICAL) et Jackson 3.1.5 (CVE-2026-89407, -89425, -91776, -91777, -68497, HIGH). À retirer dès qu'une
+             version de Spring Boot gère des versions égales ou supérieures. -->
+        <tomcat.version>11.0.25</tomcat.version>
+        <jackson-bom.version>3.1.7</jackson-bom.version>
         <!-- Seuils de couverture JaCoCo (lignes et branches), surchargeables en ligne de commande.
              Ne pas les baisser sans décision de l'utilisateur (spec 0.3, RG4). -->
         <jacoco.seuil.lignes>0.85</jacoco.seuil.lignes>
