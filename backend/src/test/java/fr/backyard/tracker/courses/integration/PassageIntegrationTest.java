@@ -72,7 +72,7 @@ class PassageIntegrationTest {
     /** Les 17 champs d'origine (4.2) plus les 2 champs de bouclage de 4.7 (RG9, contrat additif). */
     static final List<String> CHAMPS_PILOTAGE = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur",
             "demarreeLe", "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle",
-            "boucleMaxTerminee", "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
+            "boucleMaxTerminee", "boucleEnAttenteDeDecision", "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
             "dureeEcouleeMillisecondes", "nombreInscrits", "inscritsEnCourse", "nombreAyantBoucle",
             "nombreEnBoucle", "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs",
             "inscritsVainqueurs");

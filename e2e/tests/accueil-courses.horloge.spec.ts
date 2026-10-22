@@ -37,7 +37,7 @@ test('CA14 - la Course passe de « À venir » à « En cours » puis « Termin�
     await poserMarqueur(page);
     expect((await repartition(page, [course.nom]))[course.nom]).toBe('en-cours');
 
-    await avancerHorloge(playwright, 'PT61M');
+    await avancerHorloge(playwright, 'PT64M');
     await expect.poll(() => statutDuSuivi(page, course.id), { timeout: 15000 }).toBe('TERMINEE');
     // sans rechargement : toujours « En cours » à l'écran
     expect(await page.evaluate(() => (window as unknown as Record<string, unknown>)['marqueurRechargement'])).toBe(1);

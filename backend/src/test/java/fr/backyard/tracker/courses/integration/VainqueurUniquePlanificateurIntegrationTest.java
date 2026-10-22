@@ -89,17 +89,17 @@ class VainqueurUniquePlanificateurIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA7 : sans toucher au service, après avance du Clock à 14:01:00.000Z, Bruno est VAINQUEUR et la Course TERMINEE en moins de 5 s ; ensuite plus aucune écriture ni ligne « Fin de course » supplémentaire")
+    @DisplayName("CA7 : sans toucher au service, après avance du Clock à 14:01:15.000Z, Bruno est VAINQUEUR et la Course TERMINEE en moins de 5 s ; ensuite plus aucune écriture ni ligne « Fin de course » supplémentaire")
     void ca7_vainqueur_sans_intervention() throws Exception {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
-        decor.horloge.fixer(DecorAbandon.T0.plusMillis(59_999));
+        decor.horloge.fixer(DecorAbandon.T0.plusMillis(74_999));
         Thread.sleep(1_500);
         assertThat(contexte.getBeansOfType(PlanificateurAbandonAutomatique.class)).hasSize(1);
         assertThat(decor.statutCourse(x)).isEqualTo("EN_COURS");
         decor.demarrerJournal();
 
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(75));
 
         assertThat(DecorAbandon.attendre(() -> termine(x), DELAI)).isTrue();
         assertThat(decor.etat(x, decor.idBruno)).isEqualTo("VAINQUEUR:-:-");
@@ -150,7 +150,7 @@ class VainqueurUniquePlanificateurIntegrationTest {
                 + "execute function piege_abandon()");
         decor.demarrerJournal();
 
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(75));
 
         assertThat(DecorAbandon.attendre(() -> termine(saine), DELAI)).isTrue();
         assertThat(decor.etat(saine, decor.idAlice)).isEqualTo("VAINQUEUR:-:-");

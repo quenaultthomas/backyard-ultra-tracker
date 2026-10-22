@@ -96,12 +96,12 @@ class AbandonAutomatiquePlanificateurIntegrationTest {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
         decor.poserPassage(x, decor.idTom, 1);
-        decor.horloge.fixer(DecorAbandon.T0.plusMillis(59_999));
+        decor.horloge.fixer(DecorAbandon.T0.plusMillis(74_999));
         Thread.sleep(1_500);
         assertThat(decor.etat(x, decor.idChloe)).isEqualTo("EN_COURSE:-:-");
         decor.demarrerJournal();
 
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(75));
 
         assertThat(DecorAbandon.attendre(() -> abandonne(x, decor.idChloe), DELAI)).isTrue();
         assertThat(decor.etat(x, decor.idChloe)).isEqualTo("ABANDON:HORS_DELAI:1");
@@ -176,7 +176,7 @@ class AbandonAutomatiquePlanificateurIntegrationTest {
                 + "execute function piege_abandon()");
         decor.demarrerJournal();
 
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(60));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(75));
 
         assertThat(DecorAbandon.attendre(() -> abandonne(saine, retardataire), DELAI)).isTrue();
         assertThat(DecorAbandon.attendre(() -> erreurs().size() >= 2, DELAI))

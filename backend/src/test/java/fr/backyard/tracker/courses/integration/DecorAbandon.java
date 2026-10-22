@@ -35,6 +35,8 @@ final class DecorAbandon {
     static final String CHEMIN = "/api/administration/courses";
     static final String JOUR = "2026-10-12";
     static final Instant T0 = Instant.parse("2026-10-12T14:00:00Z");
+    /** Délai de grâce 7.1 (RG1) d'une Boucle de 1 min : min(3 min, 1 min / 4) = 15 s. */
+    static final long GRACE_SECONDES = 15;
     static final String NOM_X = "Backyard des Crêtes";
     static final String NOM_Y = "Backyard du Lac";
     static final String INSERTION_COMPTE = "insert into compte (id, pseudo, pseudo_normalise, empreinte_mot_de_passe, "

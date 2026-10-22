@@ -23,6 +23,7 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 | 4 | Course en direct | 4.1 → 4.12 | faire tourner une course de bout en bout |
 | 5 | Scan hors ligne | 5.1 → 5.2 | scanner sans réseau sans perdre de passage |
 | 6 | Suivi public | 6.1 → 6.4 | projeter le suivi d'une course |
+| 7 | Préparation de la release | 7.1 → 7.4 | lancer un test grandeur nature avec une version publiée |
 
 ---
 
@@ -210,6 +211,28 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 
 ---
 
+## Jalon 7 : Préparation de la release
+
+Issu de `docs/audits/audit-2026-10-21-pre-release.md`. Objectif : corriger ce qui fausserait ou bloquerait un test grandeur nature. Le 7.1 est bloquant et dépend d'une décision à trancher (voir « Décisions en attente »). Le jalon A du 2026-10-16 (A.1 à A.3) ayant disparu de cette roadmap au commit `ddd0383`, ses points encore ouverts sont repris ici (7.2 et 7.3).
+
+### 7.1 Scan tardif et fin de course (MET-02, bloquant)
+- **Livré** : un scan fait dans les temps mais reçu après le départ de la boucle suivante ne fausse plus la fin de course, grâce à un délai de grâce dans le domaine avant de trancher la boucle (décision prise). L'aide « demandez une réintégration » n'est plus affichée quand la réintégration est impossible. Procédure terrain ajoutée à `docs/deploiement.md`.
+- **Tu testes** : avec l'horloge de la démo, scanner un coureur juste après le départ de la boucle suivante → le résultat final est correct (ou corrigeable) ; le message affiché au bénévole est exact.
+
+### 7.2 Suivi public sous charge (PER-04)
+- **Livré** : micro-cache de 1 à 2 s de la réponse de suivi par course ; limite de débit par IP sur les routes publiques `/api/courses/*` ; décalage aléatoire de la relance au zéro du compte à rebours et espacement progressif sur erreur 5xx côté front ; planificateur d'abandon allégé (verrou et relectures seulement à l'échéance d'une boucle) ; fin des requêtes N+1 des listes de courses.
+- **Tu testes** : une course de démo avec une trentaine de coureurs et plusieurs dizaines d'écrans de suivi ouverts (script de charge fourni) : le suivi reste fluide et les scans ne ralentissent pas au départ d'une boucle.
+
+### 7.3 Transport, erreurs et connexion (SEC-04, SEC-06, ARC-03, ARC-07)
+- **Livré** : en-tête HSTS dans le `Caddyfile`, cookie `Secure` indépendant de `X-Forwarded-Proto` ; le plafond global de hachage ne permet plus à un anonyme de refuser toutes les connexions légitimes ; la borne de 24 h de l'âge d'un scan passe dans le domaine (supprimée du DTO et du front) ; le gestionnaire d'erreurs couvre tous les contrôleurs, y compris les publics.
+- **Tu testes** : en-têtes de réponse en HTTPS ; des tentatives de connexion anonymes en rafale ne bloquent pas la connexion de l'admin master ; un scan trop ancien est refusé avec le même message qu'avant.
+
+### 7.4 Publication de la version 0.5.0 (DEP-03, DEP-07, CVE)
+- **Livré** : branche de release avec versions du pom et des `package.json`, section 0.5.0 du `CHANGELOG.md` et `VERSION` d'exemple à jour ; mise à jour de Vite et d'`@angular/build` pour les alertes Dependabot (outillage de build uniquement) ; sauvegarde `pg_dump` planifiée documentée (et utilisable) pour le jour de course ; tag `0.5.0-rc.1` pour une répétition générale sur le VPS, puis `0.5.0`.
+- **Tu testes** : déployer le tag `-rc.1` sur le VPS en suivant `docs/deploiement.md`, y restaurer une sauvegarde, puis dérouler une mini-course de bout en bout.
+
+---
+
 ## Décisions prises
 
 | Sujet | Décision | Incrément |
@@ -217,6 +240,7 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 | Maîtrise du temps pour les tests E2E | Horloge pilotable activée uniquement dans le profil `e2e`. Les vrais essais en temps réel se font en recette sur le terrain. | 4.3 |
 | Suppression d'un compte ayant couru | Anonymisation : le compte ne peut plus se connecter, son pseudo est remplacé, ses résultats sont conservés. | 3.6 |
 | Suppression d'une course | Par l'admin master uniquement, tant que la course est `EN_PREPARATION`. | 2.5 |
+| Scan reçu après le départ de la boucle suivante (MET-02) | Délai de grâce dans le domaine : la boucle N n'est tranchée (abandon automatique, fin de course) qu'à départ(N+1) + délai. Le scan reste attribué à N grâce à son âge. Durée du délai à fixer dans la spec 7.1. | 7.1 |
 
 ## Décisions en attente
 

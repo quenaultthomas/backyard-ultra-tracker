@@ -31,6 +31,7 @@ test('CA19 - le scan suit les boucles : continuité, doublon et fin du temps, vu
 
   // 4.8 (RG19) : Bruno, sans Passage 1 alors qu'Alice en a un, est mis en abandon par le planificateur (tick d'1 s) ;
   // il n'est donc plus « sans passage sur la boucle précédente » mais « en abandon ». La continuité est couverte plus bas.
+  await avancerHorloge(playwright, 'PT3M');
   await expect.poll(() => lireInscriptionEnBase(course.id, bruno.dossard).statut, { timeout: 8000 }).toBe('ABANDON');
   await scannerParEntree(page, bruno.jeton);
   await expect(page.getByTestId('scan-refus-motif')).toHaveText('Coureur en abandon');
@@ -39,7 +40,7 @@ test('CA19 - le scan suit les boucles : continuité, doublon et fin du temps, vu
   await scannerParEntree(page, alice.jeton);
   await expect(erreur).toHaveText('Ce coureur a déjà un passage sur la boucle 2.');
 
-  await avancerHorloge(playwright, 'PT60M');
+  await avancerHorloge(playwright, 'PT63M');
 
   // 4.8 : Bruno étant en abandon, la fin du temps est constatée avec Alice et Carole (Passage 2, toujours en course).
   // 4.10 : adapté (RG14). Deux passants à la dernière Boucle sont vainqueurs partagés et la Course est terminée dans la
@@ -64,7 +65,7 @@ test('CA19 - personne n\'a bouclé la Boucle 1 : la Course se termine avec les d
   const [alice, bruno] = course.coureurs;
   await ouvrirEcranDeScan(page, course);
 
-  await avancerHorloge(playwright, 'PT60M');
+  await avancerHorloge(playwright, 'PT63M');
   await expect.poll(() => lireStatutCourseEnBase(course.id), { timeout: 8000 }).toBe('TERMINEE');
 
   await scannerParEntree(page, alice.jeton);

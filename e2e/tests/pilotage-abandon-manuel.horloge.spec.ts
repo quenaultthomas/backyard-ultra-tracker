@@ -57,7 +57,7 @@ test('CA16 - Bruno abandonné « Manuel » après avoir bouclé la Boucle 1 : Bo
     await avancerHorloge(playwright, 'PT10M');
     await scanner(chloe, 2);
 
-    await avancerHorloge(playwright, 'PT50M');
+    await avancerHorloge(playwright, 'PT53M');
 
     await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée', HUIT_SECONDES);
     await expect(lire(page, 'pilotage-vainqueurs-titre')).toHaveText('Vainqueur');

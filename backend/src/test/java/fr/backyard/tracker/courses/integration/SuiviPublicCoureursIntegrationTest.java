@@ -49,7 +49,7 @@ import tools.jackson.databind.JsonNode;
 class SuiviPublicCoureursIntegrationTest {
 
     static final List<String> CHAMPS = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur",
-            "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee",
+            "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee", "boucleEnAttenteDeDecision",
             "tempsAvantFinBoucleMillisecondes", "dureeEcouleeMillisecondes", "coureursEnCourse", "abandons",
             "vainqueurs", "distanceBoucleMetres", "denivelePositifBoucleMetres", "bouclesTerminees",
             "distanceCumuleeMetres", "denivelePositifCumuleMetres", "allureSecondesParKilometre",
@@ -104,7 +104,7 @@ class SuiviPublicCoureursIntegrationTest {
     // ---------------------------------------------------------------- CA8
 
     @Test
-    @DisplayName("CA8 : X EN_COURS (Alice 1 et Bruno 2 EN_COURSE, Karim 3 ABANDON Boucle 1 VOLONTAIRE) sans session : 200, no-store, aucun Set-Cookie, 21 champs exactement (6.3 RG1), lignes à 2 et 4 champs, aucune fuite, aucune écriture")
+    @DisplayName("CA8 : X EN_COURS (Alice 1 et Bruno 2 EN_COURSE, Karim 3 ABANDON Boucle 1 VOLONTAIRE) sans session : 200, no-store, aucun Set-Cookie, 22 champs (7.1 : + boucleEnAttenteDeDecision) exactement (6.3 RG1), lignes à 2 et 4 champs, aucune fuite, aucune écriture")
     void ca8_suivi_public_avec_trois_listes() throws Exception {
         UUID x = courseEnCours("X");
         UUID alice = inscrire(x, decor.idAlice, 1, "EN_COURSE");
@@ -123,7 +123,7 @@ class SuiviPublicCoureursIntegrationTest {
                 c -> assertThat(c).contains("no-store"));
         assertThat(reponse.headers().allValues("set-cookie")).isEmpty();
         JsonNode corps = decor.json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(21).containsExactlyInAnyOrderElementsOf(CHAMPS);
+        assertThat(corps.propertyNames()).hasSize(22).containsExactlyInAnyOrderElementsOf(CHAMPS);
         assertThat(corps.get("coureursEnCourse")).hasSize(2);
         for (JsonNode ligne : corps.get("coureursEnCourse")) {
             assertThat(ligne.propertyNames()).containsExactlyInAnyOrderElementsOf(CHAMPS_COUREUR);
@@ -175,7 +175,7 @@ class SuiviPublicCoureursIntegrationTest {
 
         assertThat(reponse.statusCode()).isEqualTo(200);
         JsonNode corps = decor.json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(21);
+        assertThat(corps.propertyNames()).hasSize(22);
         assertThat(corps.get("statut").asString()).isEqualTo("EN_PREPARATION");
         for (String liste : List.of("coureursEnCourse", "abandons", "vainqueurs")) {
             assertThat(corps.get(liste).isArray()).as(liste).isTrue();

@@ -30,10 +30,14 @@ import org.junit.jupiter.api.Test;
  * {@code int vainqueurs()} (4.10 : nombre de vainqueurs, remplace le booléen) ; la Course terminée est écrite par {@code DepotCourses.enregistrer(Course)} (une seule
  * fois) et chaque Inscription modifiée (vainqueur comprise) par {@code DepotInscriptions.mettreAJour} (une fois).
  * Course X : boucles de 1 min, M = 5, t0 = 14:00:00Z ; Bruno (1), Chloé (2), Tom (3).
+ * Adaptés à 7.1 (RG2, RG3) sans affaiblissement : chaque instant de contrôle est décalé de {@code GRACE}, délai de
+ * grâce d'une Boucle de 1 min (15 s) ; les attentes sont inchangées.
  */
 class AbandonnerCoureursHorsDelaiVainqueurTest {
 
     private static final Instant T0 = Instant.parse("2026-10-12T14:00:00Z");
+    /** 7.1 RG1 : délai de grâce d'une Boucle de 1 min ; une Boucle n'est tranchée qu'à départ(N+1) + GRACE. */
+    private static final Duration GRACE = Duration.ofSeconds(15);
     private static final LocalDate JOUR = LocalDate.of(2026, 10, 12);
     private static final UUID X = id(1);
     private static final UUID Y = id(2);
@@ -71,7 +75,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     void doit_declarer_le_vainqueur_unique_et_terminer_la_course() {
         courseXAvec(boucles(1), boucles(), boucles());
 
-        var resultat = casA(T0.plusSeconds(60)).executer(X);
+        var resultat = casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(1);
         assertThat(resultat.abandons()).isEqualTo(2);
@@ -92,7 +96,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     void doit_ecrire_la_course_une_fois_et_chaque_inscription_concernee_une_fois() {
         courseXAvec(boucles(1), boucles(), boucles());
 
-        casA(T0.plusSeconds(60)).executer(X);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(courses.nombreDEnregistrements).isEqualTo(1);
         assertThat(inscriptions.nombreDeMisesAJour).isEqualTo(3);
@@ -104,7 +108,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         courseXAvec(boucles(1), boucles(), boucles());
         List<Passage> passagesAvant = List.copyOf(passages.passages);
 
-        casA(T0.plusSeconds(60)).executer(X);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(courses.parId(X).orElseThrow().demarreeLe()).contains(T0);
         assertThat(passages.passages).containsExactlyElementsOf(passagesAvant);
@@ -116,7 +120,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     void doit_ne_rien_faire_une_milliseconde_avant_la_bascule() {
         courseXAvec(boucles(1), boucles(), boucles());
 
-        var resultat = casA(T0.plusMillis(59_999)).executer(X);
+        var resultat = casA(T0.plusSeconds(60).plus(GRACE).minusMillis(1)).executer(X);
 
         assertThat(resultat.vainqueurs()).isZero();
         assertThat(resultat.abandons()).isZero();
@@ -129,12 +133,12 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     @DisplayName("CA3 - RG7 : second appel (même Clock, puis plus tard) : Course TERMINEE ignorée, aucune écriture, pas de second vainqueur")
     void doit_ignorer_une_course_deja_terminee_au_second_appel() {
         courseXAvec(boucles(1), boucles(), boucles());
-        casA(T0.plusSeconds(60)).executer(X);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
         int misesAJour = inscriptions.nombreDeMisesAJour;
         int sauvegardesCourse = courses.nombreDEnregistrements;
 
-        var memeInstant = casA(T0.plusSeconds(60)).executer(X);
-        var plusTard = casA(T0.plusSeconds(60).plusMillis(1)).executer(X);
+        var memeInstant = casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
+        var plusTard = casA(T0.plusSeconds(60).plus(GRACE).plusMillis(1)).executer(X);
 
         assertThat(memeInstant.vainqueurs()).isZero();
         assertThat(memeInstant.abandons()).isZero();
@@ -149,7 +153,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     @DisplayName("CA3 - RG6 : Course chargée par parIdPourModification (jamais parId), Clock lu une seule fois")
     void doit_charger_sous_verrou_et_lire_le_clock_une_fois() {
         courseXAvec(boucles(1), boucles(), boucles());
-        var clock = new ScenarioPassageDeTest.ClockAvanceALaLecture(T0.plusSeconds(60), Duration.ofSeconds(60));
+        var clock = new ScenarioPassageDeTest.ClockAvanceALaLecture(T0.plusSeconds(60).plus(GRACE), Duration.ofSeconds(60));
 
         casAvec(clock).executer(X);
 
@@ -163,7 +167,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     void doit_laisser_la_course_en_cours_quand_deux_coureurs_ont_boucle() {
         courseXAvec(boucles(1), boucles(1), boucles());
 
-        var resultat = casA(T0.plusSeconds(60)).executer(X);
+        var resultat = casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isZero();
         assertThat(resultat.abandons()).isEqualTo(1);
@@ -179,7 +183,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     void doit_declarer_vainqueurs_les_trois_quand_personne_n_a_boucle() {
         courseXAvec(boucles(), boucles(), boucles());
 
-        var resultat = casA(T0.plusSeconds(60)).executer(X);
+        var resultat = casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(3);
         assertThat(resultat.abandons()).isZero();
@@ -199,10 +203,10 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     @DisplayName("CA2 - ADAPTÉ 4.10 (était « aucune décision ») RG1 : Bruno {1}, Chloé {1}, Tom {1} puis personne sur la boucle 2 à 14:02:00.000Z : les trois VAINQUEUR, Course TERMINEE")
     void doit_declarer_vainqueurs_les_trois_quand_personne_ne_boucle_la_boucle_suivante() {
         courseXAvec(boucles(1), boucles(1), boucles(1));
-        casA(T0.plusSeconds(60)).executer(X);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
         assertThat(courses.parId(X).orElseThrow().statut()).isEqualTo(StatutCourse.EN_COURS);
 
-        var resultat = casA(T0.plusSeconds(120)).executer(X);
+        var resultat = casA(T0.plusSeconds(120).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(3);
         assertThat(resultat.abandons()).isZero();
@@ -214,10 +218,10 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     @DisplayName("CA3 - RG2 : à 14:02:00.000Z, Bruno {1, 2}, Chloé {1}, Tom {1} : Bruno VAINQUEUR, Chloé et Tom ABANDON boucle 2, TERMINEE")
     void doit_declarer_le_vainqueur_a_la_deuxieme_boucle() {
         courseXAvec(boucles(1, 2), boucles(1), boucles(1));
-        casA(T0.plusSeconds(60)).executer(X);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
         assertThat(courses.parId(X).orElseThrow().statut()).isEqualTo(StatutCourse.EN_COURS);
 
-        var resultat = casA(T0.plusSeconds(120)).executer(X);
+        var resultat = casA(T0.plusSeconds(120).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(1);
         assertThat(relue(bruno).statut()).isEqualTo(StatutInscription.VAINQUEUR);
@@ -231,7 +235,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     void doit_rattraper_puis_terminer_a_la_boucle_du_vainqueur() {
         courseXAvec(boucles(1, 2), boucles(1), boucles());
 
-        var resultat = casA(T0.plus(Duration.ofMinutes(3))).executer(X);
+        var resultat = casA(T0.plus(Duration.ofMinutes(3)).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(1);
         assertThat(resultat.abandons()).isEqualTo(2);
@@ -246,7 +250,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     void doit_decider_a_la_premiere_boucle_meme_apres_plusieurs_boucles_de_retard() {
         courseXAvec(boucles(1), boucles(), boucles());
 
-        casA(T0.plus(Duration.ofMinutes(3))).executer(X);
+        casA(T0.plus(Duration.ofMinutes(3)).plus(GRACE)).executer(X);
 
         assertThat(relue(chloe).boucleAbandon()).contains(1);
         assertThat(relue(tom).boucleAbandon()).contains(1);
@@ -259,7 +263,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         courses.enregistrer(course(X, 1, 5));
         bruno = inscrire(X, 1, boucles(1));
 
-        var resultat = casA(T0.plusSeconds(60)).executer(X);
+        var resultat = casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(1);
         assertThat(resultat.abandons()).isZero();
@@ -273,7 +277,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         courses.enregistrer(course(X, 1, 5));
         bruno = inscrire(X, 1, boucles());
 
-        var resultat = casA(T0.plusSeconds(60)).executer(X);
+        var resultat = casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(1);
         assertThat(relue(bruno).statut()).isEqualTo(StatutInscription.VAINQUEUR);
@@ -288,7 +292,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         inscriptions.mettreAJour(tom.abandonner(MotifAbandon.MANUEL, 1));
         inscriptions.nombreDeMisesAJour = 0;
 
-        var resultat = casA(T0.plusSeconds(120)).executer(X);
+        var resultat = casA(T0.plusSeconds(120).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(1);
         assertThat(resultat.abandons()).isZero();
@@ -306,7 +310,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         courseXAvec(boucles(1), boucles(), boucles());
         passages.poser(Passage.corriger(UUID.randomUUID(), chloe, 1));
 
-        var resultat = casA(T0.plusSeconds(60)).executer(X);
+        var resultat = casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isZero();
         assertThat(relue(tom).statut()).isEqualTo(StatutInscription.ABANDON);
@@ -322,7 +326,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         bruno = inscrire(X, 1, boucles(1, 2));
         chloe = inscrire(X, 2, boucles(1));
 
-        var resultat = casA(T0.plusSeconds(120)).executer(X);
+        var resultat = casA(T0.plusSeconds(120).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(1);
         assertThat(relue(bruno).statut()).isEqualTo(StatutInscription.VAINQUEUR);
@@ -339,7 +343,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         tom = inscrire(X, 3, boucles(1));
         courses.nombreDEnregistrements = 0;
 
-        var resultat = casA(T0.plusSeconds(120)).executer(X);
+        var resultat = casA(T0.plusSeconds(120).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(2);
         assertThat(resultat.abandons()).isEqualTo(1);
@@ -360,7 +364,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         chloe = inscrire(X, 2, boucles(1));
         tom = inscrire(X, 3, boucles(1));
 
-        var resultat = casA(T0.plusSeconds(60)).executer(X);
+        var resultat = casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isZero();
         assertThat(resultat.abandons()).isZero();
@@ -376,8 +380,8 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         Inscription karim = inscrire(Y, 1, boucles(1));
         Inscription sophie = inscrire(Y, 2, boucles());
 
-        casA(T0.plusSeconds(60)).executer(X);
-        var resultatY = casA(T0.plusSeconds(60)).executer(Y);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
+        var resultatY = casA(T0.plusSeconds(60).plus(GRACE)).executer(Y);
 
         assertThat(resultatY.vainqueurs()).isZero();
         assertThat(resultatY.abandons()).isZero();
@@ -395,8 +399,8 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         Inscription karim = inscrire(Y, 1, boucles());
         Inscription sophie = inscrire(Y, 2, boucles(1));
 
-        casA(T0.plusSeconds(60)).executer(X);
-        casA(T0.plusSeconds(60)).executer(Y);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(Y);
 
         assertThat(relue(bruno).statut()).isEqualTo(StatutInscription.VAINQUEUR);
         assertThat(relue(sophie).statut()).isEqualTo(StatutInscription.VAINQUEUR);
@@ -412,7 +416,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     void doit_ne_rien_faire_une_milliseconde_avant_la_fin_de_la_boucle_sans_passage() {
         courseXAvec(boucles(), boucles(), boucles());
 
-        var resultat = casA(T0.plusMillis(59_999)).executer(X);
+        var resultat = casA(T0.plusSeconds(60).plus(GRACE).minusMillis(1)).executer(X);
 
         assertThat(resultat.vainqueurs()).isZero();
         assertThat(resultat.abandons()).isZero();
@@ -425,12 +429,12 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     @DisplayName("CA2 - RG7 : vainqueurs partagés, second appel (même Clock, puis plus tard) : Course TERMINEE ignorée, aucune écriture, pas de vainqueur de plus")
     void doit_ignorer_une_course_terminee_par_vainqueurs_partages_au_second_appel() {
         courseXAvec(boucles(), boucles(), boucles());
-        casA(T0.plusSeconds(60)).executer(X);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
         int misesAJour = inscriptions.nombreDeMisesAJour;
         int sauvegardesCourse = courses.nombreDEnregistrements;
 
-        var memeInstant = casA(T0.plusSeconds(60)).executer(X);
-        var plusTard = casA(T0.plusSeconds(60).plusMillis(1)).executer(X);
+        var memeInstant = casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
+        var plusTard = casA(T0.plusSeconds(60).plus(GRACE).plusMillis(1)).executer(X);
 
         assertThat(memeInstant.vainqueurs()).isZero();
         assertThat(memeInstant.abandons()).isZero();
@@ -445,7 +449,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     @DisplayName("CA2 - RG7 : vainqueurs partagés, Course chargée par parIdPourModification (jamais parId), Clock lu une seule fois")
     void doit_charger_sous_verrou_et_lire_le_clock_une_fois_pour_des_vainqueurs_partages() {
         courseXAvec(boucles(), boucles(), boucles());
-        var clock = new ScenarioPassageDeTest.ClockAvanceALaLecture(T0.plusSeconds(60), Duration.ofSeconds(60));
+        var clock = new ScenarioPassageDeTest.ClockAvanceALaLecture(T0.plusSeconds(60).plus(GRACE), Duration.ofSeconds(60));
 
         casAvec(clock).executer(X);
 
@@ -459,7 +463,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     void doit_rattraper_puis_partager_la_victoire() {
         courseXAvec(boucles(1), boucles(1), boucles());
 
-        var resultat = casA(T0.plus(Duration.ofMinutes(3))).executer(X);
+        var resultat = casA(T0.plus(Duration.ofMinutes(3)).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(2);
         assertThat(resultat.abandons()).isEqualTo(1);
@@ -475,7 +479,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
     void doit_abandonner_puis_partager_la_victoire() {
         courseXAvec(boucles(1, 2), boucles(1, 2), boucles(1));
 
-        var resultat = casA(T0.plus(Duration.ofMinutes(3))).executer(X);
+        var resultat = casA(T0.plus(Duration.ofMinutes(3)).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(2);
         assertThat(resultat.abandons()).isEqualTo(1);
@@ -492,7 +496,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         inscriptions.mettreAJour(tom.abandonner(MotifAbandon.MANUEL, 1));
         inscriptions.nombreDeMisesAJour = 0;
 
-        var resultat = casA(T0.plusSeconds(120)).executer(X);
+        var resultat = casA(T0.plusSeconds(120).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(2);
         assertThat(relue(tom).statut()).isEqualTo(StatutInscription.ABANDON);
@@ -508,7 +512,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         courses.enregistrer(course(X, 1, 5));
         courses.nombreDEnregistrements = 0;
 
-        var resultat = casA(T0.plusSeconds(60)).executer(X);
+        var resultat = casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isZero();
         assertThat(courses.parId(X).orElseThrow().statut()).isEqualTo(StatutCourse.EN_COURS);
@@ -524,7 +528,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         inscriptions.mettreAJour(tom.abandonner(MotifAbandon.HORS_DELAI, 1));
         inscriptions.nombreDeMisesAJour = 0;
 
-        var resultat = casA(T0.plusSeconds(120)).executer(X);
+        var resultat = casA(T0.plusSeconds(120).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isZero();
         assertThat(resultat.abandons()).isZero();
@@ -541,7 +545,7 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         chloe = inscrire(X, 2, boucles(1));
         tom = inscrire(X, 3, boucles());
 
-        var resultat = casA(T0.plusSeconds(60)).executer(X);
+        var resultat = casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
 
         assertThat(resultat.vainqueurs()).isEqualTo(2);
         assertThat(relue(tom).boucleAbandon()).contains(1);
@@ -556,8 +560,8 @@ class AbandonnerCoureursHorsDelaiVainqueurTest {
         Inscription karim = inscrire(Y, 1, boucles());
         Inscription sophie = inscrire(Y, 2, boucles());
 
-        casA(T0.plusSeconds(60)).executer(X);
-        var resultatY = casA(T0.plusSeconds(60)).executer(Y);
+        casA(T0.plusSeconds(60).plus(GRACE)).executer(X);
+        var resultatY = casA(T0.plusSeconds(60).plus(GRACE)).executer(Y);
 
         assertThat(resultatY.vainqueurs()).isZero();
         assertThat(courses.parId(Y).orElseThrow().statut()).isEqualTo(StatutCourse.EN_COURS);

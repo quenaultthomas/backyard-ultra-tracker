@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
@@ -35,6 +36,13 @@ public final class Course {
 
     /** Délai minimal entre deux Passages d'une même Inscription, avant plafonnement par la durée de Boucle. */
     public static final Duration DELAI_MINIMAL_ENTRE_PASSAGES = Duration.ofMinutes(2);
+
+    /**
+     * Délai de grâce, avant plafonnement par la durée de Boucle : la Boucle N n'est tranchée (abandon automatique, fin
+     * de Course) qu'à {@code départ(N+1) + délai}, pour accepter les scans faits pendant N mais reçus en retard.
+     * Constante, non configurable.
+     */
+    public static final Duration DELAI_DE_GRACE = Duration.ofMinutes(3);
 
     private final UUID id;
     private final String nom;
@@ -285,6 +293,41 @@ public final class Course {
     }
 
     /**
+     * Délai de grâce effectif : {@link #DELAI_DE_GRACE}, plafonné au quart de la durée de Boucle (toujours inférieur
+     * à la durée de Boucle : au plus une Boucle en attente de décision). Unique définition.
+     */
+    public Duration delaiDeGrace() {
+        return plafonneAuQuartDeBoucle(DELAI_DE_GRACE);
+    }
+
+    /**
+     * Nombre de Boucles tranchées à {@code maintenant}, à la milliseconde : la Boucle N l'est à partir de
+     * {@code demarreeLe + N x durée + délai de grâce} (borne incluse), plafonné au nombre maximum de Boucles. Zéro
+     * pour une Course qui n'est pas EN_COURS, sans heure de départ ou avant son départ. Seul nombre de Boucles
+     * utilisé pour décider l'abandon automatique et la fin de Course. Unique définition.
+     */
+    public int bouclesTranchees(Instant maintenant) {
+        if (statut != StatutCourse.EN_COURS || demarreeLe == null) {
+            return 0;
+        }
+        Duration apresGrace = Duration.between(demarreeLe, instantCompte(maintenant)).minus(delaiDeGrace());
+        if (apresGrace.isNegative()) {
+            return 0;
+        }
+        return (int) Math.min(apresGrace.dividedBy(dureeBoucle()), nombreMaxBoucles);
+    }
+
+    /**
+     * Boucle terminée dont la décision est encore en attente (délai de grâce en cours) à {@code maintenant} : les
+     * Boucles terminées si elles dépassent les Boucles tranchées. Vide sinon, et pour une Course qui n'est pas
+     * EN_COURS. Unique définition.
+     */
+    public OptionalInt boucleEnAttenteDeDecision(Instant maintenant) {
+        int terminees = bouclesTerminees(maintenant);
+        return terminees > bouclesTranchees(maintenant) ? OptionalInt.of(terminees) : OptionalInt.empty();
+    }
+
+    /**
      * Statistiques de la Course à {@code maintenant}. Boucles terminées : {@link #bouclesTerminees} hors TERMINEE ;
      * pour une Course TERMINEE, le plus grand numéro de Boucle des Passages (0 sans Passage), indépendant de
      * l'instant. Cumuls : Boucles terminées x paramètres de Boucle. Durée finale (TERMINEE seulement) : Boucles
@@ -397,9 +440,12 @@ public final class Course {
      * quart de la durée de Boucle pour ne jamais bloquer l'enchaînement des Boucles courtes. Unique définition.
      */
     public Duration delaiMinimalEntrePassages() {
-        Duration quartDeBoucle = Duration.ofMinutes(parametresBoucle.dureeMinutes()).dividedBy(4);
-        return quartDeBoucle.compareTo(DELAI_MINIMAL_ENTRE_PASSAGES) < 0 ? quartDeBoucle
-                : DELAI_MINIMAL_ENTRE_PASSAGES;
+        return plafonneAuQuartDeBoucle(DELAI_MINIMAL_ENTRE_PASSAGES);
+    }
+
+    private Duration plafonneAuQuartDeBoucle(Duration delai) {
+        Duration quartDeBoucle = dureeBoucle().dividedBy(4);
+        return quartDeBoucle.compareTo(delai) < 0 ? quartDeBoucle : delai;
     }
 
     /**

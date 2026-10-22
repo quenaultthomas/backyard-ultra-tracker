@@ -40,7 +40,7 @@ test('CA18 - la bascule de Boucle met à jour boucles, distance, dénivelé et a
 
   await scannerParApi(playwright, course, alice);
   await scannerParApi(playwright, course, bruno);
-  await avancerHorloge(playwright, 'PT60M');
+  await avancerHorloge(playwright, 'PT63M');
   await expect(lire(page, 'suivi-boucles-terminees')).toHaveText('2', CINQ_SECONDES);
   await expect(lire(page, 'suivi-distance-cumulee')).toHaveText('13,40 km');
   await expect(lire(page, 'suivi-denivele-cumule')).toHaveText('70 m D+');
@@ -57,10 +57,10 @@ test('CA19 - course terminée : statistiques finales, « Durée de la course » 
   await expect(lire(page, 'suivi-nombre-en-course')).toHaveText('2');
   await poserMarqueur(page);
 
-  await avancerHorloge(playwright, 'PT61M');
+  await avancerHorloge(playwright, 'PT64M');
   await expect(lire(page, 'suivi-boucles-terminees')).toHaveText('1', CINQ_SECONDES);
   await scannerParApi(playwright, course, alice);
-  await avancerHorloge(playwright, 'PT60M');
+  await avancerHorloge(playwright, 'PT63M');
 
   await expect(lire(page, 'suivi-statut')).toHaveText('Terminée', CINQ_SECONDES);
   await expect(lire(page, 'suivi-boucles-terminees')).toHaveText('2');
@@ -99,7 +99,7 @@ test('CA20 - vainqueurs partagés sans passage sur la Boucle 2 : 1 boucle, 01:00
   await page.goto(urlSuivi(course.id));
   await expect(lire(page, 'suivi-nombre-en-course')).toHaveText('2');
 
-  await avancerHorloge(playwright, 'PT121M');
+  await avancerHorloge(playwright, 'PT124M');
   await expect(lire(page, 'suivi-vainqueurs').getByRole('heading', { level: 2 })).toHaveText('Vainqueurs', CINQ_SECONDES);
   await expect(lire(page, 'suivi-boucles-terminees')).toHaveText('1');
   await expect(lire(page, 'suivi-distance-cumulee')).toHaveText('6,70 km');
@@ -109,7 +109,7 @@ test('CA20 - vainqueurs partagés sans passage sur la Boucle 2 : 1 boucle, 01:00
   const sansScan = await courseY(playwright);
   await page.goto(urlSuivi(sansScan.id));
   await expect(lire(page, 'suivi-statut')).toBeVisible();
-  await avancerHorloge(playwright, 'PT61M');
+  await avancerHorloge(playwright, 'PT64M');
   await expect(lire(page, 'suivi-vainqueurs').getByRole('heading', { level: 2 })).toHaveText('Vainqueurs', CINQ_SECONDES);
   await expect(lire(page, 'suivi-boucles-terminees')).toHaveText('0');
   await expect(lire(page, 'suivi-distance-cumulee')).toHaveText('0,00 km');
@@ -125,11 +125,11 @@ test('CA21 - course limitée à 2 boucles : « Terminée », deux vainqueurs, 2 
   await page.goto(urlSuivi(course.id));
   await expect(lire(page, 'suivi-nombre-en-course')).toHaveText('2');
 
-  await avancerHorloge(playwright, 'PT61M');
+  await avancerHorloge(playwright, 'PT64M');
   await expect(lire(page, 'suivi-boucles-terminees')).toHaveText('1', CINQ_SECONDES);
   await scannerParApi(playwright, course, alice);
   await scannerParApi(playwright, course, bruno);
-  await avancerHorloge(playwright, 'PT60M');
+  await avancerHorloge(playwright, 'PT63M');
 
   await expect(lire(page, 'suivi-statut')).toHaveText('Terminée', CINQ_SECONDES);
   await expect(lire(page, 'suivi-vainqueurs').getByRole('heading', { level: 2 })).toHaveText('Vainqueurs');
@@ -148,7 +148,7 @@ test('CA22 - la réintégration d\'un coureur ne change pas l\'allure (passages 
   await page.goto(urlSuivi(course.id));
   await expect(lire(page, 'suivi-nombre-en-course')).toHaveText('3');
 
-  await avancerHorloge(playwright, 'PT31M');
+  await avancerHorloge(playwright, 'PT34M');
   await expect(lire(page, 'suivi-abandon-' + karim.dossard)).toBeVisible(CINQ_SECONDES);
   await expect(lire(page, 'suivi-allure')).toHaveText(FORMAT_ALLURE);
   const avant = (await lire(page, 'suivi-allure').innerText()).trim();

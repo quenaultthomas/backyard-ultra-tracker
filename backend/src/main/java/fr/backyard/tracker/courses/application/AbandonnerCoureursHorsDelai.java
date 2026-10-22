@@ -25,8 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
  * Abandon automatique des coureurs hors délai d'une Course, déclenché côté serveur. La Course est chargée sous
  * verrou, puis Inscriptions et Passages sont relus et l'horloge lue une seule fois : deux exécutions concurrentes,
  * ou une exécution et un scan, sont sérialisées et la seconde trouve l'état déjà traité. Idempotent : une Course
- * introuvable, qui n'est pas en cours (une Course TERMINEE comprise) ou sans Boucle terminée à décider n'est pas
- * modifiée. Statuts des Inscriptions et de la Course sont écrits dans la même transaction. Journal : une ligne par
+ * introuvable, qui n'est pas en cours (une Course TERMINEE comprise) ou sans Boucle tranchée à décider n'est pas
+ * modifiée. Seules les Boucles tranchées ({@link Course#bouclesTranchees}, délai de grâce écoulé) sont décidées :
+ * une Boucle terminée dont la grâce court accepte encore les scans tardifs. Statuts des Inscriptions et de la Course sont écrits dans la même transaction. Journal : une ligne par
  * Boucle ayant produit des abandons et une ligne de fin de course (vainqueur unique ou vainqueurs partagés),
  * identifiant de la Course seulement.
  */
@@ -74,8 +75,8 @@ public class AbandonnerCoureursHorsDelai {
         if (course == null) {
             return Resultat.AUCUNE_DECISION;
         }
-        int bouclesTerminees = course.bouclesTerminees(horloge.instant());
-        if (bouclesTerminees == 0) {
+        int bouclesTranchees = course.bouclesTranchees(horloge.instant());
+        if (bouclesTranchees == 0) {
             return Resultat.AUCUNE_DECISION;
         }
         List<Inscription> enCourse = depotInscriptions.parCourse(courseId).stream()
@@ -86,7 +87,7 @@ public class AbandonnerCoureursHorsDelai {
         Map<UUID, Set<Integer>> boucles = bouclesPasseesParInscription(enCourse);
         Decision decision = AbandonAutomatique.decider(enCourse,
                 (inscription, boucle) -> boucles.getOrDefault(inscription.id(), Set.of()).contains(boucle),
-                bouclesTerminees, course.nombreMaxBoucles());
+                bouclesTranchees, course.nombreMaxBoucles());
         appliquer(course, decision);
         journaliser(courseId, decision);
         return new Resultat(decision.abandons().size(), decision.vainqueurs().size());

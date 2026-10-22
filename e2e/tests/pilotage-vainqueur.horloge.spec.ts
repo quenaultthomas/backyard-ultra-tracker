@@ -91,7 +91,7 @@ test('CA11 - Bruno seul a bouclé la Boucle 1 : au départ de la Boucle 2 il est
   await expect(lire(page, 'pilotage-vainqueurs')).toHaveCount(0);
 
   // 10 + 50 = 60 min après le départ : fin de la Boucle 1 (60 min), début de la Boucle 2
-  await avancerHorloge(playwright, 'PT50M');
+  await avancerHorloge(playwright, 'PT53M');
 
   await verifierVainqueurUnique(page, bruno, '1');
   await expect(lire(page, 'pilotage-compteur-abandons')).toHaveText('2 coureurs en abandon');
@@ -127,7 +127,7 @@ test('CA12 - deux coureurs ont bouclé la Boucle 1 : seul Tom abandonne, pas de 
     await avancerHorloge(playwright, 'PT10M');
     await scanner(scan, bruno, 1);
     await scanner(scan, chloe, 1);
-    await avancerHorloge(playwright, 'PT50M');
+    await avancerHorloge(playwright, 'PT53M');
 
     await expect(lire(page, 'pilotage-compteur-abandons')).toHaveText('1 coureur en abandon', HUIT_SECONDES);
     await verifierAbandons(page, [tom], 1);
@@ -138,7 +138,7 @@ test('CA12 - deux coureurs ont bouclé la Boucle 1 : seul Tom abandonne, pas de 
 
     // Boucle 2 : plus de 2 minutes après le Passage 1 de Bruno (anti-doublon 4.6)
     await scanner(scan, bruno, 2);
-    await avancerHorloge(playwright, 'PT60M');
+    await avancerHorloge(playwright, 'PT63M');
   } finally {
     await contexteBenevole.close();
   }
@@ -167,7 +167,7 @@ test('CA12 - rattrapage : Bruno scanné seul puis 3 Boucles d\'un coup, il est v
     await contexteBenevole.close();
   }
 
-  await avancerHorloge(playwright, 'PT180M');
+  await avancerHorloge(playwright, 'PT183M');
 
   await verifierVainqueurUnique(page, bruno, '1');
   await verifierAbandons(page, [chloe, tom], 1);
@@ -195,7 +195,7 @@ test('CA12 - coureur seul inscrit : scanné, il est vainqueur au départ de la B
   await expect(lire(page, 'pilotage-vainqueurs')).toHaveCount(0);
   expect(lireStatutCourseEnBase(course.id)).toBe('EN_COURS');
 
-  await avancerHorloge(playwright, 'PT60M');
+  await avancerHorloge(playwright, 'PT63M');
 
   await verifierVainqueurUnique(page, bruno, '1');
   await expect(lire(page, 'pilotage-aucun-abandon')).toHaveText('Aucun abandon.');
@@ -208,7 +208,7 @@ test('CA12 - aucun scan : à la fin de la Boucle 1 la Course est terminée, les 
   const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 3, nombreMaxBoucles: 5, dureeBoucleMinutes: 60 });
   await ouvrirPilotage(page, course.id);
 
-  await avancerHorloge(playwright, 'PT60M');
+  await avancerHorloge(playwright, 'PT63M');
 
   await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée', HUIT_SECONDES);
   await expect(lire(page, 'pilotage-vainqueurs-titre')).toHaveText('Vainqueurs');
@@ -229,11 +229,11 @@ test('CA13 - dernière Boucle autorisée (M = 2) : Bruno seul sur la Boucle 2 es
     await avancerHorloge(playwright, 'PT10M');
     await scanner(scan, bruno, 1);
     await scanner(scan, chloe, 1);
-    await avancerHorloge(playwright, 'PT50M');
+    await avancerHorloge(playwright, 'PT53M');
     await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 2 sur 2', HUIT_SECONDES);
     await scanner(scan, bruno, 2);
     // 10 + 50 + 60 = 120 min = M x D : fin de la dernière Boucle autorisée
-    await avancerHorloge(playwright, 'PT60M');
+    await avancerHorloge(playwright, 'PT63M');
   } finally {
     await contexteBenevole.close();
   }
@@ -258,11 +258,11 @@ test('CA13 - dernière Boucle autorisée (M = 2) : Bruno et Chloé ont tous deux
     await avancerHorloge(playwright, 'PT10M');
     await scanner(scan, bruno, 1);
     await scanner(scan, chloe, 1);
-    await avancerHorloge(playwright, 'PT50M');
+    await avancerHorloge(playwright, 'PT53M');
     await expect(lire(page, 'pilotage-boucle-courante')).toHaveText('Boucle 2 sur 2', HUIT_SECONDES);
     await scanner(scan, bruno, 2);
     await scanner(scan, chloe, 2);
-    await avancerHorloge(playwright, 'PT60M');
+    await avancerHorloge(playwright, 'PT63M');
   } finally {
     await contexteBenevole.close();
   }
@@ -307,7 +307,7 @@ test('CA14 - après la fin, le scan de Bruno (vainqueur) puis de Chloé (abandon
     await scanner(scan, bruno, 1);
     expect(identifiants).toHaveLength(1);
     await expect(lire(page, 'pilotage-inscrit-boucle')).toHaveText(['A bouclé', 'En boucle', 'En boucle'], HUIT_SECONDES);
-    await avancerHorloge(playwright, 'PT50M');
+    await avancerHorloge(playwright, 'PT53M');
     await expect(lire(page, 'pilotage-statut')).toHaveText('Terminée', HUIT_SECONDES);
     await expect(lire(page, 'pilotage-vainqueurs')).toBeVisible();
 

@@ -102,7 +102,7 @@ test.describe('Pilotage avec horloge pilotable (4.3)', () => {
     await expect(lire(page, 'pilotage-message-derniere-boucle')).toHaveText('Dernière boucle autorisée.', SIX_SECONDES);
 
     await scannerTous(browser, course, 2);
-    await avancerHorloge(playwright, 'PT60M');
+    await avancerHorloge(playwright, 'PT63M');
     // 4.10 : adapté (RG14). Le temps de la dernière Boucle écoulé, la fin est constatée dans la seconde (avec des inscrits,
     // le message transitoire « La fin de course sera constatée automatiquement » n'est plus observable) : les deux
     // coureurs, passants de la dernière Boucle, sont vainqueurs partagés et la Course est terminée.

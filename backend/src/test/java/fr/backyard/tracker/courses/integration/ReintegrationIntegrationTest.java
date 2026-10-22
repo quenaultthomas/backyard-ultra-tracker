@@ -56,10 +56,12 @@ class ReintegrationIntegrationTest {
 
     static final String ID_INCONNU = "00000000-0000-4000-8000-000000000001";
     static final Instant FIN_BOUCLE_1 = DecorAbandon.T0.plusSeconds(60);
+    /** Instant où la Boucle 1 est tranchée (7.1) : fin de Boucle + délai de grâce de 15 s. */
+    static final Instant DECISION_BOUCLE_1 = FIN_BOUCLE_1.plusSeconds(DecorAbandon.GRACE_SECONDES);
     static final List<String> CHAMPS_REPONSE = List.of("inscriptionId", "dossard", "statut", "bouclesCorrigees");
     static final List<String> CHAMPS_PILOTAGE = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur",
             "demarreeLe", "dureeBoucleMinutes", "nombreMaxBoucles", "boucleCourante", "derniereBoucle",
-            "boucleMaxTerminee", "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
+            "boucleMaxTerminee", "boucleEnAttenteDeDecision", "debutBoucleCourante", "finBoucleCourante", "tempsAvantFinBoucleMillisecondes",
             "dureeEcouleeMillisecondes", "nombreInscrits", "nombreAyantBoucle", "nombreEnBoucle", "inscritsEnCourse",
             "nombreAbandons", "inscritsEnAbandon", "nombreVainqueurs", "inscritsVainqueurs");
     static final List<String> CHAMPS_INSCRIT = List.of("inscriptionId", "dossard", "pseudo", "statut",
@@ -409,7 +411,7 @@ class ReintegrationIntegrationTest {
     void ca6_course_terminee_avec_vainqueur() throws Exception {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
-        decor.horloge.fixer(FIN_BOUCLE_1);
+        decor.horloge.fixer(DECISION_BOUCLE_1);
         controler.executer(UUID.fromString(x));
         assertThat(decor.statutCourse(x)).isEqualTo("TERMINEE");
         assertThat(decor.etat(x, decor.idBruno)).isEqualTo("VAINQUEUR:-:-");
@@ -711,12 +713,12 @@ class ReintegrationIntegrationTest {
     // ---------------------------------------------------------------- CA9
 
     @Test
-    @DisplayName("CA9 : réintégration puis contrôle à 14:01:00.000Z : Passage 1c, Chloé ABANDON HORS_DELAI Boucle 1, Bruno et Tom EN_COURSE, Course EN_COURS (le réintégré change l'issue)")
+    @DisplayName("CA9 : réintégration puis contrôle à 14:01:15.000Z : Passage 1c, Chloé ABANDON HORS_DELAI Boucle 1, Bruno et Tom EN_COURSE, Course EN_COURS (le réintégré change l'issue)")
     void ca9_reintegration_puis_controle() throws Exception {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
         abandonnerParSql(x, decor.idTom, "MANUEL", 1);
-        decor.horloge.fixer(FIN_BOUCLE_1);
+        decor.horloge.fixer(DECISION_BOUCLE_1);
 
         HttpResponse<String> reponse = reintegrer(decor.patron, x, inscriptionDe(x, decor.idTom));
         controler.executer(UUID.fromString(x));
@@ -736,7 +738,7 @@ class ReintegrationIntegrationTest {
         String x = decor.courseXDemarree();
         decor.poserPassage(x, decor.idBruno, 1);
         abandonnerParSql(x, decor.idTom, "MANUEL", 1);
-        decor.horloge.fixer(FIN_BOUCLE_1);
+        decor.horloge.fixer(DECISION_BOUCLE_1);
 
         controler.executer(UUID.fromString(x));
         HttpResponse<String> reponse = reintegrer(decor.patron, x, inscriptionDe(x, decor.idTom));
@@ -756,7 +758,7 @@ class ReintegrationIntegrationTest {
             String x = decor.courseDemarreeAvecMaxBoucles("Course controle " + essai, 5);
             decor.poserPassage(x, decor.idBruno, 1);
             abandonnerParSql(x, decor.idTom, "MANUEL", 1);
-            decor.horloge.fixer(FIN_BOUCLE_1);
+            decor.horloge.fixer(DECISION_BOUCLE_1);
             String tom = inscriptionDe(x, decor.idTom);
 
             List<HttpResponse<String>> resultats = lancerEnParallele(
@@ -945,7 +947,7 @@ class ReintegrationIntegrationTest {
     // ---------------------------------------------------------------- CA10
 
     @Test
-    @DisplayName("CA10 : pilotage après la réintégration de Tom : 200, no-store, 23 champs, inscritsEnCourse de 3 éléments de 7 champs (Tom terminées 1, corrigées 1 ; Bruno et Chloé 0), inscritsEnAbandon vide, nombreInscrits 3 ; aucun jeton, identifiant de Compte ni de Passage ; GET sans écriture ni ligne INFO")
+    @DisplayName("CA10 : pilotage après la réintégration de Tom : 200, no-store, 24 champs, inscritsEnCourse de 3 éléments de 7 champs (Tom terminées 1, corrigées 1 ; Bruno et Chloé 0), inscritsEnAbandon vide, nombreInscrits 3 ; aucun jeton, identifiant de Compte ni de Passage ; GET sans écriture ni ligne INFO")
     void ca10_pilotage_apres_reintegration() throws Exception {
         String x = courseAvecTomHorsDelai();
         decor.horloge.fixer(DecorAbandon.T0.plusSeconds(90));
@@ -962,7 +964,7 @@ class ReintegrationIntegrationTest {
         assertThat(reponse.headers().firstValue("cache-control")).hasValueSatisfying(
                 c -> assertThat(c).contains("no-store"));
         JsonNode pilotage = corps(reponse);
-        assertThat(pilotage.propertyNames()).hasSize(23).containsExactlyInAnyOrderElementsOf(CHAMPS_PILOTAGE);
+        assertThat(pilotage.propertyNames()).hasSize(24).containsExactlyInAnyOrderElementsOf(CHAMPS_PILOTAGE);
         assertThat(pilotage.get("nombreInscrits").asInt()).isEqualTo(3);
         assertThat(pilotage.get("inscritsEnCourse")).hasSize(3);
         assertThat(pilotage.get("inscritsEnCourse")).allSatisfy(n -> assertThat(n.propertyNames()).hasSize(7)
@@ -1019,9 +1021,9 @@ class ReintegrationIntegrationTest {
         decor.poserPassage(x, decor.idBruno, 1);
         decor.poserPassage(x, decor.idBruno, 2);
         abandonnerParSql(x, decor.idChloe, "HORS_DELAI", 1);
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(120));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(135));
         controler.executer(UUID.fromString(x));
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(180)); // Boucle 3 sans Passage : vainqueurs partagés
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(195)); // Boucle 3 sans Passage : vainqueurs partagés
         controler.executer(UUID.fromString(x));
         assertThat(decor.statutCourse(x)).isEqualTo("TERMINEE");
 
@@ -1129,7 +1131,7 @@ class ReintegrationIntegrationTest {
                 .statusCode()).isEqualTo(200);
 
         assertThat(decor.jdbc.queryForList(ETAT_INSCRIPTIONS)).isEqualTo(avant);
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(120));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(135));
         controler.executer(UUID.fromString(x));
         assertThat(decor.etat(x, decor.idTom)).isEqualTo("EN_COURSE:-:-");
         assertThat(decor.etat(x, decor.idBruno)).isEqualTo("EN_COURSE:-:-");
@@ -1148,7 +1150,7 @@ class ReintegrationIntegrationTest {
         assertThat(decor.scanner(decor.leo, x, decor.jeton(x, decor.idChloe), UUID.randomUUID(), 0).statusCode())
                 .isEqualTo(201);
 
-        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(120));
+        decor.horloge.fixer(DecorAbandon.T0.plusSeconds(135));
         controler.executer(UUID.fromString(x));
 
         assertThat(decor.etat(x, decor.idTom)).isEqualTo("ABANDON:HORS_DELAI:2");

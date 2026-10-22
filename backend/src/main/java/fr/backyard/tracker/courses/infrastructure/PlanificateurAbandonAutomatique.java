@@ -13,9 +13,10 @@ import org.springframework.stereotype.Component;
 
 /**
  * Déclenchement côté serveur de l'abandon automatique : chaque seconde (premier tick une seconde après le démarrage,
- * ce qui rattrape les Boucles terminées pendant un arrêt), chaque Course en cours est contrôlée dans sa propre
+ * ce qui rattrape les Boucles dont le délai de grâce s'est écoulé pendant un arrêt), chaque Course en cours est contrôlée dans sa propre
  * transaction. L'échec d'une Course est retenté au tick suivant, sans empêcher les autres. Le tick tourne en temps réel ;
- * la décision ne dépend que du bean Clock, lu par le cas d'usage. Aucun journal pour un tick sans effet.
+ * la décision ne dépend que du bean Clock, lu par le cas d'usage, et une Boucle n'est tranchée qu'après le délai de
+ * grâce du domaine ({@code Course.bouclesTranchees}). Aucun journal pour un tick sans effet.
  * Désactivable par {@code backyard.abandon-automatique.actif=false} (tests d'intégration).
  *
  * <p>Journal borné (DEP-05) : une panne qui dure (base injoignable, Course en échec) n'est journalisée, trace comprise,

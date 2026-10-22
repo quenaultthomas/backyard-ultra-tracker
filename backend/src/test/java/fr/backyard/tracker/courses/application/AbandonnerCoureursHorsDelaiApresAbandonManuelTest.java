@@ -26,10 +26,14 @@ import org.junit.jupiter.api.Test;
  * Utilise {@code AbandonnerCoureur} (signatures : voir {@link AbandonnerCoureurTest}) puis le contrôle existant
  * {@code AbandonnerCoureursHorsDelai} (inchangé). Course X : Boucles de 1 min, M = 5 ; Course W : M = 2 ;
  * t0 = 14:00:00Z.
+ * Adaptés à 7.1 (RG2, RG3) sans affaiblissement : chaque instant de contrôle est décalé de {@code GRACE}, délai de
+ * grâce d'une Boucle de 1 min (15 s) ; les attentes sont inchangées.
  */
 class AbandonnerCoureursHorsDelaiApresAbandonManuelTest {
 
     private static final Instant T0 = Instant.parse("2026-10-12T14:00:00Z");
+    /** 7.1 RG1 : délai de grâce d'une Boucle de 1 min ; une Boucle n'est tranchée qu'à départ(N+1) + GRACE. */
+    private static final Duration GRACE = Duration.ofSeconds(15);
     private static final LocalDate JOUR = LocalDate.of(2026, 10, 12);
     private static final UUID COURSE = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
@@ -66,7 +70,7 @@ class AbandonnerCoureursHorsDelaiApresAbandonManuelTest {
         courseAvec(5, boucles(1), boucles(1), boucles());
         abandonManuel.executer(COURSE, chloe.id(), MotifAbandon.MANUEL);
 
-        var resultat = controleA(T0.plusSeconds(60)).executer(COURSE);
+        var resultat = controleA(T0.plusSeconds(60).plus(GRACE)).executer(COURSE);
 
         assertThat(resultat.vainqueurs()).isEqualTo(1);
         assertThat(resultat.abandons()).isEqualTo(1);
@@ -87,7 +91,7 @@ class AbandonnerCoureursHorsDelaiApresAbandonManuelTest {
         abandonManuel.executer(COURSE, tom.id(), MotifAbandon.MANUEL);
         int misesAJourAvant = inscriptions.nombreDeMisesAJour;
 
-        var resultat = controleA(T0.plusSeconds(120)).executer(COURSE);
+        var resultat = controleA(T0.plusSeconds(120).plus(GRACE)).executer(COURSE);
 
         assertThat(resultat.vainqueurs()).isEqualTo(2);
         assertThat(resultat.abandons()).isZero();
@@ -108,7 +112,7 @@ class AbandonnerCoureursHorsDelaiApresAbandonManuelTest {
         assertThat(relue(tom).boucleAbandon()).contains(1);
         int misesAJourAvant = inscriptions.nombreDeMisesAJour;
 
-        var resultat = controleA(T0.plusMillis(60_200)).executer(COURSE);
+        var resultat = controleA(T0.plusMillis(60_200).plus(GRACE)).executer(COURSE);
 
         assertThat(resultat.abandons()).isZero();
         assertThat(inscriptions.nombreDeMisesAJour).isEqualTo(misesAJourAvant);

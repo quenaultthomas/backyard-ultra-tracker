@@ -32,7 +32,7 @@ test('CA17 - abandon automatique : le coureur sans passage passe en « Hors dél
   await expect(lire(page, 'suivi-nombre-en-course')).toHaveText('3');
   await poserMarqueur(page);
 
-  await avancerHorloge(playwright, 'PT61M');
+  await avancerHorloge(playwright, 'PT64M');
   const ligne = lire(page, 'suivi-abandon-' + karim.dossard);
   await expect(ligne).toContainText(karim.pseudo, CINQ_SECONDES);
   await expect(ligne).toContainText('Boucle 1');
@@ -54,10 +54,10 @@ test('CA18 - vainqueur unique : bandeau « Vainqueur », abandon Boucle 2 « Hor
   await expect(lire(page, 'suivi-nombre-en-course')).toHaveText('3');
   await poserMarqueur(page);
 
-  await avancerHorloge(playwright, 'PT61M');
+  await avancerHorloge(playwright, 'PT64M');
   await expect(lire(page, 'suivi-nombre-abandons')).toHaveText('1', CINQ_SECONDES);
   await scannerParApi(playwright, course, alice);
-  await avancerHorloge(playwright, 'PT60M');
+  await avancerHorloge(playwright, 'PT63M');
 
   await expect(lire(page, 'suivi-statut')).toHaveText('Terminée', CINQ_SECONDES);
   const bandeau = lire(page, 'suivi-vainqueurs');
@@ -89,7 +89,7 @@ test('CA19 - vainqueurs partagés : bandeau « Vainqueurs » par dossard, aucun 
   await page.goto(urlSuivi(course.id));
   await expect(lire(page, 'suivi-nombre-en-course')).toHaveText('2');
 
-  await avancerHorloge(playwright, 'PT61M');
+  await avancerHorloge(playwright, 'PT64M');
   const bandeau = lire(page, 'suivi-vainqueurs');
   await expect(bandeau.getByRole('heading', { level: 2 })).toHaveText('Vainqueurs', CINQ_SECONDES);
   await expect(lire(page, 'suivi-vainqueur-' + alice.dossard)).toContainText(alice.pseudo);
@@ -111,10 +111,10 @@ test('CA23 - ouverture d\'une course déjà terminée : listes complètes au pre
   const [alice, bruno, karim] = course.coureurs;
   await scannerParApi(playwright, course, alice);
   await scannerParApi(playwright, course, bruno);
-  await avancerHorloge(playwright, 'PT61M');
+  await avancerHorloge(playwright, 'PT64M');
   // Bruno et Karim sont tombés ou vont tomber : on laisse Alice seule terminer la Boucle 2.
   await scannerParApi(playwright, course, alice);
-  await avancerHorloge(playwright, 'PT60M');
+  await avancerHorloge(playwright, 'PT63M');
   // La page ne doit s'ouvrir qu'une fois la fin de course constatée par le planificateur (sinon l'annonce est légitime).
   await expect.poll(() => lireStatutCourseEnBase(course.id), { timeout: 8000 }).toBe('TERMINEE');
 
@@ -147,7 +147,7 @@ test('CA24 - annonce de fin dans une région status : « Vainqueurs : … » à 
   await expect(annonce).toHaveText('');
   await expect(page.locator('main [aria-live]')).toHaveCount(0);
 
-  await avancerHorloge(playwright, 'PT61M');
+  await avancerHorloge(playwright, 'PT64M');
   await expect(annonce).toHaveText(`Course terminée. Vainqueurs : ${alice.pseudo}, ${bruno.pseudo}.`, CINQ_SECONDES);
   await expect(lire(page, 'suivi-vainqueurs').getByRole('heading', { level: 2 })).toHaveText('Vainqueurs');
   await expect(page.locator('main [aria-live]')).toHaveCount(0);

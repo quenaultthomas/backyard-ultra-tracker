@@ -85,7 +85,7 @@ testHorloge('CA16 - fin de course constatée : message de fin, statut Terminée,
   await expect(lire(page, 'suivi-boucle')).toHaveText('Boucle 1 sur 5');
   await poserMarqueur(page);
 
-  await avancerHorloge(playwright, 'PT61M');
+  await avancerHorloge(playwright, 'PT64M');
   await expect(lire(page, 'suivi-message-terminee')).toHaveText('La course est terminée.', CINQ_SECONDES);
   await expect(lire(page, 'suivi-statut')).toHaveText('Terminée');
   await expect(lire(page, 'suivi-boucle')).toHaveCount(0);
@@ -114,7 +114,7 @@ testHorloge('CA22 - deux Courses dans deux onglets évoluent indépendamment', a
 
   // X est scannée à la Boucle 1 : elle passe en Boucle 2. Y (1 min) n'est pas scannée : sa fin de course est constatée.
   await scannerTous(page, longue, 1);
-  await avancerHorloge(playwright, 'PT61M');
+  await avancerHorloge(playwright, 'PT64M');
   await expect(lire(page, 'suivi-boucle')).toHaveText('Boucle 2 sur 5', { timeout: 6000 });
   await expect(lire(page, 'suivi-statut')).toHaveText('En cours');
   await expect(lire(ongletCourte, 'suivi-message-terminee')).toHaveText('La course est terminée.', { timeout: 6000 });

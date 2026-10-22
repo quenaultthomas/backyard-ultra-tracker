@@ -442,7 +442,7 @@ test.describe('File de scan, refus reçus en différé', () => {
       motif: 'Course terminée',
       detail: 'La course est terminée.',
       coureurIdentifie: false,
-      aide: true,
+      aide: false,
     },
     {
       nom: 'jeton inconnu',

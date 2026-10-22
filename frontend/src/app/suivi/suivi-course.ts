@@ -35,6 +35,8 @@ export interface SuiviCourse {
   boucleCourante: number | null;
   derniereBoucle: boolean;
   boucleMaxTerminee: boolean;
+  /** Boucle terminée dont la décision (abandon, fin de course) est en attente ; `null` sinon. */
+  boucleEnAttenteDeDecision: number | null;
   tempsAvantFinBoucleMillisecondes: number | null;
   dureeEcouleeMillisecondes: number | null;
   /** Inscriptions `EN_COURSE`, triées par le serveur ; vide en `EN_PREPARATION` et `TERMINEE`. */

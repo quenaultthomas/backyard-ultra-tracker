@@ -40,7 +40,7 @@ import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Contrat de l'incrément 6.3 (statistiques du suivi public) : CA11 à CA16, serveur réel. Le contrat est celui de la
- * spec : GET /api/courses/{id}/suivi, public, liste fermée de 21 champs (RG1), cumuls, allure, durée finale
+ * spec : GET /api/courses/{id}/suivi, public, liste fermée de 22 champs (7.1 : + boucleEnAttenteDeDecision) (RG1), cumuls, allure, durée finale
  * dérivés des Passages (RG4 à RG7), 3 instructions SQL de plus qu'en EN_PREPARATION (RG9). Courses de 60 min,
  * d = 6700 m, h = 35 m, t0 = 12/10/2026 14:00:00Z ; le contrôle de fin de course est celui du planificateur
  * (cas d'usage {@link AbandonnerCoureursHorsDelai} qu'il appelle), exécuté ici à la main sur le Clock de test.
@@ -53,7 +53,7 @@ import tools.jackson.databind.node.ObjectNode;
 class SuiviPublicStatistiquesIntegrationTest {
 
     static final List<String> CHAMPS = List.of("courseId", "nom", "logoUrl", "statut", "heureServeur",
-            "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee",
+            "nombreMaxBoucles", "boucleCourante", "derniereBoucle", "boucleMaxTerminee", "boucleEnAttenteDeDecision",
             "tempsAvantFinBoucleMillisecondes", "dureeEcouleeMillisecondes", "coureursEnCourse", "abandons",
             "vainqueurs", "distanceBoucleMetres", "denivelePositifBoucleMetres", "bouclesTerminees",
             "distanceCumuleeMetres", "denivelePositifCumuleMetres", "allureSecondesParKilometre",
@@ -62,6 +62,8 @@ class SuiviPublicStatistiquesIntegrationTest {
             "bouclesTerminees", "distanceCumuleeMetres", "denivelePositifCumuleMetres",
             "allureSecondesParKilometre", "dureeFinaleMillisecondes");
     static final Instant T0 = DecorAbandon.T0;
+    /** Délai de grâce 7.1 (RG1) d'une Boucle de 90 min : min(3 min, 90 min / 4) = 3 min. */
+    static final Duration DELAI_DE_GRACE = Duration.ofMinutes(3);
     static final int DUREE_MINUTES = 60;
     static final int DISTANCE = 6700;
     static final int DENIVELE = 35;
@@ -112,7 +114,7 @@ class SuiviPublicStatistiquesIntegrationTest {
     // ---------------------------------------------------------------- CA11
 
     @Test
-    @DisplayName("CA11 : X EN_COURS (Alice Boucle 1 SCAN à t0 + 50 min, Bruno Boucle 1 SCAN à t0 + 40 min) lue à t0 + 61 min sans session : 200, no-store, aucun Set-Cookie, 21 champs, statistiques 1 / 6700 / 35 / 403 / null, aucune fuite")
+    @DisplayName("CA11 : X EN_COURS (Alice Boucle 1 SCAN à t0 + 50 min, Bruno Boucle 1 SCAN à t0 + 40 min) lue à t0 + 61 min sans session : 200, no-store, aucun Set-Cookie, 22 champs (7.1 : + boucleEnAttenteDeDecision), statistiques 1 / 6700 / 35 / 403 / null, aucune fuite")
     void ca11_statistiques_sans_session() throws Exception {
         UUID x = coursesql("X", "EN_COURS", T0);
         UUID alice = decor.insererInscription(x, decor.idAlice, 1, "EN_COURSE");
@@ -131,7 +133,7 @@ class SuiviPublicStatistiquesIntegrationTest {
                 c -> assertThat(c).contains("no-store"));
         assertThat(reponse.headers().allValues("set-cookie")).isEmpty();
         JsonNode corps = decor.json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).hasSize(21).containsExactlyInAnyOrderElementsOf(CHAMPS);
+        assertThat(corps.propertyNames()).hasSize(22).containsExactlyInAnyOrderElementsOf(CHAMPS);
         assertThat(corps.get("statut").asString()).isEqualTo("EN_COURS");
         assertThat(corps.get("distanceBoucleMetres").asInt()).isEqualTo(6700);
         assertThat(corps.get("denivelePositifBoucleMetres").asInt()).isEqualTo(35);
@@ -163,7 +165,7 @@ class SuiviPublicStatistiquesIntegrationTest {
             HttpResponse<String> reponse = suivi(id.toString(), Map.of());
             assertThat(reponse.statusCode()).isEqualTo(200);
             JsonNode corps = decor.json.readTree(reponse.body());
-            assertThat(corps.propertyNames()).hasSize(21);
+            assertThat(corps.propertyNames()).hasSize(22);
             assertStatistiques(corps, 0, 0, 0, null, null);
         }
         HttpResponse<String> anonyme = suivi(terminee, Map.of());
@@ -353,7 +355,7 @@ class SuiviPublicStatistiquesIntegrationTest {
                     scannerA(course, decor.idBruno, debutMinutes + 10);
                 }
             }
-            horloge.fixer(T0.plus(Duration.ofMinutes((long) boucle * DUREE_MINUTES)));
+            horloge.fixer(T0.plus(Duration.ofMinutes((long) boucle * DUREE_MINUTES)).plus(DELAI_DE_GRACE)); // 7.1 : décision à départ(N+1) + grâce
             abandonner.executer(UUID.fromString(course));
         }
         assertThat(decor.statutCourse(course)).as(nom).isEqualTo("TERMINEE");
