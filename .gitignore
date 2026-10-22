@@ -13,3 +13,7 @@ e2e/test-results/
 e2e/playwright-report/
 e2e/blob-report/
 test-results/
+
+# Sauvegardes de la base (scripts/sauvegarder.sh) : jamais commitées.
+sauvegardes/
+*.dump

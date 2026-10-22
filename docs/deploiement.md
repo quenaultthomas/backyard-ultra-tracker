@@ -38,7 +38,7 @@ Toutes les variables sont décrites dans `.env.example`. Le fichier `.env` n'est
 | `BASE_NOM` | facultative (défaut `backyard`) | nom de la base |
 | `BASE_UTILISATEUR` | facultative (défaut `backyard`) | utilisateur de la base |
 | `BASE_MOT_DE_PASSE` | **obligatoire**, non vide | mot de passe de la base |
-| `VERSION` | **obligatoire** en production | version des images `api` et `web` tirées de `ghcr.io`, sans le « v » du tag (`0.4.0`, `0.4.0-rc.1`) ; ignorée en dev et en E2E |
+| `VERSION` | **obligatoire** en production | version des images `api` et `web` tirées de `ghcr.io`, sans le « v » du tag (`0.5.0`, `0.5.0-rc.1`) ; ignorée en dev et en E2E |
 | `DOMAINE` | **obligatoire** | nom de domaine servi en HTTPS |
 | `CONNEXION_ECHECS_MAX` | facultative (défaut `5`, entier ≥ 1) | échecs de connexion consécutifs sur un même pseudo avant blocage temporaire |
 | `CONNEXION_BLOCAGE_SECONDES` | facultative (défaut `900`, entier ≥ 1) | durée du blocage, et délai au-delà duquel des échecs partiels sont oubliés |
@@ -113,7 +113,7 @@ $PROD logs api | grep "Admin master"
    chmod 600 .env
    ```
 3. Renseigner dans `.env` :
-   - `VERSION=` la version à déployer, sans le « v » (ex. `0.4.0`) ;
+   - `VERSION=` la version à déployer, sans le « v » (ex. `0.5.0`, ou `0.5.0-rc.1` pour une pré-version) ;
    - `DOMAINE=` le nom de domaine (ex. `backyard.example.org`) ;
    - `BASE_MOT_DE_PASSE=` la sortie de `openssl rand -hex 24` ;
    - `ADMIN_MASTER_PSEUDO=` le pseudo de l'admin master (ex. `Patron`) ;
@@ -183,7 +183,7 @@ Le jeton est stocké dans `~/.docker/config.json` : ne jamais le commiter et lui
    ```sh
    git pull
    ```
-3. Comparer `.env.example` avec `.env` et ajouter les nouvelles variables éventuelles (depuis 1.4 : `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE`, obligatoires ; ignorées si l'admin master existe déjà ; depuis la correction de l'audit du 2026-10-16 : `HACHAGE_CONCURRENCE_MAX`, `API_MEMOIRE_MAX`, `BASE_MEMOIRE_MAX` et `WEB_MEMOIRE_MAX`, toutes facultatives ; depuis 7.3 : `HACHAGE_CONCURRENCE_MAX_PAR_IP` et `COOKIES_SECURE`, facultatives, la seconde imposée à `true` en production).
+3. Comparer `.env.example` avec `.env` et ajouter les nouvelles variables éventuelles (depuis 1.4 : `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE`, obligatoires ; ignorées si l'admin master existe déjà ; depuis la correction de l'audit du 2026-10-16 : `HACHAGE_CONCURRENCE_MAX`, `API_MEMOIRE_MAX`, `BASE_MEMOIRE_MAX` et `WEB_MEMOIRE_MAX`, toutes facultatives ; depuis 7.3 : `HACHAGE_CONCURRENCE_MAX_PAR_IP` et `COOKIES_SECURE`, facultatives, la seconde imposée à `true` en production ; la liste complète des variables nouvelles d'une version figure dans sa section de `CHANGELOG.md`).
 4. Passer `VERSION` à la nouvelle version dans `.env`, tirer les images et relancer (les migrations Liquibase s'appliquent au démarrage de `api`) :
    ```sh
    $PROD pull
@@ -238,13 +238,43 @@ Le script affiche les requêtes envoyées, les `200`, `429`, `5xx`/erreurs rése
 
 ## Sauvegarde
 
-Sauvegarde de la base au format personnalisé de `pg_dump`, lancée dans le conteneur `base` (l'utilisateur et la base sont lus depuis le conteneur, pas depuis l'hôte) :
+Sauvegarde de la base au format personnalisé de `pg_dump`, lancée dans le conteneur `base` (l'utilisateur et la base sont lus depuis le conteneur, pas depuis l'hôte) par `scripts/sauvegarder.sh`, à lancer depuis la racine du dépôt :
 
 ```sh
-$PROD exec -T base sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > sauvegarde-$(date +%Y%m%d-%H%M).dump
+./scripts/sauvegarder.sh                          # production (-f docker-compose.yml -f docker-compose.prod.yml)
+./scripts/sauvegarder.sh --verifier-restauration  # idem, puis restauration d'essai et comparaison des comptages
+COMPOSE_FICHIERS="-f docker-compose.yml" ./scripts/sauvegarder.sh   # stack de dev
 ```
 
-Vérifier que le fichier n'est pas vide, puis le copier hors du VPS. La sauvegarde est manuelle (aucune tâche planifiée fournie).
+Le script écrit dans un fichier temporaire, le contrôle (`pg_restore --list`), le renomme `sauvegarde-AAAAMMJJ-HHMM.dump` (suffixe des secondes si le nom existe déjà), puis ne garde que les plus récents fichiers `sauvegarde-*.dump` du dossier (les autres fichiers ne sont jamais touchés). La dernière ligne affichée donne le chemin et la taille. En cas d'échec (`base` arrêtée, disque plein, dump illisible), le message part sur la sortie d'erreur, le code de sortie est non nul et aucune sauvegarde existante n'est supprimée. Il ne lit pas `.env` et n'affiche aucun mot de passe.
+
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `SAUVEGARDE_DOSSIER` | `./sauvegardes` | dossier de destination, créé s'il manque (droits `700`) |
+| `SAUVEGARDE_CONSERVER` | `14` | nombre de fichiers `sauvegarde-*.dump` conservés ; entier ≥ 1, sinon code 2 avant toute écriture |
+| `COMPOSE_FICHIERS` | `-f docker-compose.yml -f docker-compose.prod.yml` | options passées à `docker compose` (ajouter `-p <projet> --env-file <fichier>` pour une stack isolée) |
+
+`--verifier-restauration` restaure le dump dans une base temporaire `restauration_verif` du conteneur `base` (supprimée puis recréée si elle existe déjà, jamais la base de production), compare le nombre de lignes des tables `course`, `inscription` et `passage` avec la base source, supprime la base temporaire dans tous les cas et sort en code 1 si un comptage diffère (une écriture pendant la sauvegarde peut l'expliquer : relancer).
+
+**Jour de course.**
+- Une sauvegarde manuelle juste avant le départ de la première Boucle, une autre juste après l'annonce du Vainqueur.
+- Les copier aussitôt hors du VPS : une sauvegarde laissée sur le même disque ne protège pas d'une panne du disque ou de la perte du VPS. Depuis le poste de l'administrateur :
+  ```sh
+  rsync -av <utilisateur>@<vps>:backyard-ultra-tracker/sauvegardes/ ./sauvegardes-backyard/
+  # ou un seul fichier :
+  scp <utilisateur>@<vps>:backyard-ultra-tracker/sauvegardes/sauvegarde-20261024-0800.dump .
+  ```
+
+**Planification** (`crontab -e` de l'utilisateur qui lance Docker sur le VPS ; `cron` s'exécute sur l'hôte, pas dans un conteneur) :
+
+```cron
+# Pendant une course : toutes les heures, journal dans sauvegardes/sauvegarde.log.
+0 * * * * cd /home/<utilisateur>/backyard-ultra-tracker && ./scripts/sauvegarder.sh >> sauvegardes/sauvegarde.log 2>&1
+# Hors course : une fois par jour à 3 h, avec restauration d'essai.
+0 3 * * * cd /home/<utilisateur>/backyard-ultra-tracker && ./scripts/sauvegarder.sh --verifier-restauration >> sauvegardes/sauvegarde.log 2>&1
+```
+
+Avec 14 fichiers conservés, la ligne horaire garde 14 heures de course ; relever `SAUVEGARDE_CONSERVER` (par exemple `SAUVEGARDE_CONSERVER=48 ./scripts/sauvegarder.sh`) pour une course plus longue. `pg_dump` lit un instantané cohérent sans verrouiller les tables : il ne bloque ni les scans ni le suivi public. Le journal `sauvegarde.log` n'est pas concerné par la rotation.
 
 Facultatif, sauvegarde des certificats Caddy (évite une nouvelle émission après une réinstallation) :
 
@@ -268,7 +298,13 @@ $PROD start api web
 $PROD ps
 ```
 
-`--clean --if-exists` supprime les objets existants avant de les recréer ; `--no-owner` attribue les objets à l'utilisateur courant. Sur un nouveau VPS : faire le premier déploiement (base vide créée avec le mot de passe de `.env`), puis restaurer.
+`--clean --if-exists` supprime les objets existants avant de les recréer ; `--no-owner` attribue les objets à l'utilisateur courant (le dump ne contient pas les rôles : le mot de passe de base du VPS cible s'applique). Sur un nouveau VPS : faire le premier déploiement (base vide créée avec le mot de passe de `.env`), puis restaurer.
+
+Contrôle après restauration :
+1. `$PROD ps` : `base`, `api` et `web` `healthy` (environ 90 s) ;
+2. `curl https://<domaine>/api/version` : la version attendue ;
+3. connexion avec l'admin master sur `https://<domaine>/connexion` ;
+4. la liste des Courses de l'administration (et l'accueil public) montre les Courses de la sauvegarde, et le suivi public d'une Course affiche ses coureurs.
 
 Restauration facultative des certificats Caddy (`web` arrêté ; `tar` exécuté en root conserve les propriétaires d'origine, l'utilisateur non root `web`) :
 
@@ -278,6 +314,80 @@ docker run --rm -v backyard-ultra-tracker_donnees-caddy:/data -v "$PWD":/sauvega
   tar xzf /sauvegarde/donnees-caddy.tar.gz -C /data
 $PROD start web
 ```
+
+## Contrôle des vulnérabilités
+
+À refaire avant chaque version (et à chaque répétition `-rc.N`), résultats datés ci-dessous. Règles de décision :
+- dépendance d'exécution (Maven, `dependencies` npm, image) `HIGH` ou `CRITICAL` : corrigée avant la version par montée de version (parent Spring Boot si possible, sinon propriété de version dans `backend/pom.xml`, retirée dès que Spring Boot la rattrape ; pour une image, nouvelle version de l'image de base puis nouvelle `-rc.N`) ; si aucune version corrigée n'existe, acceptée par écrit ici avec son exposition réelle ;
+- outillage de build (`devDependencies`, étape de build des Dockerfiles) : corrigé dès qu'une version existe, sans montée de version majeure d'Angular (jamais `npm audit fix --force`) ; un `overrides` est documenté dans `frontend/package.json` et retiré quand le paquet amont embarque la correction. Il n'est pas embarqué dans les images d'exécution.
+
+**npm** (dans `frontend/` et `e2e/`) :
+```sh
+npm audit --omit=dev && npm audit
+```
+
+**Maven** (sans clé NVD, `dependency-check` n'est pas intégré au build) : alertes Dependabot de l'onglet *Security* du dépôt, puis
+```sh
+cd backend && ./mvnw -B org.codehaus.mojo:versions-maven-plugin:2.21.0:display-dependency-updates
+```
+Avec une clé NVD : `./mvnw org.owasp:dependency-check-maven:<version>:check -DnvdApiKey=<clé>` (version épinglée).
+
+**Images** (outil épinglé, jamais `latest`) :
+```sh
+for image in ghcr.io/quenaultthomas/backyard-ultra-tracker-api:<version> \
+             ghcr.io/quenaultthomas/backyard-ultra-tracker-web:<version> postgres:17.11-alpine; do
+  docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.76.1 \
+    image --severity HIGH,CRITICAL "$image"
+done
+```
+Avant le tag, les images construites localement (`docker compose build`, images `backyard-ultra-tracker-api:latest` et `backyard-ultra-tracker-web:latest`) donnent le même résultat que les images publiées pour le même commit.
+
+**Résultats du 2026-10-22 (préparation de la 0.5.0, images locales)** :
+
+| Contrôle | Résultat |
+|---|---|
+| `npm audit` `frontend/` | avant : 2 alertes (`vite` 8.3.0 `high`, via `@angular/build` 22.2.3 qui l'épingle ; 6 alertes Dependabot `vite`, corrigées en 8.3.3). Après `overrides` `vite` 8.3.3 : `found 0 vulnerabilities` (avec et sans `--omit=dev`) ; `@angular/build` 22.2.3 est la dernière version stable, aucune ne corrige encore `vite` |
+| `npm audit` `e2e/` | `found 0 vulnerabilities` (avec et sans `--omit=dev`) |
+| Maven (Dependabot + `display-dependency-updates`) | aucune alerte Dependabot Maven ; mises à jour disponibles non liées à une CVE (`postgresql` 42.7.14, Spring Boot 4.2.0-M2 jalon) non appliquées |
+| Image `api` | avant : `tomcat-embed-core` 11.0.24 (CVE-2026-65182, CVE-2026-65905, CVE-2026-68525, `CRITICAL`), `jackson-core`/`jackson-databind` 3.1.5 (CVE-2026-89407, -89425, -91776, -91777, -68497, `HIGH`). Corrigé : `tomcat.version` 11.0.25 et `jackson-bom.version` 3.1.7 dans `backend/pom.xml`. Après : 0 vulnérabilité `HIGH`/`CRITICAL` (Ubuntu 24.04 et `application.jar`) |
+| Image `web` (`caddy:2.11.7-alpine`) | 5 `HIGH` dans le binaire `caddy` (Go `stdlib` 1.26.8 et `golang.org/x/net` 0.59.0 : CVE-2026-78669 et CVE-2026-78667 déni de service HTTP/2 et en-têtes `Range`, CVE-2026-97031 déni de service TLS ECH, CVE-2026-111943 validation de chaîne x509). **Acceptées** : aucune image Caddy plus récente que 2.11.7 publiée. Exposition réelle : `web` est exposé à Internet, risque de déni de service (pas de fuite de données identifiée) ; CVE-2026-111943 concerne la validation de certificats clients/amont, non utilisée (Caddy ne relaie qu'en HTTP vers `api` dans le réseau Compose). À reprendre (nouvelle `-rc.N`) dès la sortie d'une image Caddy corrigée |
+| Image `postgres:17.11-alpine` | 1 `CRITICAL` et 25 `HIGH`, toutes dans `gosu` (compilé avec Go 1.24.6). **Acceptées** : aucune image `postgres` 17 plus récente publiée. Exposition réelle : `gosu` ne sert qu'au point d'entrée pour abandonner les droits root, sans réseau ; `base` n'expose aucun port (réseau Compose interne). PostgreSQL lui-même : 0 vulnérabilité `HIGH`/`CRITICAL` |
+
+Les résultats de la répétition `v0.5.0-rc.1` sur les images publiées sont ajoutés à ce tableau par l'utilisateur (étape 7 de « Répétition générale d'une version »).
+
+## Répétition générale d'une version
+
+Avant chaque version `X.Y.Z`, une pré-version `vX.Y.Z-rc.1` est déployée et éprouvée sur le VPS, dans cet ordre. Exemple pour la 0.5.0 :
+
+1. **Tag de pré-version.** Pull request de la branche de release ouverte et CI verte. Sur la tête de la branche :
+   ```sh
+   git tag v0.5.0-rc.1 && git push origin v0.5.0-rc.1
+   gh run watch
+   ```
+   Le workflow `Release` doit réussir et créer une Release GitHub marquée *Pre-release*. Les sources restent en `0.5.0` : la vérification ignore le suffixe `-rc.N`.
+2. **Packages publics** si c'est la première publication (voir « Accès du VPS aux images »).
+3. **Déploiement sur le VPS.** Faire une sauvegarde, puis `VERSION=0.5.0-rc.1` dans `.env` et :
+   ```sh
+   $PROD pull && $PROD up -d && $PROD ps
+   curl https://<domaine>/api/version
+   ```
+   Le workflow construit les images avec l'argument `VERSION` égal au tag sans le « v » : `app.version` vaut `0.5.0-rc.1` (et `build.version`, lue dans le pom, vaut `0.5.0`). Le pied de page de l'application affiche aussi `0.5.0-rc.1`.
+4. **Sécurité visible.**
+   - `curl -sI https://<domaine>/ | grep -i strict-transport-security` : en-tête présent ;
+   - cookies `JSESSIONID` et `XSRF-TOKEN` marqués `Secure` (outils du navigateur, après connexion) ;
+   - connecté en admin master, `https://<domaine>/api/test/horloge` répond 404 (l'horloge pilotable n'existe qu'en E2E ; 401 sans session).
+5. **Sauvegarde et restauration.** `./scripts/sauvegarder.sh --verifier-restauration` (trois comptages identiques, code 0), copie hors du VPS, poser le `crontab` d'exemple et vérifier qu'un `.dump` apparaît ; puis restauration réelle de ce dump (section Restauration) et son contrôle.
+6. **Mini-course de bout en bout.** Course de 2 minutes par Boucle, 2 ou 3 coureurs inscrits, un bénévole affecté ; application installée (PWA) sur le téléphone du bénévole ; un scan fait hors ligne (mode avion) puis transmis ; un coureur sans passage passe en abandon automatique ; un Vainqueur est désigné ; suivi public ouvert sur un second appareil pendant toute la course.
+7. **Scan des images** publiées `0.5.0-rc.1` (section « Contrôle des vulnérabilités ») et ajout des résultats datés.
+8. **Décision.** Tout est vert : passage à la `0.5.0`. Sinon : correction sur la branche, puis `v0.5.0-rc.2` et reprise à l'étape 1.
+9. **Version finale.** Merger la pull request, puis :
+   ```sh
+   git switch main && git pull
+   git tag v0.5.0 && git push origin v0.5.0
+   ```
+   Déployer par la procédure « Mise à jour » (`VERSION=0.5.0`). Le retour arrière se fait vers `VERSION=0.5.0-rc.1` (mêmes migrations) ou, avec restauration de la sauvegarde faite avant la mise à jour, vers la version précédente.
+
+Un tag publié n'est jamais déplacé ni supprimé : une correction donne toujours un nouveau tag.
 
 ## Tester la production en local
 
