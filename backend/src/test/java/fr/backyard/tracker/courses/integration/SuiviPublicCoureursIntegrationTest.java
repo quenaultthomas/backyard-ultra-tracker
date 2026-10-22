@@ -270,6 +270,7 @@ class SuiviPublicCoureursIntegrationTest {
 
         UUID nouvelleAlice = decor.insererCompte("Alice", "COUREUR");
         inscrire(x, nouvelleAlice, 5, "EN_COURSE");
+        invaliderLeMicroCache();
 
         assertThat(lignes(corps(x).get("coureursEnCourse")))
                 .containsExactly("1:" + ANONYME, "2:Bruno", "5:Alice");
@@ -290,6 +291,7 @@ class SuiviPublicCoureursIntegrationTest {
                 + bruno + "/abandon", decor.nadia.entetes(), "application/json", "{\"motif\":\"MANUEL\"}");
         assertThat(abandon.statusCode()).as(abandon.body()).isEqualTo(200);
 
+        invaliderLeMicroCache();
         JsonNode apresAbandon = corps(x);
         assertThat(lignes(apresAbandon.get("abandons"))).containsExactly("1:Bruno");
         assertThat(apresAbandon.get("abandons").get(0).get("boucleAbandon").asInt()).isEqualTo(2);
@@ -300,6 +302,7 @@ class SuiviPublicCoureursIntegrationTest {
                 + "/inscriptions/" + bruno + "/reintegration", decor.nadia.entetes(), null, null);
         assertThat(reintegration.statusCode()).as(reintegration.body()).isEqualTo(200);
 
+        invaliderLeMicroCache();
         JsonNode apresReintegration = corps(x);
         assertThat(lignes(apresReintegration.get("coureursEnCourse"))).containsExactly("1:Bruno", "2:Chloé", "3:Tom");
         assertThat(apresReintegration.get("abandons").isArray()).isTrue();
@@ -307,6 +310,7 @@ class SuiviPublicCoureursIntegrationTest {
 
         assertThat(abandonner.executer(UUID.fromString(x)).abandons()).isEqualTo(1);
 
+        invaliderLeMicroCache();
         JsonNode apresAutomatique = corps(x);
         assertThat(lignes(apresAutomatique.get("abandons"))).containsExactly("3:Tom");
         assertThat(apresAutomatique.get("abandons").get(0).get("motifAbandon").asString()).isEqualTo("HORS_DELAI");
@@ -426,6 +430,11 @@ class SuiviPublicCoureursIntegrationTest {
 
     // ---------------------------------------------------------------- outils
 
+    /** 7.2 RG2 : une seconde de plus que la lecture précédente, pour que le micro-cache relise la base. */
+    private void invaliderLeMicroCache() {
+        horloge.fixer(horloge.instant().plusSeconds(1));
+    }
+
     private void horloge(long secondesApresT0) {
         horloge.fixer(DecorAbandon.T0.plusSeconds(secondesApresT0));
     }
@@ -456,6 +465,7 @@ class SuiviPublicCoureursIntegrationTest {
     }
 
     private long requetes(Statistics statistiques, UUID course) throws Exception {
+        invaliderLeMicroCache();
         long avant = statistiques.getPrepareStatementCount();
         assertThat(suivi(course.toString(), Map.of()).statusCode()).isEqualTo(200);
         return statistiques.getPrepareStatementCount() - avant;

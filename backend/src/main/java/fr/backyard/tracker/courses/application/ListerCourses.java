@@ -37,8 +37,14 @@ public class ListerCourses {
     /** Une seule lecture des empreintes pour toute la liste. */
     @Transactional(readOnly = true)
     public List<CourseListee> executerAvecLogos() {
+        return avecEmpreintesLogo(executer());
+    }
+
+    /** Courses déjà lues, dans le même ordre, complétées de leurs empreintes de logo en une seule lecture. */
+    @Transactional(readOnly = true)
+    public List<CourseListee> avecEmpreintesLogo(List<Course> courses) {
         Map<UUID, String> empreintes = depotLogos.empreintesParIdCourse();
-        return executer().stream()
+        return courses.stream()
                 .map(course -> new CourseListee(course, Optional.ofNullable(empreintes.get(course.id()))))
                 .toList();
     }

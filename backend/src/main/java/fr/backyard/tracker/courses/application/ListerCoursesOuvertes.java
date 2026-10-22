@@ -15,8 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Courses ouvertes aux inscriptions, dans l'ordre de liste du domaine, chacune avec l'Inscription du Compte demandeur
- * s'il en a une. Les Inscriptions des autres Comptes ne sont jamais lues : seul leur nombre est compté, une fois par
- * Course, pour l'indicateur de complétude.
+ * s'il en a une. Les Inscriptions des autres Comptes ne sont jamais lues : seul leur nombre est compté, en une seule
+ * lecture groupée pour toute la liste, pour l'indicateur de complétude.
  */
 @Service
 public class ListerCoursesOuvertes {
@@ -40,11 +40,15 @@ public class ListerCoursesOuvertes {
     public List<CourseOuverte> executer(UUID compteId) {
         Map<UUID, Inscription> mesInscriptions = depotInscriptions.parCompte(compteId).stream()
                 .collect(Collectors.toMap(Inscription::courseId, Function.identity()));
-        return depotCourses.toutes().stream()
+        List<Course> ouvertes = depotCourses.toutes().stream()
                 .filter(Course::estOuverte)
                 .sorted(Course.ORDRE_DE_LISTE)
+                .toList();
+        Map<UUID, Integer> inscrits = depotInscriptions.nombresInscritsParCourse(
+                ouvertes.stream().map(Course::id).toList());
+        return ouvertes.stream()
                 .map(course -> new CourseOuverte(course, Optional.ofNullable(mesInscriptions.get(course.id())),
-                        course.estComplete(depotInscriptions.nombreInscrits(course.id()))))
+                        course.estComplete(inscrits.getOrDefault(course.id(), 0))))
                 .toList();
     }
 }

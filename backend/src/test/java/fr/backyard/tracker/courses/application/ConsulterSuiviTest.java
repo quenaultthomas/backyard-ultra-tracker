@@ -112,7 +112,7 @@ class ConsulterSuiviTest {
         ClockAvanceALaLecture clock = new ClockAvanceALaLecture(T0.plusMillis(60_000), Duration.ofSeconds(7));
 
         var suivi = new ConsulterSuivi(depotCourses, new DepotInscriptionsEspionDeTest().port, new AnnuaireSuiviDeTest(),
-                new DepotPassagesEnMemoireDeTest(), clock).executer(X);
+                new DepotPassagesEnMemoireDeTest(), new DepotLogosDeTest(), clock).executer(X);
 
         assertThat(clock.lectures.get()).isEqualTo(1);
         assertThat(suivi.heureServeur()).isEqualTo(T0.plusMillis(60_000));
@@ -308,7 +308,7 @@ class ConsulterSuiviTest {
 
     private ConsulterSuivi consulterA(Instant maintenant) {
         return new ConsulterSuivi(depotCourses, new DepotInscriptionsEspionDeTest().port, new AnnuaireSuiviDeTest(),
-                new DepotPassagesEnMemoireDeTest(), Clock.fixed(maintenant, ZoneOffset.UTC));
+                new DepotPassagesEnMemoireDeTest(), new DepotLogosDeTest(), Clock.fixed(maintenant, ZoneOffset.UTC));
     }
 
     private static Course course(UUID id, String nom, StatutCourse statut, int dureeBoucleMinutes, int maxBoucles,

@@ -7,3 +7,5 @@ services:
   api:
     environment:
       SPRING_PROFILES_ACTIVE: e2e
+      # Tests E2E parallèles depuis une même IP : limite haute pour ne jamais s'auto-limiter (7.2).
+      BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE: 6000

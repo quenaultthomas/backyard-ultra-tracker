@@ -1,7 +1,6 @@
 package fr.backyard.tracker.courses.exposition;
 
 import fr.backyard.tracker.courses.application.ConsulterSuivi;
-import fr.backyard.tracker.courses.application.ListerCourses;
 import java.util.List;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpMethod;
@@ -23,11 +22,8 @@ public class SuiviPublicController {
     private static final String CHEMIN = "/api/courses/{id}/suivi";
 
     private final ConsulterSuivi consulterSuivi;
-    private final ListerCourses listerCourses;
-
-    public SuiviPublicController(ConsulterSuivi consulterSuivi, ListerCourses listerCourses) {
+    public SuiviPublicController(ConsulterSuivi consulterSuivi) {
         this.consulterSuivi = consulterSuivi;
-        this.listerCourses = listerCourses;
     }
 
     /** Identifiant inconnu ou invalide : même 404 COURSE_INTROUVABLE. */
@@ -35,7 +31,7 @@ public class SuiviPublicController {
     public ResponseEntity<SuiviCourseReponse> consulterSuivi(@PathVariable("id") String id) {
         ConsulterSuivi.Suivi suivi = consulterSuivi.executer(IdentifiantCourse.deCourse(id));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(SuiviCourseReponse.depuis(suivi, listerCourses.avecEmpreinteLogo(suivi.course())));
+                .body(SuiviCourseReponse.depuis(suivi));
     }
 
     /** HEAD, implicitement servi sur un GET par Spring MVC, n'est pas exposé : jamais de 2xx hors GET. */

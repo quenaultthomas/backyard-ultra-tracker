@@ -4,6 +4,9 @@ import fr.backyard.tracker.courses.domaine.DepotInscriptions;
 import fr.backyard.tracker.courses.domaine.Inscription;
 import fr.backyard.tracker.courses.domaine.JetonQr;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,7 +48,21 @@ final class DepotInscriptionsEnMemoireDeTest implements DepotInscriptions {
     /** Compte toutes les Inscriptions de la Course, quel que soit leur statut (3.2 RG3) ; ne compare à aucun maximum. */
     @Override
     public int nombreInscrits(UUID courseId) {
+        nombreDeComptagesUnitaires++;
         return (int) inscriptions.stream().filter(i -> i.courseId().equals(courseId)).count();
+    }
+
+    /** 7.2 RG10 : compteur des comptages unitaires (ne doivent plus servir aux listes de Courses). */
+    int nombreDeComptagesUnitaires;
+    /** 7.2 RG10 : nombre de comptages groupés demandés. */
+    int nombreDeComptagesGroupes;
+
+    /** 7.2 RG10 (nom supposé) : une entrée par Course demandée, 0 pour une Course sans Inscrit. */
+    public Map<UUID, Integer> nombresInscritsParCourse(Collection<UUID> courseIds) {
+        nombreDeComptagesGroupes++;
+        Map<UUID, Integer> nombres = new HashMap<>();
+        courseIds.forEach(id -> nombres.put(id, (int) inscriptions.stream().filter(i -> i.courseId().equals(id)).count()));
+        return nombres;
     }
 
     @Override

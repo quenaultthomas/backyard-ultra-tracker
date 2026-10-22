@@ -1,5 +1,6 @@
 package fr.backyard.tracker.courses.domaine;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,9 +34,14 @@ public interface DepotCourses {
         throw new UnsupportedOperationException("Suppression de Course non prise en charge par ce dépôt");
     }
 
-    /** Identifiants des Courses EN_COURS, dans un ordre quelconque. */
-    default List<UUID> idsEnCours() {
-        return toutes().stream().filter(course -> course.statut() == StatutCourse.EN_COURS).map(Course::id).toList();
+    /** Courses EN_COURS, lues sans verrou, dans un ordre quelconque. */
+    default List<Course> enCours() {
+        return toutes().stream().filter(course -> course.statut() == StatutCourse.EN_COURS).toList();
+    }
+
+    /** Courses existantes parmi ces identifiants, dans un ordre quelconque ; un identifiant inconnu est ignoré. */
+    default List<Course> parIds(Collection<UUID> ids) {
+        return ids.stream().distinct().map(this::parId).flatMap(Optional::stream).toList();
     }
 
     /** Courses auxquelles ce bénévole est affecté, dans un ordre quelconque. */

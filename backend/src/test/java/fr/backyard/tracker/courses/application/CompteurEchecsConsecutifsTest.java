@@ -1,4 +1,4 @@
-package fr.backyard.tracker.courses.infrastructure;
+package fr.backyard.tracker.courses.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

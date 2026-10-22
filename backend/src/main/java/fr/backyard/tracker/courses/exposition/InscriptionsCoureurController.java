@@ -7,6 +7,7 @@ import fr.backyard.tracker.courses.application.ListerCoursesOuvertes.CourseOuver
 import fr.backyard.tracker.courses.domaine.Inscription;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -42,7 +43,12 @@ public class InscriptionsCoureurController {
 
     @GetMapping
     public List<CourseOuverteReponse> listerCoursesOuvertes(@AuthenticationPrincipal UUID compteId) {
-        return listerCoursesOuvertes.executer(compteId).stream().map(this::versReponse).toList();
+        List<CourseOuverte> ouvertes = listerCoursesOuvertes.executer(compteId);
+        List<ListerCourses.CourseListee> listees =
+                listerCourses.avecEmpreintesLogo(ouvertes.stream().map(CourseOuverte::course).toList());
+        return IntStream.range(0, ouvertes.size())
+                .mapToObj(rang -> versReponse(ouvertes.get(rang), listees.get(rang)))
+                .toList();
     }
 
     /** Un corps éventuel est ignoré ; un identifiant qui n'est pas un UUID donne 404 comme un UUID inconnu. */
@@ -54,8 +60,7 @@ public class InscriptionsCoureurController {
         return InscriptionReponse.depuis(inscription);
     }
 
-    private CourseOuverteReponse versReponse(CourseOuverte courseOuverte) {
-        return CourseOuverteReponse.depuis(listerCourses.avecEmpreinteLogo(courseOuverte.course()),
-                courseOuverte.monInscription(), courseOuverte.complete());
+    private static CourseOuverteReponse versReponse(CourseOuverte courseOuverte, ListerCourses.CourseListee listee) {
+        return CourseOuverteReponse.depuis(listee, courseOuverte.monInscription(), courseOuverte.complete());
     }
 }

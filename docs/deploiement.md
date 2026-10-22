@@ -45,6 +45,7 @@ Toutes les variables sont décrites dans `.env.example`. Le fichier `.env` n'est
 | `ADMIN_MASTER_PSEUDO` | **obligatoire** (facultative en dev) | pseudo de l'admin master, créé au démarrage s'il n'existe pas (3 à 30 caractères) |
 | `ADMIN_MASTER_MOT_DE_PASSE` | **obligatoire** (facultative en dev) | mot de passe initial de l'admin master (12 à 128 caractères) |
 | `HACHAGE_CONCURRENCE_MAX` | facultative (défaut `4`, entier ≥ 1) | calculs Argon2id simultanés (connexion, création de compte, changement de mot de passe), environ 19 Mio chacun ; au-delà, attente d'une seconde au plus puis réponse 503 `SERVICE_SATURE` |
+| `BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE` | facultative (défaut `1200`, entier ≥ 0, `0` = aucune limite) | requêtes `GET /api/courses` et `/api/courses/**` (accueil, suivi, logo) admises par IP et par minute ; au-delà, 429 `TROP_DE_REQUETES` (voir « Suivi public sous charge ») |
 | `API_MEMOIRE_MAX` | facultative (défaut `1g`) | plafond mémoire du conteneur `api` (production seulement) |
 | `BASE_MEMOIRE_MAX` | facultative (défaut `512m`) | plafond mémoire du conteneur `base` (production seulement) |
 | `WEB_MEMOIRE_MAX` | facultative (défaut `256m`) | plafond mémoire du conteneur `web` (production seulement) |
@@ -55,6 +56,8 @@ Une valeur de `CONNEXION_ECHECS_MAX` ou `CONNEXION_BLOCAGE_SECONDES` non entièr
 
 Une valeur de `HACHAGE_CONCURRENCE_MAX` non entière ou inférieure à 1 empêche de même `api` de démarrer ; `$PROD logs api` cite `backyard.hachage.concurrence-max`.
 
+Une valeur de `BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE` non entière ou négative (`abc`, `-1`) empêche aussi `api` de démarrer ; le journal cite `backyard.limite-debit-public.par-minute`.
+
 ### Limitation des connexions : compromis connu
 
 Le blocage temporaire après `CONNEXION_ECHECS_MAX` échecs porte sur le **pseudo**, pas sur l'adresse IP : il protège chaque compte contre la recherche de mot de passe, quelle que soit l'origine des tentatives. Contrepartie : n'importe qui connaissant un pseudo (classement et listes publics) peut le bloquer pendant `CONNEXION_BLOCAGE_SECONDES` en enchaînant des mots de passe faux, **y compris celui de l'admin master**, et recommencer à la fin du blocage. Le mot de passe n'est jamais exposé, mais la connexion du compte visé est refusée (429 `TENTATIVES_EXCESSIVES`) pendant ce temps.
@@ -63,7 +66,7 @@ Le blocage temporaire après `CONNEXION_ECHECS_MAX` échecs porte sur le **pseud
 - Pour lever un blocage en urgence : `$PROD restart api` remet à zéro compteurs et blocages, mais déconnecte tout le monde (sessions en mémoire) ; à éviter pendant une course.
 - Si un blocage abusif se répète, réduire temporairement `CONNEXION_BLOCAGE_SECONDES` dans `.env` puis `$PROD up -d api` (même effet de déconnexion).
 
-Il n'y a pas de limite de débit par adresse IP (le Caddy standard n'en fournit pas). Le coût des tentatives est borné autrement : chaque vérification Argon2id se fait hors transaction (aucune connexion de base tenue pendant le calcul) et au plus `HACHAGE_CONCURRENCE_MAX` calculs tournent en même temps. Une rafale sur `/api/connexion` ou `/api/comptes` reçoit des 503 `SERVICE_SATURE` (en-tête `Retry-After`) au lieu d'épuiser la mémoire de `api` ou le pool de connexions de la base, que partagent les scans des bénévoles et le planificateur. Limite restante : une rafale massive et soutenue (plusieurs centaines de requêtes simultanées) peut encore occuper les fils d'exécution de Tomcat pendant l'attente d'une seconde ; une limite par IP dans Caddy (module tiers `caddy-ratelimit`, image Caddy à construire) reste la protection à ajouter avant une exposition à forte audience. `$PROD logs api | grep "calculs d'empreinte saturés"` montre ces refus.
+Il n'y a pas de limite de débit par adresse IP sur la connexion (le Caddy standard n'en fournit pas ; seules les routes publiques de lecture sont limitées, voir « Suivi public sous charge »). Le coût des tentatives est borné autrement : chaque vérification Argon2id se fait hors transaction (aucune connexion de base tenue pendant le calcul) et au plus `HACHAGE_CONCURRENCE_MAX` calculs tournent en même temps. Une rafale sur `/api/connexion` ou `/api/comptes` reçoit des 503 `SERVICE_SATURE` (en-tête `Retry-After`) au lieu d'épuiser la mémoire de `api` ou le pool de connexions de la base, que partagent les scans des bénévoles et le planificateur. Limite restante : une rafale massive et soutenue (plusieurs centaines de requêtes simultanées) peut encore occuper les fils d'exécution de Tomcat pendant l'attente d'une seconde ; une limite par IP dans Caddy (module tiers `caddy-ratelimit`, image Caddy à construire) reste la protection à ajouter avant une exposition à forte audience. `$PROD logs api | grep "calculs d'empreinte saturés"` montre ces refus.
 
 ### Ressources : mémoire et journaux
 
@@ -205,6 +208,27 @@ L'application est installable et garde sa coque en cache (service worker, incré
 - Ne pas mettre à jour ni redémarrer `api` pendant une course. Si c'est inévitable, reconnecter les bénévoles (les sessions sont perdues) avant la fin du délai de grâce pour que leurs scans en attente partent à temps.
 
 **Limite.** Au-delà du délai de grâce, la Boucle est tranchée : un scan tardif est refusé. Si la course est encore en cours, un administrateur peut réintégrer le coureur. Sur une course `TERMINEE`, aucune correction n'est possible dans l'application : noter le résultat corrigé à la main.
+
+## Suivi public sous charge
+
+Le suivi public est projeté et ouvert par les spectateurs : chaque écran interroge `GET /api/courses/{id}/suivi` toutes les 3 s environ (~20 requêtes par minute), avec un décalage aléatoire pour ne pas partir tous au même instant, et espace ses nouvelles tentatives en cas d'erreur (3, 6, 12, 24 puis 30 s).
+
+- **Micro-cache** : l'api relit la Course, ses Inscriptions et ses Passages au plus une fois par seconde et par Course ; compte à rebours, Boucle courante et heure du serveur sont recalculés à chaque requête. Un statut de coureur (scan, abandon, vainqueur) peut apparaître sur le suivi jusqu'à ~2 s après la décision. Le pilotage n'est pas mis en cache.
+- **Planificateur** : le contrôle d'abandon automatique ne verrouille une Course et ne relit ses Passages qu'à l'échéance d'une Boucle (départ + délai de grâce), plus chaque seconde.
+- **Limite de débit** : `BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE` (défaut `1200`) requêtes par IP et par minute sur `GET /api/courses` et `/api/courses/**` ; au-delà, 429 `TROP_DE_REQUETES` avec `Retry-After` jusqu'à la minute suivante, refusé avant tout accès à la base. La connexion, les routes coureur, bénévole et administration ne sont pas concernées. L'IP retenue est celle transmise par Caddy (`X-Forwarded-For`), uniquement si la requête vient du service `web` (`BACKYARD_PROXY_DE_CONFIANCE=web`, fixé dans `docker-compose.yml`) : un en-tête envoyé directement à `api` est ignoré. Une ligne `Débit public dépassé` par IP et par minute apparaît dans `$PROD logs api`.
+- **Limite connue** : des spectateurs derrière une même IP (wifi d'un stade, NAT d'opérateur) partagent le compteur ; 1200 admet ~60 écrans. Au-delà, remonter la variable dans `.env` puis `$PROD up -d api` (aucune reconstruction, mais les sessions sont perdues : hors course). `0` désactive la limite.
+- **Évolution possible** : limiter dans Caddy (module tiers `caddy-ratelimit`, image Caddy à construire) protégerait aussi la bande passante ; non retenu pour garder l'image officielle.
+
+**Mesure** (local uniquement, comme les données de démonstration) :
+
+```bash
+# Crée (si absente) la Course « Backyard de charge » et 30 coureurs charge01…charge30, affiche son identifiant.
+PEUPLER=30 ./scripts/charge-suivi.sh
+# Démarrer la Course dans l'interface, puis simuler 50 écrans pendant 60 s.
+COURSE=<identifiant> ECRANS=50 DUREE=60 ./scripts/charge-suivi.sh
+```
+
+Le script affiche les requêtes envoyées, les `200`, `429`, `5xx`/erreurs réseau, la latence médiane et le p95 ; il sort en code 1 si le p95 dépasse 500 ms ou s'il y a au moins un `5xx`. Il lit `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE` dans `.env` comme `scripts/donnees-demo.sh` (pour `PEUPLER`), vise `BASE_URL` (défaut `http://localhost`) et refuse une cible autre que `localhost`/`127.0.0.1` sans `DEMO_FORCER=oui` (code 2).
 
 ## Sauvegarde
 
