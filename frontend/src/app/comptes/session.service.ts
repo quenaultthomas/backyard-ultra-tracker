@@ -21,8 +21,8 @@ export type EtatSession = 'INCONNU' | 'ANONYME' | 'CONNECTE';
 /** Compte connecté tel que l'application l'utilise (sans `creeLe`, absent d'un Compte mémorisé). */
 export type CompteConnecte = Pick<CompteReponse, 'id' | 'pseudo' | 'role'>;
 
-/** Fin de session volontaire, annoncée une fois par l'écran de connexion. */
-export type FinSession = 'DECONNEXION' | 'SUPPRESSION_COMPTE';
+/** Fin de session (volontaire ou refusée par l'API), annoncée une fois par l'écran de connexion. */
+export type FinSession = 'DECONNEXION' | 'SUPPRESSION_COMPTE' | 'SESSION_EXPIREE';
 
 const DELAI_MAX_RESTAURATION_MS = 5000;
 
@@ -101,8 +101,14 @@ export class SessionService {
     return this.compteUneFoisConnu().pipe(map((compte) => compte !== null));
   }
 
-  /** La session serveur n'existe plus (401) : l'état local devient anonyme. */
+  /**
+   * La session serveur n'existe plus (401) : l'état local devient anonyme. La fin de session n'est
+   * annoncée que si l'utilisateur était connecté (pas pour un visiteur).
+   */
   oublierSessionExpiree(): void {
+    if (this.etat() === 'CONNECTE') {
+      this.finSessionRecente.set('SESSION_EXPIREE');
+    }
     this.oublier();
   }
 

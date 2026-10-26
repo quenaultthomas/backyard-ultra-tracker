@@ -37,6 +37,8 @@ server:
   servlet:
     session:
       # Sessions en memoire : un redemarrage de l'api deconnecte tout le monde.
+      # Delai par defaut du conteneur seulement : toute session authentifiee recoit a l'ouverture le delai
+      # d'inactivite de son role, choisi par PolitiqueSession (backyard.session.*, 8.2 RG5).
       timeout: 12h
       # Identifiant de session uniquement par cookie, jamais dans l'URL.
       tracking-modes: cookie
@@ -60,6 +62,11 @@ backyard:
     # echecs consecutifs avant blocage, puis duree du blocage et de l'oubli des echecs partiels.
     echecs-max: ${CONNEXION_ECHECS_MAX:5}
     blocage-secondes: ${CONNEXION_BLOCAGE_SECONDES:900}
+  session:
+    # Delai d'inactivite de session par role (secondes, entiers de 1 a 604800, administrateurs <= autres), sinon
+    # l'api ne demarre pas. Glissant : chaque requete authentifiee le repousse. Regle dans PolitiqueSession.
+    inactivite-admin-secondes: ${SESSION_INACTIVITE_ADMIN_SECONDES:7200}
+    inactivite-coureur-benevole-secondes: ${SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES:43200}
   hachage:
     # Plafond des calculs Argon2id simultanes (connexion, creation de compte, changement de mot de passe) :
     # environ 19 Mio de memoire chacun. Au-dela, attente bornee puis 503 SERVICE_SATURE (SEC-06).

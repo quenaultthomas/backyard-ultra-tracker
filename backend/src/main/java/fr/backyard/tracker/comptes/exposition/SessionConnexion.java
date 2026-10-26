@@ -1,6 +1,7 @@
 package fr.backyard.tracker.comptes.exposition;
 
 import fr.backyard.tracker.comptes.domaine.Compte;
+import fr.backyard.tracker.comptes.domaine.PolitiqueSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -29,14 +30,17 @@ public class SessionConnexion {
     private final SecurityContextRepository depotContexte;
     private final SecurityContextHolderStrategy contexteCourant = SecurityContextHolder.getContextHolderStrategy();
     private final boolean cookieSecure;
+    private final PolitiqueSession politiqueSession;
 
     /**
      * @param cookieSecure drapeau Secure du cookie effacé, même propriété que JSESSIONID et XSRF-TOKEN (7.3 RG2),
      *                     validée au démarrage par la configuration de sécurité
      */
     public SessionConnexion(SecurityContextRepository depotContexte,
-                            @Value("${server.servlet.session.cookie.secure}") String cookieSecure) {
+                            @Value("${server.servlet.session.cookie.secure}") String cookieSecure,
+                            PolitiqueSession politiqueSession) {
         this.depotContexte = depotContexte;
+        this.politiqueSession = politiqueSession;
         this.cookieSecure = "true".equals(cookieSecure.trim());
     }
 
@@ -49,6 +53,12 @@ public class SessionConnexion {
         contexte.setAuthentication(authentification(compte));
         contexteCourant.setContext(contexte);
         depotContexte.saveContext(contexte, requete, reponse);
+        appliquerDelaiInactivite(compte, requete.getSession());
+    }
+
+    /** Délai d'inactivité choisi par la politique selon le rôle, posé une fois à l'ouverture (8.2 RG5). */
+    private void appliquerDelaiInactivite(Compte compte, HttpSession session) {
+        session.setMaxInactiveInterval(Math.toIntExact(politiqueSession.delaiInactivite(compte.role()).toSeconds()));
     }
 
     /** Nouvel identifiant pour la session (existante) d'une requête authentifiée, avec la même identité. */
