@@ -9,6 +9,7 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 - Désactivation et réactivation des comptes administrateur (par l'admin master) et bénévole (par un admin ou l'admin master) : un compte désactivé ne peut plus se connecter (réponse identique à des identifiants invalides), toutes ses sessions sont fermées, et un bénévole désactivé est retiré des courses qui n'ont pas démarré ; ses passages et ses affectations aux courses démarrées sont conservés. L'admin master, son propre compte et le dernier administrateur actif ne peuvent pas être désactivés (SEC-13, constat PEN-01 du pentest du 2026-10-26).
 - Un bénévole désactivé ne peut plus être ajouté à une course (409 `BENEVOLE_DESACTIVE`).
 - Les listes de comptes d'administration exposent l'état `actif` de chaque compte.
+- `/api/version` ne renvoie plus que la version applicative déployée, `{"app":{"version":"…"}}` : plus de `group`, `artifact`, `name`, `time` ni version du pom (SEC-17, constat PEN-03 du pentest du 2026-10-26). Une api construite sans argument `VERSION` répond `dev`.
 
 ## [0.5.0] - 2026-10-22
 
