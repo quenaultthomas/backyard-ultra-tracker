@@ -42,6 +42,8 @@ Toutes les variables sont décrites dans `.env.example`. Le fichier `.env` n'est
 | `DOMAINE` | **obligatoire** | nom de domaine servi en HTTPS |
 | `CONNEXION_ECHECS_MAX` | facultative (défaut `5`, entier ≥ 1) | échecs de connexion consécutifs sur un même pseudo avant blocage temporaire |
 | `CONNEXION_BLOCAGE_SECONDES` | facultative (défaut `900`, entier ≥ 1) | durée du blocage, et délai au-delà duquel des échecs partiels sont oubliés |
+| `SESSION_INACTIVITE_ADMIN_SECONDES` | facultative (défaut `7200`, entier de 1 à 604800) | délai d'inactivité de session des comptes `ADMIN_MASTER` et `ADMIN`, en secondes ; ne doit pas dépasser `SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES` (voir « Durée des sessions ») |
+| `SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES` | facultative (défaut `43200`, entier de 1 à 604800) | délai d'inactivité de session des comptes `COUREUR` et `BENEVOLE`, en secondes |
 | `ADMIN_MASTER_PSEUDO` | **obligatoire** (facultative en dev) | pseudo de l'admin master, créé au démarrage s'il n'existe pas (3 à 30 caractères) |
 | `ADMIN_MASTER_MOT_DE_PASSE` | **obligatoire** (facultative en dev) | mot de passe initial de l'admin master (12 à 128 caractères) |
 | `HACHAGE_CONCURRENCE_MAX` | facultative (défaut `4`, entier ≥ 1) | calculs Argon2id simultanés (connexion, création de compte, changement de mot de passe), environ 19 Mio chacun ; au-delà, attente d'une seconde au plus puis réponse 503 `SERVICE_SATURE` |
@@ -56,6 +58,8 @@ Si `BASE_MOT_DE_PASSE`, `DOMAINE`, `ADMIN_MASTER_PSEUDO` ou `ADMIN_MASTER_MOT_DE
 
 Une valeur de `CONNEXION_ECHECS_MAX` ou `CONNEXION_BLOCAGE_SECONDES` non entière ou inférieure à 1 empêche `api` de démarrer (jamais `healthy`) ; `$PROD logs api` cite la propriété (`backyard.connexion.echecs-max` ou `backyard.connexion.blocage-secondes`) et la borne. Pour un test à la main, `CONNEXION_BLOCAGE_SECONDES=30` évite d'attendre 15 minutes ; ne pas garder une valeur aussi basse en production.
 
+Une valeur de `SESSION_INACTIVITE_ADMIN_SECONDES` ou `SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES` non entière, vide, hors de 1 à 604800, ou un délai administrateurs supérieur à celui des coureurs et bénévoles empêche `api` de démarrer (jamais `healthy`) ; `$PROD logs api` cite la propriété (`backyard.session.inactivite-admin-secondes` ou `backyard.session.inactivite-coureur-benevole-secondes`) et la borne. Au démarrage valide, `$PROD logs api | grep "Politique de session"` affiche les deux délais retenus.
+
 Une valeur de `HACHAGE_CONCURRENCE_MAX` ou `HACHAGE_CONCURRENCE_MAX_PAR_IP` non entière ou inférieure à 1 empêche de même `api` de démarrer ; `$PROD logs api` cite `backyard.hachage.concurrence-max` ou `backyard.hachage.concurrence-max-par-ip`. Une valeur de `COOKIES_SECURE` autre que `true` ou `false` empêche aussi le démarrage (le journal cite `server.servlet.session.cookie.secure`). Aucune de ces variables n'est obligatoire.
 
 ### HTTPS, HSTS et cookies
@@ -64,11 +68,19 @@ En production (site servi sur `DOMAINE`), Caddy ajoute `Strict-Transport-Securit
 
 Une valeur de `BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE` non entière ou négative (`abc`, `-1`) empêche aussi `api` de démarrer ; le journal cite `backyard.limite-debit-public.par-minute`.
 
+### Durée des sessions
+
+Une session expire après une période d'**inactivité** qui dépend du rôle du compte, fixée à la connexion : `SESSION_INACTIVITE_ADMIN_SECONDES` (défaut 2 h) pour `ADMIN_MASTER` et `ADMIN`, `SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES` (défaut 12 h) pour `COUREUR` et `BENEVOLE`. Le délai est glissant : chaque requête authentifiée le repousse ; il n'y a pas de durée absolue. Une session expirée reçoit 401 et l'écran de connexion affiche « Votre session a expiré ou a été fermée. Veuillez vous reconnecter. ».
+
+- Les sessions déjà ouvertes gardent le délai reçu à leur ouverture : changer une valeur impose `$PROD up -d api`, ce qui déconnecte tout le monde (à faire hors course).
+- Administrateurs : ne pas descendre sous 600 s en production. Bénévoles : garder au moins la durée d'une course.
+- **Jour de course** : l'écran de pilotage d'une course relance des requêtes régulières et garde la session de l'admin tant qu'il reste ouvert. Un onglet admin laissé sur un autre écran (liste des courses, gestion des comptes) sans activité pendant le délai demande une reconnexion à l'action suivante.
+
 ### Limitation des connexions : compromis connu
 
 Le blocage temporaire après `CONNEXION_ECHECS_MAX` échecs porte sur le **pseudo**, pas sur l'adresse IP : il protège chaque compte contre la recherche de mot de passe, quelle que soit l'origine des tentatives. Contrepartie : n'importe qui connaissant un pseudo (classement et listes publics) peut le bloquer pendant `CONNEXION_BLOCAGE_SECONDES` en enchaînant des mots de passe faux, **y compris celui de l'admin master**, et recommencer à la fin du blocage. Le mot de passe n'est jamais exposé, mais la connexion du compte visé est refusée (429 `TENTATIVES_EXCESSIVES`) pendant ce temps.
 
-- Une session déjà ouverte n'est pas affectée : le jour d'une course, l'admin master se connecte **avant** le départ et garde sa session (12 h d'inactivité au plus ; ne pas se déconnecter).
+- Une session déjà ouverte n'est pas affectée : le jour d'une course, l'admin master se connecte **avant** le départ et garde sa session tant qu'il fait une action au moins toutes les 2 h par défaut (`SESSION_INACTIVITE_ADMIN_SECONDES`, pas de limite absolue ; l'écran de pilotage ouvert suffit) ; ne pas se déconnecter.
 - Pour lever un blocage en urgence : `$PROD restart api` remet à zéro compteurs et blocages, mais déconnecte tout le monde (sessions en mémoire) ; à éviter pendant une course.
 - Si un blocage abusif se répète, réduire temporairement `CONNEXION_BLOCAGE_SECONDES` dans `.env` puis `$PROD up -d api` (même effet de déconnexion).
 
@@ -196,7 +208,7 @@ Le jeton est stocké dans `~/.docker/config.json` : ne jamais le commiter et lui
 
 Ne jamais utiliser `down -v` en production : cette option supprime les volumes, donc la base et les certificats.
 
-Les sessions de connexion sont conservées en mémoire par `api` (expiration après 12 h d'inactivité) : toute mise à jour ou tout redémarrage de `api` déconnecte tous les utilisateurs, qui doivent se reconnecter. Éviter de mettre à jour pendant une course.
+Les sessions de connexion sont conservées en mémoire par `api` (expiration après une inactivité qui dépend du rôle : 2 h par défaut pour les administrateurs, 12 h pour les coureurs et bénévoles) : toute mise à jour ou tout redémarrage de `api` déconnecte tous les utilisateurs, qui doivent se reconnecter. Éviter de mettre à jour pendant une course.
 
 Les compteurs d'échecs de connexion et les blocages temporaires sont aussi en mémoire : un redémarrage de `api` les remet à zéro (c'est aussi le moyen de débloquer un pseudo avant la fin du délai). L'application est prévue pour une seule instance de `api`.
 

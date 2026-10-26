@@ -10,6 +10,7 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 - Un bénévole désactivé ne peut plus être ajouté à une course (409 `BENEVOLE_DESACTIVE`).
 - Les listes de comptes d'administration exposent l'état `actif` de chaque compte.
 - `/api/version` ne renvoie plus que la version applicative déployée, `{"app":{"version":"…"}}` : plus de `group`, `artifact`, `name`, `time` ni version du pom (SEC-17, constat PEN-03 du pentest du 2026-10-26). Une api construite sans argument `VERSION` répond `dev`.
+- La session des administrateurs (admin master et admins) expire après 2 h d'inactivité par défaut, celle des coureurs et bénévoles après 12 h (inchangé) ; délais glissants, réglables par `SESSION_INACTIVITE_ADMIN_SECONDES` et `SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES` et validés au démarrage (SEC-16, constat PEN-05 du pentest du 2026-10-26).
 
 ## [0.5.0] - 2026-10-22
 

@@ -23,6 +23,11 @@
           Votre compte a été supprimé.
         </p>
       }
+      @case ('SESSION_EXPIREE') {
+        <p class="message--info" role="status" data-testid="message-session-expiree">
+          Votre session a expiré ou a été fermée. Veuillez vous reconnecter.
+        </p>
+      }
     }
 
     <form class="formulaire" [formGroup]="formulaire" (ngSubmit)="soumettre()" novalidate>
