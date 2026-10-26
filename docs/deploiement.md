@@ -153,7 +153,7 @@ $PROD logs api | grep "Admin master"
    ```sh
    $PROD ps
    ```
-7. Vérifier le site : `curl https://<domaine>/api/sante` répond `{"status":"UP"}`, `curl https://<domaine>/api/version` indique la version déployée (`app.version`, doit valoir celle de `.env`), et `http://<domaine>/` redirige (308) vers HTTPS.
+7. Vérifier le site : `curl https://<domaine>/api/sante` répond `{"status":"UP"}`, `curl https://<domaine>/api/version` indique la version déployée (`app.version`, doit valoir celle de `.env`) : la réponse est `{"app":{"version":"<VERSION de .env>"}}` et ne contient que cette version (aucune métadonnée de build), et `http://<domaine>/` redirige (308) vers HTTPS.
 8. Vérifier l'admin master : `$PROD logs api | grep "Admin master"` affiche « Admin master créé (compte <identifiant>) », puis se connecter sur `https://<domaine>/connexion` avec ses identifiants : arrivée sur l'espace d'administration.
 
 Le certificat Let's Encrypt est obtenu au premier démarrage puis renouvelé automatiquement par Caddy. En cas d'échec (DNS non propagé, port 80 ou 443 fermé), la cause figure dans `$PROD logs web` ; le site reste inaccessible en HTTPS mais `web` reste `healthy` (sa santé ne dépend pas du certificat). Les certificats sont conservés dans le volume `donnees-caddy` : ne pas le supprimer sans raison, Let's Encrypt limite le nombre d'émissions.
@@ -393,7 +393,7 @@ Avant chaque version `X.Y.Z`, une pré-version `vX.Y.Z-rc.1` est déployée et �
    $PROD pull && $PROD up -d && $PROD ps
    curl https://<domaine>/api/version
    ```
-   Le workflow construit les images avec l'argument `VERSION` égal au tag sans le « v » : `app.version` vaut `0.5.0-rc.1` (et `build.version`, lue dans le pom, vaut `0.5.0`). Le pied de page de l'application affiche aussi `0.5.0-rc.1`.
+   Le workflow construit les images avec l'argument `VERSION` égal au tag sans le « v » : `app.version` vaut `0.5.0-rc.1` (seul champ de la réponse). Le pied de page de l'application affiche aussi `0.5.0-rc.1`.
 4. **Sécurité visible.**
    - `curl -sI https://<domaine>/ | grep -i strict-transport-security` : en-tête présent ;
    - cookies `JSESSIONID` et `XSRF-TOKEN` marqués `Secure` (outils du navigateur, après connexion) ;

@@ -100,10 +100,13 @@ management:
     web:
       exposure:
         include: health,info
-  # /actuator/info : version du build (pom) et version de l'image déployée (argument de build VERSION du Dockerfile).
+  # /actuator/info (alias public /api/version) : uniquement la version deployee {"app":{"version":...}},
+  # issue de l'argument de build VERSION du Dockerfile. Aucune metadonnee de build exposee (SEC-17).
   info:
     env:
       enabled: true
+    build:
+      enabled: false
   endpoint:
     health:
       show-details: never
