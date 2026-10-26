@@ -44,7 +44,9 @@ class DeploiementProfilE2eIntegrationTest {
         Map<String, Object> environnement = (Map<String, Object>) api.get("environment");
         // 7.2 RG4 : limite de débit relevée à 6000 pour que les tests E2E parallèles ne s'auto-limitent pas
         assertThat(environnement).containsOnly(Map.entry("SPRING_PROFILES_ACTIVE", "e2e"),
-                Map.entry("BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE", 6000));
+                Map.entry("BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE", 6000),
+                // 8.4 RG15 : plafond d'échecs par adresse relevé à 100 (tests E2E parallèles issus de la même adresse)
+                Map.entry("CONNEXION_ECHECS_PAR_IP_MAX", 100));
         assertThat(lire("docker-compose.e2e.yml")).doesNotContain("BACKYARD_ENVIRONNEMENT");
         assertThat(lire("docker-compose.e2e.yml")).contains("docker-compose.prod.yml");
     }

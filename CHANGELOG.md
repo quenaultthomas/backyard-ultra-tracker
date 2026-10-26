@@ -10,6 +10,7 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 - Un bénévole désactivé ne peut plus être ajouté à une course (409 `BENEVOLE_DESACTIVE`).
 - Les listes de comptes d'administration exposent l'état `actif` de chaque compte.
 - La session des administrateurs (admin master et admins) expire après 2 h d'inactivité par défaut, celle des coureurs et bénévoles après 12 h (inchangé) ; délais glissants, réglables par `SESSION_INACTIVITE_ADMIN_SECONDES` et `SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES` et validés au démarrage (SEC-16, constat PEN-05 du pentest du 2026-10-26).
+- Plafond d'échecs de connexion par adresse IP sur une fenêtre glissante (défaut : 20 échecs par 60 s), en plus du blocage par pseudo : au-delà, la tentative est refusée avant toute vérification du mot de passe, avec la même réponse 429 `TENTATIVES_EXCESSIVES` et `Retry-After` ; une connexion réussie n'efface pas le compteur. Réglable par `CONNEXION_ECHECS_PAR_IP_MAX` (1 à 1000) et `CONNEXION_ECHECS_PAR_IP_FENETRE_SECONDES` (1 à 3600), validés au démarrage (SEC-14, constat PEN-02 du pentest du 2026-10-26).
 
 ## [0.5.0] - 2026-10-22
 

@@ -23,6 +23,7 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | SEC-11 | `/api/test/horloge` et l'horloge pilotable absents hors profil `e2e` | P1 | 4.3 |
 | SEC-12 | Un bénévole ou un coureur ne peut pas lire ni modifier les données d'un autre (accès par identifiant, IDOR) | P1 | 2.4 |
 | SEC-13 | Révocation (désactivation / réactivation) des comptes ADMIN et BENEVOLE : connexion refusée sans indice, sessions fermées, admin master, soi-même et dernier admin actif protégés | P1 | 8.1 |
+| SEC-14 | Plafond d'échecs de connexion par adresse cliente (fenêtre glissante), réponse identique au blocage par pseudo, mémoire bornée, valeurs configurables et validées au démarrage | P2 | 8.4 |
 | SEC-16 | Durée d'inactivité de session distincte par rôle (rôles privilégiés plus courts), politique unique dans le domaine, valeurs configurables et validées au démarrage | P2 | 8.2 |
 
 ## ARC : Architecture et DDD

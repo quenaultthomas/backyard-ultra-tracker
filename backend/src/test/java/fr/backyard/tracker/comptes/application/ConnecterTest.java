@@ -11,11 +11,13 @@ import fr.backyard.tracker.comptes.domaine.DonneesCompteInvalidesException;
 import fr.backyard.tracker.comptes.domaine.EncodeurMotDePasse;
 import fr.backyard.tracker.comptes.domaine.IdentifiantsInvalidesException;
 import fr.backyard.tracker.comptes.domaine.MotDePasse;
+import fr.backyard.tracker.comptes.domaine.PlafondEchecsParAdresse;
 import fr.backyard.tracker.comptes.domaine.PolitiqueBlocage;
 import fr.backyard.tracker.comptes.domaine.Pseudo;
 import fr.backyard.tracker.comptes.domaine.RegistreTentativesConnexion;
 import fr.backyard.tracker.comptes.domaine.Role;
 import fr.backyard.tracker.comptes.domaine.TentativesConnexion;
+import fr.backyard.tracker.comptes.infrastructure.RegistreEchecsParAdresseEnMemoire;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -30,6 +32,9 @@ import org.junit.jupiter.api.Test;
 
 class ConnecterTest {
 
+    /** Incrément 8.4 : adresse cliente fixe, nouvelle dépendance de Connecter (adaptation mécanique). */
+    private static final String ADRESSE_FIXE = "203.0.113.1";
+
     private static final Instant MAINTENANT = Instant.parse("2026-10-02T10:00:00Z");
     private static final String MOT_DE_PASSE = "un-mot-de-passe-12";
     private static final String PREFIXE_EMPREINTE = "empreinte:";
@@ -42,7 +47,8 @@ class ConnecterTest {
     /** Constructeur de 1.3 : registre vierge à chaque test et politique par défaut (seuil jamais atteint ici). */
     private Connecter connecter(DepotComptes depotComptes) {
         return new Connecter(depotComptes, encodeur, new RegistreEnMemoire(), PolitiqueBlocage.parDefaut(),
-                horlogeFixe);
+                new RegistreEchecsParAdresseEnMemoire(), PlafondEchecsParAdresse.parDefaut(),
+                () -> Optional.of(ADRESSE_FIXE), horlogeFixe);
     }
 
     private Compte alice() {

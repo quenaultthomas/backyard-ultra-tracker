@@ -132,7 +132,9 @@ class ReleaseDepotIntegrationTest {
                 "BASE_MEMOIRE_MAX", "WEB_MEMOIRE_MAX", "ADMIN_MASTER_PSEUDO", "ADMIN_MASTER_MOT_DE_PASSE", "BASE_URL",
                 "DEMO_FORCER",
                 // Ajoutées après la 0.5.0 (8.2 RG13) : décrites dans [Unreleased] du CHANGELOG, pas dans la 0.5.0.
-                "SESSION_INACTIVITE_ADMIN_SECONDES", "SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES");
+                "SESSION_INACTIVITE_ADMIN_SECONDES", "SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES",
+                // Ajoutées après la 0.5.0 (8.4 RG15) : décrites dans [Unreleased] du CHANGELOG, pas dans la 0.5.0.
+                "CONNEXION_ECHECS_PAR_IP_MAX", "CONNEXION_ECHECS_PAR_IP_FENETRE_SECONDES");
         Matcher variables = Pattern.compile("(?m)^#?\\s*([A-Z][A-Z0-9_]+)=").matcher(lire(".env.example"));
         List<String> manquantes = new ArrayList<>();
         while (variables.find()) {

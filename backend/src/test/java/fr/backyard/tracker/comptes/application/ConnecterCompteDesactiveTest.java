@@ -9,11 +9,13 @@ import fr.backyard.tracker.comptes.domaine.DepotComptes;
 import fr.backyard.tracker.comptes.domaine.EncodeurMotDePasse;
 import fr.backyard.tracker.comptes.domaine.IdentifiantsInvalidesException;
 import fr.backyard.tracker.comptes.domaine.MotDePasse;
+import fr.backyard.tracker.comptes.domaine.PlafondEchecsParAdresse;
 import fr.backyard.tracker.comptes.domaine.PolitiqueBlocage;
 import fr.backyard.tracker.comptes.domaine.Pseudo;
 import fr.backyard.tracker.comptes.domaine.RegistreTentativesConnexion;
 import fr.backyard.tracker.comptes.domaine.Role;
 import fr.backyard.tracker.comptes.domaine.TentativesConnexion;
+import fr.backyard.tracker.comptes.infrastructure.RegistreEchecsParAdresseEnMemoire;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -29,6 +31,9 @@ import org.junit.jupiter.api.Test;
 /** Incrément 8.1, CA5 : connexion d'un Compte désactivé, indiscernable d'un échec ordinaire (RG1, RG9). */
 class ConnecterCompteDesactiveTest {
 
+    /** Incrément 8.4 : adresse cliente fixe, nouvelle dépendance de Connecter (adaptation mécanique). */
+    private static final String ADRESSE_FIXE = "203.0.113.1";
+
     private static final Instant T = Instant.parse("2026-10-26T10:00:00Z");
     private static final String MOT_DE_PASSE = "mot-de-passe-benevole-1";
     private static final String PREFIXE_EMPREINTE = "empreinte:";
@@ -40,7 +45,9 @@ class ConnecterCompteDesactiveTest {
     private final DepotComptesEnMemoire depot = new DepotComptesEnMemoire();
     private final EncodeurEspion encodeur = new EncodeurEspion();
     private final RegistreEnMemoire registre = new RegistreEnMemoire();
-    private final Connecter connecter = new Connecter(depot, encodeur, registre, PolitiqueBlocage.parDefaut(), horloge);
+    private final Connecter connecter = new Connecter(depot, encodeur, registre, PolitiqueBlocage.parDefaut(),
+                new RegistreEchecsParAdresseEnMemoire(), PlafondEchecsParAdresse.parDefaut(),
+                () -> Optional.of(ADRESSE_FIXE), horloge);
 
     private Compte leo(boolean actif) {
         Compte leo = Compte.reconstituer(ID_LEO, new Pseudo("Léo"), EMPREINTE_LEO, Role.BENEVOLE, T, actif);

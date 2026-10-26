@@ -36,6 +36,10 @@ services:
       # Limitation des tentatives de connexion (entiers >= 1, sinon api ne demarre pas).
       CONNEXION_ECHECS_MAX: ${CONNEXION_ECHECS_MAX:-5}
       CONNEXION_BLOCAGE_SECONDES: ${CONNEXION_BLOCAGE_SECONDES:-900}
+      # Plafond d'echecs de connexion par adresse cliente, fenetre glissante (SEC-14) : echecs max (1 a 1000) par
+      # fenetre en secondes (1 a 3600) ; au-dela, 429 identique au blocage par pseudo. Valeur invalide : api ne demarre pas.
+      CONNEXION_ECHECS_PAR_IP_MAX: ${CONNEXION_ECHECS_PAR_IP_MAX:-20}
+      CONNEXION_ECHECS_PAR_IP_FENETRE_SECONDES: ${CONNEXION_ECHECS_PAR_IP_FENETRE_SECONDES:-60}
       # Delai d'inactivite de session par role, en secondes (1 a 604800, administrateurs <= autres).
       SESSION_INACTIVITE_ADMIN_SECONDES: ${SESSION_INACTIVITE_ADMIN_SECONDES:-7200}
       SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES: ${SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES:-43200}
@@ -47,7 +51,8 @@ services:
       COOKIES_SECURE: ${COOKIES_SECURE:-false}
       # Limite de debit des routes publiques (GET /api/courses/**), par IP et par minute ; 0 = aucune limite.
       BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE: ${BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE:-1200}
-      # Seul pair dont le X-Forwarded-For compte (limite de debit, plafond de hachage par IP) : le service web (Caddy).
+      # Seul pair dont le X-Forwarded-For compte (limite de debit, plafonds de hachage et d'echecs de connexion par IP) :
+      # le service web (Caddy).
       # Valeur fixe.
       BACKYARD_PROXY_DE_CONFIANCE: web
       # Admin master cree au premier demarrage (facultatives en dev, obligatoires en production).

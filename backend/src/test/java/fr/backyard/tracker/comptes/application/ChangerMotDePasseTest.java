@@ -16,12 +16,14 @@ import fr.backyard.tracker.comptes.domaine.InvalidationAutresSessions;
 import fr.backyard.tracker.comptes.domaine.MotDePasse;
 import fr.backyard.tracker.comptes.domaine.MotDePasseActuelIncorrectException;
 import fr.backyard.tracker.comptes.domaine.NouveauMotDePasseIdentiqueException;
+import fr.backyard.tracker.comptes.domaine.PlafondEchecsParAdresse;
 import fr.backyard.tracker.comptes.domaine.PolitiqueBlocage;
 import fr.backyard.tracker.comptes.domaine.Pseudo;
 import fr.backyard.tracker.comptes.domaine.RegistreTentativesConnexion;
 import fr.backyard.tracker.comptes.domaine.Role;
 import fr.backyard.tracker.comptes.domaine.TentativesConnexion;
 import fr.backyard.tracker.comptes.domaine.ViolationValidation;
+import fr.backyard.tracker.comptes.infrastructure.RegistreEchecsParAdresseEnMemoire;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -41,6 +43,9 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 /** Changement de son propre mot de passe (incrément 1.6b, CA1 à CA7). */
 class ChangerMotDePasseTest {
+
+    /** Incrément 8.4 : adresse cliente fixe, nouvelle dépendance de Connecter (adaptation mécanique). */
+    private static final String ADRESSE_FIXE = "203.0.113.1";
 
     private static final Instant T = Instant.parse("2026-10-02T10:00:00Z");
     private static final String ANCIEN = "un-mot-de-passe-12";
@@ -452,7 +457,9 @@ class ChangerMotDePasseTest {
     @DisplayName("CA5 - 3 échecs de connexion (ALICE) puis 2 échecs de changement bloquent les deux opérations")
     void doit_additionner_les_echecs_de_connexion_et_de_changement_dans_le_meme_registre() {
         Compte alice = alice();
-        Connecter connecter = new Connecter(depot, encodeur, registre, PolitiqueBlocage.parDefaut(), horloge);
+        Connecter connecter = new Connecter(depot, encodeur, registre, PolitiqueBlocage.parDefaut(),
+                new RegistreEchecsParAdresseEnMemoire(), PlafondEchecsParAdresse.parDefaut(),
+                () -> Optional.of(ADRESSE_FIXE), horloge);
         for (int i = 0; i < 3; i++) {
             assertThatThrownBy(() -> connecter.executer("ALICE", SECRET))
                     .isInstanceOf(IdentifiantsInvalidesException.class);
@@ -472,7 +479,9 @@ class ChangerMotDePasseTest {
     @DisplayName("CA5 - 2 échecs de changement puis 3 échecs de connexion bloquent aussi (ordre inverse)")
     void doit_bloquer_aussi_quand_les_echecs_de_changement_precedent_ceux_de_connexion() {
         Compte alice = alice();
-        Connecter connecter = new Connecter(depot, encodeur, registre, PolitiqueBlocage.parDefaut(), horloge);
+        Connecter connecter = new Connecter(depot, encodeur, registre, PolitiqueBlocage.parDefaut(),
+                new RegistreEchecsParAdresseEnMemoire(), PlafondEchecsParAdresse.parDefaut(),
+                () -> Optional.of(ADRESSE_FIXE), horloge);
         for (int i = 0; i < 2; i++) {
             assertThatThrownBy(() -> changerPour(alice, SECRET, NOUVEAU))
                     .isInstanceOf(MotDePasseActuelIncorrectException.class);
