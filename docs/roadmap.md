@@ -231,6 +231,19 @@ Issu de `docs/audits/audit-2026-10-21-pre-release.md`. Objectif : corriger ce qu
 - **Livré** : branche de release avec versions du pom et des `package.json`, section 0.5.0 du `CHANGELOG.md` et `VERSION` d'exemple à jour ; mise à jour de Vite et d'`@angular/build` pour les alertes Dependabot (outillage de build uniquement) ; sauvegarde `pg_dump` planifiée documentée (et utilisable) pour le jour de course ; tag `0.5.0-rc.1` pour une répétition générale sur le VPS, puis `0.5.0`.
 - **Tu testes** : déployer le tag `-rc.1` sur le VPS en suivant `docs/deploiement.md`, y restaurer une sauvegarde, puis dérouler une mini-course de bout en bout.
 
+## Jalon 8 : Durcissement issu du pentest (audit-2026-10-26-pentest)
+
+### 8.1 Désactivation et réactivation des comptes ADMIN et BENEVOLE (PEN-01, SEC-13)
+- **Livré** : état `actif` sur le Compte (nouveau changeset) ; désactivation et réactivation d'un admin (admin master) ou d'un bénévole (admin, admin master) ; refus pour l'admin master, soi-même et le dernier admin actif ; bénévole désactivé désaffecté des courses `EN_PREPARATION` (passages conservés) ; sessions du compte fermées ; compte désactivé non connectable (réponse identique à des identifiants invalides) ; boutons dans l'écran de gestion des comptes.
+- **Tu testes** : désactiver un bénévole puis tenter de se connecter avec, le réactiver ; essayer de désactiver l'admin master, ton propre compte, le dernier admin.
+
+### 8.2 Durée et inactivité de session des rôles privilégiés (PEN-05)
+### 8.3 Exposition de /api/version (PEN-03)
+### 8.4 Plafond d'échecs de connexion par IP (PEN-02, SEC-14)
+### 8.5 Création de comptes coureur limitée par IP (PEN-04, SEC-15)
+
+---
+
 ---
 
 ## Décisions prises

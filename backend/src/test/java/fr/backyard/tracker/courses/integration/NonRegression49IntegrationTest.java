@@ -42,12 +42,13 @@ class NonRegression49IntegrationTest {
     }
 
     @Test
-    @DisplayName("CA10 : aucun changeset Liquibase ajouté en 4.9, le dernier reste 0010-abandon-inscription")
+    @DisplayName("CA10 : aucun changeset Liquibase ajouté en 4.9 : 0010-abandon-inscription n'est suivi que de 0011-compte-actif (8.1)")
     void ca10_dernier_changeset_inchange() throws IOException {
         try (Stream<Path> fichiers = Files.list(CHANGESETS)) {
             List<String> noms = fichiers.map(f -> f.getFileName().toString()).sorted().toList();
 
-            assertThat(noms).last().asString().startsWith("0010-abandon-inscription");
+            assertThat(noms.get(noms.size() - 2)).startsWith("0010-abandon-inscription");
+            assertThat(noms.get(noms.size() - 1)).startsWith("0011-compte-actif");
         }
     }
 }

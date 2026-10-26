@@ -1165,7 +1165,7 @@ class ReintegrationIntegrationTest {
     @DisplayName("CA12 : databasechangelog se termine toujours par 0010 (aucune migration ajoutée par 4.12)")
     void ca12_aucune_migration() {
         assertThat(decor.jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
-                .endsWith("0009-passage", "0010-abandon-inscription");
+                .endsWith("0009-passage", "0010-abandon-inscription", "0011-compte-actif");
     }
 
     @Test

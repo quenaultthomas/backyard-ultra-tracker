@@ -18,7 +18,7 @@ class CompteAnonymisationTest {
     private static final UUID ID_BRUNO = UUID.fromString("ffeeddcc-bbaa-9988-7766-554433221100");
 
     private static Compte compte(UUID id, String pseudo, Role role) {
-        return Compte.reconstituer(id, new Pseudo(pseudo), "empreinte:secrete", role, CREE_LE);
+        return Compte.reconstituer(id, new Pseudo(pseudo), "empreinte:secrete", role, CREE_LE, true);
     }
 
     private static Compte aliceCoureuse() {

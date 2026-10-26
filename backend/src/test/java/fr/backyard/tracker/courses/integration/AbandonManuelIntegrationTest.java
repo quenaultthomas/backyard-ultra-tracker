@@ -781,7 +781,7 @@ class AbandonManuelIntegrationTest {
     void ca11_non_regression() throws Exception {
         String x = decor.courseXDemarree();
         assertThat(decor.jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
-                .endsWith("0009-passage", "0010-abandon-inscription");
+                .endsWith("0009-passage", "0010-abandon-inscription", "0011-compte-actif");
         decor.demarrerJournal();
 
         assertThat(decor.pilotage(decor.patron, x).statusCode()).isEqualTo(200);

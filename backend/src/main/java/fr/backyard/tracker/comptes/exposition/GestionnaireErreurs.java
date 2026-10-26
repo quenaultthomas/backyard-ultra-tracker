@@ -1,7 +1,11 @@
 package fr.backyard.tracker.comptes.exposition;
 
+import fr.backyard.tracker.comptes.domaine.AdminMasterNonDesactivableException;
+import fr.backyard.tracker.comptes.domaine.AutoDesactivationInterditeException;
 import fr.backyard.tracker.comptes.domaine.CompteIntrouvableOuInutilisableException;
 import fr.backyard.tracker.comptes.domaine.CompteNonConnectableException;
+import fr.backyard.tracker.comptes.domaine.CompteNonGerableException;
+import fr.backyard.tracker.comptes.domaine.DernierAdminActifException;
 import fr.backyard.tracker.comptes.domaine.ConnexionBloqueeException;
 import fr.backyard.tracker.comptes.domaine.DonneesCompteInvalidesException;
 import fr.backyard.tracker.comptes.domaine.HachageSatureException;
@@ -42,6 +46,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
 
     private static final String TITRE_REQUETE_INVALIDE = "Requête invalide";
+    private static final String TITRE_CONFLIT = "Conflit";
     /** Explicite : Spring 7 omet le type par défaut, le contrat d'API l'exige. */
     private static final URI TYPE_GENERIQUE = URI.create("about:blank");
     private static final Logger JOURNAL = LoggerFactory.getLogger(GestionnaireErreurs.class);
@@ -64,7 +69,7 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(PseudoDejaUtiliseException.class)
     ProblemDetail pseudoDejaUtilise() {
-        return probleme(HttpStatus.CONFLICT, "Conflit", "Ce pseudo est déjà utilisé.", "PSEUDO_DEJA_UTILISE");
+        return probleme(HttpStatus.CONFLICT, TITRE_CONFLIT, "Ce pseudo est déjà utilisé.", "PSEUDO_DEJA_UTILISE");
     }
 
     /** Réponse identique quelle que soit la cause ; journal sans pseudo ni mot de passe. */
@@ -127,6 +132,30 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
     ProblemDetail suppressionCompteInterdite() {
         return probleme(HttpStatus.FORBIDDEN, "Accès refusé", "Vous n'avez pas les droits nécessaires.",
                 "ACCES_REFUSE");
+    }
+
+    /** Identifiant inconnu, mal formé ou d'un rôle non géré par la route : même réponse, sans indice (8.1 RG2). */
+    @ExceptionHandler(CompteNonGerableException.class)
+    ProblemDetail compteNonGerable() {
+        return probleme(HttpStatus.NOT_FOUND, "Introuvable", "Ce compte est introuvable.", "COMPTE_INTROUVABLE");
+    }
+
+    @ExceptionHandler(AdminMasterNonDesactivableException.class)
+    ProblemDetail adminMasterNonDesactivable() {
+        return probleme(HttpStatus.CONFLICT, TITRE_CONFLIT, "L'administrateur principal ne peut pas être désactivé.",
+                "ADMIN_MASTER_NON_DESACTIVABLE");
+    }
+
+    @ExceptionHandler(AutoDesactivationInterditeException.class)
+    ProblemDetail autoDesactivationInterdite() {
+        return probleme(HttpStatus.CONFLICT, TITRE_CONFLIT, "Vous ne pouvez pas désactiver votre propre compte.",
+                "AUTO_DESACTIVATION_INTERDITE");
+    }
+
+    @ExceptionHandler(DernierAdminActifException.class)
+    ProblemDetail dernierAdminActif() {
+        return probleme(HttpStatus.CONFLICT, TITRE_CONFLIT, "Impossible de désactiver le dernier administrateur actif.",
+                "DERNIER_ADMIN_ACTIF");
     }
 
     @Override

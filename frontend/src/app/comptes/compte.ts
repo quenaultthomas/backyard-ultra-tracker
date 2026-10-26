@@ -28,6 +28,8 @@ export interface CompteReponse {
   role: Role;
   /** Instant ISO-8601 UTC. */
   creeLe: string;
+  /** Faux pour un Compte désactivé (listes d'administration) ; toujours vrai ailleurs. */
+  actif: boolean;
 }
 
 export type Role = 'ADMIN_MASTER' | 'ADMIN' | 'BENEVOLE' | 'COUREUR';

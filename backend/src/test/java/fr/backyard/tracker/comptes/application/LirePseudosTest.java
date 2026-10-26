@@ -61,7 +61,7 @@ class LirePseudosTest {
     }
 
     private static Compte coureur(String pseudo) {
-        return Compte.reconstituer(UUID.randomUUID(), new Pseudo(pseudo), "empreinte", Role.COUREUR, CREE_LE);
+        return Compte.reconstituer(UUID.randomUUID(), new Pseudo(pseudo), "empreinte", Role.COUREUR, CREE_LE, true);
     }
 
     private static final class DepotComptesEnMemoire implements DepotComptes {

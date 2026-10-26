@@ -25,7 +25,14 @@ import { ErreursFormulaireCompte, interpreterErreurCompte } from '../../comptes/
 import { CsrfService } from '../../partage/csrf.service';
 import { AdministrationApiService } from '../administration-api.service';
 import { RefusAccesService } from '../../comptes/refus-acces.service';
+import { ActivationCompte, ResultatActivation } from './activation-compte/activation-compte';
 import { ComptesGeres } from './comptes-geres';
+
+/** Pastille de l'état d'un Compte (affichage seulement, l'état vient de l'API). */
+const PASTILLES_ETAT = {
+  actif: 'pastille-statut pastille-statut--en-course',
+  desactive: 'pastille-statut pastille-statut--en-preparation',
+} as const;
 
 const ERREURS_SPECIFIQUES: Record<string, ErreursFormulaireCompte> = {
   PSEUDO_DEJA_UTILISE: { pseudo: 'Ce pseudo est déjà utilisé.' },
@@ -37,7 +44,7 @@ const ERREURS_SPECIFIQUES: Record<string, ErreursFormulaireCompte> = {
  */
 @Component({
   selector: 'app-gestion-comptes',
-  imports: [ReactiveFormsModule, RouterLink, DatePipe],
+  imports: [ReactiveFormsModule, RouterLink, DatePipe, ActivationCompte],
   templateUrl: './gestion-comptes.html',
   styleUrls: [
     '../../partage/page-carte.css',
@@ -63,6 +70,8 @@ export class GestionComptes implements OnInit {
     { validators: confirmationIdentique },
   );
 
+  protected readonly pastillesEtat = PASTILLES_ETAT;
+
   /** `null` tant que la liste n'est pas chargée. */
   protected readonly comptes = signal<CompteReponse[] | null>(null);
   protected readonly erreurChargement = signal(false);
@@ -70,6 +79,9 @@ export class GestionComptes implements OnInit {
   protected readonly soumis = signal(false);
   protected readonly erreursServeur = signal<ErreursFormulaireCompte>({});
   protected readonly pseudoCree = signal<string | null>(null);
+  /** Identifiant du Compte dont la confirmation est ouverte (une seule à la fois). */
+  protected readonly confirmationOuverte = signal<string | null>(null);
+  protected readonly resultatAction = signal<ResultatActivation | null>(null);
 
   ngOnInit(): void {
     this.demanderJeton();
@@ -116,6 +128,21 @@ export class GestionComptes implements OnInit {
 
   protected erreurConfirmation(): string | undefined {
     return this.soumis() ? erreurClientConfirmation(this.formulaire) : undefined;
+  }
+
+  /** Ouvre la confirmation d'une ligne (ferme la précédente) et efface les messages d'action. */
+  protected ouvrirConfirmation(id: string): void {
+    this.resultatAction.set(null);
+    this.confirmationOuverte.set(id);
+  }
+
+  /** Confirmation fermée, message affiché, liste relue selon l'issue. */
+  protected afficherResultat(resultat: ResultatActivation): void {
+    this.confirmationOuverte.set(null);
+    this.resultatAction.set(resultat);
+    if (resultat.recharger) {
+      this.chargerComptes();
+    }
   }
 
   private chargerComptes(): void {

@@ -3,6 +3,13 @@
 Toutes les évolutions notables de Backyard Ultra Tracker sont consignées ici.
 Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet suit le [versionnement sémantique](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Sécurité
+- Désactivation et réactivation des comptes administrateur (par l'admin master) et bénévole (par un admin ou l'admin master) : un compte désactivé ne peut plus se connecter (réponse identique à des identifiants invalides), toutes ses sessions sont fermées, et un bénévole désactivé est retiré des courses qui n'ont pas démarré ; ses passages et ses affectations aux courses démarrées sont conservés. L'admin master, son propre compte et le dernier administrateur actif ne peuvent pas être désactivés (SEC-13, constat PEN-01 du pentest du 2026-10-26).
+- Un bénévole désactivé ne peut plus être ajouté à une course (409 `BENEVOLE_DESACTIVE`).
+- Les listes de comptes d'administration exposent l'état `actif` de chaque compte.
+
 ## [0.5.0] - 2026-10-22
 
 Version du jour de course : scan hors ligne, application installable, écran de suivi public projetable et accueil public, avec une décision de Boucle tolérante aux scans tardifs et un suivi qui tient la charge des spectateurs.

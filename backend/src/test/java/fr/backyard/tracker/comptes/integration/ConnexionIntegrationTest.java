@@ -123,7 +123,7 @@ class ConnexionIntegrationTest {
         assertThat(reponse.statusCode()).isEqualTo(200);
         assertThat(reponse.headers().firstValue("content-type")).hasValueSatisfying(c -> assertThat(c).contains("json"));
         JsonNode corps = json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe");
+        assertThat(corps.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe", "actif");
         assertThat(UUID.fromString(corps.get("id").asString())).isEqualTo(id);
         assertThat(corps.get("pseudo").asString()).isEqualTo("Alice");
         assertThat(corps.get("role").asString()).isEqualTo("COUREUR");
@@ -483,7 +483,7 @@ class ConnexionIntegrationTest {
 
         assertThat(reponse.statusCode()).isEqualTo(200);
         JsonNode corps = json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe");
+        assertThat(corps.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe", "actif");
         assertThat(corps.get("id").asString()).isEqualTo(id.toString());
         assertThat(corps.get("pseudo").asString()).isEqualTo("Alice");
         assertThat(corps.get("role").asString()).isEqualTo("COUREUR");

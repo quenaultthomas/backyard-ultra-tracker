@@ -1,7 +1,9 @@
 package fr.backyard.tracker.comptes.exposition;
 
 import fr.backyard.tracker.comptes.application.CreerBenevole;
+import fr.backyard.tracker.comptes.application.DesactiverBenevole;
 import fr.backyard.tracker.comptes.application.ListerBenevoles;
+import fr.backyard.tracker.comptes.application.ReactiverBenevole;
 import fr.backyard.tracker.comptes.domaine.Compte;
 import java.util.List;
 import java.util.UUID;
@@ -11,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,10 +32,15 @@ public class BenevolesController {
 
     private final CreerBenevole creerBenevole;
     private final ListerBenevoles listerBenevoles;
+    private final DesactiverBenevole desactiverBenevole;
+    private final ReactiverBenevole reactiverBenevole;
 
-    public BenevolesController(CreerBenevole creerBenevole, ListerBenevoles listerBenevoles) {
+    public BenevolesController(CreerBenevole creerBenevole, ListerBenevoles listerBenevoles, DesactiverBenevole desactiverBenevole,
+                           ReactiverBenevole reactiverBenevole) {
         this.creerBenevole = creerBenevole;
         this.listerBenevoles = listerBenevoles;
+        this.desactiverBenevole = desactiverBenevole;
+        this.reactiverBenevole = reactiverBenevole;
     }
 
     /** Principal : identifiant du compte de l'admin connecté (voir {@link SessionConnexion}). */
@@ -49,5 +57,18 @@ public class BenevolesController {
     @GetMapping
     public List<CompteReponse> listerBenevoles() {
         return listerBenevoles.executer().stream().map(CompteReponse::depuis).toList();
+    }
+
+    /** Sans corps ; le journal du changement est écrit par le cas d'usage (identifiants seuls). */
+    @PostMapping("/{id}/desactivation")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void desactiverBenevole(@PathVariable("id") String id, @AuthenticationPrincipal UUID idAppelant) {
+        desactiverBenevole.executer(idAppelant, IdentifiantCompte.lire(id));
+    }
+
+    @PostMapping("/{id}/reactivation")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void reactiverBenevole(@PathVariable("id") String id, @AuthenticationPrincipal UUID idAppelant) {
+        reactiverBenevole.executer(idAppelant, IdentifiantCompte.lire(id));
     }
 }

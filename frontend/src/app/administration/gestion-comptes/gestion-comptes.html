@@ -9,6 +9,18 @@
 
     <section class="formulaire" [attr.aria-labelledby]="'titre-liste-' + pp">
       <h2 [id]="'titre-liste-' + pp" class="sous-titre">{{ geres.titreListe }}</h2>
+      @if (resultatAction(); as resultat) {
+        @if (resultat.succes; as message) {
+          <p class="message--succes" role="status" [attr.data-testid]="p + '-message-action'">
+            {{ message }}
+          </p>
+        }
+        @if (resultat.erreur; as message) {
+          <p class="message--erreur" role="alert" [attr.data-testid]="p + '-erreur-action'">
+            {{ message }}
+          </p>
+        }
+      }
       @if (erreurChargement()) {
         <p class="message--erreur" role="alert" [attr.data-testid]="pp + '-erreur'">
           {{ geres.erreurChargement }}
@@ -25,7 +37,12 @@
         } @else {
           <ul class="grille-cartes" [attr.data-testid]="'liste-' + pp">
             @for (compte of liste; track compte.id) {
-              <li class="carte-liste compte" [attr.data-testid]="'ligne-' + p">
+              @let etat = compte.actif ? 'actif' : 'desactive';
+              <li
+                class="carte-liste compte"
+                [attr.data-etat]="etat"
+                [attr.data-testid]="'ligne-' + p"
+              >
                 <span class="ligne__pseudo">{{ compte.pseudo }}</span>
                 <span class="ligne__date">
                   Créé le
@@ -33,6 +50,21 @@
                     compte.creeLe | date: "dd/MM/yyyy 'à' HH:mm"
                   }}</time>
                 </span>
+                <span
+                  [class]="pastillesEtat[etat]"
+                  [attr.data-etat]="etat"
+                  [attr.data-testid]="p + '-etat'"
+                >
+                  {{ compte.actif ? 'Actif' : 'Désactivé' }}
+                </span>
+                <app-activation-compte
+                  [compte]="compte"
+                  [comptesGeres]="geres"
+                  [ouverte]="confirmationOuverte() === compte.id"
+                  (ouvrir)="ouvrirConfirmation(compte.id)"
+                  (fermer)="confirmationOuverte.set(null)"
+                  (termine)="afficherResultat($event)"
+                />
               </li>
             }
           </ul>

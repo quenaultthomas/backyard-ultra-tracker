@@ -68,7 +68,7 @@ class SupprimerCompteCoureurTest {
     }
 
     private Compte compte(String pseudo, Role role, String empreinte) {
-        Compte compte = Compte.reconstituer(UUID.randomUUID(), new Pseudo(pseudo), empreinte, role, T.minusSeconds(3600));
+        Compte compte = Compte.reconstituer(UUID.randomUUID(), new Pseudo(pseudo), empreinte, role, T.minusSeconds(3600), true);
         depot.comptes.put(compte.id(), compte);
         return compte;
     }

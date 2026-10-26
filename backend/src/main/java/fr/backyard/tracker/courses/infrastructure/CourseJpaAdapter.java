@@ -54,12 +54,28 @@ public class CourseJpaAdapter implements DepotCourses {
         return Optional.ofNullable(entityManager.find(CourseJpaEntity.class, id)).map(CourseJpaAdapter::versDomaine);
     }
 
-    /** Verrou exclusif sur la ligne course jusqu'à la fin de la transaction, posé avant de lire les affectations. */
+    /**
+     * Verrou exclusif sur la ligne course jusqu'à la fin de la transaction, posé avant de lire les affectations. La
+     * Course est toujours relue en base sous ce verrou : une instance déjà chargée dans la transaction (lecture
+     * préalable, par exemple {@link #parBenevole}) est d'abord détachée, sinon Hibernate se contenterait de verrouiller
+     * cette instance, avec un état périmé (statut changé entre-temps) ou une erreur si la ligne a été supprimée. Sans
+     * perte : toute modification passe par {@link #enregistrer}, qui écrit immédiatement. Une Course supprimée
+     * entre-temps donne une absence.
+     */
     @Override
     @Transactional
     public Optional<Course> parIdPourModification(UUID id) {
+        oublierInstanceChargee(id);
         return Optional.ofNullable(entityManager.find(CourseJpaEntity.class, id, LockModeType.PESSIMISTIC_WRITE))
                 .map(CourseJpaAdapter::versDomaine);
+    }
+
+    /**
+     * {@code getReference} rend l'instance déjà gérée, ou un mandataire non initialisé (aucune requête) ; les détacher
+     * vide le contexte de persistance pour cet identifiant.
+     */
+    private void oublierInstanceChargee(UUID id) {
+        entityManager.detach(entityManager.getReference(CourseJpaEntity.class, id));
     }
 
     /**

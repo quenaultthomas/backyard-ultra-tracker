@@ -23,7 +23,7 @@ class CompteConnexionTest {
     @DisplayName("CA4 - un compte sans empreinte (anonymisé) ne peut pas se connecter")
     void doit_ne_pas_pouvoir_se_connecter_un_compte_sans_empreinte() {
         Compte compte = Compte.reconstituer(
-                UUID.randomUUID(), new Pseudo("Anonyme1"), null, Role.COUREUR, CREE_LE);
+                UUID.randomUUID(), new Pseudo("Anonyme1"), null, Role.COUREUR, CREE_LE, true);
 
         assertThat(compte.peutSeConnecter()).isFalse();
     }

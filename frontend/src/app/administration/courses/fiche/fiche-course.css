@@ -80,3 +80,14 @@ app-inscrits-course {
   font-weight: var(--poids-normal);
   overflow-wrap: anywhere;
 }
+
+/* « (désactivé) » : bénévole désactivé encore affecté (encre douce sur sable, texte porteur). */
+.badge-desactive {
+  padding: 0 var(--espace-2);
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-sable);
+  color: var(--couleur-encre-douce);
+  font-size: var(--taille-petite);
+  font-weight: var(--poids-gras);
+  white-space: nowrap;
+}

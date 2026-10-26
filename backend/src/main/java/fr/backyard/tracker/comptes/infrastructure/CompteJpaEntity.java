@@ -34,25 +34,30 @@ public class CompteJpaEntity {
     @Column(name = "cree_le", nullable = false)
     private Instant creeLe;
 
+    @Column(name = "actif", nullable = false)
+    private boolean actif;
+
     protected CompteJpaEntity() {
         // requis par JPA
     }
 
     CompteJpaEntity(UUID id, String pseudo, String pseudoNormalise, String empreinteMotDePasse, Role role,
-                    Instant creeLe) {
+                    Instant creeLe, boolean actif) {
         this.id = id;
         this.pseudo = pseudo;
         this.pseudoNormalise = pseudoNormalise;
         this.empreinteMotDePasse = empreinteMotDePasse;
         this.role = role;
         this.creeLe = creeLe;
+        this.actif = actif;
     }
 
-    /** Données modifiables d'un compte existant (changement de mot de passe, anonymisation). */
-    void reporter(String nouveauPseudo, String nouveauPseudoNormalise, String nouvelleEmpreinte) {
+    /** Données modifiables d'un compte existant (changement de mot de passe, anonymisation, désactivation). */
+    void reporter(String nouveauPseudo, String nouveauPseudoNormalise, String nouvelleEmpreinte, boolean nouvelActif) {
         this.pseudo = nouveauPseudo;
         this.pseudoNormalise = nouveauPseudoNormalise;
         this.empreinteMotDePasse = nouvelleEmpreinte;
+        this.actif = nouvelActif;
     }
 
     UUID id() {
@@ -73,5 +78,9 @@ public class CompteJpaEntity {
 
     Instant creeLe() {
         return creeLe;
+    }
+
+    boolean actif() {
+        return actif;
     }
 }

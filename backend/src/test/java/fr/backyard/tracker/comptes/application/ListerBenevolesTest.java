@@ -68,7 +68,7 @@ class ListerBenevolesTest {
     }
 
     private static Compte compte(String pseudo, Role role, Instant creeLe) {
-        return Compte.reconstituer(UUID.randomUUID(), new Pseudo(pseudo), "empreinte", role, creeLe);
+        return Compte.reconstituer(UUID.randomUUID(), new Pseudo(pseudo), "empreinte", role, creeLe, true);
     }
 
     /** Dépôt en mémoire ; la liste par rôle est rendue dans l'ordre inverse d'insertion, sans tri. */

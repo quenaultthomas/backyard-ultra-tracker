@@ -66,7 +66,7 @@ class ChangerMotDePasseTest {
 
     private Compte alice(Role role) {
         Compte alice = Compte.reconstituer(
-                UUID.randomUUID(), new Pseudo("Alice"), empreinteDe(ANCIEN), role, T.minusSeconds(3600));
+                UUID.randomUUID(), new Pseudo("Alice"), empreinteDe(ANCIEN), role, T.minusSeconds(3600), true);
         depot.comptes.put(alice.id(), alice);
         encodeur.reinitialiser();
         return alice;
@@ -78,7 +78,7 @@ class ChangerMotDePasseTest {
 
     private Compte compteSansEmpreinte() {
         Compte anonyme = Compte.reconstituer(
-                UUID.randomUUID(), new Pseudo("Alice"), null, Role.COUREUR, T.minusSeconds(3600));
+                UUID.randomUUID(), new Pseudo("Alice"), null, Role.COUREUR, T.minusSeconds(3600), true);
         depot.comptes.put(anonyme.id(), anonyme);
         encodeur.reinitialiser();
         return anonyme;
@@ -505,7 +505,7 @@ class ChangerMotDePasseTest {
         alice();
         echecsDejaEnregistres(5);
         Compte leo = Compte.reconstituer(
-                UUID.randomUUID(), new Pseudo("Léo"), empreinteDe(ANCIEN), Role.BENEVOLE, T.minusSeconds(60));
+                UUID.randomUUID(), new Pseudo("Léo"), empreinteDe(ANCIEN), Role.BENEVOLE, T.minusSeconds(60), true);
         depot.comptes.put(leo.id(), leo);
 
         changerPour(leo, ANCIEN, NOUVEAU);
@@ -557,7 +557,7 @@ class ChangerMotDePasseTest {
     void doit_ne_jamais_exposer_un_mot_de_passe_dans_les_exceptions() {
         Compte alice = alice();
         Compte supprime = Compte.reconstituer(
-                UUID.randomUUID(), new Pseudo("Zoe"), empreinteDe(ANCIEN), Role.COUREUR, T);
+                UUID.randomUUID(), new Pseudo("Zoe"), empreinteDe(ANCIEN), Role.COUREUR, T, true);
         Map<String, Throwable> echecs = new LinkedHashMap<>();
         echecs.put("incorrect", echecDe(() -> changerPour(alice, SECRET, NOUVEAU)));
         echecs.put("129 caractères", echecDe(() -> changerPour(alice, "a".repeat(129), NOUVEAU)));

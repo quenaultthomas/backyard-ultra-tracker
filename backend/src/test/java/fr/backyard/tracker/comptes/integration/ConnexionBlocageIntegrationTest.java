@@ -189,7 +189,7 @@ class ConnexionBlocageIntegrationTest {
         HttpResponse<String> reussie = connecter("Alice", MOT_DE_PASSE);
         assertThat(reussie.statusCode()).isEqualTo(200);
         JsonNode corps = json.readTree(reussie.body());
-        assertThat(corps.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe");
+        assertThat(corps.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe", "actif");
         assertThat(corps.get("pseudo").asString()).isEqualTo("Alice");
 
         // Nouvelle série (client anonyme) : 5 échecs en 401 sont de nouveau nécessaires.

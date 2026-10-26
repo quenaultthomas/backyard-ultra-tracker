@@ -105,11 +105,15 @@
             Impossible de charger la liste des bénévoles. Réessayez plus tard.
           </p>
         } @else if (benevoles(); as liste) {
-          @if (liste.length === 0) {
+          @if (liste.length === 0 || lignes().length === 0) {
             <div class="etat-vide">
               <span class="etat-vide__visuel visuel-substitution" aria-hidden="true"></span>
               <p class="etat-vide__message" data-testid="fiche-benevoles-vide">
-                Aucun bénévole n'existe encore.
+                {{
+                  liste.length === 0
+                    ? "Aucun bénévole n'existe encore."
+                    : "Aucun bénévole actif n'est disponible."
+                }}
               </p>
               <a
                 class="bouton bouton--secondaire"
@@ -135,7 +139,14 @@
                     (change)="basculer(ligne.id, caseBenevole.checked)"
                     data-testid="fiche-benevole-case"
                   />
-                  <label [attr.for]="idCase">{{ ligne.libelle }}</label>
+                  <label [attr.for]="idCase"
+                    >{{ ligne.libelle }}
+                    @if (ligne.desactive) {
+                      <span class="badge-desactive" data-testid="fiche-benevole-desactive"
+                        >(désactivé)</span
+                      >
+                    }
+                  </label>
                 </div>
               }
             </fieldset>

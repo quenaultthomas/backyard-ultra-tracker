@@ -17,4 +17,10 @@ final class AnnuaireBenevolesDeTest implements AnnuaireBenevoles {
     public boolean estBenevole(UUID idCompte) {
         return benevoles.contains(idCompte);
     }
+
+    /** 8.1 : tous les bénévoles connus de ce double sont actifs. */
+    @Override
+    public boolean estBenevoleActif(UUID idCompte) {
+        return benevoles.contains(idCompte);
+    }
 }
