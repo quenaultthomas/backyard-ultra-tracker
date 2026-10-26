@@ -10,10 +10,12 @@ import fr.backyard.tracker.comptes.domaine.EncodeurMotDePasse;
 import fr.backyard.tracker.comptes.domaine.IdentifiantsInvalidesException;
 import fr.backyard.tracker.comptes.domaine.MotDePasse;
 import fr.backyard.tracker.comptes.domaine.Pseudo;
+import fr.backyard.tracker.comptes.domaine.PlafondEchecsParAdresse;
 import fr.backyard.tracker.comptes.domaine.PolitiqueBlocage;
 import fr.backyard.tracker.comptes.domaine.RegistreTentativesConnexion;
 import fr.backyard.tracker.comptes.domaine.Role;
 import fr.backyard.tracker.comptes.domaine.TentativesConnexion;
+import fr.backyard.tracker.comptes.infrastructure.RegistreEchecsParAdresseEnMemoire;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -31,6 +33,9 @@ import org.junit.jupiter.api.Test;
 /** Blocage temporaire des tentatives de connexion (incrément 1.3). */
 class ConnecterBlocageTest {
 
+    /** Incrément 8.4 : adresse cliente fixe, nouvelle dépendance de Connecter (adaptation mécanique). */
+    private static final String ADRESSE_FIXE = "203.0.113.1";
+
     private static final Instant T = Instant.parse("2026-10-02T10:00:00Z");
     private static final String MOT_DE_PASSE = "un-mot-de-passe-12";
     private static final String MOT_DE_PASSE_FAUX = "mauvais-mot-de-passe-1";
@@ -40,7 +45,9 @@ class ConnecterBlocageTest {
     private final DepotComptesEnMemoire depot = new DepotComptesEnMemoire();
     private final EncodeurEspion encodeur = new EncodeurEspion();
     private final RegistreEnMemoire registre = new RegistreEnMemoire();
-    private final Connecter connecter = new Connecter(depot, encodeur, registre, PolitiqueBlocage.parDefaut(), horloge);
+    private final Connecter connecter = new Connecter(depot, encodeur, registre, PolitiqueBlocage.parDefaut(),
+                new RegistreEchecsParAdresseEnMemoire(), PlafondEchecsParAdresse.parDefaut(),
+                () -> Optional.of(ADRESSE_FIXE), horloge);
 
     private Compte compte(String pseudo) {
         Compte compte = Compte.creerCoureur(new Pseudo(pseudo), PREFIXE_EMPREINTE + MOT_DE_PASSE, T);
@@ -243,7 +250,9 @@ class ConnecterBlocageTest {
     @DisplayName("CA10 - avec une politique de 1 échec, le premier échec bloque la tentative suivante")
     void doit_bloquer_des_le_premier_echec_avec_echecs_max_a_1() {
         compte("Alice");
-        Connecter strict = new Connecter(depot, encodeur, registre, new PolitiqueBlocage(1, 60), horloge);
+        Connecter strict = new Connecter(depot, encodeur, registre, new PolitiqueBlocage(1, 60),
+                new RegistreEchecsParAdresseEnMemoire(), PlafondEchecsParAdresse.parDefaut(),
+                () -> Optional.of(ADRESSE_FIXE), horloge);
 
         assertThatThrownBy(() -> strict.executer("Alice", MOT_DE_PASSE_FAUX))
                 .isInstanceOf(IdentifiantsInvalidesException.class);

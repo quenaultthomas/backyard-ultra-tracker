@@ -62,6 +62,11 @@ backyard:
     # echecs consecutifs avant blocage, puis duree du blocage et de l'oubli des echecs partiels.
     echecs-max: ${CONNEXION_ECHECS_MAX:5}
     blocage-secondes: ${CONNEXION_BLOCAGE_SECONDES:900}
+    # Plafond d'echecs de connexion par adresse cliente (8.4, SEC-14), fenetre glissante : au plus echecs-par-ip-max
+    # echecs (entier 1 a 1000) par echecs-par-ip-fenetre-secondes (entier 1 a 3600) ; au-dela, 429 identique au
+    # blocage par pseudo. Valeur invalide : l'api ne demarre pas. Compteur en memoire, jamais remis a zero par un succes.
+    echecs-par-ip-max: ${CONNEXION_ECHECS_PAR_IP_MAX:20}
+    echecs-par-ip-fenetre-secondes: ${CONNEXION_ECHECS_PAR_IP_FENETRE_SECONDES:60}
   session:
     # Delai d'inactivite de session par role (secondes, entiers de 1 a 604800, administrateurs <= autres), sinon
     # l'api ne demarre pas. Glissant : chaque requete authentifiee le repousse. Regle dans PolitiqueSession.

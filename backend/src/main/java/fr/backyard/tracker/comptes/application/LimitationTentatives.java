@@ -6,6 +6,7 @@ import fr.backyard.tracker.comptes.domaine.RegistreTentativesConnexion;
 import fr.backyard.tracker.comptes.domaine.TentativesConnexion;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
+import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -27,11 +28,19 @@ final class LimitationTentatives {
 
     /** @throws ConnexionBloqueeException si la clé est bloquée à cet instant */
     void verifierNonBloquee(String cle, Instant maintenant) {
-        TentativesConnexion tentatives = registre.constater(cle, maintenant);
-        if (tentatives.estBloquee(maintenant)) {
-            JOURNAL.log(Level.INFO, "Connexion refusée : blocage en cours");
-            throw new ConnexionBloqueeException(tentatives.tempsRestant(maintenant));
+        Duration restant = tempsDeBlocage(cle, maintenant);
+        if (!restant.isZero()) {
+            throw new ConnexionBloqueeException(restant);
         }
+    }
+
+    /** Temps restant du blocage de la clé ; nul si elle n'est pas bloquée. */
+    Duration tempsDeBlocage(String cle, Instant maintenant) {
+        Duration restant = registre.constater(cle, maintenant).tempsRestant(maintenant);
+        if (!restant.isZero()) {
+            JOURNAL.log(Level.INFO, "Connexion refusée : blocage en cours");
+        }
+        return restant;
     }
 
     void enregistrerEchec(String cle, Instant maintenant) {

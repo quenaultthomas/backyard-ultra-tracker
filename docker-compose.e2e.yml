@@ -9,3 +9,6 @@ services:
       SPRING_PROFILES_ACTIVE: e2e
       # Tests E2E parallèles depuis une même IP : limite haute pour ne jamais s'auto-limiter (7.2).
       BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE: 6000
+      # Mêmes tests parallèles, même IP : plafond d'échecs de connexion par adresse relevé (8.4) pour que la suite ne
+      # s'auto-limite pas ; le test dédié (projet horloge, seul en série) en atteint exactement 100.
+      CONNEXION_ECHECS_PAR_IP_MAX: 100
