@@ -36,6 +36,9 @@ services:
       # Limitation des tentatives de connexion (entiers >= 1, sinon api ne demarre pas).
       CONNEXION_ECHECS_MAX: ${CONNEXION_ECHECS_MAX:-5}
       CONNEXION_BLOCAGE_SECONDES: ${CONNEXION_BLOCAGE_SECONDES:-900}
+      # Delai d'inactivite de session par role, en secondes (1 a 604800, administrateurs <= autres).
+      SESSION_INACTIVITE_ADMIN_SECONDES: ${SESSION_INACTIVITE_ADMIN_SECONDES:-7200}
+      SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES: ${SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES:-43200}
       # Calculs Argon2id simultanes (~19 Mio chacun) ; au-dela, 503 SERVICE_SATURE (entier >= 1).
       HACHAGE_CONCURRENCE_MAX: ${HACHAGE_CONCURRENCE_MAX:-4}
       # Plafond par adresse cliente, avant le plafond global : une IP n'occupe jamais toutes les places (entier >= 1).

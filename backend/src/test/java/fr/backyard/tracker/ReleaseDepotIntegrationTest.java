@@ -130,7 +130,9 @@ class ReleaseDepotIntegrationTest {
         List<String> deja0_4 = List.of("BASE_NOM", "BASE_UTILISATEUR", "BASE_MOT_DE_PASSE", "VERSION", "DOMAINE",
                 "CONNEXION_ECHECS_MAX", "CONNEXION_BLOCAGE_SECONDES", "HACHAGE_CONCURRENCE_MAX", "API_MEMOIRE_MAX",
                 "BASE_MEMOIRE_MAX", "WEB_MEMOIRE_MAX", "ADMIN_MASTER_PSEUDO", "ADMIN_MASTER_MOT_DE_PASSE", "BASE_URL",
-                "DEMO_FORCER");
+                "DEMO_FORCER",
+                // Ajoutées après la 0.5.0 (8.2 RG13) : décrites dans [Unreleased] du CHANGELOG, pas dans la 0.5.0.
+                "SESSION_INACTIVITE_ADMIN_SECONDES", "SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES");
         Matcher variables = Pattern.compile("(?m)^#?\\s*([A-Z][A-Z0-9_]+)=").matcher(lire(".env.example"));
         List<String> manquantes = new ArrayList<>();
         while (variables.find()) {
