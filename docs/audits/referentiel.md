@@ -22,6 +22,7 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | SEC-10 | Envoi du logo : type réel vérifié, taille limitée, nom de fichier non pris tel quel, pas de traversée de chemin | P1 | 2.3 |
 | SEC-11 | `/api/test/horloge` et l'horloge pilotable absents hors profil `e2e` | P1 | 4.3 |
 | SEC-12 | Un bénévole ou un coureur ne peut pas lire ni modifier les données d'un autre (accès par identifiant, IDOR) | P1 | 2.4 |
+| SEC-13 | Révocation (désactivation / réactivation) des comptes ADMIN et BENEVOLE : connexion refusée sans indice, sessions fermées, admin master, soi-même et dernier admin actif protégés | P1 | 8.1 |
 
 ## ARC : Architecture et DDD
 

@@ -55,6 +55,26 @@ export class AdministrationApiService {
     return this.http.post<CompteReponse>(URL_BENEVOLES, requete);
   }
 
+  /** Désactive un Compte `ADMIN` (admin master, 204 sans corps, idempotent). */
+  desactiverAdmin(id: string): Observable<void> {
+    return this.http.post<void>(`${urlCompte(URL_ADMINS, id)}/desactivation`, null);
+  }
+
+  /** Réactive un Compte `ADMIN` (admin master, 204 sans corps, idempotent). */
+  reactiverAdmin(id: string): Observable<void> {
+    return this.http.post<void>(`${urlCompte(URL_ADMINS, id)}/reactivation`, null);
+  }
+
+  /** Désactive un Compte `BENEVOLE` et le retire des Courses `EN_PREPARATION` (204 sans corps). */
+  desactiverBenevole(id: string): Observable<void> {
+    return this.http.post<void>(`${urlCompte(URL_BENEVOLES, id)}/desactivation`, null);
+  }
+
+  /** Réactive un Compte `BENEVOLE`, sans réaffectation (204 sans corps, idempotent). */
+  reactiverBenevole(id: string): Observable<void> {
+    return this.http.post<void>(`${urlCompte(URL_BENEVOLES, id)}/reactivation`, null);
+  }
+
   /** Toutes les Courses, dans l'ordre renvoyé par l'API (admins et admin master). */
   listerCourses(): Observable<CourseReponse[]> {
     return this.http.get<CourseReponse[]>(URL_COURSES);
@@ -139,6 +159,10 @@ export class AdministrationApiService {
   supprimerLogo(id: string): Observable<void> {
     return this.http.delete<void>(`${urlCourse(id)}/logo`);
   }
+}
+
+function urlCompte(urlRole: string, id: string): string {
+  return `${urlRole}/${encodeURIComponent(id)}`;
 }
 
 function urlCourse(id: string): string {

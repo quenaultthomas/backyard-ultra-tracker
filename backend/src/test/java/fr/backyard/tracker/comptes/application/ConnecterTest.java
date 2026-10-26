@@ -54,7 +54,7 @@ class ConnecterTest {
 
     private Compte compteSansEmpreinte(String pseudo) {
         Compte anonyme = Compte.reconstituer(
-                UUID.randomUUID(), new Pseudo(pseudo), null, Role.COUREUR, horlogeFixe.instant());
+                UUID.randomUUID(), new Pseudo(pseudo), null, Role.COUREUR, horlogeFixe.instant(), true);
         depot.comptes.add(anonyme);
         return anonyme;
     }

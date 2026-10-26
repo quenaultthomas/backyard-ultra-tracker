@@ -54,6 +54,17 @@ public interface DepotComptes {
     }
 
     /**
+     * Comptes du rôle donné relus sous verrou exclusif jusqu'à la fin de la transaction de l'appelant, triés par
+     * identifiant croissant (ordre de verrouillage constant) : deux désactivations concurrentes d'admins sont
+     * sérialisées et la seconde décide sur l'état validé par la première.
+     *
+     * @throws UnsupportedOperationException si le dépôt ne sait pas verrouiller par rôle
+     */
+    default List<Compte> trouverParRolePourModification(Role role) {
+        throw new UnsupportedOperationException("Ce dépôt ne sait pas verrouiller les comptes d'un rôle.");
+    }
+
+    /**
      * Comptes trouvés parmi ces identifiants, en une seule recherche, dans un ordre quelconque ; les identifiants
      * inconnus sont ignorés.
      *
@@ -64,8 +75,8 @@ public interface DepotComptes {
     }
 
     /**
-     * Enregistre les modifications d'un compte existant : empreinte du mot de passe, et pour un compte anonymisé
-     * pseudo et clé d'unicité.
+     * Enregistre les modifications d'un compte existant : empreinte du mot de passe, état actif, et pour un compte
+     * anonymisé pseudo et clé d'unicité.
      *
      * @throws CompteIntrouvableOuInutilisableException si le compte n'existe plus
      * @throws UnsupportedOperationException            si le dépôt ne sait pas mettre à jour

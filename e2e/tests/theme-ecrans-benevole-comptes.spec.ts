@@ -906,8 +906,13 @@ test.describe('Clavier et titres', () => {
 
     // Gestion des bénévoles
     await ouvrir(page, MASTER, '/administration/benevoles');
-    const arretsComptes = (await arretsAuTab(page)).filter((x) => !x.dansEntete);
-    expect(arretsComptes.map((x) => x.testid ?? x.texte)).toEqual(['benevole-champ-pseudo', 'benevole-champ-mot-de-passe', 'benevole-champ-confirmation', 'benevole-bouton-creer', 'lien-retour-administration']);
+    // 8.1 RG19 : un bouton Désactiver / Réactiver par ligne de la liste, avant le formulaire (ordre du DOM)
+    const arretsComptes = (await arretsAuTab(page, 500)).filter((x) => !x.dansEntete);
+    const estBoutonLigne = (x: Arret) => x.testid === 'benevole-bouton-desactiver' || x.testid === 'benevole-bouton-reactiver';
+    const boutonsLignes = arretsComptes.filter(estBoutonLigne);
+    expect(boutonsLignes.length, 'un arrêt par ligne de la liste').toBeGreaterThan(0);
+    expect(arretsComptes.slice(0, boutonsLignes.length).every(estBoutonLigne), 'boutons de ligne avant le formulaire').toBe(true);
+    expect(arretsComptes.filter((x) => !estBoutonLigne(x)).map((x) => x.testid ?? x.texte)).toEqual(['benevole-champ-pseudo', 'benevole-champ-mot-de-passe', 'benevole-champ-confirmation', 'benevole-bouton-creer', 'lien-retour-administration']);
     verifierContours(arretsComptes);
     expect(await titresDeLaPage(page)).toEqual(['h1:Gestion des bénévoles', 'h2:Bénévoles', 'h2:Créer un bénévole']);
 

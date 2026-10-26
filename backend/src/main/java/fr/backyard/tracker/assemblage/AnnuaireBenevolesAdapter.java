@@ -22,4 +22,9 @@ public class AnnuaireBenevolesAdapter implements AnnuaireBenevoles {
     public boolean estBenevole(UUID idCompte) {
         return verifierBenevole.estBenevole(idCompte);
     }
+
+    @Override
+    public boolean estBenevoleActif(UUID idCompte) {
+        return verifierBenevole.estBenevoleActif(idCompte);
+    }
 }

@@ -475,7 +475,7 @@ class PilotageCourseIntegrationTest {
         List<String> ids = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
 
         assertThat(ids).isNotEmpty();
-        assertThat(ids.get(ids.size() - 1)).isEqualTo("0010-abandon-inscription");
+        assertThat(ids.get(ids.size() - 1)).isEqualTo("0011-compte-actif");
     }
 
     // ---------------------------------------------------------------- utilitaires

@@ -79,6 +79,22 @@ public class CompteJpaAdapter implements DepotComptes {
                 .map(CompteJpaAdapter::versDomaine);
     }
 
+    /**
+     * {@code select ... order by id for update} en une requête : les lignes sont verrouillées dans un ordre constant
+     * et relues en base. Doit être appelé dans la transaction du cas d'usage.
+     */
+    @Override
+    public List<Compte> trouverParRolePourModification(Role role) {
+        return entityManager
+                .createQuery("select c from CompteJpaEntity c where c.role = :role order by c.id",
+                        CompteJpaEntity.class)
+                .setParameter("role", role)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .getResultStream()
+                .map(CompteJpaAdapter::versDomaine)
+                .toList();
+    }
+
     @Override
     public List<Compte> trouverParIds(Collection<UUID> ids) {
         if (ids.isEmpty()) {
@@ -119,8 +135,8 @@ public class CompteJpaAdapter implements DepotComptes {
     }
 
     /**
-     * Le rôle et la date de création d'un compte ne changent jamais : l'empreinte, le pseudo et sa clé d'unicité
-     * (modifiés par l'anonymisation) sont reportés.
+     * Le rôle et la date de création d'un compte ne changent jamais : l'empreinte, l'état actif, le pseudo et sa clé
+     * d'unicité (modifiés par l'anonymisation) sont reportés.
      */
     @Override
     @Transactional
@@ -129,7 +145,8 @@ public class CompteJpaAdapter implements DepotComptes {
         if (entite == null) {
             throw new CompteIntrouvableOuInutilisableException();
         }
-        entite.reporter(compte.pseudo().valeur(), compte.pseudoNormalise(), compte.empreinteMotDePasse());
+        entite.reporter(compte.pseudo().valeur(), compte.pseudoNormalise(), compte.empreinteMotDePasse(),
+                compte.actif());
         try {
             entityManager.flush();
         } catch (ConstraintViolationException exception) {
@@ -150,11 +167,11 @@ public class CompteJpaAdapter implements DepotComptes {
 
     private static CompteJpaEntity versEntite(Compte compte) {
         return new CompteJpaEntity(compte.id(), compte.pseudo().valeur(), compte.pseudoNormalise(),
-                compte.empreinteMotDePasse(), compte.role(), compte.creeLe());
+                compte.empreinteMotDePasse(), compte.role(), compte.creeLe(), compte.actif());
     }
 
     private static Compte versDomaine(CompteJpaEntity entite) {
         return Compte.reconstituer(entite.id(), Pseudo.reconstituer(entite.pseudo()), entite.empreinteMotDePasse(),
-                entite.role(), entite.creeLe());
+                entite.role(), entite.creeLe(), entite.actif());
     }
 }

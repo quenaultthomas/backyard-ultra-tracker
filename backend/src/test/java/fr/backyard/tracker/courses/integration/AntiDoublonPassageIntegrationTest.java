@@ -232,7 +232,7 @@ class AntiDoublonPassageIntegrationTest {
 
         // Schéma : aucun changeset ni colonne ajoutés par 4.6.
         List<String> ids = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
-        assertThat(ids).last().isEqualTo("0010-abandon-inscription");
+        assertThat(ids).last().isEqualTo("0011-compte-actif");
         assertThat(jdbc.queryForList("select column_name from information_schema.columns where table_name = 'passage'",
                 String.class)).containsExactlyInAnyOrder("id", "inscription_id", "numero_boucle", "scanne_le", "origine");
     }

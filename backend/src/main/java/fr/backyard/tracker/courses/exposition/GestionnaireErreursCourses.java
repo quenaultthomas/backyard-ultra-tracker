@@ -1,5 +1,6 @@
 package fr.backyard.tracker.courses.exposition;
 
+import fr.backyard.tracker.courses.domaine.BenevoleDesactiveException;
 import fr.backyard.tracker.courses.domaine.BenevoleInconnuException;
 import fr.backyard.tracker.courses.domaine.BenevoleNonAffecteException;
 import fr.backyard.tracker.courses.domaine.CourseTermineePourAbandonException;
@@ -62,6 +63,13 @@ public class GestionnaireErreursCourses {
     ProblemDetail benevoleInconnu() {
         return validationEchouee(List.of(new ViolationValidation("benevoleIds", "BENEVOLE_INCONNU",
                 "Un des comptes choisis n'est pas un bénévole.")));
+    }
+
+    /** Un nouvel affecté est désactivé (8.1 RG13) ; aucun identifiant dans la réponse. */
+    @ExceptionHandler(BenevoleDesactiveException.class)
+    ProblemDetail benevoleDesactive() {
+        return probleme(HttpStatus.CONFLICT, "Conflit", "Un des bénévoles choisis est désactivé.",
+                "BENEVOLE_DESACTIVE");
     }
 
     @ExceptionHandler(CourseTermineeException.class)

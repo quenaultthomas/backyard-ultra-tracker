@@ -24,4 +24,13 @@ public class ConsulterCompteConnecte {
                 .filter(Compte::peutSeConnecter)
                 .orElseThrow(CompteNonConnectableException::new);
     }
+
+    /**
+     * Relecture juste après l'ouverture d'une session de connexion (8.1 RG10) : faux si le Compte a disparu ou ne peut
+     * plus se connecter (désactivé pendant la connexion).
+     */
+    @Transactional(readOnly = true)
+    public boolean estConnectable(UUID idCompte) {
+        return depotComptes.trouverParId(idCompte).filter(Compte::peutSeConnecter).isPresent();
+    }
 }

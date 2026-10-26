@@ -112,7 +112,7 @@ class CompteIntegrationTest {
         assertThat(reponse.headers().firstValue("content-type")).hasValueSatisfying(c -> assertThat(c).contains("json"));
         assertThat(reponse.headers().firstValue("location")).isEmpty();
         JsonNode corps = json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe");
+        assertThat(corps.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe", "actif");
         assertThat(UUID.fromString(corps.get("id").asString())).isNotNull();
         assertThat(corps.get("pseudo").asString()).isEqualTo("Alice");
         assertThat(corps.get("role").asString()).isEqualTo("COUREUR");
@@ -442,7 +442,7 @@ class CompteIntegrationTest {
         List<String> changesets = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
         assertThat(changesets).containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
                 "0006-affectation-benevole", "0007-inscription",
-                "0008-demarrage-course", "0009-passage", "0010-abandon-inscription");
+                "0008-demarrage-course", "0009-passage", "0010-abandon-inscription", "0011-compte-actif");
 
         Map<String, Map<String, Object>> colonnes = new java.util.HashMap<>();
         jdbc.queryForList("""
@@ -450,7 +450,7 @@ class CompteIntegrationTest {
                 from information_schema.columns where table_schema = 'public' and table_name = 'compte'""")
                 .forEach(c -> colonnes.put((String) c.get("column_name"), c));
         assertThat(colonnes.keySet()).containsExactlyInAnyOrder(
-                "id", "pseudo", "pseudo_normalise", "empreinte_mot_de_passe", "role", "cree_le");
+                "id", "pseudo", "pseudo_normalise", "empreinte_mot_de_passe", "role", "cree_le", "actif");
         assertThat(colonnes.get("id").get("data_type")).isEqualTo("uuid");
         assertThat(colonnes.get("pseudo").get("character_maximum_length")).isEqualTo(30);
         assertThat(colonnes.get("pseudo").get("is_nullable")).isEqualTo("NO");

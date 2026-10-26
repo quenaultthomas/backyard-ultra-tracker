@@ -31,6 +31,8 @@ import {
 import { DemarrageCourse } from './demarrage-course/demarrage-course';
 import { InscritsCourse } from './inscrits-course/inscrits-course';
 
+const CODE_BENEVOLE_DESACTIVE = 'BENEVOLE_DESACTIVE';
+
 const ERREURS_AFFECTATION: ErreursSpecifiques<never> = {
   VALIDATION_ECHOUEE: ({ erreurs }) => ({
     generale: erreurs?.some(({ code }) => code === 'BENEVOLE_INCONNU')
@@ -40,12 +42,17 @@ const ERREURS_AFFECTATION: ErreursSpecifiques<never> = {
   COURSE_TERMINEE: {
     generale: 'La course est terminée : ses bénévoles ne peuvent plus être modifiés.',
   },
+  [CODE_BENEVOLE_DESACTIVE]: {
+    generale: 'Un des bénévoles choisis est désactivé. Rechargez la page.',
+  },
 };
 
 /** Bénévole proposé à l'affectation : un Compte `BENEVOLE` connu, ou un identifiant inconnu. */
 interface LigneBenevole {
   readonly id: string;
   readonly libelle: string;
+  /** Compte désactivé encore affecté à la Course : affiché « (désactivé) », décochable. */
+  readonly desactive: boolean;
 }
 
 /** Fiche d'une Course (admins et admin master) : rappel de la Course et bénévoles affectés. */
@@ -101,14 +108,20 @@ export class FicheCourse implements OnInit {
     return statut === 'EN_COURS' || statut === 'TERMINEE';
   });
 
-  /** Bénévoles dans l'ordre de l'API, puis identifiants affectés absents de cette liste. */
+  /**
+   * Bénévoles actifs et désactivés encore affectés, dans l'ordre de l'API, puis identifiants
+   * affectés absents de cette liste. Un bénévole désactivé non affecté n'est pas proposé.
+   */
   protected readonly lignes = computed<LigneBenevole[]>(() => {
     const benevoles = this.benevoles() ?? [];
+    const affectes = new Set(this.fiche()?.benevoleIds ?? []);
     const connus = new Set(benevoles.map(({ id }) => id));
-    const inconnus = (this.fiche()?.benevoleIds ?? []).filter((id) => !connus.has(id));
+    const inconnus = [...affectes].filter((id) => !connus.has(id));
     return [
-      ...benevoles.map(({ id, pseudo }) => ({ id, libelle: pseudo })),
-      ...inconnus.map((id) => ({ id, libelle: 'Bénévole inconnu' })),
+      ...benevoles
+        .filter(({ id, actif }) => actif || affectes.has(id))
+        .map(({ id, pseudo, actif }) => ({ id, libelle: pseudo, desactive: !actif })),
+      ...inconnus.map((id) => ({ id, libelle: 'Bénévole inconnu', desactive: false })),
     ];
   });
 
@@ -119,17 +132,7 @@ export class FicheCourse implements OnInit {
 
   ngOnInit(): void {
     this.chargerFiche();
-    this.administrationApi
-      .listerBenevoles()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (benevoles) => this.benevoles.set(benevoles),
-        error: (erreur: unknown) => {
-          if (!this.refusAcces.rediriger(erreur, this.ecran())) {
-            this.erreurBenevoles.set(true);
-          }
-        },
-      });
+    this.chargerBenevoles();
     this.chargerInscrits();
   }
 
@@ -190,6 +193,25 @@ export class FicheCourse implements OnInit {
       });
   }
 
+  /** Liste relue après un refus `BENEVOLE_DESACTIVE` : les cases qui ne sont plus proposées sont décochées. */
+  private chargerBenevoles(): void {
+    this.administrationApi
+      .listerBenevoles()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (benevoles) => {
+          this.benevoles.set(benevoles);
+          const proposes = new Set(this.lignes().map(({ id }) => id));
+          this.coches.update((coches) => new Set([...coches].filter((id) => proposes.has(id))));
+        },
+        error: (erreur: unknown) => {
+          if (!this.refusAcces.rediriger(erreur, this.ecran())) {
+            this.erreurBenevoles.set(true);
+          }
+        },
+      });
+  }
+
   /** Lecture unique, indépendante de la fiche : un échec n'affecte que la section « Inscrits ». */
   private chargerInscrits(): void {
     this.administrationApi
@@ -223,8 +245,12 @@ export class FicheCourse implements OnInit {
     }
     const erreurs = interpreterErreurFormulaire(erreur, ERREURS_AFFECTATION, []);
     this.erreur.set(erreurs.generale ?? MESSAGE_SERVICE_INDISPONIBLE);
-    if (lireProbleme(erreur)?.code === 'COURSE_TERMINEE') {
+    const code = lireProbleme(erreur)?.code;
+    if (code === 'COURSE_TERMINEE') {
       this.chargerFiche();
+    }
+    if (code === CODE_BENEVOLE_DESACTIVE) {
+      this.chargerBenevoles();
     }
     if (erreurs.jetonExpire) {
       this.csrf.renouvelerJeton().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();

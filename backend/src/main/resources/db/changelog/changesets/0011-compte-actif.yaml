@@ -1,0 +1,20 @@
+# Increment 8.1 : etat actif d'un compte (desactivation / reactivation des comptes ADMIN et BENEVOLE).
+# Les comptes existants deviennent actifs par la valeur par defaut.
+databaseChangeLog:
+  - changeSet:
+      id: 0011-compte-actif
+      author: backyard-ultra-tracker
+      changes:
+        - addColumn:
+            tableName: compte
+            columns:
+              - column:
+                  name: actif
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: compte
+            columnName: actif

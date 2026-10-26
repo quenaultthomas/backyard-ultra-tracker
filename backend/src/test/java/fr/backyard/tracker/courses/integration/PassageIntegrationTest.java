@@ -539,7 +539,7 @@ class PassageIntegrationTest {
         assertThat(environnement.getProperty("spring.jpa.hibernate.ddl-auto")).isEqualTo("validate");
         List<String> ids = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
         assertThat(ids).containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
-                "0006-affectation-benevole", "0007-inscription", "0008-demarrage-course", "0009-passage", "0010-abandon-inscription");
+                "0006-affectation-benevole", "0007-inscription", "0008-demarrage-course", "0009-passage", "0010-abandon-inscription", "0011-compte-actif");
 
         assertThat(jdbc.queryForList("select column_name from information_schema.columns where table_name = 'passage'",
                 String.class)).containsExactlyInAnyOrder("id", "inscription_id", "numero_boucle", "scanne_le", "origine");

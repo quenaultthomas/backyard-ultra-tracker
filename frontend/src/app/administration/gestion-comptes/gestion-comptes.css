@@ -24,3 +24,17 @@
   font-size: var(--taille-secondaire);
   color: var(--couleur-encre-douce);
 }
+
+.compte > .pastille-statut {
+  align-self: flex-start;
+}
+
+/* Compte désactivé : carte atténuée (fond sable, pseudo en encre douce), contrastes conservés. */
+.compte[data-etat='desactive'] {
+  background-color: var(--couleur-sable);
+  box-shadow: none;
+}
+
+.compte[data-etat='desactive'] .ligne__pseudo {
+  color: var(--couleur-encre-douce);
+}

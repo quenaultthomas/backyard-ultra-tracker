@@ -273,7 +273,7 @@ class CreerBenevoleTest {
     }
 
     private static Compte compte(String pseudo, Role role) {
-        return Compte.reconstituer(UUID.randomUUID(), new Pseudo(pseudo), "empreinte-d-origine", role, MAINTENANT);
+        return Compte.reconstituer(UUID.randomUUID(), new Pseudo(pseudo), "empreinte-d-origine", role, MAINTENANT, true);
     }
 
     /** Dépôt en mémoire : l'unicité se juge sur le pseudo normalisé, tous rôles confondus. */

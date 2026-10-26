@@ -28,8 +28,10 @@ class ArchitectureTest {
     private static final String ADAPTATEUR_PSEUDOS = RACINE + ".assemblage.AnnuairePseudosAdapter";
     // 3.6 RG16 : troisième exception nommée, le pont d'annulation des inscriptions (même assemblage)
     private static final String ADAPTATEUR_ANNULATION = RACINE + ".assemblage.AnnulationInscriptionsAdapter";
+    // 8.1 RG18 : quatrième exception nommée, le pont de désaffectation d'un bénévole désactivé (même assemblage)
+    private static final String ADAPTATEUR_DESAFFECTATION = RACINE + ".assemblage.DesaffectationBenevoleAdapter";
     private static final List<String> ADAPTATEURS_NOMMES =
-            List.of(ADAPTATEUR_ANNUAIRE, ADAPTATEUR_PSEUDOS, ADAPTATEUR_ANNULATION);
+            List.of(ADAPTATEUR_ANNUAIRE, ADAPTATEUR_PSEUDOS, ADAPTATEUR_ANNULATION, ADAPTATEUR_DESAFFECTATION);
     // 7.3 RG4 : AdresseCliente et ValveAdressePair, partagées entre comptes.infrastructure et courses.infrastructure
     private static final String PARTAGE_INFRASTRUCTURE = RACINE + ".partage.infrastructure";
     private static final List<String> COUCHES = List.of("domaine", "application", "infrastructure", "exposition");
@@ -82,7 +84,7 @@ class ArchitectureTest {
                 .whereLayer("Exposition").mayNotBeAccessedByAnyLayer()
                 .withOptionalLayers(true)
                 .ignoreDependency(
-                        DescribedPredicate.describe("les adaptateurs nommés d'assemblage (bénévoles, pseudos, annulation)",
+                        DescribedPredicate.describe("les adaptateurs nommés d'assemblage (bénévoles, pseudos, annulation, désaffectation)",
                                 (JavaClass origine) -> ADAPTATEURS_NOMMES.contains(origine.getName())),
                         DescribedPredicate.alwaysTrue())
                 // 7.3 RG4 : package technique partagé, accessible aux seules infrastructures des contextes
@@ -150,6 +152,7 @@ class ArchitectureTest {
                 .and().doNotHaveFullyQualifiedName(ADAPTATEUR_ANNUAIRE)
                 .and().doNotHaveFullyQualifiedName(ADAPTATEUR_PSEUDOS)
                 .and().doNotHaveFullyQualifiedName(ADAPTATEUR_ANNULATION)
+                .and().doNotHaveFullyQualifiedName(ADAPTATEUR_DESAFFECTATION)
                 .should().resideInAnyPackage(paquets)
                 .as("RG9/RG16 : toute classe est dans fr.backyard.tracker.<comptes|courses>.<couche>")
                 .check(classes);

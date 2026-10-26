@@ -1,6 +1,7 @@
 package fr.backyard.tracker.courses.application;
 
 import fr.backyard.tracker.courses.domaine.AnnuaireBenevoles;
+import fr.backyard.tracker.courses.domaine.BenevoleDesactiveException;
 import fr.backyard.tracker.courses.domaine.BenevoleInconnuException;
 import fr.backyard.tracker.courses.domaine.Course;
 import fr.backyard.tracker.courses.domaine.CourseIntrouvableException;
@@ -13,7 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Remplacement de l'ensemble des bénévoles affectés à une Course par un admin (le rôle est contrôlé avant ce cas
- * d'usage). Ordre des contrôles : existence de la Course, statut, puis bénévoles ; rien n'est modifié en cas de refus.
+ * d'usage). Ordre des contrôles : existence de la Course, statut, bénévoles connus, puis activité des nouveaux
+ * affectés (un bénévole désactivé déjà affecté peut rester ou être retiré) ; rien n'est modifié en cas de refus.
  */
 @Service
 public class AffecterBenevoles {
@@ -34,6 +36,7 @@ public class AffecterBenevoles {
      * @throws CourseIntrouvableException aucune Course pour cet identifiant
      * @throws CourseTermineeException la Course est TERMINEE
      * @throws BenevoleInconnuException un des identifiants ne désigne pas un bénévole
+     * @throws BenevoleDesactiveException un des bénévoles nouvellement affectés est désactivé
      */
     @Transactional
     public Course executer(Commande commande) {
@@ -41,6 +44,7 @@ public class AffecterBenevoles {
                 .orElseThrow(CourseIntrouvableException::new);
         course.autoriserAffectation();
         annuaireBenevoles.verifierBenevoles(commande.benevoleIds());
+        annuaireBenevoles.verifierActifs(course.nouveauxBenevoles(commande.benevoleIds()));
         course.affecterBenevoles(commande.benevoleIds());
         depotCourses.enregistrer(course);
         return course;

@@ -1,0 +1,66 @@
+@let c = compte();
+@let p = comptesGeres().prefixe;
+@let idTexte = p + '-confirmation-texte-' + c.id;
+@if (c.actif) {
+  <button
+    #boutonAction
+    type="button"
+    class="ligne__action ligne__action--danger"
+    [disabled]="envoiEnCours()"
+    [attr.aria-label]="'Désactiver le compte ' + c.pseudo"
+    [attr.aria-expanded]="ouverte()"
+    (click)="ouvrir.emit()"
+    [attr.data-testid]="p + '-bouton-desactiver'"
+  >
+    Désactiver
+  </button>
+} @else {
+  <button
+    #boutonAction
+    type="button"
+    class="ligne__action"
+    [disabled]="envoiEnCours()"
+    [attr.aria-label]="'Réactiver le compte ' + c.pseudo"
+    [attr.aria-expanded]="ouverte()"
+    (click)="ouvrir.emit()"
+    [attr.data-testid]="p + '-bouton-reactiver'"
+  >
+    Réactiver
+  </button>
+}
+
+@if (ouverte()) {
+  <div
+    class="confirmation"
+    [class.confirmation--neutre]="!c.actif"
+    role="group"
+    [attr.aria-labelledby]="idTexte"
+    (keydown.escape)="annuler()"
+    [attr.data-testid]="p + '-confirmation'"
+  >
+    <p [id]="idTexte" class="confirmation__texte" [attr.data-testid]="p + '-confirmation-texte'">
+      {{ texteConfirmation() }}
+    </p>
+    <div class="confirmation__actions">
+      <button
+        type="button"
+        [class]="c.actif ? 'ligne__action ligne__action--danger-plein' : 'bouton'"
+        [disabled]="envoiEnCours()"
+        (click)="confirmer()"
+        [attr.data-testid]="p + '-bouton-confirmer'"
+      >
+        {{ c.actif ? 'Confirmer la désactivation' : 'Confirmer la réactivation' }}
+      </button>
+      <button
+        #boutonAnnuler
+        type="button"
+        class="ligne__action"
+        [disabled]="envoiEnCours()"
+        (click)="annuler()"
+        [attr.data-testid]="p + '-bouton-annuler'"
+      >
+        Annuler
+      </button>
+    </div>
+  </div>
+}

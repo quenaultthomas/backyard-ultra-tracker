@@ -19,7 +19,8 @@ import java.util.stream.LongStream;
 /**
  * Racine d'agrégat : une édition de backyard. Une Course ne se crée que par {@link #declarer} et ne change que par
  * {@link #modifier}, qui appliquent les mêmes règles de saisie : aucune Course invalide n'existe en mémoire.
- * Les bénévoles affectés (identifiants de Comptes) ne changent que par {@link #affecterBenevoles}. Le passage à
+ * Les bénévoles affectés (identifiants de Comptes) ne changent que par {@link #affecterBenevoles} et
+ * {@link #retirerBenevoleDesactive}. Le passage à
  * EN_COURS et l'heure de départ ne viennent que de {@link #demarrer}.
  */
 public final class Course {
@@ -209,6 +210,36 @@ public final class Course {
     public void affecterBenevoles(Collection<UUID> benevoles) {
         autoriserAffectation();
         this.benevolesAffectes = ensembleNonModifiable(benevoles);
+    }
+
+    /** Bénévoles de cet ensemble qui ne sont pas déjà affectés à la Course (doublons ignorés). */
+    public Set<UUID> nouveauxBenevoles(Collection<UUID> benevoles) {
+        Set<UUID> nouveaux = new LinkedHashSet<>(benevoles);
+        nouveaux.removeAll(benevolesAffectes);
+        return Collections.unmodifiableSet(nouveaux);
+    }
+
+    /**
+     * Un bénévole désactivé n'est retiré que des Courses EN_PREPARATION ; une Course démarrée ou terminée conserve
+     * ses affectations (scans et résultats non faussés). Unique définition de cette règle.
+     */
+    public boolean retireLesBenevolesDesactives() {
+        return statut == StatutCourse.EN_PREPARATION;
+    }
+
+    /**
+     * Retire ce bénévole désactivé des affectés si {@link #retireLesBenevolesDesactives()} ; sinon rien ne change.
+     *
+     * @return vrai si le bénévole était affecté et a été retiré
+     */
+    public boolean retirerBenevoleDesactive(UUID benevoleId) {
+        if (!retireLesBenevolesDesactives() || !benevolesAffectes.contains(benevoleId)) {
+            return false;
+        }
+        Set<UUID> restants = new LinkedHashSet<>(benevolesAffectes);
+        restants.remove(benevoleId);
+        this.benevolesAffectes = ensembleNonModifiable(restants);
+        return true;
     }
 
     /**

@@ -116,7 +116,7 @@ class AdminsIntegrationTest {
 
         assertThat(reponse.statusCode()).isEqualTo(201);
         JsonNode corps = json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe");
+        assertThat(corps.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe", "actif");
         assertThat(UUID.fromString(corps.get("id").asString())).isNotNull();
         assertThat(corps.get("pseudo").asString()).isEqualTo("Nadia");
         assertThat(corps.get("role").asString()).isEqualTo("ADMIN");
@@ -332,7 +332,7 @@ class AdminsIntegrationTest {
         List<String> pseudos = new ArrayList<>();
         for (JsonNode element : liste) {
             pseudos.add(element.get("pseudo").asString());
-            assertThat(element.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe");
+            assertThat(element.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe", "actif");
             assertThat(element.get("role").asString()).isEqualTo("ADMIN");
         }
         assertThat(pseudos).containsExactly("Marc", "Nadia", "Zoe");
@@ -429,7 +429,7 @@ class AdminsIntegrationTest {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
                 "0006-affectation-benevole", "0007-inscription",
-                "0008-demarrage-course", "0009-passage", "0010-abandon-inscription");
+                "0008-demarrage-course", "0009-passage", "0010-abandon-inscription", "0011-compte-actif");
     }
 
     // ---------------------------------------------------------------- utilitaires

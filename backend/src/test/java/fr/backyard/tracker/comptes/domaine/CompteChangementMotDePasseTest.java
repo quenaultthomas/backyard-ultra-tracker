@@ -16,7 +16,7 @@ class CompteChangementMotDePasseTest {
     private static final Instant CREE_LE = Instant.parse("2026-10-02T09:00:00Z");
 
     private Compte compte(Role role) {
-        return Compte.reconstituer(UUID.randomUUID(), new Pseudo("Alice"), "empreinte:ancienne", role, CREE_LE);
+        return Compte.reconstituer(UUID.randomUUID(), new Pseudo("Alice"), "empreinte:ancienne", role, CREE_LE, true);
     }
 
     @ParameterizedTest(name = "{0}")

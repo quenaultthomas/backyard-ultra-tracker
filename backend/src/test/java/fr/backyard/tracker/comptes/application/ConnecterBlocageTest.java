@@ -49,7 +49,7 @@ class ConnecterBlocageTest {
     }
 
     private void compteSansEmpreinte(String pseudo) {
-        depot.comptes.add(Compte.reconstituer(UUID.randomUUID(), new Pseudo(pseudo), null, Role.COUREUR, T));
+        depot.comptes.add(Compte.reconstituer(UUID.randomUUID(), new Pseudo(pseudo), null, Role.COUREUR, T, true));
     }
 
     private void echouer(String pseudo, int fois) {

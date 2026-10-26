@@ -334,7 +334,7 @@ class InitialiserAdminMasterTest {
 
     private static Compte adminMasterExistant(String pseudo) {
         return Compte.reconstituer(UUID.randomUUID(), new Pseudo(pseudo), "empreinte-d-origine",
-                Role.ADMIN_MASTER, MAINTENANT);
+                Role.ADMIN_MASTER, MAINTENANT, true);
     }
 
     /** Dépôt en mémoire : unicité sur le pseudo normalisé, existence d'un ADMIN_MASTER. */
