@@ -5,6 +5,7 @@ import fr.backyard.tracker.comptes.domaine.AutoDesactivationInterditeException;
 import fr.backyard.tracker.comptes.domaine.CompteIntrouvableOuInutilisableException;
 import fr.backyard.tracker.comptes.domaine.CompteNonConnectableException;
 import fr.backyard.tracker.comptes.domaine.CompteNonGerableException;
+import fr.backyard.tracker.comptes.domaine.CreationsCompteExcessivesException;
 import fr.backyard.tracker.comptes.domaine.DernierAdminActifException;
 import fr.backyard.tracker.comptes.domaine.ConnexionBloqueeException;
 import fr.backyard.tracker.comptes.domaine.DonneesCompteInvalidesException;
@@ -21,6 +22,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -89,6 +91,23 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
         probleme.setProperty("reessayerDansSecondes", secondes);
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, Long.toString(secondes))
+                .body(probleme);
+    }
+
+    /**
+     * Plafond de créations de Compte par adresse atteint (SEC-15) : même forme que le 429 de la limite de débit
+     * publique, sans écho de la saisie ni adresse ; aucune session créée.
+     */
+    @ExceptionHandler(CreationsCompteExcessivesException.class)
+    ResponseEntity<ProblemDetail> creationsCompteExcessives(CreationsCompteExcessivesException exception) {
+        long secondes = exception.reessayerDansSecondes();
+        ProblemDetail probleme = probleme(HttpStatus.TOO_MANY_REQUESTS, "Trop de requêtes",
+                "Trop de créations de compte depuis cette adresse. Réessayez dans quelques instants.",
+                "TROP_DE_REQUETES");
+        probleme.setProperty("reessayerDansSecondes", secondes);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(secondes))
+                .cacheControl(CacheControl.noStore())
                 .body(probleme);
     }
 

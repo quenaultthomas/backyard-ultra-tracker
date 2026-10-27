@@ -67,6 +67,13 @@ backyard:
     # blocage par pseudo. Valeur invalide : l'api ne demarre pas. Compteur en memoire, jamais remis a zero par un succes.
     echecs-par-ip-max: ${CONNEXION_ECHECS_PAR_IP_MAX:20}
     echecs-par-ip-fenetre-secondes: ${CONNEXION_ECHECS_PAR_IP_FENETRE_SECONDES:60}
+  creation-compte:
+    # Plafond de creations de Comptes coureur par adresse cliente (8.5, SEC-15), fenetre glissante : au plus
+    # par-ip-max tentatives de POST /api/comptes (entier 1 a 1000) par par-ip-fenetre-secondes (entier 1 a 3600),
+    # quelle qu'en soit l'issue ; au-dela, 429 TROP_DE_REQUETES avant validation, base et hachage. Valeur invalide :
+    # l'api ne demarre pas. Compteur en memoire, distinct de celui des echecs de connexion.
+    par-ip-max: ${CREATION_COMPTE_PAR_IP_MAX:10}
+    par-ip-fenetre-secondes: ${CREATION_COMPTE_PAR_IP_FENETRE_SECONDES:60}
   session:
     # Delai d'inactivite de session par role (secondes, entiers de 1 a 604800, administrateurs <= autres), sinon
     # l'api ne demarre pas. Glissant : chaque requete authentifiee le repousse. Regle dans PolitiqueSession.

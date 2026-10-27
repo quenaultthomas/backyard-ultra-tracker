@@ -9,13 +9,16 @@ import fr.backyard.tracker.comptes.domaine.Compte;
 import fr.backyard.tracker.comptes.domaine.DepotComptes;
 import fr.backyard.tracker.comptes.domaine.DonneesCompteInvalidesException;
 import fr.backyard.tracker.comptes.domaine.EncodeurMotDePasse;
+import fr.backyard.tracker.comptes.domaine.PlafondCreationsCompteParAdresse;
 import fr.backyard.tracker.comptes.domaine.PseudoDejaUtiliseException;
 import fr.backyard.tracker.comptes.domaine.Role;
+import fr.backyard.tracker.comptes.infrastructure.RegistreCreationsCompteParAdresseEnMemoire;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +30,13 @@ class CreerCompteCoureurTest {
     private final Clock horlogeFixe = Clock.fixed(MAINTENANT, ZoneOffset.UTC);
     private final DepotComptesEnMemoire depot = new DepotComptesEnMemoire();
     private final EncodeurMotDePasse encodeurFactice = motDePasse -> "empreinte-factice";
-    private final CreerCompteCoureur creerCompteCoureur = new CreerCompteCoureur(depot, encodeurFactice, horlogeFixe);
+    private final CreerCompteCoureur creerCompteCoureur = casUsage(depot, encodeurFactice, horlogeFixe);
+
+    /** Incrément 8.5 : adresse inconnue, donc aucun plafond de création : ces tests ne concernent pas la limite. */
+    private static CreerCompteCoureur casUsage(DepotComptes depot, EncodeurMotDePasse encodeur, Clock horloge) {
+        return new CreerCompteCoureur(depot, encodeur, horloge, Optional::empty,
+                new RegistreCreationsCompteParAdresseEnMemoire(), PlafondCreationsCompteParAdresse.parDefaut());
+    }
 
     @Test
     @DisplayName("CA5 - crée un compte COUREUR avec pseudo normalisé, date du Clock et empreinte de l'encodeur")
@@ -68,7 +77,7 @@ class CreerCompteCoureurTest {
             return "hash";
         };
 
-        new CreerCompteCoureur(depot, espion, horlogeFixe).executer("Alice", MOT_DE_PASSE);
+        casUsage(depot, espion, horlogeFixe).executer("Alice", MOT_DE_PASSE);
 
         assertThat(recus).containsExactly(MOT_DE_PASSE);
     }
@@ -108,7 +117,7 @@ class CreerCompteCoureurTest {
     void doit_remonter_les_deux_violations_sans_solliciter_encodeur_ni_depot() {
         DepotComptes depotEspion = mock(DepotComptes.class);
         EncodeurMotDePasse encodeurEspion = mock(EncodeurMotDePasse.class);
-        CreerCompteCoureur casUsage = new CreerCompteCoureur(depotEspion, encodeurEspion, horlogeFixe);
+        CreerCompteCoureur casUsage = casUsage(depotEspion, encodeurEspion, horlogeFixe);
 
         assertThatThrownBy(() -> casUsage.executer("ab", "12345"))
                 .isInstanceOfSatisfying(DonneesCompteInvalidesException.class, e -> {
