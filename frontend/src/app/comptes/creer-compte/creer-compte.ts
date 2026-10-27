@@ -19,11 +19,19 @@ import {
   erreurClientMotDePasse,
   erreurClientPseudo,
 } from '../controles-formulaire-compte';
-import { ErreursFormulaireCompte, interpreterErreurCompte } from '../erreurs-compte';
+import {
+  ErreursFormulaireCompte,
+  ErreursSpecifiques,
+  erreurTentativesExcessives,
+  interpreterErreurCompte,
+} from '../erreurs-compte';
 import { SessionService } from '../session.service';
 
-const ERREURS_SPECIFIQUES: Record<string, ErreursFormulaireCompte> = {
+const ERREURS_SPECIFIQUES: ErreursSpecifiques = {
   PSEUDO_DEJA_UTILISE: { pseudo: 'Ce pseudo est déjà utilisé.' },
+  TROP_DE_REQUETES: erreurTentativesExcessives(
+    'Trop de créations de compte depuis cette connexion.',
+  ),
 };
 
 type EtatEcran = 'SAISIE' | 'ENVOI' | 'SUCCES';

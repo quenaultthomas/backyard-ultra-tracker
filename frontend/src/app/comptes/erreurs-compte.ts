@@ -35,8 +35,9 @@ export type ErreursSpecifiques<C extends string = ChampCompte> = Readonly<
 >;
 
 /**
- * Message de blocage temporaire (429 `TENTATIVES_EXCESSIVES`) commençant par `prefixe` : délai
- * en minutes arrondi au supérieur, ou repli si l'API ne fournit pas de délai exploitable.
+ * Message de blocage temporaire (429 `TENTATIVES_EXCESSIVES` ou `TROP_DE_REQUETES`) commençant
+ * par `prefixe` : délai en minutes arrondi au supérieur, ou repli si l'API ne fournit pas de délai
+ * exploitable.
  */
 export function erreurTentativesExcessives(
   prefixe: string,

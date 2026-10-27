@@ -237,10 +237,18 @@ Issu de `docs/audits/audit-2026-10-21-pre-release.md`. Objectif : corriger ce qu
 - **Livré** : état `actif` sur le Compte (nouveau changeset) ; désactivation et réactivation d'un admin (admin master) ou d'un bénévole (admin, admin master) ; refus pour l'admin master, soi-même et le dernier admin actif ; bénévole désactivé désaffecté des courses `EN_PREPARATION` (passages conservés) ; sessions du compte fermées ; compte désactivé non connectable (réponse identique à des identifiants invalides) ; boutons dans l'écran de gestion des comptes.
 - **Tu testes** : désactiver un bénévole puis tenter de se connecter avec, le réactiver ; essayer de désactiver l'admin master, ton propre compte, le dernier admin.
 
-### 8.2 Durée et inactivité de session des rôles privilégiés (PEN-05)
-### 8.3 Exposition de /api/version (PEN-03)
+### 8.2 Durée et inactivité de session des rôles privilégiés (PEN-05, SEC-16)
+- **Livré** : délai d'inactivité de session par rôle, posé à la connexion (admin et admin master 2 h, coureur et bénévole 12 h), règle dans le domaine, réglable par `SESSION_INACTIVITE_ADMIN_SECONDES` et `SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES` et validé au démarrage ; message « session expirée » sur la connexion après une navigation dans l'application.
+- **Tu testes** : réduire le délai admin à 60 s, rester inactif puis cliquer dans l'application (message de session expirée) ; un bénévole ou un coureur reste connecté.
+### 8.3 Exposition de /api/version (PEN-03, SEC-17)
+- **Livré** : `/api/version` ne renvoie plus que la version applicative déployée, `{"app":{"version":"…"}}` ; plus de groupe, d'artefact, de nom ni de date de build.
+- **Tu testes** : `curl /api/version` ne montre que `app.version` ; `/api/actuator/info` répond 401.
 ### 8.4 Plafond d'échecs de connexion par IP (PEN-02, SEC-14)
+- **Livré** : compteur d'échecs de connexion par adresse en fenêtre glissante (20 échecs par 60 s par défaut) en plus du blocage par pseudo ; même 429 `TENTATIVES_EXCESSIVES` + `Retry-After`, contrôle avant tout hachage ; variables `CONNEXION_ECHECS_PAR_IP_MAX` et `CONNEXION_ECHECS_PAR_IP_FENETRE_SECONDES`.
+- **Tu testes** : 21 tentatives de connexion échouées de suite depuis la même adresse (la 21e est refusée), puis la connexion normale après une minute.
 ### 8.5 Création de comptes coureur limitée par IP (PEN-04, SEC-15)
+- **Livré** : plafond de créations de compte par adresse (10 par 60 s par défaut) sur `POST /api/comptes`, 429 `TROP_DE_REQUETES`, contrôle avant tout hachage ; message dédié sur l'écran de création ; variables `CREATION_COMPTE_PAR_IP_MAX` et `CREATION_COMPTE_PAR_IP_FENETRE_SECONDES` ; scripts de démo qui réessaient sur 429.
+- **Tu testes** : créer 11 comptes de suite (le 11e est refusé avec un message), puis réessayer après une minute.
 
 ---
 

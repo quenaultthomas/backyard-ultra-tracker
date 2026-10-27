@@ -24,6 +24,7 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | SEC-12 | Un bénévole ou un coureur ne peut pas lire ni modifier les données d'un autre (accès par identifiant, IDOR) | P1 | 2.4 |
 | SEC-13 | Révocation (désactivation / réactivation) des comptes ADMIN et BENEVOLE : connexion refusée sans indice, sessions fermées, admin master, soi-même et dernier admin actif protégés | P1 | 8.1 |
 | SEC-14 | Plafond d'échecs de connexion par adresse cliente (fenêtre glissante), réponse identique au blocage par pseudo, mémoire bornée, valeurs configurables et validées au démarrage | P2 | 8.4 |
+| SEC-15 | Création de Comptes coureur limitée par adresse cliente (fenêtre glissante, POST /api/comptes), refus 429 TROP_DE_REQUETES avant validation, base et hachage, adresse non usurpable, compteur séparé de la connexion, valeurs configurables et validées au démarrage | P3 | 8.5 |
 | SEC-16 | Durée d'inactivité de session distincte par rôle (rôles privilégiés plus courts), politique unique dans le domaine, valeurs configurables et validées au démarrage | P2 | 8.2 |
 | SEC-17 | Exposition publique minimale de la version : /api/version et /actuator/info ne renvoient que la version applicative déployée (aucun groupe, artefact, nom ni date de build), et l'actuator n'est joignable de l'extérieur que par /api/sante et /api/version | P2 | 8.3 |
 

@@ -117,9 +117,29 @@ connecter_admin_master() {
   renouveler_csrf
 }
 
+# delai_limite_creation : secondes annoncées par le 429 de POST /api/comptes (reessayerDansSecondes de $REPONSE),
+# 60 par défaut, bornées de 1 à 60.
+delai_limite_creation() {
+  local secondes
+  secondes="$(grep -o '"reessayerDansSecondes" *: *[0-9]*' "$REPONSE" | grep -o '[0-9]*$' || true)"
+  secondes="${secondes:-60}"
+  (( 10#$secondes < 1 )) && secondes=1
+  (( 10#$secondes > 60 )) && secondes=60
+  printf '%d' "$(( 10#$secondes ))"
+}
+
+# creer_compte CHEMIN PSEUDO MOT_DE_PASSE ROLE : sur 429 de POST /api/comptes (plafond de créations par adresse,
+# SEC-15), attend la durée annoncée et renouvelle la même création, trois fois au plus.
 creer_compte() {
-  local chemin="$1" pseudo="$2" mot_de_passe="$3" role="$4" statut
-  statut="$(printf '{"pseudo":"%s","motDePasse":"%s"}' "$pseudo" "$mot_de_passe" | requete POST "$chemin")"
+  local chemin="$1" pseudo="$2" mot_de_passe="$3" role="$4" statut essais=0 delai
+  while :; do
+    statut="$(printf '{"pseudo":"%s","motDePasse":"%s"}' "$pseudo" "$mot_de_passe" | requete POST "$chemin")"
+    [[ "$statut" == "429" && "$chemin" == "/api/comptes" && $essais -lt 3 ]] || break
+    essais=$(( essais + 1 ))
+    delai="$(delai_limite_creation)"
+    echo "limite de création de comptes atteinte, nouvel essai dans $delai s"
+    sleep "$delai"
+  done
   if [[ "$statut" == "201" ]]; then
     echo "créé : $pseudo (compte $role)"
   elif [[ "$statut" == "409" ]] && grep -q '"code" *: *"PSEUDO_DEJA_UTILISE"' "$REPONSE"; then
