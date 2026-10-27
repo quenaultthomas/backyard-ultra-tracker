@@ -46,7 +46,9 @@ class DeploiementProfilE2eIntegrationTest {
         assertThat(environnement).containsOnly(Map.entry("SPRING_PROFILES_ACTIVE", "e2e"),
                 Map.entry("BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE", 6000),
                 // 8.4 RG15 : plafond d'échecs par adresse relevé à 100 (tests E2E parallèles issus de la même adresse)
-                Map.entry("CONNEXION_ECHECS_PAR_IP_MAX", 100));
+                Map.entry("CONNEXION_ECHECS_PAR_IP_MAX", 100),
+                // 8.5 RG9 : plafond de créations de Compte par adresse relevé à 1000 (suite parallèle, même adresse)
+                Map.entry("CREATION_COMPTE_PAR_IP_MAX", 1000));
         assertThat(lire("docker-compose.e2e.yml")).doesNotContain("BACKYARD_ENVIRONNEMENT");
         assertThat(lire("docker-compose.e2e.yml")).contains("docker-compose.prod.yml");
     }

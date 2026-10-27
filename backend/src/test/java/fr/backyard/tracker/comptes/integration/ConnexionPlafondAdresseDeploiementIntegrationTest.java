@@ -56,11 +56,10 @@ class ConnexionPlafondAdresseDeploiementIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA23 : le référentiel d'audit contient la ligne SEC-14, SEC-15 et SEC-17 restent libres")
+    @DisplayName("CA23 : le référentiel d'audit contient la ligne SEC-14")
     void ca23_referentiel_sec_14() throws IOException {
         String referentiel = lire("docs/audits/referentiel.md");
         assertThat(referentiel).contains("| SEC-14 | Plafond d'échecs de connexion par adresse cliente (fenêtre glissante)")
                 .containsPattern("\\| SEC-14 \\|[^\\n]*\\| P2 \\| 8\\.4 \\|");
-        assertThat(referentiel).doesNotContain("| SEC-15 |").doesNotContain("| SEC-17 |");
     }
 }

@@ -128,9 +128,29 @@ declarer_course_de_charge() {
   echo "créé : $NOM_COURSE (course)"
 }
 
+# delai_limite_creation : secondes annoncées par le 429 de POST /api/comptes (reessayerDansSecondes de $REPONSE),
+# 60 par défaut, bornées de 1 à 60.
+delai_limite_creation() {
+  local secondes
+  secondes="$(grep -o '"reessayerDansSecondes" *: *[0-9]*' "$REPONSE" | grep -o '[0-9]*$' || true)"
+  secondes="${secondes:-60}"
+  (( 10#$secondes < 1 )) && secondes=1
+  (( 10#$secondes > 60 )) && secondes=60
+  printf '%d' "$(( 10#$secondes ))"
+}
+
+# creer_coureur PSEUDO : sur 429 (plafond de créations par adresse, SEC-15), attend la durée annoncée et renouvelle la
+# même création, trois fois au plus.
 creer_coureur() {
-  local statut
-  statut="$(printf '{"pseudo":"%s","motDePasse":"%s"}' "$1" "$MOT_DE_PASSE_COUREUR" | requete POST /api/comptes)"
+  local statut essais=0 delai
+  while :; do
+    statut="$(printf '{"pseudo":"%s","motDePasse":"%s"}' "$1" "$MOT_DE_PASSE_COUREUR" | requete POST /api/comptes)"
+    [[ "$statut" == "429" && $essais -lt 3 ]] || break
+    essais=$(( essais + 1 ))
+    delai="$(delai_limite_creation)"
+    echo "limite de création de comptes atteinte, nouvel essai dans $delai s"
+    sleep "$delai"
+  done
   if [[ "$statut" == "201" ]]; then
     echo "créé : $1 (compte COUREUR)"
   elif [[ "$statut" == "409" ]] && grep -q '"code" *: *"PSEUDO_DEJA_UTILISE"' "$REPONSE"; then

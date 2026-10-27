@@ -12,3 +12,6 @@ services:
       # Mêmes tests parallèles, même IP : plafond d'échecs de connexion par adresse relevé (8.4) pour que la suite ne
       # s'auto-limite pas ; le test dédié (projet horloge, seul en série) en atteint exactement 100.
       CONNEXION_ECHECS_PAR_IP_MAX: 100
+      # Mêmes tests parallèles, même IP : la suite crée de nombreux Comptes coureur ; plafond de créations par adresse
+      # relevé à son maximum (8.5) pour qu'elle ne s'auto-limite jamais (le 429 réel est couvert en intégration).
+      CREATION_COMPTE_PAR_IP_MAX: 1000
