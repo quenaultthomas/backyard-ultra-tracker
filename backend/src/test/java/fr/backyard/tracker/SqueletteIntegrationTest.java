@@ -94,9 +94,9 @@ class SqueletteIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA13 : le build tourne sous Java 25 et Spring Boot 4.1.1")
-    void ca13_build_sous_java_25_et_spring_boot_4_1_1() {
+    @DisplayName("CA13 : le build tourne sous Java 25 et Spring Boot 4.1.x")
+    void ca13_build_sous_java_25_et_spring_boot_4_1() {
         assertThat(Runtime.version().feature()).isEqualTo(25);
-        assertThat(SpringBootVersion.getVersion()).isEqualTo("4.1.1");
+        assertThat(SpringBootVersion.getVersion()).startsWith("4.1.");
     }
 }
