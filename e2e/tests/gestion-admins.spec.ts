@@ -8,6 +8,7 @@ import {
   exigerIdentifiantsAdminMaster,
   pseudoAdminUnique,
 } from './aide-admin';
+import { ouvrirFormulaire, verifierFerme } from './aide-formulaire';
 
 test.beforeAll(() => {
   exigerIdentifiantsAdminMaster();
@@ -44,11 +45,15 @@ test.describe('Gestion des administrateurs', () => {
     await expect(page.getByTestId('liste-admins').or(page.getByTestId('admins-vide'))).toBeVisible();
     await expect(page.getByTestId('ligne-admin').filter({ hasText: pseudo })).toHaveCount(0);
 
+    await verifierFerme(page, 'admin');
+    await ouvrirFormulaire(page, 'admin');
     await remplirFormulaire(page, pseudo, MOT_DE_PASSE_ADMIN_CREE, MOT_DE_PASSE_ADMIN_CREE);
     await page.getByTestId('admin-bouton-creer').click();
 
     await expect(page.getByTestId('admin-message-succes')).toHaveText(`L'administrateur ${pseudo} a été créé.`);
     await expect(page.getByTestId('ligne-admin').filter({ hasText: pseudo })).toHaveCount(1);
+    await verifierFerme(page, 'admin');
+    await ouvrirFormulaire(page, 'admin');
     await expect(page.getByTestId('admin-champ-pseudo')).toHaveValue('');
     await expect(page.getByTestId('admin-champ-mot-de-passe')).toHaveValue('');
     await expect(page.getByTestId('admin-champ-confirmation')).toHaveValue('');
@@ -100,6 +105,7 @@ test.describe('Gestion des administrateurs', () => {
     await ouvrirGestionAdminsEnMaster(page);
 
     // formulaire vide
+    await ouvrirFormulaire(page, 'admin');
     await page.getByTestId('admin-bouton-creer').click();
     await expect(page.getByTestId('admin-erreur-pseudo')).toHaveText('Le pseudo est obligatoire.');
     await expect(page.getByTestId('admin-erreur-mot-de-passe')).toHaveText('Le mot de passe est obligatoire.');
@@ -192,6 +198,9 @@ test.describe('Gestion des administrateurs', () => {
     await page.goto('/administration/admins');
     await expect(page.getByTestId('admins-erreur')).toHaveText('Impossible de charger la liste des administrateurs. Réessayez plus tard.');
     await expect(page.getByTestId('admins-erreur')).not.toContainText('500');
+    await expect(page.getByTestId('admin-bouton-nouveau')).toBeVisible();
+    await expect(page.getByTestId('admin-bouton-nouveau')).toBeEnabled();
+    await ouvrirFormulaire(page, 'admin');
     await expect(page.getByTestId('admin-champ-pseudo')).toBeEnabled();
     await expect(page.getByTestId('admin-bouton-creer')).toBeEnabled();
 
@@ -203,6 +212,7 @@ test.describe('Gestion des administrateurs', () => {
     await page.goto('/administration/admins');
     await expect(page.getByTestId('liste-admins').or(page.getByTestId('admins-vide'))).toBeVisible();
     const pseudo = pseudoAdminUnique();
+    await ouvrirFormulaire(page, 'admin');
     await remplirFormulaire(page, pseudo, MOT_DE_PASSE_ADMIN_CREE, MOT_DE_PASSE_ADMIN_CREE);
     await page.getByTestId('admin-bouton-creer').click();
     await expect(page.getByTestId('admin-erreur-generale')).toHaveText('Service indisponible, veuillez réessayer plus tard.');

@@ -7,6 +7,23 @@
 
     <section class="formulaire" aria-labelledby="titre-liste-courses">
       <h2 id="titre-liste-courses" class="sous-titre">Courses</h2>
+      <button
+        #boutonNouvelle
+        type="button"
+        class="bouton bouton--secondaire bouton-ouvrir"
+        [attr.aria-expanded]="ouverture.ouvert()"
+        aria-controls="formulaire-course"
+        [disabled]="envoiEnCours()"
+        (click)="ouvrirDeclaration()"
+        data-testid="course-bouton-nouvelle"
+      >
+        Nouvelle course
+      </button>
+      @if (messageSucces(); as message) {
+        <p class="message--succes" role="status" data-testid="course-message-succes">
+          {{ message }}
+        </p>
+      }
       @if (messageErreur(); as message) {
         <p class="message--erreur" role="alert" data-testid="courses-message-erreur">
           {{ message }}
@@ -32,7 +49,9 @@
             <p class="etat-vide__message" data-testid="courses-vide">
               Aucune course pour le moment.
             </p>
-            <p class="aide">Utilisez le formulaire ci-dessous pour déclarer la première course.</p>
+            <p class="aide">
+              Utilisez le bouton « Nouvelle course » pour déclarer la première course.
+            </p>
           </div>
         } @else {
           <app-liste-courses
@@ -48,22 +67,20 @@
     </section>
 
     <form
+      id="formulaire-course"
       class="formulaire formulaire--saisie encart"
       [class.encart--edition]="enEdition"
+      [hidden]="!ouverture.ouvert()"
       [formGroup]="formulaire"
       (ngSubmit)="soumettre()"
       novalidate
       aria-labelledby="titre-formulaire-course"
+      data-testid="course-formulaire"
     >
       <h2 id="titre-formulaire-course" class="sous-titre" data-testid="course-formulaire-titre">
         {{ enEdition ? 'Modifier la course' : 'Déclarer une course' }}
       </h2>
 
-      @if (messageSucces(); as message) {
-        <p class="message--succes" role="status" data-testid="course-message-succes">
-          {{ message }}
-        </p>
-      }
       @if (e.generale; as erreurGenerale) {
         <p class="message--erreur" role="alert" data-testid="course-erreur-generale">
           {{ erreurGenerale }}
@@ -138,36 +155,27 @@
         }
       </div>
 
-      @if (enEdition) {
-        <div class="actions">
-          <button
-            type="submit"
-            class="bouton"
-            [disabled]="envoiEnCours()"
-            data-testid="course-bouton-enregistrer"
-          >
-            Enregistrer les modifications
-          </button>
-          <button
-            type="button"
-            class="bouton bouton--secondaire"
-            [disabled]="envoiEnCours()"
-            (click)="annuler()"
-            data-testid="course-bouton-annuler"
-          >
-            Annuler
-          </button>
-        </div>
-      } @else {
+      <div class="actions">
         <button
           type="submit"
           class="bouton"
           [disabled]="envoiEnCours()"
-          data-testid="course-bouton-creer"
+          [attr.data-testid]="enEdition ? 'course-bouton-enregistrer' : 'course-bouton-creer'"
         >
-          Déclarer la course
+          {{ enEdition ? 'Enregistrer les modifications' : 'Déclarer la course' }}
         </button>
-      }
+        <button
+          type="button"
+          class="bouton bouton--secondaire"
+          [disabled]="envoiEnCours()"
+          (click)="fermer()"
+          [attr.data-testid]="
+            enEdition ? 'course-bouton-annuler' : 'course-bouton-annuler-creation'
+          "
+        >
+          Annuler
+        </button>
+      </div>
     </form>
 
     <a class="lien" routerLink="/administration" data-testid="lien-retour-administration">

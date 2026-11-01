@@ -61,8 +61,3 @@
 .section-repliable__bouton[aria-expanded='true']::after {
   transform: rotate(-135deg);
 }
-
-/* `.formulaire` fixe `display: flex` : l'attribut `hidden` seul serait sans effet. */
-.formulaire[hidden] {
-  display: none;
-}

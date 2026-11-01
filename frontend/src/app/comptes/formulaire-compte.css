@@ -5,6 +5,11 @@
   gap: var(--espace-4);
 }
 
+/* `.formulaire` fixe `display: flex` : l'attribut `hidden` seul serait sans effet. */
+.formulaire[hidden] {
+  display: none;
+}
+
 .sous-titre {
   margin: 0;
   font-size: var(--taille-grande);

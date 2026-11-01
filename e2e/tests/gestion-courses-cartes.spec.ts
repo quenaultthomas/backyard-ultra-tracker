@@ -18,6 +18,7 @@ import {
   type DonneesCourse,
 } from './aide-admin';
 import { placerStatutCourseEnBase } from './aide-coureur';
+import { ouvrirFormulaire, verifierFerme } from './aide-formulaire';
 import {
   AIDES_PAGE,
   ECRANS,
@@ -336,8 +337,17 @@ test.describe('Gestion des courses : liste en cartes', () => {
   test('CA3 - les actions de logo sont dans la carte, sous le visuel, avec aperçu, envoi, suppression et erreurs locales', async ({ page, playwright }) => {
     const a = await creerCourse(playwright);
     const b = await creerCourse(playwright, {}, 'EN_COURS');
+    // la base E2E est partagée (tests en parallèle) : la liste est restreinte aux deux Courses du test pour que la
+    // grille soit déterministe, sans changer les mesures ni les seuils (précédent : test « une seule Course »)
+    await page.route(MOTIF_LISTE, async (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const reponse = await route.fetch();
+      const liste = (await reponse.json()) as Array<{ id: string }>;
+      return route.fulfill({ response: reponse, json: liste.filter((c) => c.id === a.id || c.id === b.id) });
+    });
     await ouvrirListe(page);
     const la = carte(page, a.nom);
+    await expect(page.getByTestId('ligne-course')).toHaveCount(2);
 
     await expect(la.getByTestId('course-logo-absent')).toBeVisible();
     await la.getByTestId('course-champ-logo').setInputFiles(fixture('logo.png'));
@@ -349,8 +359,15 @@ test.describe('Gestion des courses : liste en cartes', () => {
     await expect(la.getByTestId('course-bouton-logo-envoyer')).toBeVisible();
     await expect(la.getByTestId('course-bouton-logo-annuler')).toBeVisible();
 
-    const avant = await boite(la);
-    const nombreAvant = await page.getByTestId('ligne-course').count();
+    // la carte est identifiée par l'identifiant de la Course (lien vers sa fiche), pas par son rang ni par un décalage absolu
+    const parId = page.getByTestId('ligne-course').filter({ has: page.locator(`[data-testid="course-lien-fiche"][href$="/${a.id}"]`) });
+    await expect(parId).toHaveCount(1);
+    const positionRelative = async (): Promise<{ left: number; top: number }> => {
+      const c = await boite(parId);
+      const g = await boite(page.getByTestId('liste-courses'));
+      return { left: c.left - g.left, top: c.top - g.top };
+    };
+    const avant = await positionRelative();
     const rangs = async (): Promise<string[]> => (await page.getByTestId('course-nom').allTextContents()).map((n) => n.trim()).filter((n) => n === a.nom || n === b.nom);
     const ordreAvant = await rangs();
     await la.getByTestId('course-bouton-logo-envoyer').click();
@@ -358,14 +375,12 @@ test.describe('Gestion des courses : liste en cartes', () => {
     await expect(la.getByTestId('course-logo')).toBeVisible();
     await expect(la.getByTestId('course-logo-absent')).toHaveCount(0);
     await expect(la.getByTestId('course-bouton-logo-supprimer')).toBeVisible();
-    // la carte garde sa place dans la grille (la base E2E est partagée : la position absolue n'est comparée
-    // que si aucune autre Course n'est apparue entre-temps)
+    // la carte garde sa place dans la grille : position mesurée relativement au haut de la liste (le message de
+    // succès décale toute la grille), comparaison toujours exécutée
     expect(await rangs()).toEqual(ordreAvant);
-    if ((await page.getByTestId('ligne-course').count()) === nombreAvant) {
-      const apres = await boite(la);
-      expect(Math.abs(apres.left - avant.left)).toBeLessThanOrEqual(1);
-      expect(Math.abs(apres.top - avant.top)).toBeLessThanOrEqual(1);
-    }
+    const apres = await positionRelative();
+    expect(Math.abs(apres.left - avant.left)).toBeLessThanOrEqual(1);
+    expect(Math.abs(apres.top - avant.top)).toBeLessThanOrEqual(1);
 
     // boutons dans la carte et sous le visuel
     const rc = await boite(la);
@@ -668,7 +683,7 @@ test.describe('Gestion des courses : liste en cartes', () => {
       await expect(vide).toBeVisible();
       await expect(vide).toHaveText('Aucune course pour le moment.');
       await expect(page.getByTestId('liste-courses')).toHaveCount(0);
-      const aide = page.getByText('Utilisez le formulaire ci-dessous pour déclarer la première course.', { exact: true });
+      const aide = page.getByText('Utilisez le bouton « Nouvelle course » pour déclarer la première course.', { exact: true });
       await expect(aide).toBeVisible();
       await expect(vide).not.toContainText('Utilisez');
       const bloc = page.locator('.etat-vide').filter({ has: vide });
@@ -700,6 +715,10 @@ test.describe('Gestion des courses : liste en cartes', () => {
         return { g: c.left, d: c.right, w: document.documentElement.clientWidth };
       });
       expect(carteDePage.d).toBeLessThanOrEqual(carteDePage.w + 0.5);
+      await verifierFerme(page, 'course');
+      await expect(page.getByTestId('course-bouton-nouvelle')).toBeVisible();
+      await expect(page.getByTestId('course-bouton-nouvelle')).toBeEnabled();
+      await ouvrirFormulaire(page, 'course');
       await expect(page.getByTestId('course-champ-nom')).toBeEnabled();
     };
 
@@ -712,7 +731,7 @@ test.describe('Gestion des courses : liste en cartes', () => {
     await page.addStyleTag({ content: AGRANDIR });
     await expect(page.getByTestId('courses-vide')).toBeVisible();
     await pasDeScrollHorizontal(page);
-    await expect(page.getByText('Utilisez le formulaire ci-dessous pour déclarer la première course.', { exact: true })).toBeVisible();
+    await expect(page.getByText('Utilisez le bouton « Nouvelle course » pour déclarer la première course.', { exact: true })).toBeVisible();
 
     // contraste et palette sur la scène dédiée du harnais
     const scene = ETATS.find((e) => e.nom === 'gestion des courses vide');
@@ -737,6 +756,7 @@ test.describe('Gestion des courses : liste en cartes', () => {
     await page.goto('/administration/courses');
     await expect(page.getByTestId('courses-vide')).toBeVisible();
     const nom = nomSansQr('R7v');
+    await ouvrirFormulaire(page, 'course');
     await page.getByTestId('course-champ-nom').fill(nom);
     await page.getByTestId('course-champ-date').fill(dateAffichee(dateLointaine()));
     await page.getByTestId('course-champ-distance').fill('1000');
@@ -889,6 +909,7 @@ test.describe('Gestion des courses : liste en cartes', () => {
     await expect(page.getByTestId('ligne-course').first()).toBeVisible();
 
     const nom = `essai-r7-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`.replace(/qr/gi, 'q9');
+    await ouvrirFormulaire(page, 'course');
     await page.getByTestId('course-champ-nom').fill(nom);
     await page.getByTestId('course-champ-date').fill(dateAffichee(dateLointaine()));
     await page.getByTestId('course-champ-distance').fill('1000');

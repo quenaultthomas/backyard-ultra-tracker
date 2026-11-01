@@ -18,6 +18,7 @@ import { finalize, map } from 'rxjs';
 import { RefusAccesService } from '../../../comptes/refus-acces.service';
 import { ErreursFormulaire, interpreterErreurFormulaire } from '../../../comptes/erreurs-compte';
 import { CsrfService } from '../../../partage/csrf.service';
+import { FormulaireALaDemande } from '../../../partage/formulaire-a-la-demande';
 import { AdministrationApiService } from '../../administration-api.service';
 import {
   CHAMPS_COURSE,
@@ -47,6 +48,7 @@ import { MenuAdministration } from '../../menu-administration/menu-administratio
   styleUrls: [
     '../../../partage/page-carte.css',
     '../../../comptes/formulaire-compte.css',
+    '../../../partage/formulaire-a-la-demande.css',
     './gestion-courses.css',
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -59,6 +61,10 @@ export class GestionCourses implements OnInit {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly location = inject(Location);
   private readonly champNom = viewChild.required<ElementRef<HTMLInputElement>>('champNom');
+  private readonly boutonNouvelle =
+    viewChild.required<ElementRef<HTMLButtonElement>>('boutonNouvelle');
+  /** Formulaire fermé à l'arrivée, ouvert par « Nouvelle course » ou « Modifier ». */
+  protected readonly ouverture = new FormulaireALaDemande(this.boutonNouvelle, this.champNom);
 
   protected readonly champsNombre = CHAMPS_NOMBRE;
   protected readonly formulaire = this.fb.group({
@@ -101,7 +107,15 @@ export class GestionCourses implements OnInit {
     this.chargerCourses();
   }
 
-  /** Passe le formulaire en mode édition, pré-rempli depuis la ligne de la liste. */
+  /** Ouvre le formulaire en déclaration ; déjà ouvert (déclaration ou modification), seul le focus change. */
+  protected ouvrirDeclaration(): void {
+    if (this.ouverture.ouvrir()) {
+      this.revenirEnDeclaration();
+      this.messageSucces.set(null);
+    }
+  }
+
+  /** Ouvre le formulaire en mode édition, pré-rempli depuis la ligne de la liste. */
   protected editer(course: CourseReponse): void {
     if (this.envoiEnCours()) {
       return;
@@ -110,11 +124,13 @@ export class GestionCourses implements OnInit {
     this.messageSucces.set(null);
     this.courseEditee.set(course);
     this.formulaire.setValue(versSaisieCourse(course));
-    this.champNom().nativeElement.focus();
+    this.ouverture.ouvrir();
   }
 
-  protected annuler(): void {
+  /** Ferme le formulaire, vidé et en déclaration, sans requête ; focus au bouton d'ouverture. */
+  protected fermer(): void {
     this.revenirEnDeclaration();
+    this.ouverture.fermer();
   }
 
   protected soumettre(): void {
@@ -163,7 +179,7 @@ export class GestionCourses implements OnInit {
     this.messageSuppression.set({ message, succes });
     this.messageSucces.set(null);
     if (this.courseEditee()?.id === id) {
-      this.revenirEnDeclaration();
+      this.fermer();
     }
     this.chargerCourses();
   }
@@ -186,7 +202,7 @@ export class GestionCourses implements OnInit {
   }
 
   private confirmer(message: string): void {
-    this.revenirEnDeclaration();
+    this.fermer();
     this.messageSucces.set(message);
     this.messageSuppression.set(null);
     this.chargerCourses();

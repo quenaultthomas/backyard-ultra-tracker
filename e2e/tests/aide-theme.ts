@@ -14,6 +14,7 @@ import {
 } from './aide-admin';
 import { deplierChangementMotDePasse } from './aide-mon-compte';
 import { placerStatutCourseEnBase, sinscrireParApi, type Inscription } from './aide-coureur';
+import { ouvrirFormulaire } from './aide-formulaire';
 
 type PlaywrightLib = PlaywrightWorkerArgs['playwright'];
 
@@ -454,6 +455,34 @@ export const ETATS: Scene[] = [
       const ligne = page.getByTestId('ligne-course').filter({ has: page.getByTestId('course-nom').getByText(jeu.courseA.nom, { exact: true }) });
       await ligne.getByTestId('course-bouton-modifier').click();
       await expect(page.getByTestId('course-formulaire-titre')).toHaveText('Modifier la course');
+    },
+  },
+  // 9.2 : les écrans de gestion s'ouvrent formulaire fermé ; ces scènes mesurent le formulaire ouvert.
+  {
+    nom: 'gestion des courses formulaire ouvert',
+    route: '/administration/courses',
+    role: 'master',
+    pret: async (page, jeu) => {
+      await ECRANS.find((e) => e.nom === 'gestion des courses')!.pret(page, jeu);
+      await ouvrirFormulaire(page, 'course');
+    },
+  },
+  {
+    nom: 'gestion des admins formulaire ouvert',
+    route: '/administration/admins',
+    role: 'master',
+    pret: async (page) => {
+      await expect(page.getByTestId('titre-admins')).toBeVisible();
+      await ouvrirFormulaire(page, 'admin');
+    },
+  },
+  {
+    nom: 'gestion des benevoles formulaire ouvert',
+    route: '/administration/benevoles',
+    role: 'master',
+    pret: async (page) => {
+      await expect(page.getByTestId('titre-benevoles')).toBeVisible();
+      await ouvrirFormulaire(page, 'benevole');
     },
   },
 ];

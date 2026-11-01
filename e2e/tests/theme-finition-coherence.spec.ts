@@ -20,6 +20,7 @@ import {
 } from './aide-admin';
 import { placerStatutCourseEnBase, sinscrireParApi } from './aide-coureur';
 import { seDeconnecterParLeMenu } from './aide-entete';
+import { ouvrirFormulaire } from './aide-formulaire';
 import { deplierChangementMotDePasse } from './aide-mon-compte';
 import {
   ECRANS,
@@ -460,6 +461,7 @@ test.describe('Messages migrés vers message--erreur, message--succes et message
     // succès de déclaration
     await ouvrir(page, MASTER, '/administration/courses', 'titre-courses');
     const nom = nomSansQr('R9bN');
+    await ouvrirFormulaire(page, 'course');
     await page.getByTestId('course-champ-nom').fill(nom);
     await page.getByTestId('course-champ-date').fill(dateAffichee(dateDansJours(joursLointains())));
     await page.getByTestId('course-champ-distance').fill('1000');
@@ -732,6 +734,7 @@ test.describe('Modes d\'affichage', () => {
         .evaluateAll((els) => els.filter((el) => el.checkVisibility()).map((el) => getComputedStyle(el).backgroundImage));
       for (const fond of fondsVisuels) expect(fond, `${ecran.nom} : visuel de substitution`).toBe('none');
       if (ecran.chemin === '/administration/courses') {
+        await ouvrirFormulaire(page, 'course');
         const encart = page.locator('form.encart');
         expect(parseFloat(await css(encart, 'borderTopWidth'))).toBeGreaterThanOrEqual(1);
         expect(await css(encart, 'borderTopStyle')).not.toBe('none');
@@ -753,6 +756,7 @@ test.describe('Parcours de non-régression sur téléphone', () => {
 
     // admin : déclaration d'une Course (Gestion des courses)
     await ouvrir(page, MASTER, '/administration/courses', 'titre-courses', 360, 640);
+    await ouvrirFormulaire(page, 'course');
     await page.getByTestId('course-champ-nom').fill(nom);
     await page.getByTestId('course-champ-date').fill(dateAffichee(dateDansJours(joursLointains())));
     await page.getByTestId('course-champ-distance').fill('1000');
