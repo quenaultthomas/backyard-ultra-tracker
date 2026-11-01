@@ -747,7 +747,10 @@ test('CA9 - la fiche et le formulaire se parcourent au clavier dans l\'ordre du 
   const idsDom = await page.getByTestId('fiche-benevole-case').evaluateAll((els) => els.map((e) => e.id));
   expect(idsDom.length).toBeGreaterThanOrEqual(2);
   expect(idsDom).toContain(`fiche-benevole-${await idDe(page, b1)}`);
-  const arrets = (await tabulerJusqua(page, 600, (a) => a.testid === 'fiche-lien-retour')).filter((a) => !a.dansEntete);
+  const arretsBruts = (await tabulerJusqua(page, 600, (a) => a.testid === 'fiche-lien-retour')).filter((a) => !a.dansEntete);
+  // 9.1 : trois arrêts du menu d'administration en tête de l'ordre.
+  expect(arretsBruts.slice(0, 3).map((a) => a.testid)).toEqual(['menu-administration-courses', 'menu-administration-admins', 'menu-administration-benevoles']);
+  const arrets = arretsBruts.slice(3);
   // 6.1 : le lien « Suivi public » suit le bouton Enregistrer.
   // 4.1 : la section « Démarrage » (course en préparation) précède les cases des bénévoles dans l'ordre du DOM.
   expect(arrets.map((a) => a.testid)).toEqual(['fiche-bouton-demarrer', ...idsDom.map(() => 'fiche-benevole-case'), 'fiche-bouton-enregistrer', 'fiche-lien-suivi', 'fiche-lien-retour']);
@@ -766,7 +769,9 @@ test('CA9 - la fiche et le formulaire se parcourent au clavier dans l\'ordre du 
   );
   const nue = await creerCourse(playwright);
   await ouvrirFiche(page, nue.id);
-  const sans = (await tabulerJusqua(page, 60, (a) => a.testid === 'fiche-lien-retour')).filter((a) => !a.dansEntete);
+  const sansBruts = (await tabulerJusqua(page, 60, (a) => a.testid === 'fiche-lien-retour')).filter((a) => !a.dansEntete);
+  expect(sansBruts.slice(0, 3).map((a) => a.testid)).toEqual(['menu-administration-courses', 'menu-administration-admins', 'menu-administration-benevoles']);
+  const sans = sansBruts.slice(3);
   expect(sans.map((a) => a.testid)).toEqual(['fiche-bouton-demarrer', 'fiche-lien-benevoles', 'fiche-bouton-enregistrer', 'fiche-lien-suivi', 'fiche-lien-retour']);
   await page.unroute('**/api/administration/benevoles');
 

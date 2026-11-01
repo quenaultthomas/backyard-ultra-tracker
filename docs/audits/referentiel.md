@@ -27,6 +27,11 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | SEC-15 | Création de Comptes coureur limitée par adresse cliente (fenêtre glissante, POST /api/comptes), refus 429 TROP_DE_REQUETES avant validation, base et hachage, adresse non usurpable, compteur séparé de la connexion, valeurs configurables et validées au démarrage | P3 | 8.5 |
 | SEC-16 | Durée d'inactivité de session distincte par rôle (rôles privilégiés plus courts), politique unique dans le domaine, valeurs configurables et validées au démarrage | P2 | 8.2 |
 | SEC-17 | Exposition publique minimale de la version : /api/version et /actuator/info ne renvoient que la version applicative déployée (aucun groupe, artefact, nom ni date de build), et l'actuator n'est joignable de l'extérieur que par /api/sante et /api/version | P2 | 8.3 |
+| SEC-18 | Droits sur la suppression d'un compte et le changement de rôle contrôlés côté serveur : suppression d'un admin et passage en `ADMIN` réservés à l'admin master (403 pour un admin), admin master jamais supprimable, cible hors rôle attendu = même 404 (pas d'énumération de rôle) | P1 | 9.3 |
+| SEC-19 | Sessions invalidées à la suppression d'un compte et au changement de rôle (aucune session ouverte ne conserve l'ancien rôle ni ne survit au compte), y compris en cas de requêtes simultanées | P1 | 9.3 |
+| SEC-20 | Recherche de coureurs par pseudo réservée aux admins, 3 caractères minimum, résultats limités, comptes anonymisés et autres rôles exclus, saisie traitée comme un motif littéral (pas de caractères génériques injectés), sans moyen de lister tous les pseudos | P2 | 9.5 |
+| SEC-21 | Secrets SMTP uniquement en variables d'environnement, jamais journalisés ni présents dans une exception, un `ProblemDetail` ou une trace ; TLS exigé vers le fournisseur en production | P1 | 9.9 |
+| SEC-22 | Mail d'inscription sans injection d'en-têtes ni de contenu : retours à la ligne dans le nom de course, le pseudo ou l'adresse neutralisés, adresse validée, corps en texte brut ou échappé, aucune donnée personnelle autre que celles prévues | P2 | 9.9 |
 
 ## ARC : Architecture et DDD
 
@@ -41,6 +46,7 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | ARC-07 | Exceptions métier typées, aucune exception avalée, codes HTTP cohérents (400/401/403/404/409), `ProblemDetail` | P2 | 1.1 |
 | ARC-08 | Temps injecté via `Clock`, aucun `Instant.now()` ni `LocalDateTime.now()` direct | P2 | 2.1 |
 | ARC-09 | Conventions de nommage : métier en français, suffixes techniques en anglais, tests nommés par comportement | P3 | 1.1 |
+| ARC-10 | Notification d'inscription : port sortant dans le domaine ou l'application, adaptateur SMTP dans l'infrastructure, envoi asynchrone hors transaction d'inscription, aucune dépendance Spring Mail hors infrastructure | P2 | 9.9 |
 
 ## MET : Règles métier
 
@@ -57,6 +63,10 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | MET-09 | Suppression de compte coureur : annulation des inscriptions en préparation, anonymisation, conservation des résultats, pseudo réutilisable | P1 | 3.6 |
 | MET-10 | Suppression de course : admin master uniquement, `EN_PREPARATION` uniquement, logo et affectations supprimés | P2 | 2.5 |
 | MET-11 | Valeurs dérivées (boucle courante, distance, dénivelé, allure, classement) jamais stockées | P2 | 4.2 |
+| MET-12 | Suppression d'un bénévole : refus (409) s'il est affecté à une course `EN_COURS`, affectations retirées sans ligne orpheline, passages conservés, pseudo libéré | P1 | 9.3 |
+| MET-13 | Suppression d'un admin : admin master jamais supprimable, connexion impossible ensuite, règle du dernier admin conforme à la décision de la roadmap | P1 | 9.4 |
+| MET-14 | Changement de rôle : refus (409) avec inscription `EN_PREPARATION` ou `EN_COURS`, inscriptions `TERMINEE` conservées, rôle cible permis selon le rôle de l'appelant, aucun passage de rôle depuis ou vers un compte autre que `COUREUR` | P1 | 9.6 |
+| MET-15 | Notification d'inscription : aucun mail sans adresse, contenu limité à course, pseudo, dossard et places restantes, un échec d'envoi journalisé ne bloque ni n'annule l'inscription | P1 | 9.9 |
 
 ## PER : Persistance
 
@@ -79,6 +89,7 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | DEP-05 | Production : seul `web` expose des ports, `restart: unless-stopped`, HTTPS | P1 | 0.4 |
 | DEP-06 | `.dockerignore` : pas de `target/`, `node_modules/`, secrets dans les images | P3 | 0.1 |
 | DEP-07 | Sauvegarde et restauration documentées et cohérentes avec les volumes réels | P2 | 0.4 |
+| DEP-08 | Mailpit absent de la configuration de production (`docker compose -f docker-compose.yml -f docker-compose.prod.yml config`), image à version fixée, variables SMTP dans `.env.example` et configuration de production documentée dans `docs/deploiement.md` | P1 | 9.9 |
 
 ## TST : Tests et qualité
 
@@ -101,3 +112,4 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | FRT-04 | Pas de données non échappées injectées dans le DOM (XSS) | P1 | 1.1 |
 | FRT-05 | File de scan hors ligne : pas de perte ni de doublon, reprise après coupure | P1 | 5.1 |
 | FRT-06 | Service worker : pas de mise en cache de données sensibles ni de réponses d'API périmées | P2 | 5.2 |
+| FRT-07 | Menu d'administration reflétant le rôle sans en être la protection ; formulaires de création à la demande (fermés après création ou annulation, état effacé) sans perte de saisie sur erreur | P3 | 9.1 |

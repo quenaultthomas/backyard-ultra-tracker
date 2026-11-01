@@ -27,6 +27,7 @@ import { AdministrationApiService } from '../administration-api.service';
 import { RefusAccesService } from '../../comptes/refus-acces.service';
 import { ActivationCompte, ResultatActivation } from './activation-compte/activation-compte';
 import { ComptesGeres } from './comptes-geres';
+import { MenuAdministration } from '../menu-administration/menu-administration';
 
 /** Pastille de l'état d'un Compte (affichage seulement, l'état vient de l'API). */
 const PASTILLES_ETAT = {
@@ -44,7 +45,7 @@ const ERREURS_SPECIFIQUES: Record<string, ErreursFormulaireCompte> = {
  */
 @Component({
   selector: 'app-gestion-comptes',
-  imports: [ReactiveFormsModule, RouterLink, DatePipe, ActivationCompte],
+  imports: [ReactiveFormsModule, RouterLink, DatePipe, ActivationCompte, MenuAdministration],
   templateUrl: './gestion-comptes.html',
   styleUrls: [
     '../../partage/page-carte.css',

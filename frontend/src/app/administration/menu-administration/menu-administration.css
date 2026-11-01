@@ -1,0 +1,71 @@
+/* Menu d'administration (docs/design.md, section 7) : barre d'onglets à la largeur de la carte de la page. */
+:host {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--carte-largeur, 64rem);
+}
+
+.menu-administration {
+  padding: var(--espace-1) var(--espace-2);
+  border: 1px solid var(--couleur-trait);
+  border-radius: var(--rayon-m);
+  background-color: var(--couleur-surface);
+}
+
+/* Toujours visible : les entrées passent à la ligne plutôt que de faire défiler la page. */
+.menu-administration__liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Filet bas réservé sur chaque entrée : l'entrée courante ne décale rien. */
+.menu-administration__entree {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: var(--cible-min);
+  padding: var(--espace-2) var(--espace-4);
+  border-bottom: 4px solid transparent;
+  border-radius: var(--rayon-s) var(--rayon-s) 0 0;
+  color: var(--couleur-encre);
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.menu-administration__entree:hover {
+  background-color: var(--couleur-sable);
+  text-decoration: underline;
+}
+
+.menu-administration__entree--courante {
+  border-bottom-color: var(--couleur-orange-fonce);
+  font-weight: var(--poids-gras);
+}
+
+@container cartes (max-width: 15rem) {
+  .menu-administration__entree {
+    padding-inline: var(--espace-3);
+  }
+}
+
+@media (forced-colors: active) {
+  .menu-administration__entree {
+    border-bottom-color: Canvas;
+  }
+
+  .menu-administration__entree--courante {
+    border-bottom-color: LinkText;
+  }
+}
+
+@media print {
+  :host {
+    display: none;
+  }
+}

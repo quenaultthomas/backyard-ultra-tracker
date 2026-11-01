@@ -1,0 +1,20 @@
+<nav
+  class="menu-administration"
+  aria-label="Menu d'administration"
+  data-testid="menu-administration"
+>
+  <ul class="menu-administration__liste">
+    @for (entree of entrees(); track entree.testid) {
+      <li>
+        <a
+          class="menu-administration__entree"
+          [class.menu-administration__entree--courante]="entree.courante !== null"
+          [attr.aria-current]="entree.courante"
+          [routerLink]="entree.route"
+          [attr.data-testid]="entree.testid"
+          >{{ entree.libelle }}</a
+        >
+      </li>
+    }
+  </ul>
+</nav>
