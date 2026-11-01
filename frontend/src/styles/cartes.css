@@ -100,6 +100,12 @@
   overflow-wrap: anywhere;
 }
 
+/* Écrans d'administration (9.1) : menu d'administration au-dessus de la carte, à sa largeur. */
+.page--cartes:has(> app-menu-administration) {
+  flex-direction: column;
+  gap: var(--espace-4);
+}
+
 /* Titre et pied de carte, partagés par les cartes sans feuille propre (carte de navigation). */
 .carte-liste__titre {
   margin: 0;

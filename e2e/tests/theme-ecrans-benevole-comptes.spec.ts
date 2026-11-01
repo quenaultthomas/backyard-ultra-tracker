@@ -747,7 +747,7 @@ test.describe('Accueil Administration en cartes de navigation', () => {
     await page.goto('/administration');
     await expect(page.getByTestId('administration-erreur')).toHaveText("Impossible de vérifier vos droits d'accès. Réessayez plus tard.");
     await expect(page.getByTestId('lien-gestion-courses')).toHaveCount(0);
-    await expect(page.locator('main li')).toHaveCount(0);
+    await expect(page.locator('ul.grille-cartes--navigation li')).toHaveCount(0);
   });
 });
 
@@ -907,7 +907,10 @@ test.describe('Clavier et titres', () => {
     // Gestion des bénévoles
     await ouvrir(page, MASTER, '/administration/benevoles');
     // 8.1 RG19 : un bouton Désactiver / Réactiver par ligne de la liste, avant le formulaire (ordre du DOM)
-    const arretsComptes = (await arretsAuTab(page, 500)).filter((x) => !x.dansEntete);
+    const arretsHorsEntete = (await arretsAuTab(page, 500)).filter((x) => !x.dansEntete);
+    // 9.1 : les trois arrêts du menu d'administration ouvrent le contenu (premier élément de main).
+    expect(arretsHorsEntete.slice(0, 3).map((x) => x.testid)).toEqual(['menu-administration-courses', 'menu-administration-admins', 'menu-administration-benevoles']);
+    const arretsComptes = arretsHorsEntete.slice(3);
     const estBoutonLigne = (x: Arret) => x.testid === 'benevole-bouton-desactiver' || x.testid === 'benevole-bouton-reactiver';
     const boutonsLignes = arretsComptes.filter(estBoutonLigne);
     expect(boutonsLignes.length, 'un arrêt par ligne de la liste').toBeGreaterThan(0);
@@ -918,7 +921,10 @@ test.describe('Clavier et titres', () => {
 
     // Administration
     await ouvrir(page, MASTER, '/administration');
-    const arretsAdmin = (await arretsAuTab(page)).filter((x) => !x.dansEntete);
+    const arretsAdminBruts = (await arretsAuTab(page)).filter((x) => !x.dansEntete);
+    // 9.1 : trois arrêts du menu d'administration avant les cartes.
+    expect(arretsAdminBruts.slice(0, 3).map((x) => x.testid)).toEqual(['menu-administration-courses', 'menu-administration-admins', 'menu-administration-benevoles']);
+    const arretsAdmin = arretsAdminBruts.slice(3);
     expect(arretsAdmin.map((x) => x.testid)).toEqual(['lien-gestion-courses', 'lien-gestion-benevoles', 'lien-gestion-admins']);
     expect(arretsAdmin.map((x) => x.texte)).toEqual(['Gérer les courses', 'Gérer les bénévoles', 'Gérer les administrateurs']);
     verifierContours(arretsAdmin);

@@ -32,6 +32,7 @@ import { AbandonCoureur } from './abandon-coureur/abandon-coureur';
 import { BadgeCorrige } from './badge-corrige/badge-corrige';
 import { ReintegrationCoureur } from './reintegration-coureur/reintegration-coureur';
 import { RafraichissementPilotage } from './rafraichissement-pilotage';
+import { MenuAdministration } from '../../menu-administration/menu-administration';
 
 /**
  * Pilotage d'une Course démarrée (admins et admin master) : Boucle courante, compte à rebours,
@@ -41,7 +42,14 @@ import { RafraichissementPilotage } from './rafraichissement-pilotage';
  */
 @Component({
   selector: 'app-ecran-pilotage',
-  imports: [RouterLink, DatePipe, AbandonCoureur, ReintegrationCoureur, BadgeCorrige],
+  imports: [
+    RouterLink,
+    DatePipe,
+    AbandonCoureur,
+    ReintegrationCoureur,
+    BadgeCorrige,
+    MenuAdministration,
+  ],
   providers: [RafraichissementPilotage],
   templateUrl: './ecran-pilotage.html',
   styleUrls: [

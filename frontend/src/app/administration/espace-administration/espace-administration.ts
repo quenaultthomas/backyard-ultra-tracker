@@ -14,6 +14,7 @@ import { LIBELLES_ROLE, estAdministrateur } from '../../comptes/roles';
 import { SessionService } from '../../comptes/session.service';
 import { AdministrationApiService } from '../administration-api.service';
 import { RefusAccesService } from '../../comptes/refus-acces.service';
+import { MenuAdministration } from '../menu-administration/menu-administration';
 
 const MESSAGE_VERIFICATION_IMPOSSIBLE =
   "Impossible de vérifier vos droits d'accès. Réessayez plus tard.";
@@ -21,7 +22,7 @@ const MESSAGE_VERIFICATION_IMPOSSIBLE =
 /** Espace d'administration ; ses droits sont vérifiés par le serveur à l'ouverture. */
 @Component({
   selector: 'app-espace-administration',
-  imports: [RouterLink],
+  imports: [RouterLink, MenuAdministration],
   templateUrl: './espace-administration.html',
   styleUrl: '../../partage/page-carte.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

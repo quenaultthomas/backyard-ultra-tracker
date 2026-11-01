@@ -30,6 +30,7 @@ import {
 } from '../erreurs-course';
 import { DemarrageCourse } from './demarrage-course/demarrage-course';
 import { InscritsCourse } from './inscrits-course/inscrits-course';
+import { MenuAdministration } from '../../menu-administration/menu-administration';
 
 const CODE_BENEVOLE_DESACTIVE = 'BENEVOLE_DESACTIVE';
 
@@ -58,7 +59,7 @@ interface LigneBenevole {
 /** Fiche d'une Course (admins et admin master) : rappel de la Course et bénévoles affectés. */
 @Component({
   selector: 'app-fiche-course',
-  imports: [RouterLink, DatePipe, DemarrageCourse, InscritsCourse],
+  imports: [RouterLink, DatePipe, DemarrageCourse, InscritsCourse, MenuAdministration],
   templateUrl: './fiche-course.html',
   styleUrls: [
     '../../../partage/page-carte.css',

@@ -37,11 +37,12 @@ import {
 } from '../erreurs-course';
 import { ListeCourses } from '../liste-courses/liste-courses';
 import { CourseRetiree } from '../suppression-course/suppression-course';
+import { MenuAdministration } from '../../menu-administration/menu-administration';
 
 /** Liste, déclaration et modification des Courses (admins et admin master). */
 @Component({
   selector: 'app-gestion-courses',
-  imports: [ReactiveFormsModule, RouterLink, ListeCourses],
+  imports: [ReactiveFormsModule, RouterLink, ListeCourses, MenuAdministration],
   templateUrl: './gestion-courses.html',
   styleUrls: [
     '../../../partage/page-carte.css',

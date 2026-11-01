@@ -2,6 +2,7 @@
 @let p = geres.prefixe;
 @let pp = geres.prefixePluriel;
 <main class="page page--cartes">
+  <app-menu-administration />
   <section class="carte" [attr.aria-labelledby]="'titre-' + pp">
     <h1 [id]="'titre-' + pp" class="titre" [attr.data-testid]="'titre-' + pp">
       {{ geres.titre }}
