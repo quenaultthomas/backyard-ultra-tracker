@@ -863,7 +863,8 @@ interface Arret {
   ancetresAvecOverflow: string[];
 }
 
-async function arretsAuTab(page: Page, maximum = 20, depart?: string): Promise<Arret[]> {
+async function arretsAuTab(page: Page, maximum = 20, depart?: string, jusqua?: string): Promise<Arret[]> {
+  // `jusqua` : data-testid du dernier arrêt attendu (la liste globale peut compter plus de `maximum` arrêts).
   // `depart` : élément (data-testid) d'où repartir, pour rejouer la séquence de Tab après une action sur la page.
   if (depart) await page.getByTestId(depart).focus();
   else await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
@@ -893,6 +894,7 @@ async function arretsAuTab(page: Page, maximum = 20, depart?: string): Promise<A
     });
     if (!arret) break;
     arrets.push(arret);
+    if (jusqua && arret.testid === jusqua) break;
   }
   return arrets;
 }
@@ -929,10 +931,11 @@ test.describe('Clavier et titres', () => {
     expect(await titresDeLaPage(page)).toEqual(['h1:Espace bénévole', `h2:${(await page.getByTestId('benevole-course-nom').first().textContent())!.trim()}`, `h2:${(await page.getByTestId('benevole-course-nom').nth(1).textContent())!.trim()}`]);
 
     // Gestion des bénévoles
-    const estBoutonLigne = (x: Arret) => x.testid === 'benevole-bouton-desactiver' || x.testid === 'benevole-bouton-reactiver';
+    // 9.3 RG18.5 : le bouton Supprimer est un arrêt de plus par ligne, après Désactiver / Réactiver.
+    const estBoutonLigne = (x: Arret) => x.testid === 'benevole-bouton-desactiver' || x.testid === 'benevole-bouton-reactiver' || x.testid === 'benevole-bouton-supprimer';
     const sequenceComptes = async (): Promise<Arret[]> => {
       // Le titre du site (en-tête) est le point de départ du Tab en haut de page, formulaire fermé ou ouvert.
-      const arretsHorsEntete = (await arretsAuTab(page, 500, 'entete-titre')).filter((x) => !x.dansEntete);
+      const arretsHorsEntete = (await arretsAuTab(page, 3000, 'entete-titre', 'lien-retour-administration')).filter((x) => !x.dansEntete);
       // 9.1 : les trois arrêts du menu d'administration ouvrent le contenu (premier élément de main).
       expect(arretsHorsEntete.slice(0, 3).map((x) => x.testid)).toEqual(['menu-administration-courses', 'menu-administration-admins', 'menu-administration-benevoles']);
       return arretsHorsEntete.slice(3);

@@ -2,6 +2,7 @@ package fr.backyard.tracker.comptes.exposition;
 
 import fr.backyard.tracker.comptes.domaine.AdminMasterNonDesactivableException;
 import fr.backyard.tracker.comptes.domaine.AutoDesactivationInterditeException;
+import fr.backyard.tracker.comptes.domaine.BenevoleAffecteCourseEnCoursException;
 import fr.backyard.tracker.comptes.domaine.CompteIntrouvableOuInutilisableException;
 import fr.backyard.tracker.comptes.domaine.CompteNonConnectableException;
 import fr.backyard.tracker.comptes.domaine.CompteNonGerableException;
@@ -19,6 +20,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -175,6 +177,24 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
     ProblemDetail dernierAdminActif() {
         return probleme(HttpStatus.CONFLICT, TITRE_CONFLIT, "Impossible de désactiver le dernier administrateur actif.",
                 "DERNIER_ADMIN_ACTIF");
+    }
+
+    /**
+     * Les Courses EN_COURS bloquantes sont nommées dans le détail et listées dans « courses » (réservé aux admins,
+     * qui voient déjà tous les noms) ; aucun pseudo ni identifiant de Compte.
+     */
+    @ExceptionHandler(BenevoleAffecteCourseEnCoursException.class)
+    ProblemDetail benevoleAffecteCourseEnCours(BenevoleAffecteCourseEnCoursException exception) {
+        ProblemDetail probleme = probleme(HttpStatus.CONFLICT, TITRE_CONFLIT, exception.getMessage(),
+                "BENEVOLE_AFFECTE_COURSE_EN_COURS");
+        probleme.setProperty("courses", exception.courses().stream()
+                .map(course -> new CourseEnCoursReponse(course.id(), course.nom()))
+                .toList());
+        return probleme;
+    }
+
+    /** Course EN_COURS d'un refus de suppression de bénévole, telle qu'exposée dans le 409. */
+    public record CourseEnCoursReponse(UUID id, String nom) {
     }
 
     @Override

@@ -86,6 +86,17 @@ public interface DepotComptes {
     }
 
     /**
+     * Supprime définitivement le Compte (pseudo et clé d'unicité libérés). Appelé sous le verrou du Compte, dans la
+     * transaction de l'appelant.
+     *
+     * @throws CompteNonGerableException     si le Compte n'existe plus
+     * @throws UnsupportedOperationException si le dépôt ne sait pas supprimer
+     */
+    default void supprimer(UUID id) {
+        throw new UnsupportedOperationException("Ce dépôt ne sait pas supprimer un compte.");
+    }
+
+    /**
      * Comptes du rôle donné, dans un ordre quelconque (l'ordre d'affichage est une règle des cas d'usage).
      *
      * @throws UnsupportedOperationException si le dépôt ne sait pas rechercher

@@ -75,6 +75,11 @@ export class AdministrationApiService {
     return this.http.post<void>(`${urlCompte(URL_BENEVOLES, id)}/reactivation`, null);
   }
 
+  /** Supprime un Compte `BENEVOLE` et ses affectations (204 ; 409 si affecté à une Course `EN_COURS`). */
+  supprimerBenevole(id: string): Observable<void> {
+    return this.http.delete<void>(urlCompte(URL_BENEVOLES, id));
+  }
+
   /** Toutes les Courses, dans l'ordre renvoyé par l'API (admins et admin master). */
   listerCourses(): Observable<CourseReponse[]> {
     return this.http.get<CourseReponse[]>(URL_COURSES);

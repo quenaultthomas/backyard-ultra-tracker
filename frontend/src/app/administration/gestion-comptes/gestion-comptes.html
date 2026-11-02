@@ -78,11 +78,23 @@
                 <app-activation-compte
                   [compte]="compte"
                   [comptesGeres]="geres"
-                  [ouverte]="confirmationOuverte() === compte.id"
-                  (ouvrir)="ouvrirConfirmation(compte.id)"
+                  [ouverte]="estOuverte(compte.id, 'activation')"
+                  (ouvrir)="ouvrirConfirmation(compte.id, 'activation')"
                   (fermer)="confirmationOuverte.set(null)"
                   (termine)="afficherResultat($event)"
                 />
+                @if (geres.suppression; as suppression) {
+                  <app-suppression-compte
+                    [compte]="compte"
+                    [suppression]="suppression"
+                    [prefixe]="p"
+                    [ecran]="geres.ecran"
+                    [ouverte]="estOuverte(compte.id, 'suppression')"
+                    (ouvrir)="ouvrirConfirmation(compte.id, 'suppression')"
+                    (fermer)="confirmationOuverte.set(null)"
+                    (termine)="afficherResultat($event)"
+                  />
+                }
               </li>
             }
           </ul>

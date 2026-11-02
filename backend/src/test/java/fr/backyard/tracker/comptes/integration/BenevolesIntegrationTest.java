@@ -353,7 +353,7 @@ class BenevolesIntegrationTest {
     // ---------------------------------------------------------------- CA15
 
     @Test
-    @DisplayName("CA15 : PUT, PATCH, DELETE sur /benevoles/{id} jamais 2xx, Léo intact ; POST /api/comptes avec role BENEVOLE crée un COUREUR ; /admins 403 pour ADMIN ; migrations inchangées")
+    @DisplayName("CA15 : PUT, PATCH sur /benevoles/{id} jamais 2xx, Léo intact ; POST /api/comptes avec role BENEVOLE crée un COUREUR ; /admins 403 pour ADMIN ; migrations inchangées")
     void ca15_non_regression_et_absence_de_modification() throws Exception {
         inserer("Nadia", "ADMIN");
         HttpResponse<String> coureur = api.postJson("/api/comptes",
@@ -368,7 +368,7 @@ class BenevolesIntegrationTest {
         String idLeo = json.readTree(creer(patron, corps("Léo", MOT_DE_PASSE_BENEVOLE)).body()).get("id").asString();
         Map<String, Object> avant = jdbc.queryForMap("select * from compte where pseudo = 'Léo'");
 
-        for (String methode : List.of("PUT", "PATCH", "DELETE")) {
+        for (String methode : List.of("PUT", "PATCH")) {
             HttpResponse<String> reponse = api.requete(methode, CHEMIN + "/" + idLeo, patron.entetes(),
                     "application/json", "{\"pseudo\":\"Pirate\",\"motDePasse\":\"" + MOT_DE_PASSE + "\"}");
             assertThat(reponse.statusCode()).as(methode).isIn(404, 405);

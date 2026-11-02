@@ -1,8 +1,22 @@
 import { Observable } from 'rxjs';
 
 import { CompteReponse } from '../../comptes/compte';
+import { ErreursSpecifiques } from '../../comptes/erreurs-compte';
 import { AdministrationApiService } from '../administration-api.service';
 import { CreerAdminRequete, CreerBenevoleRequete } from '../requetes-creation-compte';
+import {
+  CODE_BENEVOLE_AFFECTE_COURSE_EN_COURS,
+  refusBenevoleAffecteCourseEnCours,
+} from './suppression-compte/refus-suppression-benevole';
+
+/** Suppression définitive d'un Compte depuis sa ligne : appel API, libellés et refus propres au rôle. */
+export interface SuppressionComptesGeres {
+  readonly confirmation: (pseudo: string) => string;
+  readonly succes: (pseudo: string) => string;
+  /** Messages des refus propres au rôle (le 404 `COMPTE_INTROUVABLE` est commun). */
+  readonly erreurs: ErreursSpecifiques<never>;
+  readonly supprimer: (api: AdministrationApiService, id: string) => Observable<void>;
+}
 
 /** Type de Compte géré par l'écran de gestion : appels API, libellés et préfixes `data-testid`. */
 export interface ComptesGeres {
@@ -32,6 +46,8 @@ export interface ComptesGeres {
   readonly confirmationDesactivation: (pseudo: string) => string;
   readonly desactiver: (api: AdministrationApiService, id: string) => Observable<void>;
   readonly reactiver: (api: AdministrationApiService, id: string) => Observable<void>;
+  /** Absente : aucun bouton « Supprimer » sur les lignes. */
+  readonly suppression?: SuppressionComptesGeres;
 }
 
 export const ADMINS: ComptesGeres = {
@@ -76,4 +92,13 @@ export const BENEVOLES: ComptesGeres = {
     `sont conservés.`,
   desactiver: (api, id) => api.desactiverBenevole(id),
   reactiver: (api, id) => api.reactiverBenevole(id),
+  suppression: {
+    confirmation: (pseudo) =>
+      `Supprimer définitivement le bénévole ${pseudo} ? Son compte sera supprimé et son pseudo ` +
+      `pourra être réutilisé. Il sera retiré de toutes ses courses, y compris terminées. Les ` +
+      `passages qu'il a scannés sont conservés. Cette action est irréversible.`,
+    succes: (pseudo) => `Le bénévole ${pseudo} a été supprimé.`,
+    erreurs: { [CODE_BENEVOLE_AFFECTE_COURSE_EN_COURS]: refusBenevoleAffecteCourseEnCours },
+    supprimer: (api, id) => api.supprimerBenevole(id),
+  },
 };

@@ -115,6 +115,18 @@ public final class Compte {
         }
     }
 
+    /**
+     * Seul un Compte BENEVOLE, actif ou désactivé, se supprime par la route des bénévoles. Unique contrôle de cette
+     * règle ; tout autre rôle reçoit le même refus qu'un Compte inconnu.
+     *
+     * @throws CompteNonGerableException le Compte n'est pas un Compte BENEVOLE
+     */
+    public void verifierSuppressionBenevole() {
+        if (role != Role.BENEVOLE) {
+            throw new CompteNonGerableException();
+        }
+    }
+
     private boolean aucunAutreAdminActif(Collection<Compte> admins) {
         return admins.stream().noneMatch(admin -> admin.role == Role.ADMIN && admin.actif && !admin.id.equals(id));
     }
