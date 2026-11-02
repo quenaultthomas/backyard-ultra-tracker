@@ -1,6 +1,7 @@
 package fr.backyard.tracker.comptes.exposition;
 
 import fr.backyard.tracker.comptes.domaine.AdminMasterNonDesactivableException;
+import fr.backyard.tracker.comptes.domaine.AdminMasterNonSupprimableException;
 import fr.backyard.tracker.comptes.domaine.AutoDesactivationInterditeException;
 import fr.backyard.tracker.comptes.domaine.BenevoleAffecteCourseEnCoursException;
 import fr.backyard.tracker.comptes.domaine.CompteIntrouvableOuInutilisableException;
@@ -8,6 +9,7 @@ import fr.backyard.tracker.comptes.domaine.CompteNonConnectableException;
 import fr.backyard.tracker.comptes.domaine.CompteNonGerableException;
 import fr.backyard.tracker.comptes.domaine.CreationsCompteExcessivesException;
 import fr.backyard.tracker.comptes.domaine.DernierAdminActifException;
+import fr.backyard.tracker.comptes.domaine.DernierAdminActifNonSupprimableException;
 import fr.backyard.tracker.comptes.domaine.ConnexionBloqueeException;
 import fr.backyard.tracker.comptes.domaine.DonneesCompteInvalidesException;
 import fr.backyard.tracker.comptes.domaine.HachageSatureException;
@@ -176,6 +178,19 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
     @ExceptionHandler(DernierAdminActifException.class)
     ProblemDetail dernierAdminActif() {
         return probleme(HttpStatus.CONFLICT, TITRE_CONFLIT, "Impossible de désactiver le dernier administrateur actif.",
+                "DERNIER_ADMIN_ACTIF");
+    }
+
+    @ExceptionHandler(AdminMasterNonSupprimableException.class)
+    ProblemDetail adminMasterNonSupprimable() {
+        return probleme(HttpStatus.CONFLICT, TITRE_CONFLIT, "L'administrateur principal ne peut pas être supprimé.",
+                "ADMIN_MASTER_NON_SUPPRIMABLE");
+    }
+
+    /** Même code que le refus de désactivation (9.4 RG12), détail propre à la suppression. */
+    @ExceptionHandler(DernierAdminActifNonSupprimableException.class)
+    ProblemDetail dernierAdminActifNonSupprimable() {
+        return probleme(HttpStatus.CONFLICT, TITRE_CONFLIT, "Impossible de supprimer le dernier administrateur actif.",
                 "DERNIER_ADMIN_ACTIF");
     }
 

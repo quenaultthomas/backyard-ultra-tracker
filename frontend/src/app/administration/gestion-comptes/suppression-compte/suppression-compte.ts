@@ -50,7 +50,7 @@ export class SuppressionCompte {
 
   readonly compte = input.required<CompteReponse>();
   readonly suppression = input.required<SuppressionComptesGeres>();
-  /** Préfixe des `data-testid` (`benevole`, puis `admin` au 9.4). */
+  /** Préfixe des `data-testid` (`benevole`, `admin`). */
   readonly prefixe = input.required<string>();
   /** Route de l'écran, pour le retour après connexion. */
   readonly ecran = input.required<string>();

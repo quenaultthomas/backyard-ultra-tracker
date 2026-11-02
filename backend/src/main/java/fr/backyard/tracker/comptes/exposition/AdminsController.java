@@ -4,6 +4,7 @@ import fr.backyard.tracker.comptes.application.CreerAdmin;
 import fr.backyard.tracker.comptes.application.DesactiverAdmin;
 import fr.backyard.tracker.comptes.application.ListerAdmins;
 import fr.backyard.tracker.comptes.application.ReactiverAdmin;
+import fr.backyard.tracker.comptes.application.SupprimerAdmin;
 import fr.backyard.tracker.comptes.domaine.Compte;
 import java.util.List;
 import java.util.UUID;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,13 +36,15 @@ public class AdminsController {
     private final ListerAdmins listerAdmins;
     private final DesactiverAdmin desactiverAdmin;
     private final ReactiverAdmin reactiverAdmin;
+    private final SupprimerAdmin supprimerAdmin;
 
     public AdminsController(CreerAdmin creerAdmin, ListerAdmins listerAdmins, DesactiverAdmin desactiverAdmin,
-                           ReactiverAdmin reactiverAdmin) {
+                           ReactiverAdmin reactiverAdmin, SupprimerAdmin supprimerAdmin) {
         this.creerAdmin = creerAdmin;
         this.listerAdmins = listerAdmins;
         this.desactiverAdmin = desactiverAdmin;
         this.reactiverAdmin = reactiverAdmin;
+        this.supprimerAdmin = supprimerAdmin;
     }
 
     /** Principal : identifiant du compte de l'admin master (voir {@link SessionConnexion}). */
@@ -69,5 +73,12 @@ public class AdminsController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void reactiverAdmin(@PathVariable("id") String id, @AuthenticationPrincipal UUID idAppelant) {
         reactiverAdmin.executer(idAppelant, IdentifiantCompte.lire(id));
+    }
+
+    /** Sans corps ; le journal de la suppression (ou du refus) est écrit par le cas d'usage (identifiants seuls). */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void supprimerAdmin(@PathVariable("id") String id, @AuthenticationPrincipal UUID idAppelant) {
+        supprimerAdmin.executer(idAppelant, IdentifiantCompte.lire(id));
     }
 }

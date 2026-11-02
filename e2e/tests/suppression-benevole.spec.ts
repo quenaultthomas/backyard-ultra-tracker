@@ -377,7 +377,7 @@ test.describe('Suppression d\'un bénévole', () => {
     await expect(page).toHaveURL(/\/connexion\?retour=%2Fadministration%2Fbenevoles$/);
     await page.unrouteAll({ behavior: 'ignoreErrors' });
 
-    // aucun bouton de suppression sur l'écran des administrateurs
+    // 9.4 : l'écran des administrateurs propose un bouton de suppression par ligne (RG18.4)
     const contexteMaster = await browser.newContext();
     const pageMaster = await contexteMaster.newPage();
     await connecterAdminMaster(pageMaster);
@@ -386,8 +386,11 @@ test.describe('Suppression d\'un bénévole', () => {
     await expect(pageMaster.getByTestId('titre-admins')).toBeVisible();
     await expect(pageMaster.getByTestId('liste-admins')).toBeVisible();
     await expect(pageMaster.getByTestId('ligne-admin').first()).toBeVisible();
-    await expect(pageMaster.getByTestId('admin-bouton-supprimer')).toHaveCount(0);
-    await expect(pageMaster.getByRole('button', { name: /Supprimer/ })).toHaveCount(0);
+    const lignesAdmin = pageMaster.getByTestId('ligne-admin');
+    const nombreLignes = await lignesAdmin.count();
+    expect(nombreLignes).toBeGreaterThan(0);
+    await expect(pageMaster.getByTestId('admin-bouton-supprimer')).toHaveCount(nombreLignes);
+    for (let i = 0; i < nombreLignes; i++) await expect(lignesAdmin.nth(i).getByTestId('admin-bouton-supprimer')).toHaveCount(1);
     await contexteMaster.close();
 
     // un coureur n'accède pas à l'écran

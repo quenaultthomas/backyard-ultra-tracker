@@ -7,9 +7,6 @@ import fr.backyard.tracker.comptes.domaine.CompteNonGerableException;
 import fr.backyard.tracker.comptes.domaine.DepotComptes;
 import fr.backyard.tracker.comptes.domaine.DernierAdminActifException;
 import fr.backyard.tracker.comptes.domaine.InvalidationAutresSessions;
-import fr.backyard.tracker.comptes.domaine.Role;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,19 +36,14 @@ public class DesactiverAdmin {
      */
     @Transactional
     public void executer(UUID appelantId, UUID cibleId) {
-        List<Compte> admins = depotComptes.trouverParRolePourModification(Role.ADMIN);
-        Compte cible = ComptesGeres.ADMINS.cible(parmi(admins, cibleId)
-                .or(() -> depotComptes.trouverParIdPourModification(cibleId)));
-        Desactivation.verifier(cible, appelantId, admins);
+        AdminsVerrouilles verrouilles = AdminsVerrouilles.charger(depotComptes, cibleId);
+        Compte cible = verrouilles.cible();
+        Desactivation.verifier(cible, appelantId, verrouilles.admins());
         if (!cible.actif()) {
             return;
         }
         depotComptes.mettreAJour(cible.desactiver());
         Desactivation.journaliser(cibleId, appelantId, 0);
         Desactivation.fermerSessionsApresValidation(invalidationSessions, cibleId);
-    }
-
-    private static Optional<Compte> parmi(List<Compte> comptes, UUID id) {
-        return comptes.stream().filter(compte -> compte.id().equals(id)).findFirst();
     }
 }
