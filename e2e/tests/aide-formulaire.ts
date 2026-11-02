@@ -27,3 +27,14 @@ export async function verifierFerme(page: Page, nom: NomFormulaire): Promise<voi
   await expect(page.getByTestId(f.formulaire)).not.toBeVisible();
   await expect(page.getByTestId(f.bouton)).toHaveAttribute('aria-expanded', 'false');
 }
+
+/**
+ * Ouvre le panneau « Rechercher un coureur » (9.5) par son bouton : attend le panneau visible,
+ * `aria-expanded="true"` et le focus sur le champ de recherche. `prefixe` : `benevole` ou `admin`.
+ */
+export async function ouvrirPanneauRecherche(page: Page, prefixe: 'benevole' | 'admin'): Promise<void> {
+  await page.getByTestId(`${prefixe}-bouton-promouvoir`).click();
+  await expect(page.getByTestId(`${prefixe}-promotion`)).toBeVisible();
+  await expect(page.getByTestId(`${prefixe}-bouton-promouvoir`)).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.getByTestId(`${prefixe}-promotion-recherche`)).toBeFocused();
+}

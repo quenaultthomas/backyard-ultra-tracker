@@ -84,7 +84,7 @@ public final class Pseudo {
         if (longueur(pseudo) < LONGUEUR_MIN || excedeLongueurMax(pseudo)) {
             return Optional.of(LONGUEUR);
         }
-        if (!CARACTERES_AUTORISES.matcher(pseudo).matches()) {
+        if (!respecteAlphabet(pseudo)) {
             return Optional.of(CARACTERES);
         }
         return Optional.empty();
@@ -93,6 +93,11 @@ public final class Pseudo {
     /** Seul contrôle de saisie appliqué à la connexion : un pseudo absent ou fait d'espaces. */
     public static Optional<ViolationValidation> verifierPresence(String saisie) {
         return saisie == null || saisie.trim().isEmpty() ? Optional.of(REQUIS) : Optional.empty();
+    }
+
+    /** Vrai si le texte n'est fait que de caractères admis dans un pseudo (lettres, chiffres, « . », « _ », « - »). */
+    static boolean respecteAlphabet(String texte) {
+        return CARACTERES_AUTORISES.matcher(texte).matches();
     }
 
     /** Plus de {@value #LONGUEUR_MAX} caractères (points de code) après suppression des espaces de bord. */
@@ -110,7 +115,8 @@ public final class Pseudo {
         return normaliser(valeur);
     }
 
-    private static int longueur(String texte) {
+    /** Longueur en points de code : un caractère hors plan de base compte pour un. */
+    static int longueur(String texte) {
         return texte.codePointCount(0, texte.length());
     }
 

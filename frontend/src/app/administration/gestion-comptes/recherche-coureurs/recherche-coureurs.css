@@ -1,0 +1,40 @@
+/*
+ * Bouton « Promouvoir un coureur » et panneau de recherche (9.5) : l'hôte s'efface pour que le
+ * bouton et le panneau suivent la mise en page de la section de la liste (colonne flex).
+ */
+:host {
+  display: contents;
+}
+
+.resultats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-2);
+  overflow-wrap: anywhere;
+}
+
+.resultats p {
+  margin: 0;
+}
+
+.resultats__compte {
+  font-weight: var(--poids-gras);
+}
+
+.resultats__liste {
+  margin: 0;
+  padding-left: var(--espace-5);
+}
+
+.bouton-fermer {
+  align-self: flex-start;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Repli étroit (320 ou 360 px avec le texte à 200 %) : le panneau tient dans la carte. */
+@container cartes (max-width: 15rem) {
+  .encart {
+    padding: var(--espace-3);
+  }
+}

@@ -14,7 +14,7 @@ import {
 } from './aide-admin';
 import { deplierChangementMotDePasse } from './aide-mon-compte';
 import { placerStatutCourseEnBase, sinscrireParApi, type Inscription } from './aide-coureur';
-import { ouvrirFormulaire } from './aide-formulaire';
+import { ouvrirFormulaire, ouvrirPanneauRecherche } from './aide-formulaire';
 
 type PlaywrightLib = PlaywrightWorkerArgs['playwright'];
 
@@ -483,6 +483,29 @@ export const ETATS: Scene[] = [
     pret: async (page) => {
       await expect(page.getByTestId('titre-benevoles')).toBeVisible();
       await ouvrirFormulaire(page, 'benevole');
+    },
+  },
+  // 9.5 : panneau « Rechercher un coureur » ouvert, trois caractères saisis (au moins) et résultats affichés.
+  {
+    nom: 'gestion des admins recherche ouverte',
+    route: '/administration/admins',
+    role: 'master',
+    pret: async (page, jeu) => {
+      await expect(page.getByTestId('titre-admins')).toBeVisible();
+      await ouvrirPanneauRecherche(page, 'admin');
+      await page.getByTestId('admin-promotion-recherche').fill(jeu.coureur.slice(0, 6));
+      await expect(page.getByTestId('admin-promotion-compte')).toBeVisible();
+    },
+  },
+  {
+    nom: 'gestion des benevoles recherche ouverte',
+    route: '/administration/benevoles',
+    role: 'master',
+    pret: async (page, jeu) => {
+      await expect(page.getByTestId('titre-benevoles')).toBeVisible();
+      await ouvrirPanneauRecherche(page, 'benevole');
+      await page.getByTestId('benevole-promotion-recherche').fill(jeu.coureur.slice(0, 6));
+      await expect(page.getByTestId('benevole-promotion-compte')).toBeVisible();
     },
   },
 ];
