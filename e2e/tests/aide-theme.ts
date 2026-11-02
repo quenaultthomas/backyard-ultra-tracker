@@ -576,10 +576,21 @@ window.__t = (() => {
   const interactifs = () => Array.from(document.querySelectorAll('a[href], button, input, select, textarea'))
     .filter((el) => visible(el) && !el.disabled && el.getAttribute('type') !== 'hidden' && el.tabIndex >= 0 && el.getAttribute('aria-hidden') !== 'true');
 
+  /**
+   * Mène à leur terme les transitions CSS en cours (survol, focus, ouverture d'un formulaire) : une couleur
+   * mesurée en pleine transition est une valeur intermédiaire hors palette. Les animations sans fin ne sont pas touchées.
+   */
+  const terminerTransitions = () => {
+    for (const a of document.getAnimations()) {
+      if (a instanceof CSSTransition) a.finish();
+    }
+  };
+
   return {
-    visible, desc, hex, interactifs,
+    visible, desc, hex, interactifs, terminerTransitions,
     /** Couleurs calculées hors palette (CA5). */
     horsPalette(autorisees) {
+      terminerTransitions();
       const ok = new Set(autorisees);
       const props = ['color','backgroundColor','borderTopColor','borderRightColor','borderBottomColor','borderLeftColor','outlineColor'];
       const ecarts = [];
@@ -606,6 +617,7 @@ window.__t = (() => {
     },
     /** Ratios de contraste des textes visibles (CA6). */
     contrastes() {
+      terminerTransitions();
       const mesures = [];
       for (const el of document.querySelectorAll('*')) {
         if (!visible(el) || dansQr(el)) continue;

@@ -38,6 +38,20 @@ export async function nomsDesCaches(page: Page): Promise<string[]> {
 }
 
 /**
+ * Rétablit le réseau et attend qu'il réponde réellement depuis la page. Chromium émet l'évènement `online`
+ * au moment où l'émulation change : une relecture déclenchée par cet évènement peut encore échouer et
+ * l'écran ne se relit alors qu'à l'évènement suivant. Une fois le réseau confirmé, on le signale donc de
+ * nouveau (sans effet si la relecture a déjà réussi) pour que le test ne dépende pas de cette course.
+ */
+export async function retablirLeReseau(page: Page): Promise<void> {
+  await page.context().setOffline(false);
+  await expect
+    .poll(() => page.evaluate(() => fetch('/api/csrf', { cache: 'no-store' }).then((r) => r.ok, () => false)))
+    .toBe(true);
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
+}
+
+/**
  * Attend que le service worker soit actif et qu'il contrôle la page (rechargement), puis que la coque soit
  * entièrement précachée (index, scripts, chunks paresseux), condition de l'ouverture hors ligne.
  */
