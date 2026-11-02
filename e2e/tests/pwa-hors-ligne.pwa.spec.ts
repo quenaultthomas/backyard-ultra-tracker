@@ -20,6 +20,7 @@ import {
   lireStockagesNavigateur,
   memoriserLaListe,
   ouvrirScanAvecServiceWorker,
+  retablirLeReseau,
   retourDe,
   urlsDuCache,
 } from './aide-pwa';
@@ -138,7 +139,7 @@ test.describe('Ouverture hors ligne du bénévole (5.2)', () => {
     // Retour du réseau sur l'accueil : la liste est relue du serveur.
     await page.goto('/benevole');
     await expect(donneesHorsLigne(page)).toBeVisible();
-    await page.context().setOffline(false);
+    await retablirLeReseau(page);
     await expect(donneesHorsLigne(page)).toHaveCount(0);
     await expect(page.getByTestId('benevole-ligne-course').filter({ hasText: course.nom })).toHaveCount(1);
   });
