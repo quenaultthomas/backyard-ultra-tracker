@@ -3,6 +3,7 @@ package fr.backyard.tracker.comptes.infrastructure;
 import fr.backyard.tracker.comptes.domaine.AdminMasterDejaPresentException;
 import fr.backyard.tracker.comptes.domaine.Compte;
 import fr.backyard.tracker.comptes.domaine.CompteIntrouvableOuInutilisableException;
+import fr.backyard.tracker.comptes.domaine.CompteNonGerableException;
 import fr.backyard.tracker.comptes.domaine.DepotComptes;
 import fr.backyard.tracker.comptes.domaine.Pseudo;
 import fr.backyard.tracker.comptes.domaine.PseudoDejaUtiliseException;
@@ -152,6 +153,18 @@ public class CompteJpaAdapter implements DepotComptes {
         } catch (ConstraintViolationException exception) {
             throw traduire(exception);
         }
+    }
+
+    /** Flush immédiat : toute erreur de base survient dans le cas d'usage, avant la fermeture des sessions. */
+    @Override
+    @Transactional
+    public void supprimer(UUID id) {
+        CompteJpaEntity entite = entityManager.find(CompteJpaEntity.class, id);
+        if (entite == null) {
+            throw new CompteNonGerableException();
+        }
+        entityManager.remove(entite);
+        entityManager.flush();
     }
 
     private static RuntimeException traduire(ConstraintViolationException exception) {

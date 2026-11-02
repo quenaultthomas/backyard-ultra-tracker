@@ -4,6 +4,7 @@ import fr.backyard.tracker.comptes.application.CreerBenevole;
 import fr.backyard.tracker.comptes.application.DesactiverBenevole;
 import fr.backyard.tracker.comptes.application.ListerBenevoles;
 import fr.backyard.tracker.comptes.application.ReactiverBenevole;
+import fr.backyard.tracker.comptes.application.SupprimerBenevole;
 import fr.backyard.tracker.comptes.domaine.Compte;
 import java.util.List;
 import java.util.UUID;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,13 +36,16 @@ public class BenevolesController {
     private final ListerBenevoles listerBenevoles;
     private final DesactiverBenevole desactiverBenevole;
     private final ReactiverBenevole reactiverBenevole;
+    private final SupprimerBenevole supprimerBenevole;
 
-    public BenevolesController(CreerBenevole creerBenevole, ListerBenevoles listerBenevoles, DesactiverBenevole desactiverBenevole,
-                           ReactiverBenevole reactiverBenevole) {
+    public BenevolesController(CreerBenevole creerBenevole, ListerBenevoles listerBenevoles,
+                               DesactiverBenevole desactiverBenevole, ReactiverBenevole reactiverBenevole,
+                               SupprimerBenevole supprimerBenevole) {
         this.creerBenevole = creerBenevole;
         this.listerBenevoles = listerBenevoles;
         this.desactiverBenevole = desactiverBenevole;
         this.reactiverBenevole = reactiverBenevole;
+        this.supprimerBenevole = supprimerBenevole;
     }
 
     /** Principal : identifiant du compte de l'admin connecté (voir {@link SessionConnexion}). */
@@ -70,5 +75,12 @@ public class BenevolesController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void reactiverBenevole(@PathVariable("id") String id, @AuthenticationPrincipal UUID idAppelant) {
         reactiverBenevole.executer(idAppelant, IdentifiantCompte.lire(id));
+    }
+
+    /** Sans corps ; le journal de la suppression (ou du refus) est écrit par le cas d'usage (identifiants seuls). */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void supprimerBenevole(@PathVariable("id") String id, @AuthenticationPrincipal UUID idAppelant) {
+        supprimerBenevole.executer(idAppelant, IdentifiantCompte.lire(id));
     }
 }

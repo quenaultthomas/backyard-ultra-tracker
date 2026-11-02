@@ -21,6 +21,7 @@ import { CsrfService } from '../../../partage/csrf.service';
 import { MESSAGE_SERVICE_INDISPONIBLE } from '../../../partage/probleme';
 import { AdministrationApiService } from '../../administration-api.service';
 import { ComptesGeres } from '../comptes-geres';
+import { ResultatActionCompte } from '../resultat-action-compte';
 
 const ERREURS_ACTIVATION: ErreursSpecifiques<never> = {
   DERNIER_ADMIN_ACTIF: { generale: "Impossible : c'est le dernier administrateur actif." },
@@ -33,14 +34,6 @@ const ERREURS_ACTIVATION: ErreursSpecifiques<never> = {
   COMPTE_INTROUVABLE: { generale: "Ce compte n'existe plus." },
 };
 
-/** Issue d'une désactivation ou d'une réactivation confirmée, affichée par la liste. */
-export interface ResultatActivation {
-  readonly succes?: string;
-  readonly erreur?: string;
-  /** La liste est à relire (faux pour un jeton CSRF expiré). */
-  readonly recharger: boolean;
-}
-
 /**
  * Désactivation ou réactivation d'un Compte depuis sa ligne : bouton selon l'état renvoyé par
  * l'API, confirmation en ligne, puis un seul `POST`. Le serveur décide de tous les refus.
@@ -48,7 +41,7 @@ export interface ResultatActivation {
 @Component({
   selector: 'app-activation-compte',
   templateUrl: './activation-compte.html',
-  styleUrls: ['../../../partage/confirmation-en-ligne.css', './activation-compte.css'],
+  styleUrls: ['../../../partage/confirmation-en-ligne.css', '../action-compte.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ActivationCompte {
@@ -65,7 +58,7 @@ export class ActivationCompte {
   readonly ouverte = input(false);
   readonly ouvrir = output<void>();
   readonly fermer = output<void>();
-  readonly termine = output<ResultatActivation>();
+  readonly termine = output<ResultatActionCompte>();
 
   protected readonly envoiEnCours = signal(false);
   protected readonly texteConfirmation = computed(() => {

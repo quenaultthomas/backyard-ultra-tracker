@@ -35,6 +35,12 @@ final class EspionsDesactivationDeTest {
             }
             return nombreRetourne;
         }
+
+        /** Port complété en 9.3 : la désactivation ne doit jamais retirer le bénévole de toutes ses Courses. */
+        @Override
+        public int desaffecterDeToutesLesCourses(UUID benevoleId) {
+            throw new AssertionError("La désactivation ne doit pas appeler le retrait de toutes les affectations");
+        }
     }
 
     static final class SessionsEspion implements InvalidationAutresSessions {

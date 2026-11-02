@@ -28,9 +28,11 @@ import { CsrfService } from '../../partage/csrf.service';
 import { FormulaireALaDemande } from '../../partage/formulaire-a-la-demande';
 import { AdministrationApiService } from '../administration-api.service';
 import { RefusAccesService } from '../../comptes/refus-acces.service';
-import { ActivationCompte, ResultatActivation } from './activation-compte/activation-compte';
-import { ComptesGeres } from './comptes-geres';
 import { MenuAdministration } from '../menu-administration/menu-administration';
+import { ActivationCompte } from './activation-compte/activation-compte';
+import { ComptesGeres } from './comptes-geres';
+import { ActionCompte, ConfirmationOuverte, ResultatActionCompte } from './resultat-action-compte';
+import { SuppressionCompte } from './suppression-compte/suppression-compte';
 
 /** Pastille de l'état d'un Compte (affichage seulement, l'état vient de l'API). */
 const PASTILLES_ETAT = {
@@ -48,7 +50,14 @@ const ERREURS_SPECIFIQUES: Record<string, ErreursFormulaireCompte> = {
  */
 @Component({
   selector: 'app-gestion-comptes',
-  imports: [ReactiveFormsModule, RouterLink, DatePipe, ActivationCompte, MenuAdministration],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    DatePipe,
+    ActivationCompte,
+    SuppressionCompte,
+    MenuAdministration,
+  ],
   templateUrl: './gestion-comptes.html',
   styleUrls: [
     '../../partage/page-carte.css',
@@ -89,9 +98,9 @@ export class GestionComptes implements OnInit {
   protected readonly soumis = signal(false);
   protected readonly erreursServeur = signal<ErreursFormulaireCompte>({});
   protected readonly pseudoCree = signal<string | null>(null);
-  /** Identifiant du Compte dont la confirmation est ouverte (une seule à la fois). */
-  protected readonly confirmationOuverte = signal<string | null>(null);
-  protected readonly resultatAction = signal<ResultatActivation | null>(null);
+  /** Compte et action dont la confirmation est ouverte (une seule à la fois, toutes actions confondues). */
+  protected readonly confirmationOuverte = signal<ConfirmationOuverte | null>(null);
+  protected readonly resultatAction = signal<ResultatActionCompte | null>(null);
 
   ngOnInit(): void {
     this.demanderJeton();
@@ -153,18 +162,26 @@ export class GestionComptes implements OnInit {
     return this.soumis() ? erreurClientConfirmation(this.formulaire) : undefined;
   }
 
-  /** Ouvre la confirmation d'une ligne (ferme la précédente) et efface les messages d'action. */
-  protected ouvrirConfirmation(id: string): void {
+  protected estOuverte(id: string, action: ActionCompte): boolean {
+    const ouverte = this.confirmationOuverte();
+    return ouverte?.id === id && ouverte.action === action;
+  }
+
+  /** Ouvre une confirmation (ferme la précédente, quelle que soit l'action) et efface les messages d'action. */
+  protected ouvrirConfirmation(id: string, action: ActionCompte): void {
     this.resultatAction.set(null);
-    this.confirmationOuverte.set(id);
+    this.confirmationOuverte.set({ id, action });
   }
 
   /** Confirmation fermée, message affiché, liste relue selon l'issue. */
-  protected afficherResultat(resultat: ResultatActivation): void {
+  protected afficherResultat(resultat: ResultatActionCompte): void {
     this.confirmationOuverte.set(null);
     this.resultatAction.set(resultat);
     if (resultat.recharger) {
       this.chargerComptes();
+    }
+    if (resultat.compteRetire) {
+      this.boutonNouveau().nativeElement.focus();
     }
   }
 

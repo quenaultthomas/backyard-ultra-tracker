@@ -233,7 +233,29 @@ public final class Course {
      * @return vrai si le bénévole était affecté et a été retiré
      */
     public boolean retirerBenevoleDesactive(UUID benevoleId) {
-        if (!retireLesBenevolesDesactives() || !benevolesAffectes.contains(benevoleId)) {
+        return retireLesBenevolesDesactives() && retirerBenevole(benevoleId);
+    }
+
+    /**
+     * Une Course EN_COURS empêche la suppression d'un bénévole qui y est affecté (scans en cours) ; une Course
+     * EN_PREPARATION ou TERMINEE non. Unique définition de cette règle.
+     */
+    public boolean bloqueLaSuppressionDUnBenevole() {
+        return statut == StatutCourse.EN_COURS;
+    }
+
+    /**
+     * Retire ce bénévole supprimé des affectés, y compris d'une Course TERMINEE ; une Course qui
+     * {@link #bloqueLaSuppressionDUnBenevole() bloque la suppression} n'est jamais modifiée.
+     *
+     * @return vrai si le bénévole était affecté et a été retiré
+     */
+    public boolean retirerBenevoleSupprime(UUID benevoleId) {
+        return !bloqueLaSuppressionDUnBenevole() && retirerBenevole(benevoleId);
+    }
+
+    private boolean retirerBenevole(UUID benevoleId) {
+        if (!benevolesAffectes.contains(benevoleId)) {
             return false;
         }
         Set<UUID> restants = new LinkedHashSet<>(benevolesAffectes);
