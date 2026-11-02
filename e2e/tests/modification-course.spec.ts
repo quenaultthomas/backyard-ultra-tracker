@@ -17,6 +17,7 @@ import {
   type DonneesCourse,
 } from './aide-admin';
 import { creerCompteParApi, MOT_DE_PASSE } from './aide-connexion';
+import { ouvrirFormulaire, verifierFerme } from './aide-formulaire';
 
 type PlaywrightLib = PlaywrightWorkerArgs['playwright'];
 
@@ -107,6 +108,8 @@ test.describe('Modification d\'une course', () => {
       if (r.method() === 'GET' && /\/api\/administration\/courses\/[^/]+$/.test(r.url())) getsParId.push(r.url());
     });
     await ouvrirGestionCourses(page);
+    await verifierFerme(page, 'course');
+    await ouvrirFormulaire(page, 'course');
     await expect(page.getByTestId('course-formulaire-titre')).toHaveText('Déclarer une course');
     await modifier(page, nom);
 
@@ -138,6 +141,8 @@ test.describe('Modification d\'une course', () => {
     await expect(l.getByTestId('course-participants-max')).toHaveText('50');
     await expect(l.getByTestId('course-boucles-max')).toHaveText('24');
     await expect(l.getByTestId('course-date')).toHaveText(dateAffichee(date));
+    await verifierFerme(page, 'course');
+    await ouvrirFormulaire(page, 'course');
     await expect(page.getByTestId('course-formulaire-titre')).toHaveText('Déclarer une course');
     await verifierChampsVides(page);
     expect(getsParId).toHaveLength(0);
@@ -206,6 +211,8 @@ test.describe('Modification d\'une course', () => {
     await modifier(page, a.nom);
     await page.getByTestId('course-champ-duree').fill('15');
     await page.getByTestId('course-bouton-annuler').click();
+    await verifierFerme(page, 'course');
+    await ouvrirFormulaire(page, 'course');
     await expect(page.getByTestId('course-formulaire-titre')).toHaveText('Déclarer une course');
     await expect(page.getByTestId('course-bouton-creer')).toBeVisible();
     await expect(page.getByTestId('course-bouton-annuler')).toHaveCount(0);
@@ -227,6 +234,8 @@ test.describe('Modification d\'une course', () => {
     await page.getByTestId('course-bouton-enregistrer').click();
     await expect(page.getByTestId('course-message-succes')).toHaveText(`La course ${b.nom} a été modifiée.`);
     expect(puts).toHaveLength(1);
+    await verifierFerme(page, 'course');
+    await ouvrirFormulaire(page, 'course');
     await expect(page.getByTestId('course-bouton-creer')).toBeVisible();
 
     const nouvelle = courseDeReference();
@@ -332,6 +341,8 @@ test.describe('Modification d\'une course', () => {
     await expect(corrigee.getByTestId('course-duree')).toHaveText('55 min');
     await expect(corrigee.getByTestId('course-denivele')).toHaveText('0 m');
     await expect(page.getByTestId('course-erreur-nom')).toHaveCount(0);
+    await verifierFerme(page, 'course');
+    await ouvrirFormulaire(page, 'course');
     await verifierChampsVides(page);
   });
 
@@ -475,6 +486,8 @@ test.describe('Modification d\'une course', () => {
     }
 
     await ouvrirGestionCourses(page);
+    await verifierFerme(page, 'course');
+    await ouvrirFormulaire(page, 'course');
     await expect(page.getByTestId('course-formulaire-titre')).toHaveText('Déclarer une course');
     await expect(page.getByTestId('course-bouton-creer')).toBeVisible();
     await expect(page.getByTestId('course-bouton-enregistrer')).toHaveCount(0);

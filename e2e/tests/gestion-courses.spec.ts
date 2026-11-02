@@ -18,6 +18,7 @@ import {
   pseudoBenevoleUnique,
   type DonneesCourse,
 } from './aide-admin';
+import { ouvrirFormulaire, verifierFerme } from './aide-formulaire';
 
 type PlaywrightLib = PlaywrightWorkerArgs['playwright'];
 
@@ -103,6 +104,13 @@ async function verifierChampsVides(page: Page): Promise<void> {
   }
 }
 
+/** Formulaire fermé (9.2 RG14), puis réouvert : les champs sont vides. */
+async function verifierFermeEtChampsVidesApresReouverture(page: Page): Promise<void> {
+  await verifierFerme(page, 'course');
+  await ouvrirFormulaire(page, 'course');
+  await verifierChampsVides(page);
+}
+
 test.describe('Gestion des courses', () => {
   test('CA21 - un admin déclare une course, la retrouve dans la liste triée avec ses paramètres', async ({ page, browser, playwright }) => {
     const nom = nomCourseUnique();
@@ -115,6 +123,8 @@ test.describe('Gestion des courses', () => {
     await expect(page.getByTestId('titre-courses')).toHaveText('Gestion des courses');
     await expect(page.getByTestId('liste-courses').or(page.getByTestId('courses-vide'))).toBeVisible();
 
+    await verifierFerme(page, 'course');
+    await ouvrirFormulaire(page, 'course');
     const champDate = page.getByTestId('course-champ-date');
     await expect(champDate).toHaveAttribute('type', 'text');
     await expect(champDate).toHaveAttribute('placeholder', 'jj/mm/aaaa');
@@ -139,7 +149,7 @@ test.describe('Gestion des courses', () => {
     await expect(ligne.getByTestId('course-denivele')).toHaveText('120 m');
     await expect(ligne.getByTestId('course-participants-max')).toHaveText('50');
     await expect(ligne.getByTestId('course-boucles-max')).toHaveText('24');
-    await verifierChampsVides(page);
+    await verifierFermeEtChampsVidesApresReouverture(page);
 
     const api = await page.request.get('/api/administration/courses');
     expect(api.status()).toBe(200);
@@ -174,6 +184,7 @@ test.describe('Gestion des courses', () => {
 
     // boucle plate : dénivelé 0 accepté
     const nomPlat = nomCourseUnique('Piste plate');
+    await ouvrirFormulaire(page, 'course');
     await remplir(page, saisieReference(nomPlat, dateDansJours(31), { distance: '400', duree: '1', denivele: '0' }));
     await page.getByTestId('course-bouton-creer').click();
     await expect(page.getByTestId('course-message-succes')).toHaveText(`La course ${nomPlat} a été déclarée.`);
@@ -194,6 +205,7 @@ test.describe('Gestion des courses', () => {
     await expect(pageAdmin).toHaveURL(URL_COURSES);
     await expect(pageAdmin.getByTestId('ligne-course').filter({ hasText: nom })).toHaveCount(1);
     const nom2 = nomCourseUnique();
+    await ouvrirFormulaire(pageAdmin, 'course');
     await remplir(pageAdmin, saisieReference(nom2, dateDansJours(30)));
     await pageAdmin.getByTestId('course-bouton-creer').click();
     await expect(pageAdmin.getByTestId('course-message-succes')).toHaveText(`La course ${nom2} a été déclarée.`);
@@ -203,6 +215,7 @@ test.describe('Gestion des courses', () => {
 
   test('CA22 - les contrôles côté écran bloquent l\'envoi, le dénivelé 0 est accepté', async ({ page }) => {
     await ouvrirGestionCourses(page);
+    await ouvrirFormulaire(page, 'course');
     const posts: string[] = [];
     page.on('request', (r) => {
       if (r.method() === 'POST' && r.url().includes('/api/administration/courses')) posts.push(r.url());
@@ -244,6 +257,7 @@ test.describe('Gestion des courses', () => {
     const page = await contexte.newPage();
     try {
       await ouvrirGestionCourses(page);
+      await ouvrirFormulaire(page, 'course');
       const champDate = page.getByTestId('course-champ-date');
       const erreurDate = page.getByTestId('course-erreur-date');
       await expect(champDate).toHaveAttribute('type', 'text');
@@ -303,6 +317,7 @@ test.describe('Gestion des courses', () => {
 
   test('CA26 - les espaces autour d\'une date jj/mm/aaaa valide sont tolérés (trim)', async ({ page }) => {
     await ouvrirGestionCourses(page);
+    await ouvrirFormulaire(page, 'course');
     await remplir(page, saisieReference(nomCourseUnique(), dateDansJours(30)));
     const champDate = page.getByTestId('course-champ-date');
     await champDate.fill(' 01/01/2020 ');
@@ -317,6 +332,7 @@ test.describe('Gestion des courses', () => {
 
   test('CA23 - les erreurs de validation du serveur s\'affichent sous les champs, les valeurs sont conservées', async ({ page }) => {
     await ouvrirGestionCourses(page);
+    await ouvrirFormulaire(page, 'course');
     const lignesAvant = await page.getByTestId('ligne-course').count();
     const hier = dateDansJours(-1);
     const hierAffiche = dateAffichee(hier);
@@ -350,7 +366,7 @@ test.describe('Gestion des courses', () => {
     await expect(page.getByTestId('course-message-succes')).toHaveText(`La course ${nom} a été déclarée.`);
     await expect(page.getByTestId('ligne-course').filter({ hasText: nom })).toHaveCount(1);
     await expect(page.getByTestId('course-erreur-nom')).toHaveCount(0);
-    await verifierChampsVides(page);
+    await verifierFermeEtChampsVidesApresReouverture(page);
   });
 
   test('CA24 - l\'accès à /administration/courses et le lien dépendent du rôle', async ({ page, browser, request, playwright }) => {
@@ -407,6 +423,9 @@ test.describe('Gestion des courses', () => {
     await page.goto('/administration/courses');
     await expect(page.getByTestId('courses-erreur')).toHaveText('Impossible de charger la liste des courses. Réessayez plus tard.');
     await expect(page.getByTestId('courses-erreur')).not.toContainText('500');
+    await expect(page.getByTestId('course-bouton-nouvelle')).toBeVisible();
+    await expect(page.getByTestId('course-bouton-nouvelle')).toBeEnabled();
+    await ouvrirFormulaire(page, 'course');
     await expect(page.getByTestId('course-champ-nom')).toBeEnabled();
     await expect(page.getByTestId('course-bouton-creer')).toBeEnabled();
     await page.unroute(MOTIF_API);
@@ -429,6 +448,7 @@ test.describe('Gestion des courses', () => {
     await expect(page.getByTestId('liste-courses').or(page.getByTestId('courses-vide'))).toBeVisible();
     const nom = nomCourseUnique();
     const date = dateDansJours(30);
+    await ouvrirFormulaire(page, 'course');
     await remplir(page, saisieReference(nom, date));
     await page.getByTestId('course-bouton-creer').click();
     await expect(page.getByTestId('course-erreur-generale')).toHaveText('Service indisponible, veuillez réessayer plus tard.');
@@ -448,6 +468,7 @@ test.describe('Gestion des courses', () => {
     );
     await page.goto('/administration/courses');
     await expect(page.getByTestId('liste-courses').or(page.getByTestId('courses-vide'))).toBeVisible();
+    await ouvrirFormulaire(page, 'course');
     await remplir(page, saisieReference(nom, date));
     const nouveauCsrf = page.waitForResponse((r) => r.url().includes('/api/csrf'));
     await page.getByTestId('course-bouton-creer').click();

@@ -3,10 +3,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -23,6 +25,7 @@ import {
 } from '../../comptes/controles-formulaire-compte';
 import { ErreursFormulaireCompte, interpreterErreurCompte } from '../../comptes/erreurs-compte';
 import { CsrfService } from '../../partage/csrf.service';
+import { FormulaireALaDemande } from '../../partage/formulaire-a-la-demande';
 import { AdministrationApiService } from '../administration-api.service';
 import { RefusAccesService } from '../../comptes/refus-acces.service';
 import { ActivationCompte, ResultatActivation } from './activation-compte/activation-compte';
@@ -50,6 +53,7 @@ const ERREURS_SPECIFIQUES: Record<string, ErreursFormulaireCompte> = {
   styleUrls: [
     '../../partage/page-carte.css',
     '../../comptes/formulaire-compte.css',
+    '../../partage/formulaire-a-la-demande.css',
     './gestion-comptes.css',
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,6 +65,11 @@ export class GestionComptes implements OnInit {
   private readonly csrf = inject(CsrfService);
   private readonly refusAcces = inject(RefusAccesService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly boutonNouveau =
+    viewChild.required<ElementRef<HTMLButtonElement>>('boutonNouveau');
+  private readonly champPseudo = viewChild.required<ElementRef<HTMLInputElement>>('champPseudo');
+  /** Formulaire de création fermé à l'arrivée, ouvert par le bouton « Nouvel admin » / « Nouveau bénévole ». */
+  protected readonly ouverture = new FormulaireALaDemande(this.boutonNouveau, this.champPseudo);
 
   protected readonly formulaire = inject(NonNullableFormBuilder).group(
     {
@@ -87,6 +96,19 @@ export class GestionComptes implements OnInit {
   ngOnInit(): void {
     this.demanderJeton();
     this.chargerComptes();
+  }
+
+  /** Ouvre le formulaire vide, sans message ; déjà ouvert, seul le focus change. */
+  protected ouvrir(): void {
+    if (this.ouverture.ouvrir()) {
+      this.pseudoCree.set(null);
+    }
+  }
+
+  /** Ferme le formulaire, champs vidés (pseudo compris) et erreurs effacées, sans requête. */
+  protected fermer(): void {
+    this.viderFormulaire();
+    this.ouverture.fermer();
   }
 
   protected soumettre(): void {
@@ -165,7 +187,7 @@ export class GestionComptes implements OnInit {
 
   private confirmerCreation(compte: CompteReponse): void {
     this.pseudoCree.set(compte.pseudo);
-    this.formulaire.controls.pseudo.setValue('');
+    this.fermer();
     this.chargerComptes();
   }
 
@@ -186,6 +208,12 @@ export class GestionComptes implements OnInit {
     this.formulaire.markAsPristine();
     this.soumis.set(false);
     this.envoiEnCours.set(false);
+  }
+
+  private viderFormulaire(): void {
+    this.formulaire.reset();
+    this.soumis.set(false);
+    this.erreursServeur.set({});
   }
 
   private demanderJeton(): void {

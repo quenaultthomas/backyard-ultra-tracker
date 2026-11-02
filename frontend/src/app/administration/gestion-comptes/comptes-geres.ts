@@ -15,7 +15,11 @@ export interface ComptesGeres {
   readonly titre: string;
   readonly titreListe: string;
   readonly listeVide: string;
+  /** Aide de l'état vide, qui désigne le bouton d'ouverture du formulaire. */
+  readonly aideListeVide: string;
   readonly erreurChargement: string;
+  /** Libellé constant du bouton qui ouvre le formulaire de création. */
+  readonly boutonOuvrir: string;
   readonly titreCreation: string;
   readonly boutonCreer: string;
   readonly succes: (pseudo: string) => string;
@@ -37,7 +41,9 @@ export const ADMINS: ComptesGeres = {
   titre: 'Gestion des administrateurs',
   titreListe: 'Administrateurs',
   listeVide: 'Aucun administrateur pour le moment.',
+  aideListeVide: 'Créez-en un avec le bouton « Nouvel admin ».',
   erreurChargement: 'Impossible de charger la liste des administrateurs. Réessayez plus tard.',
+  boutonOuvrir: 'Nouvel admin',
   titreCreation: 'Créer un administrateur',
   boutonCreer: "Créer l'administrateur",
   succes: (pseudo) => `L'administrateur ${pseudo} a été créé.`,
@@ -56,7 +62,9 @@ export const BENEVOLES: ComptesGeres = {
   titre: 'Gestion des bénévoles',
   titreListe: 'Bénévoles',
   listeVide: 'Aucun bénévole pour le moment.',
+  aideListeVide: 'Créez-en un avec le bouton « Nouveau bénévole ».',
   erreurChargement: 'Impossible de charger la liste des bénévoles. Réessayez plus tard.',
+  boutonOuvrir: 'Nouveau bénévole',
   titreCreation: 'Créer un bénévole',
   boutonCreer: 'Créer le bénévole',
   succes: (pseudo) => `Le bénévole ${pseudo} a été créé.`,

@@ -23,6 +23,7 @@ import {
 } from './aide-admin';
 import { placerStatutCourseEnBase } from './aide-coureur';
 import { ouvrirMenuCompte, seDeconnecterParLeMenu } from './aide-entete';
+import { ouvrirFormulaire, verifierFerme, type NomFormulaire } from './aide-formulaire';
 import {
   AIDES_PAGE,
   ECRANS,
@@ -467,6 +468,8 @@ interface TypeCompte {
   titre: string;
   prefixe: string;
   texteVide: string;
+  aideVide: string;
+  boutonOuvrir: string;
   texteErreur: string;
   boutonCreer: string;
   titreCreation: string;
@@ -484,6 +487,8 @@ const BENEVOLES: TypeCompte = {
   titre: 'Gestion des bénévoles',
   prefixe: 'benevole',
   texteVide: 'Aucun bénévole pour le moment.',
+  aideVide: 'Créez-en un avec le bouton « Nouveau bénévole ».',
+  boutonOuvrir: 'Nouveau bénévole',
   texteErreur: 'Impossible de charger la liste des bénévoles. Réessayez plus tard.',
   boutonCreer: 'Créer le bénévole',
   titreCreation: 'Créer un bénévole',
@@ -500,6 +505,8 @@ const ADMINS: TypeCompte = {
   titre: 'Gestion des administrateurs',
   prefixe: 'admin',
   texteVide: 'Aucun administrateur pour le moment.',
+  aideVide: 'Créez-en un avec le bouton « Nouvel admin ».',
+  boutonOuvrir: 'Nouvel admin',
   texteErreur: 'Impossible de charger la liste des administrateurs. Réessayez plus tard.',
   boutonCreer: "Créer l'administrateur",
   titreCreation: 'Créer un administrateur',
@@ -579,7 +586,7 @@ test.describe('Gestion des comptes en cartes', () => {
         await expect(vide).toBeVisible();
         await expect(vide).toHaveText(t.texteVide);
         await expect(page.getByTestId(t.liste)).toHaveCount(0);
-        await expect(page.getByText('Créez-en un avec le formulaire ci-dessous.')).toBeVisible();
+        await expect(page.getByText(t.aideVide, { exact: true })).toBeVisible();
         await expect(vide.getByText('Créez-en un')).toHaveCount(0);
         const bloc = page.locator('.etat-vide');
         expect(await css(bloc, 'backgroundColor')).toBe(SABLE);
@@ -587,9 +594,17 @@ test.describe('Gestion des comptes en cartes', () => {
         expect(await css(bloc, 'borderTopColor')).toBe(TRAIT);
         const visuel = (await bloc.locator('.visuel-substitution').boundingBox())!;
         proche(visuel.width / visuel.height, 16 / 9, 0.02, 'rapport du visuel');
+        await verifierFerme(page, t.prefixe as NomFormulaire);
+        await expect(page.getByTestId(`${t.prefixe}-bouton-nouveau`)).toBeVisible();
+        await expect(page.getByTestId(`${t.prefixe}-bouton-nouveau`)).toHaveText(t.boutonOuvrir);
+        expect(await debordements(page)).toEqual([]);
+        await sansDefilementHorizontal(page);
+        await ouvrirFormulaire(page, t.prefixe as NomFormulaire);
         await expect(page.getByTestId(`${t.prefixe}-champ-pseudo`)).toBeVisible();
         expect(await debordements(page)).toEqual([]);
         await sansDefilementHorizontal(page);
+        await page.getByTestId(`${t.prefixe}-bouton-annuler`).click();
+        await verifierFerme(page, t.prefixe as NomFormulaire);
       };
       await verifier();
       await page.setViewportSize({ width: 360, height: 640 });
@@ -612,6 +627,9 @@ test.describe('Gestion des comptes en cartes', () => {
       const existant = await t.creer(playwright);
       await ouvrir(page, MASTER, t.chemin);
       const p = t.prefixe;
+      await expect(page.getByRole('form', { name: t.titreCreation })).toHaveCount(0);
+      await verifierFerme(page, p as NomFormulaire);
+      await ouvrirFormulaire(page, p as NomFormulaire);
       const encart = page.getByRole('form', { name: t.titreCreation });
       await expect(encart).toBeVisible();
       expect(await css(encart, 'backgroundColor')).toBe(SABLE);
@@ -648,10 +666,13 @@ test.describe('Gestion des comptes en cartes', () => {
       await page.getByTestId(`${p}-champ-mot-de-passe`).fill(MOT_DE_PASSE);
       await page.getByTestId(`${p}-champ-confirmation`).fill(MOT_DE_PASSE);
       await bouton.click();
-      await expect(encart.getByTestId(`${p}-message-succes`)).toHaveText(t.succes(pseudo));
+      await expect(page.getByTestId(`${p}-message-succes`)).toHaveText(t.succes(pseudo));
+      await expect(encart.getByTestId(`${p}-message-succes`)).toHaveCount(0);
       await expect(page.getByTestId(t.ligne).filter({ hasText: pseudo })).toHaveCount(1);
+      await verifierFerme(page, p as NomFormulaire);
 
       // pseudo déjà pris
+      await ouvrirFormulaire(page, p as NomFormulaire);
       await page.getByTestId(`${p}-champ-pseudo`).fill(existant);
       await page.getByTestId(`${p}-champ-mot-de-passe`).fill(MOT_DE_PASSE);
       await page.getByTestId(`${p}-champ-confirmation`).fill(MOT_DE_PASSE);
@@ -789,6 +810,7 @@ test.describe('Débordements', () => {
           await ouvrir(page, c.ident, c.chemin, l, h, grand);
           const contexte = `${c.nom} / ${etat} / ${l} px`;
           if (etat === 'erreurs') {
+            await ouvrirFormulaire(page, c.prefixe as NomFormulaire);
             await page.getByTestId(`${c.prefixe}-bouton-creer`).click();
             await expect(page.getByTestId(`${c.prefixe}-erreur-pseudo`)).toBeVisible();
             await expect(page.getByTestId(`${c.prefixe}-erreur-mot-de-passe`)).toBeVisible();
@@ -841,8 +863,10 @@ interface Arret {
   ancetresAvecOverflow: string[];
 }
 
-async function arretsAuTab(page: Page, maximum = 20): Promise<Arret[]> {
-  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+async function arretsAuTab(page: Page, maximum = 20, depart?: string): Promise<Arret[]> {
+  // `depart` : élément (data-testid) d'où repartir, pour rejouer la séquence de Tab après une action sur la page.
+  if (depart) await page.getByTestId(depart).focus();
+  else await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   const arrets: Arret[] = [];
   for (let i = 0; i < maximum; i++) {
     await page.keyboard.press('Tab');
@@ -905,17 +929,35 @@ test.describe('Clavier et titres', () => {
     expect(await titresDeLaPage(page)).toEqual(['h1:Espace bénévole', `h2:${(await page.getByTestId('benevole-course-nom').first().textContent())!.trim()}`, `h2:${(await page.getByTestId('benevole-course-nom').nth(1).textContent())!.trim()}`]);
 
     // Gestion des bénévoles
-    await ouvrir(page, MASTER, '/administration/benevoles');
-    // 8.1 RG19 : un bouton Désactiver / Réactiver par ligne de la liste, avant le formulaire (ordre du DOM)
-    const arretsHorsEntete = (await arretsAuTab(page, 500)).filter((x) => !x.dansEntete);
-    // 9.1 : les trois arrêts du menu d'administration ouvrent le contenu (premier élément de main).
-    expect(arretsHorsEntete.slice(0, 3).map((x) => x.testid)).toEqual(['menu-administration-courses', 'menu-administration-admins', 'menu-administration-benevoles']);
-    const arretsComptes = arretsHorsEntete.slice(3);
     const estBoutonLigne = (x: Arret) => x.testid === 'benevole-bouton-desactiver' || x.testid === 'benevole-bouton-reactiver';
+    const sequenceComptes = async (): Promise<Arret[]> => {
+      // Le titre du site (en-tête) est le point de départ du Tab en haut de page, formulaire fermé ou ouvert.
+      const arretsHorsEntete = (await arretsAuTab(page, 500, 'entete-titre')).filter((x) => !x.dansEntete);
+      // 9.1 : les trois arrêts du menu d'administration ouvrent le contenu (premier élément de main).
+      expect(arretsHorsEntete.slice(0, 3).map((x) => x.testid)).toEqual(['menu-administration-courses', 'menu-administration-admins', 'menu-administration-benevoles']);
+      return arretsHorsEntete.slice(3);
+    };
+    await ouvrir(page, MASTER, '/administration/benevoles');
+    await verifierFerme(page, 'benevole');
+    // 9.2 : formulaire fermé, le bouton d'ouverture ouvre la liste des arrêts, aucun champ n'est atteint.
+    // 8.1 RG19 : un bouton Désactiver / Réactiver par ligne de la liste, avant le formulaire (ordre du DOM)
+    const arretsFermes = await sequenceComptes();
+    const boutonsLignesFermes = arretsFermes.filter(estBoutonLigne);
+    expect(boutonsLignesFermes.length, 'un arrêt par ligne de la liste').toBeGreaterThan(0);
+    expect(arretsFermes[0].testid, 'premier arrêt après le menu').toBe('benevole-bouton-nouveau');
+    expect(arretsFermes.slice(1, 1 + boutonsLignesFermes.length).every(estBoutonLigne), 'boutons de ligne après le bouton d\'ouverture').toBe(true);
+    expect(arretsFermes.filter((x) => !estBoutonLigne(x)).map((x) => x.testid ?? x.texte)).toEqual(['benevole-bouton-nouveau', 'lien-retour-administration']);
+    verifierContours(arretsFermes);
+    expect(await titresDeLaPage(page)).toEqual(['h1:Gestion des bénévoles', 'h2:Bénévoles', 'h2:Créer un bénévole']);
+
+    // formulaire ouvert : les valeurs d'avant 9.2 (champs, bouton principal, lien de retour) plus « Annuler »
+    await ouvrirFormulaire(page, 'benevole');
+    const arretsComptes = await sequenceComptes();
     const boutonsLignes = arretsComptes.filter(estBoutonLigne);
     expect(boutonsLignes.length, 'un arrêt par ligne de la liste').toBeGreaterThan(0);
-    expect(arretsComptes.slice(0, boutonsLignes.length).every(estBoutonLigne), 'boutons de ligne avant le formulaire').toBe(true);
-    expect(arretsComptes.filter((x) => !estBoutonLigne(x)).map((x) => x.testid ?? x.texte)).toEqual(['benevole-champ-pseudo', 'benevole-champ-mot-de-passe', 'benevole-champ-confirmation', 'benevole-bouton-creer', 'lien-retour-administration']);
+    expect(arretsComptes[0].testid, 'premier arrêt après le menu').toBe('benevole-bouton-nouveau');
+    expect(arretsComptes.slice(1, 1 + boutonsLignes.length).every(estBoutonLigne), 'boutons de ligne avant le formulaire').toBe(true);
+    expect(arretsComptes.filter((x) => !estBoutonLigne(x)).map((x) => x.testid ?? x.texte)).toEqual(['benevole-bouton-nouveau', 'benevole-champ-pseudo', 'benevole-champ-mot-de-passe', 'benevole-champ-confirmation', 'benevole-bouton-creer', 'benevole-bouton-annuler', 'lien-retour-administration']);
     verifierContours(arretsComptes);
     expect(await titresDeLaPage(page)).toEqual(['h1:Gestion des bénévoles', 'h2:Bénévoles', 'h2:Créer un bénévole']);
 
@@ -936,12 +978,12 @@ test.describe('Clavier et titres', () => {
 
 test.describe('Palette et contraste des états ajoutés', () => {
   const AUTORISEES = [...RGB_PALETTE, RGB_TRANSPARENT];
-  const NOUVELLES = ['espace benevole vide', 'gestion des admins vide', 'gestion des benevoles vide'];
+  const NOUVELLES = ['espace benevole vide', 'gestion des admins vide', 'gestion des benevoles vide', 'gestion des admins formulaire ouvert', 'gestion des benevoles formulaire ouvert'];
   const scenes = [...ECRANS.filter((e) => ['administration', 'gestion des admins', 'gestion des benevoles', 'espace benevole'].includes(e.nom)), ...ETATS.filter((e) => NOUVELLES.includes(e.nom))];
 
   test('CA10 - les scènes ETATS attendues existent', () => {
     expect(ETATS.filter((e) => NOUVELLES.includes(e.nom)).map((e) => e.nom).sort()).toEqual([...NOUVELLES].sort());
-    expect(scenes).toHaveLength(7);
+    expect(scenes).toHaveLength(9);
   });
 
   for (const nom of ['administration', 'gestion des admins', 'gestion des benevoles', 'espace benevole', ...NOUVELLES]) {
@@ -987,6 +1029,7 @@ test.describe('Modes d\'affichage', () => {
     await expect(page.getByTestId('benevole-ligne-course')).toHaveCount(2);
     expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
     await ouvrir(page, MASTER, '/administration/benevoles');
+    expect(await css(page.getByTestId('benevole-bouton-nouveau'), 'transitionDuration')).toBe('0s');
     expect(await css(page.getByTestId('benevole-bouton-creer'), 'transitionDuration')).toBe('0s');
     expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
     await ouvrir(page, MASTER, '/administration');
@@ -1006,6 +1049,7 @@ test.describe('Modes d\'affichage', () => {
     await expect(ligneB.getByTestId('benevole-course-statut')).toHaveText('En préparation');
     await expect(ligneCourse(page, a.nom).getByTestId('benevole-course-statut')).toHaveText('En préparation');
     await ouvrir(page, MASTER, '/administration/benevoles');
+    await ouvrirFormulaire(page, 'benevole');
     const encart = page.getByRole('form', { name: 'Créer un bénévole' });
     expect(parseFloat(await css(encart, 'borderTopWidth'))).toBeGreaterThanOrEqual(1);
     expect(await css(encart, 'borderTopStyle')).not.toBe('none');
@@ -1034,6 +1078,7 @@ test.describe('Parcours bout en bout', () => {
       await expect(admin.getByTestId('titre-administration')).toBeVisible();
       await admin.getByTestId('lien-gestion-benevoles').click();
       await expect(admin).toHaveURL(/\/administration\/benevoles$/);
+      await ouvrirFormulaire(admin, 'benevole');
       await admin.getByTestId('benevole-champ-pseudo').fill(zoe);
       await admin.getByTestId('benevole-champ-mot-de-passe').fill(MOT_DE_PASSE_BENEVOLE_CREE);
       await admin.getByTestId('benevole-champ-confirmation').fill(MOT_DE_PASSE_BENEVOLE_CREE);

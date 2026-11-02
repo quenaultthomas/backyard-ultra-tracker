@@ -1,0 +1,33 @@
+/*
+ * Formulaire de création à la demande (9.2) : bouton d'ouverture en tête de la liste, formulaire
+ * masqué par `hidden` (règle de formulaire-compte.css), boutons principal et « Annuler » en ligne.
+ */
+.bouton-ouvrir {
+  align-self: flex-start;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-3);
+}
+
+/*
+ * Les boutons ne dépassent jamais de l'encart, même quand leur plus long mot (« modifications »,
+ * « l'administrateur ») est plus large que la place disponible (320 px, texte à 200 %).
+ */
+.actions .bouton {
+  flex: 1 1 12rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+
+@container cartes (max-width: 15rem) {
+  .actions .bouton {
+    padding-inline: var(--espace-3);
+  }
+}

@@ -249,6 +249,7 @@ test.describe('Données de démonstration, base neuve', () => {
     await expect(page).toHaveURL(/\/administration$/);
     await page.goto('/administration/courses');
     await expect(page.getByTestId('titre-courses')).toBeVisible();
+    await expect(page.getByTestId('liste-courses')).toBeVisible();
     const noms = await page.getByTestId('course-nom').allTextContents();
     const positions = NOMS_COURSES.map((n) => noms.indexOf(n));
     positions.forEach((p, i) => expect(p, NOMS_COURSES[i]).toBeGreaterThanOrEqual(0));

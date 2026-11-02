@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page, type PlaywrightWorkerArgs, type Request } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { ouvrirFormulaire } from './aide-formulaire';
 import { creerCompteParApi, ouvrirConnexion, pseudoUnique, saisir, MOT_DE_PASSE } from './aide-connexion';
 import {
   MOT_DE_PASSE_ADMIN_CREE,
@@ -398,8 +399,10 @@ test.describe('Logo de course', () => {
     const l = ligne(page, course.nom);
     const src = await srcVignette(l);
 
+    await ouvrirFormulaire(page, 'course');
     await choisir(l, 'logo-2.png');
     await expect(l.getByTestId('course-logo-apercu')).toBeVisible();
+    await expect(page.getByTestId('course-formulaire')).toBeVisible();
     await expect(page.getByTestId('course-formulaire-titre')).toHaveText('Déclarer une course');
     await l.getByTestId('course-bouton-logo-annuler').click();
 

@@ -22,6 +22,7 @@ import {
 import { creerCompteParApi, pseudoUnique } from './aide-connexion';
 import { placerStatutCourseEnBase, placerStatutInscriptionEnBase, sinscrireParApi } from './aide-coureur';
 import { ouvrirMenuCompte } from './aide-entete';
+import { ouvrirFormulaire, verifierFerme } from './aide-formulaire';
 import {
   AIDES_PAGE,
   ECRANS,
@@ -529,6 +530,8 @@ test('CA6 - le formulaire de déclaration est un encart : mesures, ordre, erreur
   await creerCourse(playwright);
   await ouvrirSessionMaster(page);
   await ouvrirGestion(page);
+  await verifierFerme(page, 'course');
+  await ouvrirFormulaire(page, 'course');
   const form = formulaireCourse(page);
   await expect(form).toHaveClass(/\bencart\b/);
   await expect(form).toHaveCSS('background-color', SABLE);
@@ -583,7 +586,9 @@ test('CA6 - le formulaire de déclaration est un encart : mesures, ordre, erreur
   await page.getByTestId('course-champ-participants-max').fill('20');
   await page.getByTestId('course-champ-boucles-max').fill('5');
   await creer.click();
-  await expect(form.getByTestId('course-message-succes')).toHaveText(`La course ${nom} a été déclarée.`);
+  await expect(page.getByTestId('course-message-succes')).toHaveText(`La course ${nom} a été déclarée.`);
+  await expect(page.getByTestId('course-formulaire').getByTestId('course-message-succes')).toHaveCount(0);
+  await verifierFerme(page, 'course');
   await expect(carteCourse(page, nom)).toBeVisible();
 });
 
@@ -613,6 +618,8 @@ test('CA7 - la modification cerne l\'encart de vert ; Annuler le retire ; une Co
   expect((await boite(annuler)).height).toBeGreaterThanOrEqual(44);
 
   await annuler.click();
+  await verifierFerme(page, 'course');
+  await ouvrirFormulaire(page, 'course');
   await expect(page.getByTestId('course-formulaire-titre')).toHaveText('Déclarer une course');
   await expect(form).not.toHaveClass(/\bencart--edition\b/);
 
@@ -678,6 +685,7 @@ test('CA8 - nom de 100 caractères, pseudos de 30, texte à 200 % : rien ne déb
       await expect(page.getByTestId('liste-courses')).toBeVisible();
       await page.addStyleTag({ content: AGRANDIR });
       const form = formulaireCourse(page);
+      await ouvrirFormulaire(page, 'course');
       await page.getByTestId('course-bouton-creer').click();
       await expect(page.getByTestId('course-erreur-nom')).toBeVisible();
       expect(await debordements(form), `formulaire en erreurs ${largeur}`).toEqual([]);
@@ -810,6 +818,7 @@ test('CA10 - les scènes de la fiche et du formulaire respectent contrastes et p
   const scenes = [
     ecran('fiche de course'), ecran('gestion des courses'),
     etat('fiche de course sans benevole'), etat('fiche de course sans inscrit'), etat('gestion des courses en modification'),
+    etat('gestion des courses formulaire ouvert'),
   ];
   for (const scene of scenes) {
     await page.context().clearCookies();
@@ -824,7 +833,7 @@ test('CA10 - les scènes de la fiche et du formulaire respectent contrastes et p
       expect(tuileCochee, 'texte de la tuile cochée').toBeTruthy();
       expect(Math.abs(tuileCochee!.ratio - 12.67)).toBeLessThanOrEqual(0.05);
     }
-    if (scene.nom === 'gestion des courses en modification') {
+    if (scene.nom === 'gestion des courses en modification' || scene.nom === 'gestion des courses formulaire ouvert') {
       const bordure = mesures.find((m) => m.type === 'bordure-champ' && m.element.startsWith('course-champ-nom'));
       expect(bordure, 'bordure du champ Nom').toBeTruthy();
       expect(Math.abs(bordure!.ratio - 3.61)).toBeLessThanOrEqual(0.05);
@@ -939,6 +948,7 @@ test('CA13 - parcours admin complet sur téléphone : déclarer, logo, modifier,
   await expect(page.getByTestId('liste-courses')).toBeVisible();
 
   // Déclaration.
+  await ouvrirFormulaire(page, 'course');
   await page.getByTestId('course-champ-nom').fill(nom);
   await page.getByTestId('course-champ-date').fill(dateAffichee(dateLointaine()));
   await page.getByTestId('course-champ-distance').fill('1000');

@@ -13,6 +13,7 @@ import {
   pseudoAdminUnique,
   pseudoBenevoleUnique,
 } from './aide-admin';
+import { ouvrirFormulaire, verifierFerme } from './aide-formulaire';
 import { fermerMenuCompte, ouvrirMenuCompte } from './aide-entete';
 
 test.beforeAll(() => {
@@ -70,11 +71,15 @@ test.describe('Gestion des bénévoles', () => {
     await expect(page.getByTestId('titre-benevoles')).toHaveText('Gestion des bénévoles');
     await expect(page.getByTestId('liste-benevoles').or(page.getByTestId('benevoles-vide'))).toBeVisible();
 
+    await verifierFerme(page, 'benevole');
+    await ouvrirFormulaire(page, 'benevole');
     await remplirFormulaire(page, pseudo, MOT_DE_PASSE_BENEVOLE_CREE, MOT_DE_PASSE_BENEVOLE_CREE);
     await page.getByTestId('benevole-bouton-creer').click();
 
     await expect(page.getByTestId('benevole-message-succes')).toHaveText(`Le bénévole ${pseudo} a été créé.`);
     await expect(page.getByTestId('ligne-benevole').filter({ hasText: pseudo })).toHaveCount(1);
+    await verifierFerme(page, 'benevole');
+    await ouvrirFormulaire(page, 'benevole');
     await expect(page.getByTestId('benevole-champ-pseudo')).toHaveValue('');
     await expect(page.getByTestId('benevole-champ-mot-de-passe')).toHaveValue('');
     await expect(page.getByTestId('benevole-champ-confirmation')).toHaveValue('');
@@ -98,6 +103,7 @@ test.describe('Gestion des bénévoles', () => {
     const pageAdmin = await contexte.newPage();
     await ouvrirGestionBenevoles(pageAdmin, admin, MOT_DE_PASSE_ADMIN_CREE);
     const pseudo2 = pseudoBenevoleUnique();
+    await ouvrirFormulaire(pageAdmin, 'benevole');
     await remplirFormulaire(pageAdmin, pseudo2, MOT_DE_PASSE_BENEVOLE_CREE, MOT_DE_PASSE_BENEVOLE_CREE);
     await pageAdmin.getByTestId('benevole-bouton-creer').click();
     await expect(pageAdmin.getByTestId('benevole-message-succes')).toHaveText(`Le bénévole ${pseudo2} a été créé.`);
@@ -112,6 +118,7 @@ test.describe('Gestion des bénévoles', () => {
     await ouvrirGestionBenevoles(page, PSEUDO_ADMIN_MASTER, MOT_DE_PASSE_ADMIN_MASTER);
     const lignesAvant = await page.getByTestId('ligne-benevole').count();
 
+    await ouvrirFormulaire(page, 'benevole');
     await page.getByTestId('benevole-bouton-creer').click();
     await expect(page.getByTestId('benevole-erreur-pseudo')).toHaveText('Le pseudo est obligatoire.');
     await expect(page.getByTestId('benevole-erreur-mot-de-passe')).toHaveText('Le mot de passe est obligatoire.');
@@ -196,6 +203,9 @@ test.describe('Gestion des bénévoles', () => {
     await page.goto('/administration/benevoles');
     await expect(page.getByTestId('benevoles-erreur')).toHaveText('Impossible de charger la liste des bénévoles. Réessayez plus tard.');
     await expect(page.getByTestId('benevoles-erreur')).not.toContainText('500');
+    await expect(page.getByTestId('benevole-bouton-nouveau')).toBeVisible();
+    await expect(page.getByTestId('benevole-bouton-nouveau')).toBeEnabled();
+    await ouvrirFormulaire(page, 'benevole');
     await expect(page.getByTestId('benevole-champ-pseudo')).toBeEnabled();
     await expect(page.getByTestId('benevole-bouton-creer')).toBeEnabled();
     await page.unroute(motif);
@@ -206,6 +216,7 @@ test.describe('Gestion des bénévoles', () => {
     await page.goto('/administration/benevoles');
     await expect(page.getByTestId('liste-benevoles').or(page.getByTestId('benevoles-vide'))).toBeVisible();
     const pseudo = pseudoBenevoleUnique();
+    await ouvrirFormulaire(page, 'benevole');
     await remplirFormulaire(page, pseudo, MOT_DE_PASSE_BENEVOLE_CREE, MOT_DE_PASSE_BENEVOLE_CREE);
     await page.getByTestId('benevole-bouton-creer').click();
     await expect(page.getByTestId('benevole-erreur-generale')).toHaveText('Service indisponible, veuillez réessayer plus tard.');
