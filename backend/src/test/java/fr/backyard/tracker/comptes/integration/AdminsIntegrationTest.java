@@ -404,7 +404,7 @@ class AdminsIntegrationTest {
     // ---------------------------------------------------------------- CA20
 
     @Test
-    @DisplayName("CA20 : POST /api/comptes avec role ADMIN crée un COUREUR ; PUT, PATCH, DELETE sur /admins/{id} jamais 2xx, Nadia intact ; migrations inchangées")
+    @DisplayName("CA20 : POST /api/comptes avec role ADMIN crée un COUREUR ; PUT, PATCH sur /admins/{id} jamais 2xx (DELETE devient un endpoint, 9.4), Nadia intact ; migrations inchangées")
     void ca20_non_regression_et_absence_de_modification() throws Exception {
         HttpResponse<String> coureur = api.postJson("/api/comptes",
                 "{\"pseudo\":\"Bob12\",\"motDePasse\":\"" + MOT_DE_PASSE + "\",\"role\":\"ADMIN\"}", api.jetonValide());
@@ -418,7 +418,7 @@ class AdminsIntegrationTest {
         String idNadia = json.readTree(creation.body()).get("id").asString();
         Map<String, Object> avant = jdbc.queryForMap("select * from compte where pseudo = 'Nadia'");
 
-        for (String methode : List.of("PUT", "PATCH", "DELETE")) {
+        for (String methode : List.of("PUT", "PATCH")) {
             HttpResponse<String> reponse = api.requete(methode, CHEMIN + "/" + idNadia, patron.entetes(),
                     "application/json", "{\"pseudo\":\"Pirate\",\"motDePasse\":\"" + MOT_DE_PASSE + "\"}");
             assertThat(reponse.statusCode()).as(methode).isIn(404, 405);

@@ -127,6 +127,28 @@ public final class Compte {
         }
     }
 
+    /**
+     * Unique contrôle des refus de suppression par la route des admins, dans cet ordre : Compte d'un autre rôle (même
+     * refus qu'un Compte inconnu), admin master, puis dernier admin actif. Ce dernier refus ne s'applique pas à une
+     * cible déjà inactive, qui ne retire aucun admin actif ; l'admin master n'est jamais compté parmi les admins.
+     *
+     * @param admins Comptes de rôle ADMIN relus sous verrou (la cible y figure si elle est ADMIN)
+     * @throws CompteNonGerableException                 le Compte n'est ni ADMIN ni ADMIN_MASTER
+     * @throws AdminMasterNonSupprimableException        le Compte est l'admin master
+     * @throws DernierAdminActifNonSupprimableException  le Compte est le dernier admin actif
+     */
+    public void verifierSuppressionAdmin(Collection<Compte> admins) {
+        if (role != Role.ADMIN && role != Role.ADMIN_MASTER) {
+            throw new CompteNonGerableException();
+        }
+        if (role == Role.ADMIN_MASTER) {
+            throw new AdminMasterNonSupprimableException();
+        }
+        if (actif && aucunAutreAdminActif(admins)) {
+            throw new DernierAdminActifNonSupprimableException();
+        }
+    }
+
     private boolean aucunAutreAdminActif(Collection<Compte> admins) {
         return admins.stream().noneMatch(admin -> admin.role == Role.ADMIN && admin.actif && !admin.id.equals(id));
     }

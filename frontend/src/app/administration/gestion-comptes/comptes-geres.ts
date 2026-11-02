@@ -69,6 +69,19 @@ export const ADMINS: ComptesGeres = {
     `Désactiver l'administrateur ${pseudo} ? Il ne pourra plus se connecter. Ses sessions seront fermées.`,
   desactiver: (api, id) => api.desactiverAdmin(id),
   reactiver: (api, id) => api.reactiverAdmin(id),
+  suppression: {
+    confirmation: (pseudo) =>
+      `Supprimer définitivement l'administrateur ${pseudo} ? Son compte sera supprimé, son ` +
+      `pseudo pourra être réutilisé et ses sessions seront fermées. Cette action est irréversible.`,
+    succes: (pseudo) => `L'administrateur ${pseudo} a été supprimé.`,
+    erreurs: {
+      DERNIER_ADMIN_ACTIF: { generale: "Impossible : c'est le dernier administrateur actif." },
+      ADMIN_MASTER_NON_SUPPRIMABLE: {
+        generale: "Impossible : l'administrateur principal ne peut pas être supprimé.",
+      },
+    },
+    supprimer: (api, id) => api.supprimerAdmin(id),
+  },
 };
 
 export const BENEVOLES: ComptesGeres = {

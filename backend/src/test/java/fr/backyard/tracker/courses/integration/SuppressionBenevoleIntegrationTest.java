@@ -397,7 +397,7 @@ class SuppressionBenevoleIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA9 : PUT et PATCH sur /benevoles/{id} : 404 ou 405 ; DELETE /admins/{id} : 404 ou 405 pour Patron, 403 pour Nadia ; rien n'est modifié")
+    @DisplayName("CA9 : PUT et PATCH sur /benevoles/{id} : 404 ou 405 ; DELETE /admins/{id} par Nadia : 403 ACCES_REFUSE ; rien n'est modifié")
     void ca9_autres_methodes_et_admins() throws Exception {
         List<Map<String, Object>> avant = etatBase();
         for (String methode : List.of("PUT", "PATCH")) {
@@ -405,8 +405,6 @@ class SuppressionBenevoleIntegrationTest {
                     "application/json", "{\"pseudo\":\"Pirate\"}");
             assertThat(reponse.statusCode()).as(methode).isIn(404, 405);
         }
-        assertThat(api.requete("DELETE", ADMINS + "/" + idNadia, patron.entetes(), null, null).statusCode())
-                .isIn(404, 405);
         assertProbleme(api.requete("DELETE", ADMINS + "/" + idNadia, nadia.entetes(), null, null), 403,
                 "Accès refusé", "ACCES_REFUSE", ACCES_REFUSE_DETAIL);
         assertThat(etatBase()).isEqualTo(avant);

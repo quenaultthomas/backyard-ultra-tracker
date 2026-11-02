@@ -65,6 +65,11 @@ export class AdministrationApiService {
     return this.http.post<void>(`${urlCompte(URL_ADMINS, id)}/reactivation`, null);
   }
 
+  /** Supprime un Compte `ADMIN` (admin master, 204 ; 409 admin master ou dernier admin actif). */
+  supprimerAdmin(id: string): Observable<void> {
+    return this.http.delete<void>(urlCompte(URL_ADMINS, id));
+  }
+
   /** Désactive un Compte `BENEVOLE` et le retire des Courses `EN_PREPARATION` (204 sans corps). */
   desactiverBenevole(id: string): Observable<void> {
     return this.http.post<void>(`${urlCompte(URL_BENEVOLES, id)}/desactivation`, null);
