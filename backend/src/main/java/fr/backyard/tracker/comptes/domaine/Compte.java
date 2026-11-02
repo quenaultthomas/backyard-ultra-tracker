@@ -78,6 +78,14 @@ public final class Compte {
         return empreinteMotDePasse != null && actif;
     }
 
+    /**
+     * Unique définition d'un coureur trouvable par la recherche de coureurs (9.5) : rôle COUREUR et
+     * {@link #peutSeConnecter()} (ni anonymisé, ni inactif).
+     */
+    public boolean estCoureurConnectable() {
+        return role == Role.COUREUR && peutSeConnecter();
+    }
+
     /** Même Compte, inactif : il ne peut plus se connecter ; pseudo (toujours réservé) et empreinte conservés. */
     public Compte desactiver() {
         return new Compte(id, pseudo, empreinteMotDePasse, role, creeLe, false);

@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
@@ -19,11 +19,13 @@ import {
   PilotageCourse,
   Reintegration,
 } from './courses/pilotage-course';
+import { RechercheCoureursReponse } from './recherche-coureurs';
 import { CreerAdminRequete, CreerBenevoleRequete } from './requetes-creation-compte';
 
 const URL_ACCES = '/api/administration/acces';
 const URL_ADMINS = '/api/administration/admins';
 const URL_BENEVOLES = '/api/administration/benevoles';
+const URL_COUREURS = '/api/administration/coureurs';
 const URL_COURSES = '/api/administration/courses';
 
 @Injectable({ providedIn: 'root' })
@@ -83,6 +85,13 @@ export class AdministrationApiService {
   /** Supprime un Compte `BENEVOLE` et ses affectations (204 ; 409 si affecté à une Course `EN_COURS`). */
   supprimerBenevole(id: string): Observable<void> {
     return this.http.delete<void>(urlCompte(URL_BENEVOLES, id));
+  }
+
+  /** Comptes coureurs connectables dont le pseudo contient le fragment (admins et admin master). */
+  rechercherCoureurs(q: string): Observable<RechercheCoureursReponse> {
+    return this.http.get<RechercheCoureursReponse>(URL_COUREURS, {
+      params: new HttpParams().set('q', q),
+    });
   }
 
   /** Toutes les Courses, dans l'ordre renvoyé par l'API (admins et admin master). */

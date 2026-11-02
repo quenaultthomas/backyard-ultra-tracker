@@ -104,4 +104,15 @@ public interface DepotComptes {
     default List<Compte> listerParRole(Role role) {
         throw new UnsupportedOperationException("Ce dépôt ne sait pas lister par rôle.");
     }
+
+    /**
+     * Au plus {@code limite} Comptes dont le pseudo normalisé contient littéralement le fragment (aucun caractère
+     * générique), triés par pseudo normalisé croissant. Le dépôt filtre sur la même règle que
+     * {@link Compte#estCoureurConnectable()} pour que la limite porte sur des résultats valides ; l'appelant recontrôle.
+     *
+     * @throws UnsupportedOperationException si le dépôt ne sait pas rechercher
+     */
+    default List<Compte> rechercherCoureursConnectables(String fragmentNormalise, int limite) {
+        throw new UnsupportedOperationException("Ce dépôt ne sait pas rechercher de coureurs.");
+    }
 }

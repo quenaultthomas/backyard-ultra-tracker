@@ -22,6 +22,9 @@
       >
         {{ geres.boutonOuvrir }}
       </button>
+      @if (geres.promotion; as promotion) {
+        <app-recherche-coureurs [promotion]="promotion" [prefixe]="p" [ecran]="geres.ecran" />
+      }
       @if (pseudoCree(); as pseudo) {
         <p class="message--succes" role="status" [attr.data-testid]="p + '-message-succes'">
           {{ geres.succes(pseudo) }}

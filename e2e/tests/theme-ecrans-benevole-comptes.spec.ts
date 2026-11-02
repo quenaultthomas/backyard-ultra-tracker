@@ -948,10 +948,12 @@ test.describe('Clavier et titres', () => {
     const boutonsLignesFermes = arretsFermes.filter(estBoutonLigne);
     expect(boutonsLignesFermes.length, 'un arrêt par ligne de la liste').toBeGreaterThan(0);
     expect(arretsFermes[0].testid, 'premier arrêt après le menu').toBe('benevole-bouton-nouveau');
-    expect(arretsFermes.slice(1, 1 + boutonsLignesFermes.length).every(estBoutonLigne), 'boutons de ligne après le bouton d\'ouverture').toBe(true);
-    expect(arretsFermes.filter((x) => !estBoutonLigne(x)).map((x) => x.testid ?? x.texte)).toEqual(['benevole-bouton-nouveau', 'lien-retour-administration']);
+    // 9.5 : le bouton « Promouvoir un coureur » suit le bouton d'ouverture, avant les boutons de ligne.
+    expect(arretsFermes[1].testid, 'deuxième arrêt après le menu').toBe('benevole-bouton-promouvoir');
+    expect(arretsFermes.slice(2, 2 + boutonsLignesFermes.length).every(estBoutonLigne), 'boutons de ligne après les boutons d\'ouverture').toBe(true);
+    expect(arretsFermes.filter((x) => !estBoutonLigne(x)).map((x) => x.testid ?? x.texte)).toEqual(['benevole-bouton-nouveau', 'benevole-bouton-promouvoir', 'lien-retour-administration']);
     verifierContours(arretsFermes);
-    expect(await titresDeLaPage(page)).toEqual(['h1:Gestion des bénévoles', 'h2:Bénévoles', 'h2:Créer un bénévole']);
+    expect(await titresDeLaPage(page)).toEqual(['h1:Gestion des bénévoles', 'h2:Bénévoles', 'h2:Rechercher un coureur', 'h2:Créer un bénévole']);
 
     // formulaire ouvert : les valeurs d'avant 9.2 (champs, bouton principal, lien de retour) plus « Annuler »
     await ouvrirFormulaire(page, 'benevole');
@@ -959,10 +961,11 @@ test.describe('Clavier et titres', () => {
     const boutonsLignes = arretsComptes.filter(estBoutonLigne);
     expect(boutonsLignes.length, 'un arrêt par ligne de la liste').toBeGreaterThan(0);
     expect(arretsComptes[0].testid, 'premier arrêt après le menu').toBe('benevole-bouton-nouveau');
-    expect(arretsComptes.slice(1, 1 + boutonsLignes.length).every(estBoutonLigne), 'boutons de ligne avant le formulaire').toBe(true);
-    expect(arretsComptes.filter((x) => !estBoutonLigne(x)).map((x) => x.testid ?? x.texte)).toEqual(['benevole-bouton-nouveau', 'benevole-champ-pseudo', 'benevole-champ-mot-de-passe', 'benevole-champ-confirmation', 'benevole-bouton-creer', 'benevole-bouton-annuler', 'lien-retour-administration']);
+    expect(arretsComptes[1].testid, 'deuxième arrêt après le menu').toBe('benevole-bouton-promouvoir');
+    expect(arretsComptes.slice(2, 2 + boutonsLignes.length).every(estBoutonLigne), 'boutons de ligne avant le formulaire').toBe(true);
+    expect(arretsComptes.filter((x) => !estBoutonLigne(x)).map((x) => x.testid ?? x.texte)).toEqual(['benevole-bouton-nouveau', 'benevole-bouton-promouvoir', 'benevole-champ-pseudo', 'benevole-champ-mot-de-passe', 'benevole-champ-confirmation', 'benevole-bouton-creer', 'benevole-bouton-annuler', 'lien-retour-administration']);
     verifierContours(arretsComptes);
-    expect(await titresDeLaPage(page)).toEqual(['h1:Gestion des bénévoles', 'h2:Bénévoles', 'h2:Créer un bénévole']);
+    expect(await titresDeLaPage(page)).toEqual(['h1:Gestion des bénévoles', 'h2:Bénévoles', 'h2:Rechercher un coureur', 'h2:Créer un bénévole']);
 
     // Administration
     await ouvrir(page, MASTER, '/administration');

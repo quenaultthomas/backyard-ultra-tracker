@@ -11,6 +11,9 @@ import fr.backyard.tracker.comptes.domaine.Role;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +28,8 @@ public class CompteJpaAdapter implements DepotComptes {
 
     static final String CONTRAINTE_UNICITE_PSEUDO = "uk_compte_pseudo_normalise";
     static final String CONTRAINTE_UNICITE_ADMIN_MASTER = "uk_compte_admin_master";
+    /** Caractère d'échappement explicite de la recherche par sous-chaîne. */
+    private static final char ECHAPPEMENT_LIKE = '\\';
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -117,6 +122,43 @@ public class CompteJpaAdapter implements DepotComptes {
                 .getResultStream()
                 .map(CompteJpaAdapter::versDomaine)
                 .toList();
+    }
+
+    /**
+     * Requête paramétrée {@code pseudo_normalise like ? escape '\'} : le fragment est un texte littéral, ses
+     * caractères {@code \}, {@code %} et {@code _} sont échappés. Filtre en base cohérent avec
+     * {@link Compte#estCoureurConnectable()} (rôle COUREUR, empreinte non nulle, actif), qui reste la règle et que le
+     * cas d'usage recontrôle.
+     */
+    @Override
+    public List<Compte> rechercherCoureursConnectables(String fragmentNormalise, int limite) {
+        CriteriaBuilder criteres = entityManager.getCriteriaBuilder();
+        CriteriaQuery<CompteJpaEntity> requete = criteres.createQuery(CompteJpaEntity.class);
+        Root<CompteJpaEntity> compte = requete.from(CompteJpaEntity.class);
+        requete.select(compte)
+                .where(criteres.equal(compte.get("role"), Role.COUREUR),
+                        criteres.isNotNull(compte.get("empreinteMotDePasse")),
+                        criteres.isTrue(compte.get("actif")),
+                        criteres.like(compte.get("pseudoNormalise"),
+                                criteres.parameter(String.class, "motif"), ECHAPPEMENT_LIKE))
+                .orderBy(criteres.asc(compte.get("pseudoNormalise")));
+        return entityManager.createQuery(requete)
+                .setParameter("motif", "%" + echapperPourLike(fragmentNormalise) + "%")
+                .setMaxResults(limite)
+                .getResultStream()
+                .map(CompteJpaAdapter::versDomaine)
+                .toList();
+    }
+
+    private static String echapperPourLike(String texte) {
+        StringBuilder echappe = new StringBuilder(texte.length());
+        texte.chars().forEach(caractere -> {
+            if (caractere == ECHAPPEMENT_LIKE || caractere == '%' || caractere == '_') {
+                echappe.append(ECHAPPEMENT_LIKE);
+            }
+            echappe.append((char) caractere);
+        });
+        return echappe.toString();
     }
 
     /**

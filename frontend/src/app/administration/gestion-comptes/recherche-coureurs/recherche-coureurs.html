@@ -1,0 +1,82 @@
+@let p = prefixe() + '-promotion';
+@let id = 'promotion-' + prefixe();
+@let textes = promotion();
+@let e = etat();
+<button
+  #boutonPromouvoir
+  type="button"
+  class="bouton bouton--secondaire bouton-ouvrir"
+  [attr.aria-expanded]="ouverture.ouvert()"
+  [attr.aria-controls]="id"
+  (click)="ouvrir()"
+  [attr.data-testid]="prefixe() + '-bouton-promouvoir'"
+>
+  {{ textes.boutonOuvrir }}
+</button>
+
+<section
+  [id]="id"
+  class="formulaire encart"
+  [hidden]="!ouverture.ouvert()"
+  [attr.aria-labelledby]="id + '-titre'"
+  [attr.data-testid]="p"
+>
+  <h2 [id]="id + '-titre'" class="sous-titre">{{ textes.titre }}</h2>
+
+  <div class="champ">
+    <label [attr.for]="id + '-recherche'">Pseudo du coureur</label>
+    <input
+      #champRecherche
+      [id]="id + '-recherche'"
+      type="text"
+      maxlength="30"
+      autocomplete="off"
+      autocapitalize="none"
+      spellcheck="false"
+      [formControl]="recherche"
+      (keydown.enter)="rechercherMaintenant($event)"
+      [attr.aria-describedby]="id + '-aide'"
+      [attr.data-testid]="p + '-recherche'"
+    />
+    <p [id]="id + '-aide'" class="aide" [attr.data-testid]="p + '-aide'">3 caractères minimum</p>
+  </div>
+
+  <div class="resultats" role="status" aria-live="polite">
+    @if (e.nature === 'chargement') {
+      <p [attr.data-testid]="p + '-chargement'">Recherche en cours…</p>
+    } @else if (e.nature === 'resultats') {
+      @let coureurs = e.reponse.coureurs;
+      @if (coureurs.length === 0) {
+        <p [attr.data-testid]="p + '-vide'">Aucun coureur ne correspond à cette recherche.</p>
+      } @else {
+        <p class="resultats__compte" [attr.data-testid]="p + '-compte'">
+          {{ coureurs.length }} {{ coureurs.length === 1 ? 'coureur trouvé' : 'coureurs trouvés' }}
+        </p>
+        <ul class="resultats__liste" [attr.data-testid]="p + '-liste'">
+          @for (coureur of coureurs; track coureur.id) {
+            <li [attr.data-testid]="p + '-resultat'">{{ coureur.pseudo }}</li>
+          }
+        </ul>
+        @if (e.reponse.plusDeResultats) {
+          <p [attr.data-testid]="p + '-plus'">
+            Plus de 10 coureurs correspondent : affinez votre recherche.
+          </p>
+        }
+      }
+    }
+  </div>
+  @if (e.nature === 'erreur') {
+    <p class="message--erreur" role="alert" [attr.data-testid]="p + '-erreur'">
+      Recherche impossible, veuillez réessayer plus tard.
+    </p>
+  }
+
+  <button
+    type="button"
+    class="bouton bouton--secondaire bouton-fermer"
+    (click)="fermer()"
+    [attr.data-testid]="p + '-bouton-fermer'"
+  >
+    Fermer
+  </button>
+</section>

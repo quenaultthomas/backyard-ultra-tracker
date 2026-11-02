@@ -18,6 +18,18 @@ export interface SuppressionComptesGeres {
   readonly supprimer: (api: AdministrationApiService, id: string) => Observable<void>;
 }
 
+/** Bouton « Promouvoir un coureur » et panneau de recherche d'un coureur par pseudo. */
+export interface PromotionComptesGeres {
+  readonly boutonOuvrir: string;
+  readonly titre: string;
+}
+
+/** Mêmes textes sur les pages Admins et Bénévoles. */
+const PROMOTION_COUREUR: PromotionComptesGeres = {
+  boutonOuvrir: 'Promouvoir un coureur',
+  titre: 'Rechercher un coureur',
+};
+
 /** Type de Compte géré par l'écran de gestion : appels API, libellés et préfixes `data-testid`. */
 export interface ComptesGeres {
   /** Route de l'écran, pour le retour après connexion. */
@@ -48,6 +60,8 @@ export interface ComptesGeres {
   readonly reactiver: (api: AdministrationApiService, id: string) => Observable<void>;
   /** Absente : aucun bouton « Supprimer » sur les lignes. */
   readonly suppression?: SuppressionComptesGeres;
+  /** Absente : ni bouton « Promouvoir un coureur » ni panneau de recherche. */
+  readonly promotion?: PromotionComptesGeres;
 }
 
 export const ADMINS: ComptesGeres = {
@@ -82,6 +96,7 @@ export const ADMINS: ComptesGeres = {
     },
     supprimer: (api, id) => api.supprimerAdmin(id),
   },
+  promotion: PROMOTION_COUREUR,
 };
 
 export const BENEVOLES: ComptesGeres = {
@@ -114,4 +129,5 @@ export const BENEVOLES: ComptesGeres = {
     erreurs: { [CODE_BENEVOLE_AFFECTE_COURSE_EN_COURS]: refusBenevoleAffecteCourseEnCours },
     supprimer: (api, id) => api.supprimerBenevole(id),
   },
+  promotion: PROMOTION_COUREUR,
 };

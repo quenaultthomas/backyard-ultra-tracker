@@ -31,6 +31,7 @@ import { RefusAccesService } from '../../comptes/refus-acces.service';
 import { MenuAdministration } from '../menu-administration/menu-administration';
 import { ActivationCompte } from './activation-compte/activation-compte';
 import { ComptesGeres } from './comptes-geres';
+import { RechercheCoureurs } from './recherche-coureurs/recherche-coureurs';
 import { ActionCompte, ConfirmationOuverte, ResultatActionCompte } from './resultat-action-compte';
 import { SuppressionCompte } from './suppression-compte/suppression-compte';
 
@@ -57,6 +58,7 @@ const ERREURS_SPECIFIQUES: Record<string, ErreursFormulaireCompte> = {
     ActivationCompte,
     SuppressionCompte,
     MenuAdministration,
+    RechercheCoureurs,
   ],
   templateUrl: './gestion-comptes.html',
   styleUrls: [
