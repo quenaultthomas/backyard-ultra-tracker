@@ -15,10 +15,12 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  back:
-    name: back
+  # Le back est réparti en deux jobs parallèles (unitaires, intégration) qui produisent chacun un fichier
+  # d'exécution JaCoCo ; le job `back` les fusionne et applique le contrôle de couverture du pom.
+  back-unitaires:
+    name: back-unitaires
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
@@ -26,9 +28,95 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
-      # Tests unitaires, intégration (Testcontainers), JaCoCo 85 %, ArchUnit.
-      - run: ./mvnw -B verify
+      # Tests unitaires (*Test, surefire) et règles ArchUnit ; target/jacoco.exec alimenté par l'agent JaCoCo.
+      - name: Tests unitaires et ArchUnit
+        run: ./mvnw -B test
         working-directory: backend
+      - name: Publier le fichier d'exécution JaCoCo
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: jacoco-exec-unitaires
+          path: backend/target/jacoco.exec
+          if-no-files-found: error
+          retention-days: 1
+
+  back-integration:
+    name: back-integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      # Tests d'intégration (*IntegrationTest, failsafe, Testcontainers) sans rejouer les tests unitaires :
+      # test-compile exécute initialize (agent JaCoCo, chemin de l'agent Mockito), puis failsafe est appelé
+      # directement avec sa configuration du pom. Pas de phase verify ici : le contrôle est fait par `back`.
+      - name: Tests d'intégration
+        run: ./mvnw -B test-compile failsafe:integration-test failsafe:verify
+        working-directory: backend
+      - name: Publier le fichier d'exécution JaCoCo
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: jacoco-exec-integration
+          path: backend/target/jacoco.exec
+          if-no-files-found: error
+          retention-days: 1
+
+  # Point de contrôle agrégé : conserve le nom `back` du check historique (protection de branche, release.yml).
+  back:
+    name: back
+    needs: [back-unitaires, back-integration]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Vérifier le résultat des tests back
+        env:
+          UNITAIRES: ${{ needs.back-unitaires.result }}
+          INTEGRATION: ${{ needs.back-integration.result }}
+        run: |
+          echo "back-unitaires=${UNITAIRES} back-integration=${INTEGRATION}"
+          test "$UNITAIRES" = "success" && test "$INTEGRATION" = "success"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Récupérer le fichier d'exécution des tests unitaires
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: jacoco-exec-unitaires
+          path: backend/target/jacoco-ci/unitaires
+      - name: Récupérer le fichier d'exécution des tests d'intégration
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: jacoco-exec-integration
+          path: backend/target/jacoco-ci/integration
+      # Fusion (exécution fusion-ci du pom), puis les exécutions rapport et controle-seuils du pom : mêmes
+      # seuils (jacoco.seuil.*) et même exclusion (jacoco.exclusions) que ./mvnw verify. Les classes sont
+      # recompilées : si elles ne correspondent pas à celles exécutées par les tests, JaCoCo ignorerait leur
+      # couverture en silence, d'où l'échec explicite sur son avertissement « do not match ».
+      - name: Fusionner et contrôler la couverture (85 % lignes et branches)
+        run: |
+          set -o pipefail
+          ./mvnw -B compile jacoco:merge@fusion-ci jacoco:report@rapport jacoco:check@controle-seuils | tee couverture.log
+          if grep -q "do not match" couverture.log; then
+            echo "::error::Classes compilées différentes de celles exécutées par les tests : couverture non fiable."
+            exit 1
+          fi
+        working-directory: backend
+      - name: Publier le rapport JaCoCo
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: jacoco-rapport
+          path: backend/target/site/jacoco/
+          if-no-files-found: ignore
+          retention-days: 14
 
   front:
     name: front

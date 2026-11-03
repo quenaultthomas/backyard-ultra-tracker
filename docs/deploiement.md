@@ -512,22 +512,25 @@ Le workflow `.github/workflows/release.yml` réutilise ce workflow (`workflow_ca
 
 | Job | Ce qu'il fait |
 |---|---|
-| `back` | `./mvnw verify` dans `backend/` (JDK 25, cache Maven) : tests unitaires, tests d'intégration Testcontainers, règles ArchUnit, seuil JaCoCo de 85 % (lignes et branches). |
+| `back-unitaires` | `./mvnw -B test` dans `backend/` (JDK 25, cache Maven) : tests unitaires et règles ArchUnit. Publie son fichier d'exécution JaCoCo (artefact `jacoco-exec-unitaires`, 1 jour). |
+| `back-integration` | `./mvnw -B test-compile failsafe:integration-test failsafe:verify` dans `backend/` : tests d'intégration Testcontainers, en parallèle de `back-unitaires` (limite 30 min). Publie son fichier d'exécution JaCoCo (artefact `jacoco-exec-integration`, 1 jour). |
+| `back` | Contrôle agrégé, après les deux précédents : échoue si l'un d'eux a échoué, sinon fusionne les deux fichiers d'exécution (exécution `fusion-ci` du pom) et applique le contrôle de couverture du pom (`jacoco:report@rapport jacoco:check@controle-seuils`) : mêmes seuils de 85 % (lignes et branches) et même exclusion que `./mvnw verify`. Publie le rapport JaCoCo (artefact `jacoco-rapport`). |
 | `front` | `npm ci` puis build Angular de production dans `frontend/` (Node 24, cache npm). |
 | `e2e` | Démarre la stack `docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait` (tous les services sains), puis lance `npm test` dans `e2e/` (projets `chromium`, `camera`, puis `horloge`, voir `e2e/README.md`). La stack est arrêtée par `docker compose down -v`, succès ou échec. |
 
 Le dépôt étant public, aucun job d'analyse de secrets n'est ajouté. S'il devenait privé, ajouter un job gitleaks.
 
 **Lire un échec.** Onglet *Actions* de la PR, ouvrir le job rouge puis l'étape en échec.
-- `back` : les tests en échec sont listés en fin de log (`Tests run: … Failures: …`). Un seuil JaCoCo non atteint s'affiche par « Rule violated ». Ne jamais abaisser le seuil.
+- `back-unitaires`, `back-integration` : les tests en échec sont listés en fin de log (`Tests run: … Failures: …`).
+- `back` : s'il échoue à sa première étape, l'un des deux jobs précédents a échoué (voir son log). Un seuil JaCoCo non atteint s'affiche par « Rule violated » ; le rapport HTML est dans l'artefact `jacoco-rapport`. Ne jamais abaisser le seuil.
 - `front` : l'erreur de compilation Angular est dans le log de l'étape de build.
 - `e2e` : le log de l'étape Playwright liste le scénario en échec. Les artefacts ci-dessous donnent le détail.
 
-**Artefacts** (en bas de la page de l'exécution, conservés 14 jours, publiés uniquement si `e2e` échoue) :
+**Artefacts** (en bas de la page de l'exécution). Le rapport de couverture `jacoco-rapport` est publié à chaque exécution du job `back` (14 jours). Ceux de `e2e` sont conservés 14 jours et publiés uniquement si `e2e` échoue :
 - `playwright-report` : rapport HTML et traces (`npx playwright show-report <dossier>` ou `npx playwright show-trace <trace.zip>`).
 - `docker-compose-logs` : sortie de `docker compose logs` (base, api, web).
 
-Pour rejouer en local : `cd backend && ./mvnw verify`, `cd frontend && npm ci && npm run build -- --configuration production`, et la procédure de `e2e/README.md`.
+Pour rejouer en local : `cd backend && ./mvnw verify` (enchaîne en une commande ce que font `back-unitaires`, `back-integration` et `back`), `cd frontend && npm ci && npm run build -- --configuration production`, et la procédure de `e2e/README.md`.
 
 **Mises à jour de dépendances.** `.github/dependabot.yml` ouvre chaque semaine une PR groupée par écosystème : Maven (`backend/`), npm (`frontend/` et `e2e/`), Docker (`backend/` et `frontend/`) et GitHub Actions. Les actions tierces sont épinglées par SHA de commit (version en commentaire) : Dependabot met les deux à jour.
 
@@ -537,7 +540,7 @@ Pour rejouer en local : `cd backend && ./mvnw verify`, `cd frontend && npm ci &&
 
 - [ ] *Rules > Rulesets > New branch ruleset* ciblant `main`, statut *Active* :
   - [ ] *Require a pull request before merging*
-  - [ ] *Require status checks to pass* avec les checks `back`, `front` et `e2e`
+  - [ ] *Require status checks to pass* avec les checks `back-unitaires`, `back-integration`, `back`, `front` et `e2e` (`back` et `e2e` sont les contrôles agrégés : ils échouent si l'un de leurs jobs a échoué)
   - [ ] *Require linear history*
   - [ ] *Block force pushes*
 - [ ] *General > Pull Requests* : ne laisser que *Allow squash merging* (décocher merge commit et rebase merge).
