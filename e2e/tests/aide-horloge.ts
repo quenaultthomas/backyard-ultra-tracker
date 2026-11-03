@@ -47,6 +47,15 @@ export function lireHorloge(playwright: PlaywrightLib): Promise<EtatHorloge> {
   });
 }
 
+/**
+ * Date du jour (`aaaa-mm-jj`, fuseau Europe/Paris) selon l'horloge applicative et non celle de la machine :
+ * une Course ne se déclare pas dans le passé, et l'horloge pilotée peut avoir passé minuit.
+ */
+export async function dateApplicative(playwright: PlaywrightLib): Promise<string> {
+  const { maintenant } = await lireHorloge(playwright);
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date(maintenant));
+}
+
 /** Avance l'horloge applicative d'une durée ISO-8601 (ex. `PT60M`). Renvoie l'état après avance. */
 export function avancerHorloge(playwright: PlaywrightLib, duree: string): Promise<EtatHorloge> {
   return avecSessionMaster(playwright, async (ctx, csrf) => {

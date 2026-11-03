@@ -8,12 +8,11 @@ import {
   courseDeReference,
   creerBenevoleParApi,
   creerCourseParApi,
-  dateDansJours,
   demarrerCourseParApi,
   pseudoBenevoleUnique,
 } from './aide-admin';
 import { lireJetonQrEnBase, sinscrireParApi } from './aide-coureur';
-import { avecApi } from './aide-horloge';
+import { avecApi, dateApplicative } from './aide-horloge';
 
 type PlaywrightLib = PlaywrightWorkerArgs['playwright'];
 
@@ -54,7 +53,7 @@ export async function preparerCourseDeScan(
   const benevole = options.benevole ?? pseudoBenevoleUnique();
   if (!options.benevole) await avecApi(playwright, (ctx) => creerBenevoleParApi(ctx, benevole));
   const donnees = courseDeReference({
-    date: dateDansJours(0),
+    date: await dateApplicative(playwright),
     dureeBoucleMinutes,
     nombreMaxBoucles,
     ...(options.distanceBoucleMetres !== undefined && { distanceBoucleMetres: options.distanceBoucleMetres }),
@@ -76,7 +75,7 @@ export async function preparerCourseDeScan(
 
 /** Course sans coureur ni démarrage, avec le bénévole donné affecté. */
 export async function creerCourseAffectee(playwright: PlaywrightLib, benevole: string): Promise<{ id: string; nom: string }> {
-  const donnees = courseDeReference({ date: dateDansJours(0), dureeBoucleMinutes: 60, nombreMaxBoucles: 5 });
+  const donnees = courseDeReference({ date: await dateApplicative(playwright), dureeBoucleMinutes: 60, nombreMaxBoucles: 5 });
   const course = await avecApi(playwright, (ctx) => creerCourseParApi(ctx, donnees));
   const id = course['id'] as string;
   await avecApi(playwright, (ctx) => affecterBenevolesParApi(ctx, id, [benevole]));
