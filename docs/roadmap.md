@@ -25,7 +25,7 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 | 6 | Suivi public | 6.1 → 6.4 | projeter le suivi d'une course |
 | 7 | Préparation de la release | 7.1 → 7.4 | lancer un test grandeur nature avec une version publiée |
 | 8 | Durcissement issu du pentest | 8.1 → 8.5 | désactiver un compte privilégié, voir des sessions, connexions et créations de compte plafonnées |
-| 9 | Gestion des comptes, notification d'inscription et navigation d'administration | 9.1 → 9.9 | naviguer dans l'administration par un menu, supprimer des bénévoles et des admins, promouvoir un coureur, recevoir un mail à chaque inscription |
+| 9 | Gestion des comptes et navigation d'administration | 9.1 → 9.7 | naviguer dans l'administration par un menu, supprimer des bénévoles et des admins, promouvoir un coureur |
 
 ---
 
@@ -254,13 +254,15 @@ Issu de `docs/audits/audit-2026-10-21-pre-release.md`. Objectif : corriger ce qu
 
 ---
 
-## Jalon 9 : Gestion des comptes, notification d'inscription et navigation d'administration
+## Jalon 9 : Gestion des comptes et navigation d'administration
 
-Cinq fonctionnalités demandées après la livraison du jalon 8. Elles ne rejoignent pas un jalon existant : le jalon 1 est livré et validé (un « 1.7 » fausserait son « À la fin du jalon, tu peux… ») et les jalons 7 et 8 sont clos par l'audit qui les a motivés. Les numéros existants ne changent pas.
+Fonctionnalités demandées après la livraison du jalon 8. Elles ne rejoignent pas un jalon existant : le jalon 1 est livré et validé (un « 1.7 » fausserait son « À la fin du jalon, tu peux… ») et les jalons 7 et 8 sont clos par l'audit qui les a motivés. Les numéros existants ne changent pas.
 
 Le **9.3 revient sur une exclusion du 8.1**, qui avait écarté la suppression d'un compte `ADMIN` ou `BENEVOLE` au profit de la désactivation réversible. La désactivation reste en place et se combine avec la suppression (voir « Décisions en attente », question 1).
 
-Ordre : le menu et les formulaires à la demande (9.1, 9.2) réorganisent des écrans existants et accueillent les actions suivantes ; les suppressions (9.3, 9.4) précèdent le changement de rôle (9.5 à 9.7), qui réutilise leur invalidation de session ; le mail (9.8, 9.9) est indépendant des comptes et vient en dernier (9.8 modifie le formulaire de course une fois rendu « à la demande » par le 9.2).
+Ordre : le menu et les formulaires à la demande (9.1, 9.2) réorganisent des écrans existants et accueillent les actions suivantes ; les suppressions (9.3, 9.4) précèdent le changement de rôle (9.5 à 9.7), qui réutilise leur invalidation de session .
+
+Les 9.8 (adresse de notification d'une course) et 9.9 (mail à chaque inscription) ont été abandonnés (voir « Décisions prises »).
 
 ### 9.1 Menu d'administration
 - **Dépend de** : 1.4, 1.5, 1.6, 2.1 (écrans existants).
@@ -310,25 +312,13 @@ Ordre : le menu et les formulaires à la demande (9.1, 9.2) réorganisent des é
 - **Tu testes** : en admin master, promouvoir un coureur en admin → il se reconnecte et voit l'administration. En admin simple, la page Admins est inaccessible et l'API répond 403.
 - **Données de démo** : les coureurs du 9.6 suffisent.
 
-### 9.8 Adresse de notification d'une course
-- **Dépend de** : 2.1, 2.2, 9.2.
-- **Livré** : champ facultatif « adresse mail de notification » sur la course, saisi à la création et à la modification (format validé, 400 sinon ; modifiable tant que la course est `EN_PREPARATION`, vidable). Affiché sur la fiche admin de la course. Migration Liquibase pour la colonne. Aucun mail n'est encore envoyé.
-- **Tu testes** : créer une course avec une adresse valide → affichée sur la fiche ; adresse mal formée → refusée ; modifier puis vider le champ → course enregistrée sans adresse.
-- **Données de démo** : à ajouter plus tard : une course de démo avec une adresse de notification (celle de Mailpit) et une sans.
-
-### 9.9 Mail à chaque inscription
-- **Dépend de** : 3.1, 3.2, 9.8.
-- **Livré** : à chaque inscription validée, mail envoyé à l'adresse de notification de la course ; rien si le champ est vide. Contenu : course, pseudo, dossard, nombre de places restantes, aucune autre donnée personnelle. Envoi asynchrone après validation de l'inscription ; un échec SMTP est journalisé (sans secret) et ne bloque ni n'annule jamais l'inscription. Port sortant `NotificationInscription` dans le domaine ou l'application, adaptateur SMTP dans l'infrastructure. Configuration SMTP par variables d'environnement, ajoutées à `.env.example`. Service Mailpit (interface web, API pour Playwright) dans un fichier de surcharge `docker-compose.mail.yml`, utilisé en local et en E2E, absent en production (voir « Décisions prises »). `docs/deploiement.md` : configuration SMTP en production.
-- **Tu testes** : lancer la stack avec la surcharge Mailpit, s'inscrire à la course de démo avec adresse de notification → un mail apparaît dans l'interface Mailpit avec course, pseudo, dossard et places restantes. S'inscrire à une course sans adresse → aucun mail. Arrêter Mailpit puis s'inscrire → l'inscription réussit, l'échec est dans les logs de `api`. En production, aucun service Mailpit (`docker compose -f docker-compose.yml -f docker-compose.prod.yml config`).
-- **Données de démo** : voir 9.8.
-- **Taille** : peut dépasser la cible de 400 lignes (port, adaptateur, asynchrone, compose, documentation) ; le `fonctionnel` propose alors un découpage 9.9a (port, adaptateur SMTP, envoi) / 9.9b (Mailpit, E2E, documentation de production), comme pour le 8.1.
-
 ---
 
 ## Décisions prises
 
 | Sujet | Décision | Incrément |
 |---|---|---|
+| Notification d'inscription | Abandonnée avant réalisation : pas d'adresse de notification sur la course, pas de mail, pas de SMTP ni de Mailpit. Les incréments 9.8 et 9.9 sont supprimés. | 9.8, 9.9 |
 | Maîtrise du temps pour les tests E2E | Horloge pilotable activée uniquement dans le profil `e2e`. Les vrais essais en temps réel se font en recette sur le terrain. | 4.3 |
 | Suppression d'un compte ayant couru | Anonymisation : le compte ne peut plus se connecter, son pseudo est remplacé, ses résultats sont conservés. | 3.6 |
 | Suppression d'une course | Par l'admin master uniquement, tant que la course est `EN_PREPARATION`. | 2.5 |
@@ -336,7 +326,6 @@ Ordre : le menu et les formulaires à la demande (9.1, 9.2) réorganisent des é
 | Suppression d'un bénévole | Par les admins et l'admin master, avec confirmation. Affectations retirées, refus (409) s'il est affecté à une course `EN_COURS`, session invalidée, passages scannés conservés (ils ne le référencent pas). | 9.3 |
 | Suppression d'un admin | Par l'admin master uniquement (403 pour un admin), avec confirmation. L'admin master n'est jamais supprimable. Connexion impossible et session invalidée. | 9.4 |
 | Changement de rôle d'un coureur | Recherche par pseudo (partielle, 3 caractères minimum, résultats limités, comptes `COUREUR` uniquement). L'admin master passe un coureur en `ADMIN`, les admins et l'admin master le passent en `BENEVOLE`. Refus (409) s'il a une inscription à une course `EN_PREPARATION` ou `EN_COURS` ; inscriptions `TERMINEE` conservées ; session invalidée. | 9.5, 9.6, 9.7 |
-| Mail d'inscription | Adresse de notification facultative sur la course (format validé) ; aucun mail si vide. Contenu : course, pseudo, dossard, places restantes. Envoi asynchrone après validation, un échec SMTP est journalisé et ne bloque ni n'annule jamais l'inscription. Port dans le domaine ou l'application, adaptateur SMTP dans l'infrastructure, configuration par variables d'environnement. | 9.8, 9.9 |
 | Menu d'administration | Menu de navigation (Courses, Admins, Bénévoles selon le rôle) ; chaque liste reste visible, le formulaire de création s'ouvre à la demande puis se referme après création ou annulation. Aucun changement d'API. | 9.1, 9.2 |
 | Suppression et désactivation | Les deux coexistent ; la suppression est possible aussi sur un compte désactivé. Suppression physique, pseudo libéré (pas d'anonymisation : aucun résultat ne référence un admin ou un bénévole). | 9.3, 9.4 |
 | Dernier admin | La règle du 8.1 s'applique aussi à la suppression : refus s'il n'existe aucun autre admin actif (l'admin master n'est pas compté). | 9.4 |
@@ -344,10 +333,7 @@ Ordre : le menu et les formulaires à la demande (9.1, 9.2) réorganisent des é
 | Suppression d'un bénévole ou d'un admin issu d'un coureur | Tranché : le compte est anonymisé comme au 3.6 (pseudo remplacé, mot de passe effacé, résultats conservés, pseudo libérable) s'il a des inscriptions ; sinon suppression physique comme aux 9.3 et 9.4. Livré avec le 9.6. | 9.6, 9.7 |
 | Rétrogradation | Le changement de rôle est à sens unique ; pas de retour en coureur dans ce jalon (désactivation ou suppression suffisent). | 9.6, 9.7 |
 | Emplacement de la promotion | Bouton « Promouvoir un coureur » sur les pages Bénévoles (vers `BENEVOLE`) et Admins (vers `ADMIN`) ; résultats de recherche limités à 10. | 9.5 |
-| Mailpit | Fichier de surcharge `docker-compose.mail.yml`, combiné au fichier de base en local et à `docker-compose.e2e.yml` en E2E, jamais à `docker-compose.prod.yml`. Le local par défaut n'envoie pas de mail. | 9.9 |
-| Données personnelles dans le mail | Pseudo envoyé à l'adresse de notification : accepté, avec TLS exigé vers le fournisseur et une phrase d'information sur l'écran d'inscription. | 9.9 |
 
 ## Décisions en attente
 
-1. **Fournisseur SMTP en production (9.9)** : budget quasi nul et port 25 souvent bloqué sur les VPS. Offre gratuite d'un service transactionnel (port 587/465 avec authentification) ou relais SMTP de la messagerie existante ? Domaine d'expédition, SPF et DKIM à prévoir. À trancher avant le déploiement du 9.9 ; le développement et les tests n'en dépendent pas.
-
+Aucune.

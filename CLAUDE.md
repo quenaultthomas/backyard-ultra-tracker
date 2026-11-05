@@ -15,7 +15,7 @@ Ces termes sont la référence pour le code, les specs, l'API et l'interface. Pa
 
 | Terme | Définition |
 |---|---|
-| Course | Une édition de backyard : nom, date, logo, paramètres de boucle, limites, bénévoles affectés, adresse de notification, statut |
+| Course | Une édition de backyard : nom, date, logo, paramètres de boucle, limites, bénévoles affectés, statut |
 | Boucle | Un yard : distance (m), durée (min), dénivelé positif (m), identiques pour toute la course |
 | Compte | Identité d'une personne qui se connecte (pseudo, mot de passe, rôle) |
 | Inscription | Participation d'un compte coureur à une course : dossard, jeton QR, statut, motif et boucle d'abandon |
@@ -26,8 +26,6 @@ Ces termes sont la référence pour le code, les specs, l'API et l'interface. Pa
 | Désactivation | Un compte `ADMIN` ou `BENEVOLE` ne peut plus se connecter, mais existe toujours ; réversible (réactivation) |
 | Suppression d'un compte | Retrait définitif d'un compte `ADMIN` ou `BENEVOLE` (à ne pas confondre avec la désactivation ni avec la suppression d'un compte coureur, qui anonymise) |
 | Changement de rôle | Passage d'un compte `COUREUR` à `BENEVOLE` ou `ADMIN`, à sens unique dans l'application |
-| Adresse de notification | Adresse mail facultative d'une course, destinataire de la notification d'inscription |
-| Notification d'inscription | Mail envoyé à l'adresse de notification à chaque inscription validée |
 
 Statuts et énumérations :
 - Course : `EN_PREPARATION`, `EN_COURS`, `TERMINEE`
@@ -38,7 +36,7 @@ Statuts et énumérations :
 
 ## Modèle du domaine
 
-- **Course** (racine d'agrégat) : id, nom, date, logo, statut, démarréeLe, paramètres de boucle (distance en m, durée en min, dénivelé en m), nombreMaxParticipants, nombreMaxBoucles, bénévoles affectés (identifiants de comptes `BENEVOLE`), adresseNotification (facultative, format mail validé)
+- **Course** (racine d'agrégat) : id, nom, date, logo, statut, démarréeLe, paramètres de boucle (distance en m, durée en min, dénivelé en m), nombreMaxParticipants, nombreMaxBoucles, bénévoles affectés (identifiants de comptes `BENEVOLE`)
 - **Inscription** : id, course, compte, dossard (unique par course), jetonQr (opaque, aléatoire), statut, motifAbandon, boucleAbandon
 - **Passage** : id, inscription, numeroBoucle, scanneLe (null si correction), origine
 - **Compte** (contexte séparé) : id, pseudo (unique), empreinte du mot de passe, rôle, créeLe
@@ -65,7 +63,6 @@ Principe : les passages sont une donnée brute immuable. Boucle courante, nombre
 - **Suppression d'un bénévole** : admins et admin master, avec confirmation. Ses affectations aux courses sont retirées ; refusée (409) s'il est affecté à une course `EN_COURS`. Ses sessions sont invalidées. Les passages qu'il a scannés restent intacts (ils ne le référencent pas). Possible aussi sur un compte désactivé. Si le compte (issu d'un coureur) a des inscriptions, il est anonymisé comme un compte coureur au lieu d'être effacé, pour conserver les résultats.
 - **Suppression d'un admin** : admin master uniquement (403 pour un admin), avec confirmation. L'admin master n'est jamais supprimable. Le compte ne peut plus se connecter et ses sessions sont invalidées. Même anonymisation s'il a des inscriptions. Règle du dernier admin : voir « Décisions en attente » de la roadmap.
 - **Changement de rôle** : recherche d'un coureur par pseudo (partielle, 3 caractères minimum, résultats limités, comptes `COUREUR` connectables uniquement). L'admin master passe un coureur en `ADMIN` ; les admins et l'admin master le passent en `BENEVOLE`. Refusé (409) si le coureur a une inscription à une course `EN_PREPARATION` ou `EN_COURS` ; ses inscriptions aux courses `TERMINEE` sont conservées. La session du compte est invalidée pour que le nouveau rôle s'applique.
-- **Notification d'inscription** : si la course a une adresse de notification, un mail est envoyé à chaque inscription validée (course, pseudo, dossard, places restantes, aucune autre donnée personnelle) ; sinon aucun mail. L'envoi est asynchrone, après validation de l'inscription ; un échec d'envoi est journalisé et ne bloque ni n'annule jamais l'inscription. Le port sortant est dans le domaine ou l'application, l'adaptateur SMTP dans l'infrastructure.
 
 ## Fonctionnalités par écran
 
@@ -75,7 +72,7 @@ Principe : les passages sont une donnée brute immuable. Boucle courante, nombre
 
 **Administration** (`ADMIN_MASTER`, `ADMIN`)
 - Menu de navigation (Courses, Admins, Bénévoles selon le rôle). Chaque liste reste visible ; les formulaires de création (course, admin, bénévole) ne s'ouvrent qu'à la demande par un bouton, et se referment après création ou annulation.
-- Déclaration des courses : nom, date, distance d'une boucle (m), durée d'une boucle (min), dénivelé d'une boucle (m), logo, nombre max de participants, nombre max de boucles, liste des bénévoles intervenant sur la course, adresse mail de notification des inscriptions (facultative).
+- Déclaration des courses : nom, date, distance d'une boucle (m), durée d'une boucle (min), dénivelé d'une boucle (m), logo, nombre max de participants, nombre max de boucles, liste des bénévoles intervenant sur la course.
 - Pilotage d'une course : démarrage, suivi des coureurs, abandon manuel, réintégration.
 - Gestion des comptes : l'admin master crée les admins ; les admins créent les bénévoles. Désactivation et réactivation, suppression (admins : admin master seul ; bénévoles : admins et admin master). Changement de rôle d'un coureur trouvé par recherche de pseudo (en `ADMIN` : admin master seul).
 
@@ -94,7 +91,7 @@ Principe : les passages sont une donnée brute immuable. Boucle courante, nombre
 
 ## Stack
 
-- Java 25, Spring Boot 4.1.1 (Spring Web, Spring Data JPA, Spring Security, Actuator, envoi de mail SMTP)
+- Java 25, Spring Boot 4.1.1 (Spring Web, Spring Data JPA, Spring Security, Actuator)
 - PostgreSQL, migrations Liquibase
 - Frontend : Angular en PWA (service worker pour la file de scan hors ligne), scan QR caméra
 - Déploiement : Docker + `docker compose` (voir section Déploiement)
@@ -114,7 +111,6 @@ docs/deploiement.md   procédure de déploiement sur le VPS
 docker-compose.yml    stack commune (dev, tests E2E, production)
 docker-compose.prod.yml  surcharges production (domaine, HTTPS, redémarrage)
 docker-compose.e2e.yml   surcharges pour les tests E2E (profil `e2e`, horloge pilotable)
-docker-compose.mail.yml  surcharge Mailpit (local et E2E uniquement, jamais en production)
 .env.example          toutes les variables d'environnement, sans valeur secrète
 ```
 
@@ -129,7 +125,6 @@ Toute l'application se lance avec Docker, en local comme sur le VPS. Aucune inst
 | `base` | `postgres` (version fixée) | Base de données, volume nommé `donnees-postgres` |
 | `api` | construite depuis `backend/` | Spring Boot, non exposé directement à l'extérieur |
 | `web` | construite depuis `frontend/` | Caddy : sert le front Angular, relaie `/api` vers `api`, HTTPS automatique (Let's Encrypt) en production |
-| `mailpit` | `axllent/mailpit` (version fixée) | Faux serveur SMTP avec interface web et API, pour voir les notifications d'inscription. Défini dans `docker-compose.mail.yml`, utilisé en local et en E2E, **absent en production** (SMTP réel) |
 
 **Images** :
 - Dockerfiles multi-étapes : une étape de build (JDK 25 / Node), une étape d'exécution minimale (JRE 25 / Caddy).
@@ -137,7 +132,7 @@ Toute l'application se lance avec Docker, en local comme sur le VPS. Aucune inst
 - `.dockerignore` pour ne pas embarquer `target/`, `node_modules/`, secrets.
 
 **Configuration** :
-- Tout passe par variables d'environnement (`.env`, jamais commité) : connexion base, identifiants de l'admin master, domaine, profil Spring, serveur SMTP (hôte, port, utilisateur, mot de passe, adresse d'expédition ; noms fixés par la spec 9.9, facultatives : sans hôte SMTP aucun mail n'est envoyé). `.env.example` est maintenu à jour à chaque nouvelle variable.
+- Tout passe par variables d'environnement (`.env`, jamais commité) : connexion base, identifiants de l'admin master, domaine, profil Spring. `.env.example` est maintenu à jour à chaque nouvelle variable.
 - Les logos de course sont stockés sur un volume nommé `logos` (ou en base), jamais dans l'image.
 - Liquibase s'applique automatiquement au démarrage de `api`.
 
@@ -148,7 +143,6 @@ Toute l'application se lance avec Docker, en local comme sur le VPS. Aucune inst
 
 **Commandes** :
 - Local : `docker compose up -d --build` puis http://localhost
-- Local avec mails visibles : `docker compose -f docker-compose.yml -f docker-compose.mail.yml up -d --build`, interface Mailpit sur http://localhost:8025
 - Production : `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`
 - Les tests E2E tournent sur exactement la même stack que la production (hors HTTPS).
 
@@ -188,7 +182,6 @@ Rien de critique, mais rien de ridicule :
 - Session côté serveur, cookie `HttpOnly`, `Secure`, `SameSite=Lax`, protection CSRF active.
 - HTTPS obligatoire via le reverse proxy.
 - Contrôle des rôles côté serveur sur chaque endpoint, jamais uniquement côté front. Cela vaut pour la suppression d'un compte, le changement de rôle et la recherche de coureurs ; un compte supprimé ou dont le rôle change voit toutes ses sessions invalidées.
-- Mail : identifiants SMTP uniquement en variables d'environnement, jamais journalisés ; aucune donnée saisie (nom de course, pseudo, adresse) ne peut injecter d'en-tête dans un mail ; TLS vers le fournisseur en production.
 - Jeton QR aléatoire (`SecureRandom`), distinct du dossard et non devinable.
 - Admin master créé au déploiement (premier démarrage) à partir de variables d'environnement ; unique, non supprimable, jamais créable depuis l'interface.
 - Secrets uniquement en variables d'environnement, jamais commités.
@@ -209,7 +202,6 @@ Rien de critique, mais rien de ridicule :
 - **Tests E2E** : Playwright sur la stack `docker compose` complète, lancée avec le profil `e2e` (`docker-compose.e2e.yml`). Chaque écran a au moins un parcours nominal, et chaque règle métier visible à l'écran (abandon automatique, réintégration, vainqueur, scan refusé, scan hors ligne) a son scénario.
 - **Tests d'architecture** : ArchUnit.
 - **Horloge pilotable** : dans le profil `e2e` uniquement, l'horloge de l'application peut être avancée via `/api/test/horloge` pour tester les règles temporelles en quelques secondes. Cet endpoint n'existe dans aucun autre profil, ce qui est vérifié par un test d'intégration.
-- **Mails en E2E** : la stack E2E inclut Mailpit (`docker-compose.mail.yml`) ; les tests Playwright vérifient la notification d'inscription par l'API de Mailpit. Les essais en temps réel se font en recette sur le terrain.
 
 ## Définition de « fini » (par incrément)
 
