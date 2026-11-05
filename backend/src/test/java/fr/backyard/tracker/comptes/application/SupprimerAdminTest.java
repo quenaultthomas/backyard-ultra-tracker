@@ -49,7 +49,9 @@ class SupprimerAdminTest {
     private final DepotAdmins depot = new DepotAdmins(journal);
     private final SessionsEspion sessions = new SessionsEspion(journal);
     private final RegistreEspion registre = new RegistreEspion(journal);
-    private final SupprimerAdmin supprimer = new SupprimerAdmin(depot, sessions, registre, PolitiqueBlocage.parDefaut());
+    private final SupprimerAdmin supprimer = new SupprimerAdmin(depot, sessions, registre, PolitiqueBlocage.parDefaut(),
+            new DoublesAnonymisationDeTest.AnnulationEspion(new ArrayList<>()),
+            new DoublesAnonymisationDeTest.ConsultationEspion(new ArrayList<>()));
 
     private Compte compte(UUID id, String pseudo, Role role, boolean actif) {
         return depot.ajouter(Compte.reconstituer(id, new Pseudo(pseudo), "empreinte-" + pseudo, role, CREE_LE, actif));

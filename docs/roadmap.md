@@ -292,9 +292,15 @@ Ordre : le menu et les formulaires à la demande (9.1, 9.2) réorganisent des é
 - **Tu testes** : saisir 2 caractères → aucune recherche ; saisir 3 caractères d'un pseudo de coureur → il apparaît ; un admin, un bénévole et un compte supprimé n'apparaissent jamais ; plus de 10 correspondances → 10 résultats.
 - **Données de démo** : à ajouter plus tard : une dizaine de coureurs aux pseudos proches (`promo01`…`promo12`) pour la limite des résultats.
 
-### 9.6 Passer un coureur en bénévole
+### 9.6a Anonymisation à la suppression d'un bénévole ou d'un admin
+- **Dépend de** : 9.3, 9.4, 3.6.
+- **Livré** : back seul. La suppression d'un bénévole (9.3) ou d'un admin (9.4) qui a des inscriptions anonymise le compte comme au 3.6 (pseudo remplacé, mot de passe effacé, rôle ramené à `COUREUR`, résultats conservés, pseudo libéré) ; sans inscription, suppression physique inchangée. Port `ConsultationInscriptions` côté `comptes`, adaptateur dans `assemblage`. Spec : `docs/specs/increment-9.6.md` (RG1 à RG10, CA1 à CA11). Découpé du 9.6 (dépassement de la cible de 400 lignes).
+- **Tu testes** : voir la section « Tester à la main » de la spec (une ligne SQL fabrique un bénévole ex-coureur).
+- **Données de démo** : rien.
+
+### 9.6b Passer un coureur en bénévole
 - **Dépend de** : 9.3, 9.5, 2.4, 3.6.
-- **Livré** : depuis les résultats de recherche de la page Bénévoles, « Passer en bénévole » avec confirmation (admins et admin master). Le compte devient `BENEVOLE`, sa session est fermée pour que le nouveau rôle s'applique à la prochaine connexion. Refus 409 si le coureur a une inscription à une course `EN_PREPARATION` ou `EN_COURS`, avec message explicite ; ses inscriptions aux courses `TERMINEE` sont conservées. Après le changement, il apparaît dans la liste des bénévoles et est proposé à l'affectation. Terme « changement de rôle » ajouté au langage ubiquitaire.
+- **Livré** : depuis les résultats de recherche de la page Bénévoles, « Passer en bénévole » avec confirmation (admins et admin master). Le compte devient `BENEVOLE`, sa session est fermée pour que le nouveau rôle s'applique à la prochaine connexion. Refus 409 si le coureur a une inscription à une course `EN_PREPARATION` ou `EN_COURS`, avec message explicite ; ses inscriptions aux courses `TERMINEE` sont conservées. Après le changement, il apparaît dans la liste des bénévoles et est proposé à l'affectation. Terme « changement de rôle » ajouté au langage ubiquitaire. La suppression d'un bénévole (et d'un admin) qui a des inscriptions est désormais une anonymisation, sans changement visible pour l'admin (décision prise).
 - **Tu testes** : promouvoir un coureur sans inscription en cours → il se reconnecte en bénévole et voit l'espace bénévole. Promouvoir un coureur inscrit à une course en préparation → refus avec message ; se désinscrire puis réessayer → accepté. Promouvoir un coureur ayant couru une course terminée → accepté, ses résultats restent affichés.
 - **Données de démo** : à ajouter plus tard : un coureur sans inscription, un inscrit à une course en préparation, un inscrit à une course en cours, un ayant couru une course terminée.
 
@@ -335,6 +341,7 @@ Ordre : le menu et les formulaires à la demande (9.1, 9.2) réorganisent des é
 | Suppression et désactivation | Les deux coexistent ; la suppression est possible aussi sur un compte désactivé. Suppression physique, pseudo libéré (pas d'anonymisation : aucun résultat ne référence un admin ou un bénévole). | 9.3, 9.4 |
 | Dernier admin | La règle du 8.1 s'applique aussi à la suppression : refus s'il n'existe aucun autre admin actif (l'admin master n'est pas compté). | 9.4 |
 | Affectations d'un bénévole supprimé | Toutes les affectations sont retirées, y compris sur les courses `TERMINEE` ; seuls les passages font foi pour l'historique. | 9.3 |
+| Suppression d'un bénévole ou d'un admin issu d'un coureur | Tranché : le compte est anonymisé comme au 3.6 (pseudo remplacé, mot de passe effacé, résultats conservés, pseudo libérable) s'il a des inscriptions ; sinon suppression physique comme aux 9.3 et 9.4. Livré avec le 9.6. | 9.6, 9.7 |
 | Rétrogradation | Le changement de rôle est à sens unique ; pas de retour en coureur dans ce jalon (désactivation ou suppression suffisent). | 9.6, 9.7 |
 | Emplacement de la promotion | Bouton « Promouvoir un coureur » sur les pages Bénévoles (vers `BENEVOLE`) et Admins (vers `ADMIN`) ; résultats de recherche limités à 10. | 9.5 |
 | Mailpit | Fichier de surcharge `docker-compose.mail.yml`, combiné au fichier de base en local et à `docker-compose.e2e.yml` en E2E, jamais à `docker-compose.prod.yml`. Le local par défaut n'envoie pas de mail. | 9.9 |
@@ -343,4 +350,4 @@ Ordre : le menu et les formulaires à la demande (9.1, 9.2) réorganisent des é
 ## Décisions en attente
 
 1. **Fournisseur SMTP en production (9.9)** : budget quasi nul et port 25 souvent bloqué sur les VPS. Offre gratuite d'un service transactionnel (port 587/465 avec authentification) ou relais SMTP de la messagerie existante ? Domaine d'expédition, SPF et DKIM à prévoir. À trancher avant le déploiement du 9.9 ; le développement et les tests n'en dépendent pas.
-2. **Suppression d'un bénévole issu d'un coureur (à trancher avant le 9.6)** : un coureur promu en bénévole (9.6) peut avoir des inscriptions à des courses `TERMINEE`, conservées par le changement de rôle. La suppression physique du 9.3 laisserait ces inscriptions pointer vers un compte absent. Faut-il anonymiser le compte comme au 3.6 (résultats conservés, pseudo remplacé) dans ce cas, ou refuser la suppression ? *Recommandation : anonymiser quand le compte a des inscriptions, supprimer physiquement sinon.* Même question pour un admin issu d'un coureur (9.4, 9.7).
+

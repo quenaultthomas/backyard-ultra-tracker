@@ -1,8 +1,10 @@
 package fr.backyard.tracker.comptes.application;
 
+import fr.backyard.tracker.comptes.domaine.AnnulationInscriptions;
 import fr.backyard.tracker.comptes.domaine.BenevoleAffecteCourseEnCoursException;
 import fr.backyard.tracker.comptes.domaine.Compte;
 import fr.backyard.tracker.comptes.domaine.CompteNonGerableException;
+import fr.backyard.tracker.comptes.domaine.ConsultationInscriptions;
 import fr.backyard.tracker.comptes.domaine.DepotComptes;
 import fr.backyard.tracker.comptes.domaine.DesaffectationBenevole;
 import fr.backyard.tracker.comptes.domaine.InvalidationAutresSessions;
@@ -15,11 +17,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Suppression définitive d'un Compte BENEVOLE (actif ou désactivé) par un admin ou l'admin master, dans une seule
- * transaction : Compte relu sous verrou, garde de rôle du domaine, retrait de toutes ses affectations (Courses
- * verrouillées après le Compte, refus si l'une est EN_COURS), suppression du Compte, remise à zéro du compteur
- * d'échecs de son pseudo, puis fermeture de toutes ses sessions après validation. Journal sans pseudo, mot de passe ni
- * nom de Course.
+ * Suppression d'un Compte BENEVOLE (actif ou désactivé) par un admin ou l'admin master, dans une seule transaction :
+ * Compte relu sous verrou, garde de rôle du domaine, annulation de ses Inscriptions aux Courses non démarrées, retrait
+ * de toutes ses affectations (Courses verrouillées après le Compte, refus si l'une est EN_COURS), puis anonymisation
+ * s'il lui reste des Inscriptions (9.6a RG1), suppression définitive sinon, remise à zéro du compteur d'échecs de son
+ * pseudo et fermeture de toutes ses sessions après validation. Journal sans pseudo, mot de passe ni nom de Course.
  */
 @Service
 public class SupprimerBenevole {
@@ -30,14 +32,20 @@ public class SupprimerBenevole {
     private final DesaffectationBenevole desaffectation;
     private final InvalidationAutresSessions invalidationSessions;
     private final LimitationTentatives limitation;
+    private final AnnulationInscriptions annulationInscriptions;
+    private final ConsultationInscriptions consultationInscriptions;
 
     public SupprimerBenevole(DepotComptes depotComptes, DesaffectationBenevole desaffectation,
                              InvalidationAutresSessions invalidationSessions,
-                             RegistreTentativesConnexion registreTentatives, PolitiqueBlocage politiqueBlocage) {
+                             RegistreTentativesConnexion registreTentatives, PolitiqueBlocage politiqueBlocage,
+                             AnnulationInscriptions annulationInscriptions,
+                             ConsultationInscriptions consultationInscriptions) {
         this.depotComptes = depotComptes;
         this.desaffectation = desaffectation;
         this.invalidationSessions = invalidationSessions;
         this.limitation = new LimitationTentatives(registreTentatives, politiqueBlocage);
+        this.annulationInscriptions = annulationInscriptions;
+        this.consultationInscriptions = consultationInscriptions;
     }
 
     /**
@@ -48,11 +56,18 @@ public class SupprimerBenevole {
     public void executer(UUID appelantId, UUID cibleId) {
         Compte cible = ComptesGeres.BENEVOLES.cible(depotComptes.trouverParIdPourModification(cibleId));
         cible.verifierSuppressionBenevole();
+        annulationInscriptions.annulerPour(cibleId);
         int retirees = retirerDeToutesSesCourses(cibleId);
-        depotComptes.supprimer(cibleId);
+        if (consultationInscriptions.aDesInscriptions(cibleId)) {
+            depotComptes.mettreAJour(cible.anonymiserBenevoleOuAdmin());
+            JOURNAL.log(Level.INFO, "Bénévole anonymisé (compte {0} par {1}, {2} affectation(s) retirée(s))",
+                    cibleId, appelantId, retirees);
+        } else {
+            depotComptes.supprimer(cibleId);
+            JOURNAL.log(Level.INFO, "Bénévole supprimé (compte {0} par {1}, {2} affectation(s) retirée(s))",
+                    cibleId, appelantId, retirees);
+        }
         limitation.oublier(cible.pseudoNormalise());
-        JOURNAL.log(Level.INFO, "Bénévole supprimé (compte {0} par {1}, {2} affectation(s) retirée(s))", cibleId,
-                appelantId, retirees);
         Desactivation.fermerSessionsApresValidation(invalidationSessions, cibleId);
     }
 

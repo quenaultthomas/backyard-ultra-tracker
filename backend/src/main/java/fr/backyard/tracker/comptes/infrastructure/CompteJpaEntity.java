@@ -52,11 +52,16 @@ public class CompteJpaEntity {
         this.actif = actif;
     }
 
-    /** Données modifiables d'un compte existant (changement de mot de passe, anonymisation, désactivation). */
-    void reporter(String nouveauPseudo, String nouveauPseudoNormalise, String nouvelleEmpreinte, boolean nouvelActif) {
+    /**
+     * Données modifiables d'un compte existant (changement de mot de passe, anonymisation, désactivation ; rôle ramené
+     * à COUREUR par l'anonymisation d'un bénévole ou d'un admin, 9.6a).
+     */
+    void reporter(String nouveauPseudo, String nouveauPseudoNormalise, String nouvelleEmpreinte, Role nouveauRole,
+                  boolean nouvelActif) {
         this.pseudo = nouveauPseudo;
         this.pseudoNormalise = nouveauPseudoNormalise;
         this.empreinteMotDePasse = nouvelleEmpreinte;
+        this.role = nouveauRole;
         this.actif = nouvelActif;
     }
 
