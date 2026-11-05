@@ -102,6 +102,14 @@ export class AdministrationApiService {
     return this.http.post<CompteReponse>(`${urlCompte(URL_COUREURS, id)}/passage-benevole`, null);
   }
 
+  /**
+   * Passe un Compte coureur en `ADMIN` (sans corps, admin master seul) ; renvoie le Compte devenu
+   * admin. 403 `ACCES_REFUSE` pour un admin, 404 `COMPTE_INTROUVABLE`, 409 comme `passerEnBenevole`.
+   */
+  passerEnAdmin(id: string): Observable<CompteReponse> {
+    return this.http.post<CompteReponse>(`${urlCompte(URL_COUREURS, id)}/passage-admin`, null);
+  }
+
   /** Toutes les Courses, dans l'ordre renvoyé par l'API (admins et admin master). */
   listerCourses(): Observable<CourseReponse[]> {
     return this.http.get<CourseReponse[]>(URL_COURSES);

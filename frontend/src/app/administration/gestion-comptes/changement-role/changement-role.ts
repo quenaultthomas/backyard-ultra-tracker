@@ -46,7 +46,7 @@ export class ChangementRole {
 
   readonly coureur = input.required<CoureurTrouve>();
   readonly passage = input.required<PassageComptesGeres>();
-  /** Préfixe des `data-testid` (`benevole-promotion`). */
+  /** Préfixe des `data-testid` (`benevole-promotion`, `admin-promotion`). */
   readonly prefixe = input.required<string>();
   /** Route de l'écran, pour le retour après connexion. */
   readonly ecran = input.required<string>();

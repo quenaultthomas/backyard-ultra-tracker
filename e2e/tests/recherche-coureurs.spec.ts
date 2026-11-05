@@ -53,8 +53,8 @@ async function ouvrirEnAdmin(page: Page, pseudo: string, chemin: string): Promis
 }
 
 async function resultats(page: Page, p: string): Promise<string[]> {
-  // Page Bénévoles (9.6b) : chaque résultat est une carte « pseudo + bouton Passer en bénévole » ; on compare le pseudo seul.
-  return (await t(page, `${p}-promotion-resultat`).allTextContents()).map((x) => x.replace(/\s*Passer en bénévole\s*$/, '').trim());
+  // Pages Bénévoles (9.6b) et Admins (9.7) : chaque résultat est une carte « pseudo + bouton Passer en bénévole / en admin » ; on compare le pseudo seul.
+  return (await t(page, `${p}-promotion-resultat`).allTextContents()).map((x) => x.replace(/\s*Passer en (bénévole|admin)\s*$/, '').trim());
 }
 
 const attendus = (prefixe: string, de: number, a: number): string[] =>
@@ -67,8 +67,9 @@ async function parcourirRecherche(page: Page, p: 'benevole' | 'admin', prefixe: 
   await expect(t(page, `${p}-promotion-compte`)).toHaveText('10 coureurs trouvés');
   expect(await resultats(page, p)).toEqual(attendus(prefixe, 1, 10));
   await expect(t(page, `${p}-promotion-plus`)).toHaveText(MESSAGE_PLUS);
-  // page Admins : texte seul, ni bouton ni lien ; page Bénévoles : un bouton par résultat (9.6b)
-  await expect(t(page, `${p}-promotion-liste`).getByRole('button')).toHaveCount(p === 'admin' ? 0 : 10);
+  // pages Bénévoles (9.6b) et Admins (9.7) : un bouton par résultat (« Passer en bénévole » / « Passer en admin »), aucun lien
+  await expect(t(page, `${p}-promotion-liste`).getByRole('button')).toHaveCount(10);
+  await expect(t(page, `${p}-promotion-liste`).getByRole('button', { name: p === 'admin' ? /^Passer en admin le coureur / : /^Passer en bénévole le coureur / })).toHaveCount(10);
   await expect(t(page, `${p}-promotion-liste`).getByRole('link')).toHaveCount(0);
 
   await champ.fill(`${prefixe}1`);

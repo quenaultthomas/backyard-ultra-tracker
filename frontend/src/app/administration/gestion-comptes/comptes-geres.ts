@@ -4,7 +4,7 @@ import { CompteReponse } from '../../comptes/compte';
 import { ErreursSpecifiques } from '../../comptes/erreurs-compte';
 import { AdministrationApiService } from '../administration-api.service';
 import { CreerAdminRequete, CreerBenevoleRequete } from '../requetes-creation-compte';
-import { ERREURS_PASSAGE_BENEVOLE } from './changement-role/refus-passage-benevole';
+import { ERREURS_CHANGEMENT_ROLE } from './changement-role/refus-changement-role';
 import {
   CODE_BENEVOLE_AFFECTE_COURSE_EN_COURS,
   refusBenevoleAffecteCourseEnCours,
@@ -48,8 +48,21 @@ const PASSAGE_BENEVOLE: PassageComptesGeres = {
     `reconnecter. Ce changement est irréversible.`,
   boutonConfirmer: 'Confirmer le passage en bénévole',
   succes: (pseudo) => `Le coureur ${pseudo} est maintenant bénévole.`,
-  erreurs: ERREURS_PASSAGE_BENEVOLE,
+  erreurs: ERREURS_CHANGEMENT_ROLE,
   passer: (api, id) => api.passerEnBenevole(id),
+};
+
+const PASSAGE_ADMIN: PassageComptesGeres = {
+  bouton: 'Passer en admin',
+  nomBouton: (pseudo) => `Passer en admin le coureur ${pseudo}`,
+  confirmation: (pseudo) =>
+    `Passer le coureur ${pseudo} en administrateur ? Il aura les droits d'administration, ` +
+    `pourra gérer les courses, les bénévoles et les coureurs, et ne pourra plus s'inscrire à ` +
+    `une course. Il devra se reconnecter. Ce changement est irréversible dans l'application.`,
+  boutonConfirmer: 'Confirmer le passage en admin',
+  succes: (pseudo) => `Le coureur ${pseudo} est maintenant administrateur.`,
+  erreurs: ERREURS_CHANGEMENT_ROLE,
+  passer: (api, id) => api.passerEnAdmin(id),
 };
 
 /** Mêmes textes sur les pages Admins et Bénévoles. */
@@ -127,6 +140,7 @@ export const ADMINS: ComptesGeres = {
     supprimer: (api, id) => api.supprimerAdmin(id),
   },
   promotion: PROMOTION_COUREUR,
+  passage: PASSAGE_ADMIN,
 };
 
 export const BENEVOLES: ComptesGeres = {

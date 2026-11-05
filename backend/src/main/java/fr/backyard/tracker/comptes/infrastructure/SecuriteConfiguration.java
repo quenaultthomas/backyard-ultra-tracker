@@ -25,7 +25,8 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
  * Politique de sécurité HTTP : tout /api/** exige une authentification sauf les endpoints publics,
- * /api/administration/admins/** et la suppression d'une Course sont réservés à ADMIN_MASTER, le reste de /api/administration/** aux rôles
+ * /api/administration/admins/**, la suppression d'une Course et le passage d'un coureur en admin sont réservés à
+ * ADMIN_MASTER, le reste de /api/administration/** aux rôles
  * ADMIN_MASTER et ADMIN (refus avant toute résolution du chemin), /api/benevole/** au seul rôle BENEVOLE,
  * /api/coureur/** et la suppression de son propre compte au seul rôle COUREUR, /api/test/** (horloge pilotable du
  * profil e2e) au seul rôle ADMIN_MASTER,
@@ -57,6 +58,10 @@ public class SecuriteConfiguration {
                         .hasRole(Role.ADMIN_MASTER.name())
                         // Suppression d'une Course : ADMIN_MASTER seul (le chemin du logo a un segment de plus).
                         .requestMatchers(HttpMethod.DELETE, "/api/administration/courses/*")
+                        .hasRole(Role.ADMIN_MASTER.name())
+                        // Passage d'un coureur en admin : ADMIN_MASTER seul, toutes méthodes (9.7 RG3), avant la
+                        // règle générale ci-dessous qui laisserait passer un ADMIN.
+                        .requestMatchers("/api/administration/coureurs/*/passage-admin")
                         .hasRole(Role.ADMIN_MASTER.name())
                         .requestMatchers("/api/administration/**")
                         .hasAnyRole(Role.ADMIN_MASTER.name(), Role.ADMIN.name())
