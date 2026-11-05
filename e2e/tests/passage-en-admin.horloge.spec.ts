@@ -1,5 +1,5 @@
-import { expect, test, avancerHorloge } from './aide-horloge';
-import { exigerIdentifiantsAdminMaster } from './aide-admin';
+import { expect, test, avancerHorloge, avecApi } from './aide-horloge';
+import { creerAdminParApi, exigerIdentifiantsAdminMaster, pseudoAdminUnique } from './aide-admin';
 import { preparerCourseDeScan, lireStatutCourseEnBase } from './aide-scan';
 import { scannerParApi } from './aide-suivi-coureurs';
 import { lire, urlSuivi } from './aide-suivi';
@@ -18,6 +18,8 @@ test.beforeAll(() => {
 
 test('CA17 et CA21 - E4 (Course terminée seulement) est promu, reste au suivi public, puis supprimé : « Coureur anonyme » avec son dossard', async ({ page, playwright }) => {
   test.setTimeout(150_000);
+  // sur une base neuve, E4 serait le seul admin actif : sa suppression serait refusée (dernier administrateur)
+  await avecApi(playwright, (ctx) => creerAdminParApi(ctx, pseudoAdminUnique()));
   const e4 = `${prefixeUnique()}e4`;
   const course = await preparerCourseDeScan(playwright, { nombreCoureurs: 2, nombreMaxBoucles: 5, pseudos: [e4] });
   const [coureur] = course.coureurs;
