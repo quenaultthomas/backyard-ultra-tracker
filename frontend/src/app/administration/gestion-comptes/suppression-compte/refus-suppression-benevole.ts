@@ -1,28 +1,15 @@
 import { ProblemDetail } from '../../../partage/probleme';
-
-/** Course `EN_COURS` qui bloque la suppression d'un bénévole (propriété `courses` du 409). */
-export interface CourseEnCoursBloquante {
-  id: string;
-  nom: string;
-}
-
-/** Corps du 409 `BENEVOLE_AFFECTE_COURSE_EN_COURS`. */
-export interface ProblemeBenevoleAffecteCourseEnCours extends ProblemDetail {
-  courses?: CourseEnCoursBloquante[];
-}
+import { listeNomsCourses, nomsCoursesBloquantes } from '../courses-bloquantes';
 
 export const CODE_BENEVOLE_AFFECTE_COURSE_EN_COURS = 'BENEVOLE_AFFECTE_COURSE_EN_COURS';
 
 /** Message du refus, construit à partir des noms des Courses bloquantes renvoyées par l'API. */
 export function refusBenevoleAffecteCourseEnCours(probleme: ProblemDetail): { generale: string } {
-  const { courses } = probleme as ProblemeBenevoleAffecteCourseEnCours;
-  const noms = Array.isArray(courses)
-    ? courses.map((course) => course?.nom).filter((nom) => typeof nom === 'string')
-    : [];
+  const noms = nomsCoursesBloquantes(probleme);
   if (noms.length === 0) {
     return { generale: 'Impossible : ce bénévole est affecté à une course en cours.' };
   }
-  const liste = noms.map((nom) => `« ${nom} »`).join(', ');
+  const liste = listeNomsCourses(noms);
   return {
     generale:
       noms.length === 1

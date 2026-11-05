@@ -4,6 +4,7 @@ import {
   ElementRef,
   inject,
   input,
+  output,
   signal,
   viewChild,
 } from '@angular/core';
@@ -19,6 +20,7 @@ import {
   of,
   startWith,
   switchMap,
+  tap,
   timer,
 } from 'rxjs';
 
@@ -26,7 +28,9 @@ import { RefusAccesService } from '../../../comptes/refus-acces.service';
 import { FormulaireALaDemande } from '../../../partage/formulaire-a-la-demande';
 import { AdministrationApiService } from '../../administration-api.service';
 import { RechercheCoureursReponse } from '../../recherche-coureurs';
-import { PromotionComptesGeres } from '../comptes-geres';
+import { ChangementRole } from '../changement-role/changement-role';
+import { PassageComptesGeres, PromotionComptesGeres } from '../comptes-geres';
+import { ResultatActionCompte, ResultatChangementRole } from '../resultat-action-compte';
 
 /** Contrôle d'affichage seulement : le serveur valide la recherche (3 à 30 caractères). */
 const LONGUEUR_MIN_RECHERCHE = 3;
@@ -50,10 +54,12 @@ const ERREUR: EtatRecherche = { nature: 'erreur' };
  * Bouton « Promouvoir un coureur » et panneau de recherche d'un Compte coureur par pseudo,
  * ouvert à la demande. Une seule recherche compte à la fois : toute nouvelle saisie, le passage
  * sous 3 caractères ou la fermeture annule la précédente et en ignore la réponse.
+ * Avec `passage`, chaque résultat porte un bouton de changement de rôle ; sa confirmation est
+ * coordonnée par la page (une seule confirmation ouverte) et fermée par toute nouvelle recherche.
  */
 @Component({
   selector: 'app-recherche-coureurs',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, ChangementRole],
   templateUrl: './recherche-coureurs.html',
   styleUrls: [
     '../../../comptes/formulaire-compte.css',
@@ -68,6 +74,13 @@ export class RechercheCoureurs {
   readonly prefixe = input.required<string>();
   /** Route de l'écran, pour le retour après connexion. */
   readonly ecran = input.required<string>();
+  /** Absent : résultats en texte seul. */
+  readonly passage = input<PassageComptesGeres>();
+  /** Identifiant du coureur dont la confirmation de changement de rôle est ouverte. */
+  readonly confirmationOuverte = input<string | null>(null);
+  readonly ouvrirConfirmation = output<string>();
+  readonly fermerConfirmation = output<void>();
+  readonly termine = output<ResultatActionCompte>();
 
   private readonly administrationApi = inject(AdministrationApiService);
   private readonly refusAcces = inject(RefusAccesService);
@@ -93,6 +106,7 @@ export class RechercheCoureurs {
         distinctUntilChanged(
           (avant, apres) => !apres.immediate && avant.fragment === apres.fragment,
         ),
+        tap(() => this.fermerConfirmation.emit()),
         switchMap((demande) => this.rechercher(demande)),
         takeUntilDestroyed(),
       )
@@ -106,7 +120,19 @@ export class RechercheCoureurs {
   /** Entrée : recherche sans attendre la fin de la frappe, y compris pour relancer après une erreur. */
   protected rechercherMaintenant(evenement: Event): void {
     evenement.preventDefault();
-    this.demandesImmediates.next({ fragment: this.recherche.value.trim(), immediate: true });
+    this.relancer();
+  }
+
+  /** Message transmis à la page ; résultats périmés : même recherche relancée, focus dans le champ. */
+  protected terminerChangementRole({
+    relancerRecherche,
+    ...resultat
+  }: ResultatChangementRole): void {
+    this.termine.emit(resultat);
+    if (relancerRecherche) {
+      this.relancer();
+      this.champRecherche().nativeElement.focus();
+    }
   }
 
   /** Panneau masqué, champ vidé, recherche en cours annulée, focus rendu au bouton. */
@@ -114,6 +140,10 @@ export class RechercheCoureurs {
     this.demandesImmediates.next({ fragment: '', immediate: true });
     this.recherche.reset('', { emitEvent: false });
     this.ouverture.fermer();
+  }
+
+  private relancer(): void {
+    this.demandesImmediates.next({ fragment: this.recherche.value.trim(), immediate: true });
   }
 
   private rechercher({ fragment, immediate }: Demande): Observable<EtatRecherche> {

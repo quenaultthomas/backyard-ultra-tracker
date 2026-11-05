@@ -26,6 +26,32 @@
   padding-left: var(--espace-5);
 }
 
+/* Résultats avec bouton de changement de rôle (9.6b) : une petite carte par coureur. */
+.resultats__liste--actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-2);
+  padding: 0;
+  list-style: none;
+}
+
+.resultats__liste--actions > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espace-2) var(--espace-3);
+  padding: var(--espace-3);
+  border: 1px solid var(--couleur-trait);
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-surface);
+}
+
+.resultats__pseudo {
+  flex: 1 1 8rem;
+  min-width: 0;
+  font-weight: var(--poids-gras);
+}
+
 .bouton-fermer {
   align-self: flex-start;
   max-width: 100%;
@@ -36,5 +62,9 @@
 @container cartes (max-width: 15rem) {
   .encart {
     padding: var(--espace-3);
+  }
+
+  .resultats__liste--actions > li {
+    padding: var(--espace-2);
   }
 }

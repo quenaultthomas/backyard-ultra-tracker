@@ -1,7 +1,10 @@
-/** Action d'une ligne de Compte qui demande une confirmation en ligne. */
-export type ActionCompte = 'activation' | 'suppression';
+/**
+ * Action qui demande une confirmation en ligne : sur une ligne de Compte, ou `promotion` sur un
+ * résultat de la recherche de coureurs (`id` du coureur trouvé).
+ */
+export type ActionCompte = 'activation' | 'suppression' | 'promotion';
 
-/** Confirmation ouverte dans la liste : une seule à la fois, toutes actions confondues. */
+/** Confirmation ouverte sur la page : une seule à la fois, toutes actions confondues. */
 export interface ConfirmationOuverte {
   readonly id: string;
   readonly action: ActionCompte;
@@ -15,4 +18,10 @@ export interface ResultatActionCompte {
   readonly recharger: boolean;
   /** Le Compte a disparu de la liste : le focus revient au bouton d'ouverture du formulaire. */
   readonly compteRetire?: boolean;
+}
+
+/** Issue d'un changement de rôle confirmé depuis la recherche de coureurs. */
+export interface ResultatChangementRole extends ResultatActionCompte {
+  /** Les résultats ont changé (succès, coureur introuvable) : la recherche est relancée. */
+  readonly relancerRecherche: boolean;
 }

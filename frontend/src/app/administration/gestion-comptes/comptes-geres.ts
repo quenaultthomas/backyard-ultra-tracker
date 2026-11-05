@@ -4,6 +4,7 @@ import { CompteReponse } from '../../comptes/compte';
 import { ErreursSpecifiques } from '../../comptes/erreurs-compte';
 import { AdministrationApiService } from '../administration-api.service';
 import { CreerAdminRequete, CreerBenevoleRequete } from '../requetes-creation-compte';
+import { ERREURS_PASSAGE_BENEVOLE } from './changement-role/refus-passage-benevole';
 import {
   CODE_BENEVOLE_AFFECTE_COURSE_EN_COURS,
   refusBenevoleAffecteCourseEnCours,
@@ -23,6 +24,33 @@ export interface PromotionComptesGeres {
   readonly boutonOuvrir: string;
   readonly titre: string;
 }
+
+/** Changement de rôle d'un coureur trouvé par la recherche : appel API, libellés et refus. */
+export interface PassageComptesGeres {
+  /** Libellé du bouton de chaque résultat. */
+  readonly bouton: string;
+  /** Nom accessible du bouton, qui commence par son libellé visible. */
+  readonly nomBouton: (pseudo: string) => string;
+  readonly confirmation: (pseudo: string) => string;
+  readonly boutonConfirmer: string;
+  readonly succes: (pseudo: string) => string;
+  /** Messages des refus (404 et 409), propres au rôle visé. */
+  readonly erreurs: ErreursSpecifiques<never>;
+  readonly passer: (api: AdministrationApiService, id: string) => Observable<CompteReponse>;
+}
+
+const PASSAGE_BENEVOLE: PassageComptesGeres = {
+  bouton: 'Passer en bénévole',
+  nomBouton: (pseudo) => `Passer en bénévole le coureur ${pseudo}`,
+  confirmation: (pseudo) =>
+    `Passer le coureur ${pseudo} en bénévole ? Il pourra scanner les passages des courses ` +
+    `auxquelles il sera affecté et ne pourra plus s'inscrire à une course. Il devra se ` +
+    `reconnecter. Ce changement est irréversible.`,
+  boutonConfirmer: 'Confirmer le passage en bénévole',
+  succes: (pseudo) => `Le coureur ${pseudo} est maintenant bénévole.`,
+  erreurs: ERREURS_PASSAGE_BENEVOLE,
+  passer: (api, id) => api.passerEnBenevole(id),
+};
 
 /** Mêmes textes sur les pages Admins et Bénévoles. */
 const PROMOTION_COUREUR: PromotionComptesGeres = {
@@ -62,6 +90,8 @@ export interface ComptesGeres {
   readonly suppression?: SuppressionComptesGeres;
   /** Absente : ni bouton « Promouvoir un coureur » ni panneau de recherche. */
   readonly promotion?: PromotionComptesGeres;
+  /** Absent : résultats de la recherche en texte seul, sans bouton. */
+  readonly passage?: PassageComptesGeres;
 }
 
 export const ADMINS: ComptesGeres = {
@@ -130,4 +160,5 @@ export const BENEVOLES: ComptesGeres = {
     supprimer: (api, id) => api.supprimerBenevole(id),
   },
   promotion: PROMOTION_COUREUR,
+  passage: PASSAGE_BENEVOLE,
 };
