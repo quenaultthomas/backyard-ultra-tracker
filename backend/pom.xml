@@ -21,7 +21,7 @@
         <java.version>25</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <archunit.version>1.5.1</archunit.version>
-        <jacoco.version>0.8.15</jacoco.version>
+        <jacoco.version>0.8.16</jacoco.version>
         <!-- Requis par Argon2PasswordEncoder (Spring Security), non géré par Spring Boot. -->
         <bouncycastle.version>1.86</bouncycastle.version>
         <!-- Montées de correctifs de sécurité au-dessus des versions gérées par Spring Boot 4.1.1 (incrément 7.4,
