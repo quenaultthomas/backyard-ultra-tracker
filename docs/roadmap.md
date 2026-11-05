@@ -26,6 +26,7 @@ Découpage en mini-incréments. Chacun est livré, relu et validé avant de pass
 | 7 | Préparation de la release | 7.1 → 7.4 | lancer un test grandeur nature avec une version publiée |
 | 8 | Durcissement issu du pentest | 8.1 → 8.5 | désactiver un compte privilégié, voir des sessions, connexions et créations de compte plafonnées |
 | 9 | Gestion des comptes et navigation d'administration | 9.1 → 9.7 | naviguer dans l'administration par un menu, supprimer des bénévoles et des admins, promouvoir un coureur |
+| 10 | Photos des coureurs | 10.1 → 10.2 | ajouter ta photo de profil, voir le tableau de polaroïds des coureurs en course sur le suivi live |
 
 ---
 
@@ -312,12 +313,24 @@ Les 9.8 (adresse de notification d'une course) et 9.9 (mail à chaque inscriptio
 - **Tu testes** : en admin master, promouvoir un coureur en admin → il se reconnecte et voit l'administration. En admin simple, la page Admins est inaccessible et l'API répond 403.
 - **Données de démo** : les coureurs du 9.6 suffisent.
 
+### 10.1 Photo de profil
+- **Dépend de** : 1.2, 2.3 (stockage des logos), 3.6.
+- **Livré** : le coureur ajoute, remplace ou retire sa photo depuis « Mon compte » (formats image et taille limités, comme le logo, vérification du contenu réel du fichier). Stockage sur un volume nommé, jamais dans l'image. La photo est publique : visible sur le suivi, servie sans connexion par une URL non devinable. Le coureur peut la retirer à tout moment ; la suppression ou l'anonymisation du compte efface le fichier. Un bénévole ou un admin issu d'un coureur conserve sa photo tant qu'il n'est pas anonymisé. Une phrase d'information précise que la photo est visible publiquement.
+- **Tu testes** : envoyer une photo dans Mon compte → aperçu affiché. Fichier trop lourd ou non image → refusé. Redémarrer la stack → la photo est toujours là. La retirer → aperçu remplacé par la silhouette. Supprimer le compte → fichier effacé.
+- **Données de démo** : photos de démonstration pour quelques coureurs.
+
+### 10.2 Tableau de polaroïds sur le suivi live
+- **Dépend de** : 6.2, 10.1.
+- **Livré** : sur le suivi public, un tableau façon liège, comme dans les vrais backyard, avec un polaroïd épinglé par coureur encore en course : photo (silhouette si aucune), pseudo, dossard, légèrement inclinés. Un coureur en abandon quitte le tableau au prochain rafraîchissement (polling 2-3 s) ; le vainqueur est mis en valeur. Lisible en mode projection, performant avec de nombreux coureurs, accessible (texte alternatif).
+- **Tu testes** : ouvrir le suivi d'une course avec plusieurs coureurs, certains avec photo → polaroïds avec épingles. Faire passer un coureur en abandon → son polaroïd disparaît sans recharger. Coureur sans photo → silhouette.
+
 ---
 
 ## Décisions prises
 
 | Sujet | Décision | Incrément |
 |---|---|---|
+| Photo de profil | Ajoutée par le coureur dans Mon compte, publique sur le suivi (retirable à tout moment, effacée à la suppression du compte). Polaroïd avec silhouette pour les coureurs sans photo. Découpage : 10.1 photo, 10.2 tableau. | 10.1, 10.2 |
 | Notification d'inscription | Abandonnée avant réalisation : pas d'adresse de notification sur la course, pas de mail, pas de SMTP ni de Mailpit. Les incréments 9.8 et 9.9 sont supprimés. | 9.8, 9.9 |
 | Maîtrise du temps pour les tests E2E | Horloge pilotable activée uniquement dans le profil `e2e`. Les vrais essais en temps réel se font en recette sur le terrain. | 4.3 |
 | Suppression d'un compte ayant couru | Anonymisation : le compte ne peut plus se connecter, son pseudo est remplacé, ses résultats sont conservés. | 3.6 |
