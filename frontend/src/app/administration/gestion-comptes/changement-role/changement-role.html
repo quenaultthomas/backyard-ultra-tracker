@@ -1,0 +1,54 @@
+@let c = coureur();
+@let textes = passage();
+@let idTexte = prefixe() + '-confirmation-texte-' + c.id;
+<button
+  #boutonPasser
+  type="button"
+  class="bouton bouton--secondaire"
+  [disabled]="envoiEnCours()"
+  [attr.aria-label]="textes.nomBouton(c.pseudo)"
+  [attr.aria-expanded]="ouverte()"
+  (click)="ouvrir.emit()"
+  [attr.data-testid]="prefixe() + '-bouton-passer'"
+>
+  {{ textes.bouton }}
+</button>
+
+@if (ouverte()) {
+  <div
+    class="confirmation confirmation--neutre"
+    role="group"
+    [attr.aria-labelledby]="idTexte"
+    (keydown.escape)="annuler()"
+    [attr.data-testid]="prefixe() + '-confirmation'"
+  >
+    <p
+      [id]="idTexte"
+      class="confirmation__texte"
+      [attr.data-testid]="prefixe() + '-confirmation-texte'"
+    >
+      {{ texteConfirmation() }}
+    </p>
+    <div class="confirmation__actions">
+      <button
+        type="button"
+        class="bouton"
+        [disabled]="envoiEnCours()"
+        (click)="confirmer()"
+        [attr.data-testid]="prefixe() + '-bouton-confirmer'"
+      >
+        {{ textes.boutonConfirmer }}
+      </button>
+      <button
+        #boutonAnnuler
+        type="button"
+        class="bouton bouton--secondaire"
+        [disabled]="envoiEnCours()"
+        (click)="annuler()"
+        [attr.data-testid]="prefixe() + '-bouton-annuler'"
+      >
+        Annuler
+      </button>
+    </div>
+  </div>
+}

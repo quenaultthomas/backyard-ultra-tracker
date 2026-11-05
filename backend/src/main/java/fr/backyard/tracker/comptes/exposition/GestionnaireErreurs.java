@@ -4,6 +4,7 @@ import fr.backyard.tracker.comptes.domaine.AdminMasterNonDesactivableException;
 import fr.backyard.tracker.comptes.domaine.AdminMasterNonSupprimableException;
 import fr.backyard.tracker.comptes.domaine.AutoDesactivationInterditeException;
 import fr.backyard.tracker.comptes.domaine.BenevoleAffecteCourseEnCoursException;
+import fr.backyard.tracker.comptes.domaine.ChangementRoleRefuseException;
 import fr.backyard.tracker.comptes.domaine.CompteIntrouvableOuInutilisableException;
 import fr.backyard.tracker.comptes.domaine.CompteNonConnectableException;
 import fr.backyard.tracker.comptes.domaine.CompteNonGerableException;
@@ -210,6 +211,25 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
 
     /** Course EN_COURS d'un refus de suppression de bénévole, telle qu'exposée dans le 409. */
     public record CourseEnCoursReponse(UUID id, String nom) {
+    }
+
+    /**
+     * Changement de rôle refusé (9.6b RG13, RG19) : le motif est le code, les seules Courses qui le motivent sont
+     * nommées dans le détail et listées dans « courses » (triées par le domaine) ; aucun pseudo ni identifiant de
+     * Compte.
+     */
+    @ExceptionHandler(ChangementRoleRefuseException.class)
+    ProblemDetail changementRoleRefuse(ChangementRoleRefuseException exception) {
+        ProblemDetail probleme = probleme(HttpStatus.CONFLICT, TITRE_CONFLIT, exception.getMessage(),
+                exception.motif());
+        probleme.setProperty("courses", exception.courses().stream()
+                .map(course -> new CourseReponse(course.id(), course.nom()))
+                .toList());
+        return probleme;
+    }
+
+    /** Course d'un refus de changement de rôle, telle qu'exposée dans le 409. */
+    public record CourseReponse(UUID id, String nom) {
     }
 
     @Override

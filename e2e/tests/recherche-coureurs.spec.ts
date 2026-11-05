@@ -53,7 +53,8 @@ async function ouvrirEnAdmin(page: Page, pseudo: string, chemin: string): Promis
 }
 
 async function resultats(page: Page, p: string): Promise<string[]> {
-  return (await t(page, `${p}-promotion-resultat`).allTextContents()).map((x) => x.trim());
+  // Page Bénévoles (9.6b) : chaque résultat est une carte « pseudo + bouton Passer en bénévole » ; on compare le pseudo seul.
+  return (await t(page, `${p}-promotion-resultat`).allTextContents()).map((x) => x.replace(/\s*Passer en bénévole\s*$/, '').trim());
 }
 
 const attendus = (prefixe: string, de: number, a: number): string[] =>
@@ -66,8 +67,8 @@ async function parcourirRecherche(page: Page, p: 'benevole' | 'admin', prefixe: 
   await expect(t(page, `${p}-promotion-compte`)).toHaveText('10 coureurs trouvés');
   expect(await resultats(page, p)).toEqual(attendus(prefixe, 1, 10));
   await expect(t(page, `${p}-promotion-plus`)).toHaveText(MESSAGE_PLUS);
-  // texte seul : ni bouton ni lien dans la liste
-  await expect(t(page, `${p}-promotion-liste`).getByRole('button')).toHaveCount(0);
+  // page Admins : texte seul, ni bouton ni lien ; page Bénévoles : un bouton par résultat (9.6b)
+  await expect(t(page, `${p}-promotion-liste`).getByRole('button')).toHaveCount(p === 'admin' ? 0 : 10);
   await expect(t(page, `${p}-promotion-liste`).getByRole('link')).toHaveCount(0);
 
   await champ.fill(`${prefixe}1`);
@@ -135,7 +136,7 @@ test.describe('Rechercher un coureur par pseudo', () => {
     expect(requetes).toEqual([{ methode: 'GET', q: prefixe }]);
     expect(await resultats(page, 'benevole')).toEqual(attendus(prefixe, 1, 10));
     await expect(t(page, 'benevole-promotion-plus')).toHaveText(MESSAGE_PLUS);
-    await expect(t(page, 'benevole-promotion-liste').getByRole('button')).toHaveCount(0);
+    await expect(t(page, 'benevole-promotion-liste').getByRole('button')).toHaveCount(10); // un bouton « Passer en bénévole » par résultat (9.6b)
     await expect(t(page, 'benevole-promotion-liste').getByRole('link')).toHaveCount(0);
     // un coureur d'un autre rôle ou anonymisé de même préfixe n'apparaît jamais
     for (const exclu of [jeu.admin, jeu.benevole, jeu.anonymise]) {
@@ -170,7 +171,7 @@ test.describe('Rechercher un coureur par pseudo', () => {
     // pseudo interprété en texte : réponse interceptée avec du HTML
     await page.route((url) => url.pathname === CHEMIN_RECHERCHE, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: corpsRecherche(['<b>x</b>']) }));
     await t(page, 'benevole-promotion-recherche').fill('htm');
-    await expect(t(page, 'benevole-promotion-resultat')).toHaveText(['<b>x</b>']);
+    await expect(t(page, 'benevole-promotion-resultat')).toHaveText(['<b>x</b> Passer en bénévole']);
     await expect(t(page, 'benevole-promotion-liste').locator('b')).toHaveCount(0);
     await page.unroute((url) => url.pathname === CHEMIN_RECHERCHE).catch(() => undefined);
 

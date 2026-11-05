@@ -52,9 +52,30 @@
         <p class="resultats__compte" [attr.data-testid]="p + '-compte'">
           {{ coureurs.length }} {{ coureurs.length === 1 ? 'coureur trouvé' : 'coureurs trouvés' }}
         </p>
-        <ul class="resultats__liste" [attr.data-testid]="p + '-liste'">
+        @let changement = passage();
+        <ul
+          class="resultats__liste"
+          [class.resultats__liste--actions]="changement"
+          [attr.data-testid]="p + '-liste'"
+        >
           @for (coureur of coureurs; track coureur.id) {
-            <li [attr.data-testid]="p + '-resultat'">{{ coureur.pseudo }}</li>
+            <li [attr.data-testid]="p + '-resultat'">
+              @if (changement) {
+                <span class="resultats__pseudo">{{ coureur.pseudo }}</span>
+                <app-changement-role
+                  [coureur]="coureur"
+                  [passage]="changement"
+                  [prefixe]="p"
+                  [ecran]="ecran()"
+                  [ouverte]="confirmationOuverte() === coureur.id"
+                  (ouvrir)="ouvrirConfirmation.emit(coureur.id)"
+                  (fermer)="fermerConfirmation.emit()"
+                  (termine)="terminerChangementRole($event)"
+                />
+              } @else {
+                {{ coureur.pseudo }}
+              }
+            </li>
           }
         </ul>
         @if (e.reponse.plusDeResultats) {

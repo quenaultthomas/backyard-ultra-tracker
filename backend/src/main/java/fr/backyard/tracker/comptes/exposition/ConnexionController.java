@@ -32,15 +32,18 @@ public class ConnexionController {
     }
 
     /**
-     * Le Compte est relu après l'ouverture de la session (8.1 RG10) : désactivé entre-temps, la session est refermée et
-     * la réponse est celle de tout échec d'identification, sans échec compté.
+     * Le Compte est relu après l'ouverture de la session (8.1 RG10, 9.6 RG15) : désactivé, anonymisé ou changé de rôle
+     * entre-temps, la session est refermée et la réponse est celle de tout échec d'identification, sans échec compté.
      */
     @PostMapping(path = "/api/connexion", consumes = MediaType.APPLICATION_JSON_VALUE)
     public CompteReponse connecter(@RequestBody ConnexionRequete requete, HttpServletRequest requeteHttp,
                                    HttpServletResponse reponseHttp) {
         Compte compte = connecter.executer(requete.pseudo(), requete.motDePasse());
         sessionConnexion.ouvrir(compte, requeteHttp, reponseHttp);
-        if (!consulterCompteConnecte.estConnectable(compte.id())) {
+        boolean sessionConfirmee = consulterCompteConnecte.estConnectable(compte.id())
+                .filter(relu -> relu.confirmeLaSessionDe(compte))
+                .isPresent();
+        if (!sessionConfirmee) {
             sessionConnexion.fermer(requeteHttp, reponseHttp);
             throw new IdentifiantsInvalidesException();
         }

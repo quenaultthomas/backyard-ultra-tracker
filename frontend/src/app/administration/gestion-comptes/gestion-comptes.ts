@@ -165,8 +165,20 @@ export class GestionComptes implements OnInit {
   }
 
   protected estOuverte(id: string, action: ActionCompte): boolean {
+    return this.idConfirmationOuverte(action) === id;
+  }
+
+  /** Identifiant du Compte dont la confirmation de cette action est ouverte, sinon `null`. */
+  protected idConfirmationOuverte(action: ActionCompte): string | null {
     const ouverte = this.confirmationOuverte();
-    return ouverte?.id === id && ouverte.action === action;
+    return ouverte?.action === action ? ouverte.id : null;
+  }
+
+  /** Ferme la confirmation ouverte si elle porte sur cette action (laisse celle d'une autre action). */
+  protected fermerConfirmation(action: ActionCompte): void {
+    if (this.confirmationOuverte()?.action === action) {
+      this.confirmationOuverte.set(null);
+    }
   }
 
   /** Ouvre une confirmation (ferme la précédente, quelle que soit l'action) et efface les messages d'action. */

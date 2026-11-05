@@ -79,6 +79,15 @@ public final class Compte {
     }
 
     /**
+     * Relecture d'un Compte juste après l'ouverture de sa session (8.1 RG10, 9.6 RG15) : la session n'est conservée
+     * que si ce Compte relu peut toujours se connecter, sous le rôle avec lequel il a été authentifié. Un rôle changé
+     * entre l'authentification et l'ouverture de la session (passage en bénévole) la rend caduque.
+     */
+    public boolean confirmeLaSessionDe(Compte authentifie) {
+        return peutSeConnecter() && id.equals(authentifie.id) && role == authentifie.role;
+    }
+
+    /**
      * Unique définition d'un coureur trouvable par la recherche de coureurs (9.5) : rôle COUREUR et
      * {@link #peutSeConnecter()} (ni anonymisé, ni inactif).
      */
@@ -159,6 +168,19 @@ public final class Compte {
 
     private boolean aucunAutreAdminActif(Collection<Compte> admins) {
         return admins.stream().noneMatch(admin -> admin.role == Role.ADMIN && admin.actif && !admin.id.equals(id));
+    }
+
+    /**
+     * Changement de rôle d'un coureur en bénévole (9.6b RG12) : même identité, pseudo, empreinte, date de création et
+     * état actif, rôle BENEVOLE. Unique contrôle de la cible : un coureur connectable ({@link #estCoureurConnectable()}).
+     *
+     * @throws CompteNonGerableException le Compte n'est pas un coureur connectable (même refus qu'un Compte inconnu)
+     */
+    public Compte passerEnBenevole() {
+        if (!estCoureurConnectable()) {
+            throw new CompteNonGerableException();
+        }
+        return new Compte(id, pseudo, empreinteMotDePasse, Role.BENEVOLE, creeLe, actif);
     }
 
     /**

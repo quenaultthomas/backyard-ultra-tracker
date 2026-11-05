@@ -3,6 +3,7 @@ package fr.backyard.tracker.comptes.application;
 import fr.backyard.tracker.comptes.domaine.Compte;
 import fr.backyard.tracker.comptes.domaine.CompteNonConnectableException;
 import fr.backyard.tracker.comptes.domaine.DepotComptes;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,11 +27,12 @@ public class ConsulterCompteConnecte {
     }
 
     /**
-     * Relecture juste après l'ouverture d'une session de connexion (8.1 RG10) : faux si le Compte a disparu ou ne peut
-     * plus se connecter (désactivé pendant la connexion).
+     * Relecture juste après l'ouverture d'une session de connexion (8.1 RG10, 9.6 RG15) : le Compte tel qu'il est en
+     * base, vide s'il a disparu. La session n'est conservée que si ce Compte relu la confirme
+     * ({@link Compte#confirmeLaSessionDe(Compte)}) : ni désactivé, ni anonymisé, ni changé de rôle pendant la connexion.
      */
     @Transactional(readOnly = true)
-    public boolean estConnectable(UUID idCompte) {
-        return depotComptes.trouverParId(idCompte).filter(Compte::peutSeConnecter).isPresent();
+    public Optional<Compte> estConnectable(UUID idCompte) {
+        return depotComptes.trouverParId(idCompte);
     }
 }

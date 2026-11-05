@@ -23,7 +23,16 @@
         {{ geres.boutonOuvrir }}
       </button>
       @if (geres.promotion; as promotion) {
-        <app-recherche-coureurs [promotion]="promotion" [prefixe]="p" [ecran]="geres.ecran" />
+        <app-recherche-coureurs
+          [promotion]="promotion"
+          [passage]="geres.passage"
+          [prefixe]="p"
+          [ecran]="geres.ecran"
+          [confirmationOuverte]="idConfirmationOuverte('promotion')"
+          (ouvrirConfirmation)="ouvrirConfirmation($event, 'promotion')"
+          (fermerConfirmation)="fermerConfirmation('promotion')"
+          (termine)="afficherResultat($event)"
+        />
       }
       @if (pseudoCree(); as pseudo) {
         <p class="message--succes" role="status" [attr.data-testid]="p + '-message-succes'">

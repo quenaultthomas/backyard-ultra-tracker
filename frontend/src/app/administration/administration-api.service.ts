@@ -94,6 +94,14 @@ export class AdministrationApiService {
     });
   }
 
+  /**
+   * Passe un Compte coureur en `BENEVOLE` (sans corps) ; renvoie le Compte devenu bénévole.
+   * 404 `COMPTE_INTROUVABLE`, 409 si le coureur est inscrit à une Course non terminée.
+   */
+  passerEnBenevole(id: string): Observable<CompteReponse> {
+    return this.http.post<CompteReponse>(`${urlCompte(URL_COUREURS, id)}/passage-benevole`, null);
+  }
+
   /** Toutes les Courses, dans l'ordre renvoyé par l'API (admins et admin master). */
   listerCourses(): Observable<CourseReponse[]> {
     return this.http.get<CourseReponse[]>(URL_COURSES);

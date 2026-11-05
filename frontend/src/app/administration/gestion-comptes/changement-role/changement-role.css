@@ -1,0 +1,33 @@
+/*
+ * Bouton d'un résultat de recherche et sa confirmation en ligne (9.6b) : l'hôte s'efface pour que
+ * le bouton suive le pseudo dans la ligne du résultat et que la confirmation passe dessous.
+ */
+:host {
+  display: contents;
+}
+
+.bouton {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.confirmation {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.confirmation__actions > .bouton {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+/* Repli étroit (320 ou 360 px avec le texte à 200 %) : les boutons tiennent dans le panneau. */
+@container cartes (max-width: 15rem) {
+  .bouton {
+    padding-inline: var(--espace-3);
+  }
+
+  .confirmation {
+    padding: var(--espace-2);
+  }
+}

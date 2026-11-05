@@ -64,5 +64,11 @@ final class DoublesAnonymisationDeTest {
             }
             return inscrits.contains(compteId);
         }
+
+        /** 9.6b : ajouté pour la compilation du port complété ; les tests de 9.6a n'en font aucun usage. */
+        @Override
+        public List<fr.backyard.tracker.comptes.domaine.CourseNonTerminee> coursesNonTerminees(UUID compteId) {
+            throw new AssertionError("La suppression ne doit pas appeler coursesNonTerminees (9.6b)");
+        }
     }
 }
