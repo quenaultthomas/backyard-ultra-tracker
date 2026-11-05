@@ -143,15 +143,17 @@ test.describe('Passer un coureur en bénévole', () => {
     await expect(t(page, 'fiche-ligne-benevole').filter({ hasText: e1 })).toHaveCount(1);
   });
 
-  test('CA26 - sur la page Admins, l\'admin master voit les résultats sans bouton ; sur la page Bénévoles, l\'admin master a le bouton', async ({ page, playwright }) => {
+  test('CA26 - sur la page Admins, l\'admin master n\'a que « Passer en admin » (9.7) et aucun « Passer en bénévole » ; sur la page Bénévoles, l\'admin master a le bouton', async ({ page, playwright }) => {
     const p = prefixeUnique();
     const e1 = `${p}e1`;
     await creerCoureur(playwright, e1);
     await ouvrirEnMaster(page, '/administration/admins', 'titre-admins');
     await t(page, 'admin-bouton-promouvoir').click();
     await t(page, 'admin-promotion-recherche').fill(e1);
-    await expect(t(page, 'admin-promotion-resultat')).toHaveText([e1]);
-    await expect(t(page, 'admin-promotion-liste').getByRole('button')).toHaveCount(0);
+    // 9.7 : la page Admins porte désormais un bouton « Passer en admin » par résultat (plus de résultats en texte seul)
+    await expect(t(page, 'admin-promotion-resultat')).toHaveText([`${e1} Passer en admin`]);
+    await expect(t(page, 'admin-promotion-liste').getByRole('button')).toHaveCount(1);
+    await expect(t(page, 'admin-promotion-liste').getByRole('button', { name: `Passer en admin le coureur ${e1}`, exact: true })).toBeVisible();
     await expect(t(page, 'admin-promotion-liste').getByRole('link')).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Passer en bénévole/ })).toHaveCount(0);
 

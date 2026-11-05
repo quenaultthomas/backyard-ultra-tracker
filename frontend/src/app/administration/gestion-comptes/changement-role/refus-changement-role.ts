@@ -37,8 +37,12 @@ function refusCourseEnCours(probleme: ProblemDetail): { generale: string } {
   };
 }
 
-/** Refus du passage d'un coureur en bénévole (le serveur décide, le front met en mots). */
-export const ERREURS_PASSAGE_BENEVOLE: ErreursSpecifiques<never> = {
+/**
+ * Refus d'un changement de rôle, en bénévole comme en admin : mêmes codes, mêmes messages
+ * (le serveur décide, le front met en mots). Jeton CSRF expiré et 5xx restent communs à tous
+ * les formulaires (`interpreterErreurFormulaire`, `MESSAGE_SERVICE_INDISPONIBLE`).
+ */
+export const ERREURS_CHANGEMENT_ROLE: ErreursSpecifiques<never> = {
   COMPTE_INTROUVABLE: { generale: "Ce coureur n'existe plus ou n'est plus un coureur." },
   COUREUR_INSCRIT_COURSE_EN_PREPARATION: refusCourseEnPreparation,
   COUREUR_INSCRIT_COURSE_EN_COURS: refusCourseEnCours,

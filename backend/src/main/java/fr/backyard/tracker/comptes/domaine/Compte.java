@@ -171,16 +171,33 @@ public final class Compte {
     }
 
     /**
-     * Changement de rôle d'un coureur en bénévole (9.6b RG12) : même identité, pseudo, empreinte, date de création et
-     * état actif, rôle BENEVOLE. Unique contrôle de la cible : un coureur connectable ({@link #estCoureurConnectable()}).
+     * Changement de rôle d'un coureur en bénévole (9.6b RG12) : voir {@link #changerRoleDuCoureur(Role)}.
      *
      * @throws CompteNonGerableException le Compte n'est pas un coureur connectable (même refus qu'un Compte inconnu)
      */
     public Compte passerEnBenevole() {
+        return changerRoleDuCoureur(Role.BENEVOLE);
+    }
+
+    /**
+     * Changement de rôle d'un coureur en admin (9.7 RG2) : voir {@link #changerRoleDuCoureur(Role)}.
+     *
+     * @throws CompteNonGerableException le Compte n'est pas un coureur connectable (même refus qu'un Compte inconnu)
+     */
+    public Compte passerEnAdmin() {
+        return changerRoleDuCoureur(Role.ADMIN);
+    }
+
+    /**
+     * Unique transformation d'un changement de rôle (9.6b, 9.7 RG11) : même identité, pseudo, empreinte, date de
+     * création et état actif, rôle cible. Unique contrôle de la cible : un coureur connectable
+     * ({@link #estCoureurConnectable()}).
+     */
+    private Compte changerRoleDuCoureur(Role roleCible) {
         if (!estCoureurConnectable()) {
             throw new CompteNonGerableException();
         }
-        return new Compte(id, pseudo, empreinteMotDePasse, Role.BENEVOLE, creeLe, actif);
+        return new Compte(id, pseudo, empreinteMotDePasse, roleCible, creeLe, actif);
     }
 
     /**
