@@ -189,7 +189,7 @@ public class CompteJpaAdapter implements DepotComptes {
             throw new CompteIntrouvableOuInutilisableException();
         }
         entite.reporter(compte.pseudo().valeur(), compte.pseudoNormalise(), compte.empreinteMotDePasse(),
-                compte.actif());
+                compte.role(), compte.actif());
         try {
             entityManager.flush();
         } catch (ConstraintViolationException exception) {

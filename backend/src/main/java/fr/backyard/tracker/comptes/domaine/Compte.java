@@ -180,7 +180,26 @@ public final class Compte {
         if (role != Role.COUREUR) {
             throw new SuppressionCompteInterditeException();
         }
-        return new Compte(id, Pseudo.anonyme(), null, role, creeLe, actif);
+        return enCompteAnonyme();
+    }
+
+    /**
+     * Suppression d'un Compte BENEVOLE ou ADMIN qui a des Inscriptions (9.6a RG3) : même Compte anonymisé que
+     * {@link #anonymiser()}, rôle ramené à COUREUR, état actif inchangé. Unique contrôle de la règle « l'admin master
+     * n'est jamais anonymisé ».
+     *
+     * @throws SuppressionCompteInterditeException le Compte n'est ni BENEVOLE ni ADMIN
+     */
+    public Compte anonymiserBenevoleOuAdmin() {
+        if (role != Role.BENEVOLE && role != Role.ADMIN) {
+            throw new SuppressionCompteInterditeException();
+        }
+        return enCompteAnonyme();
+    }
+
+    /** Forme unique d'un Compte anonymisé : même identité, pseudo anonyme, sans empreinte, rôle COUREUR. */
+    private Compte enCompteAnonyme() {
+        return new Compte(id, Pseudo.anonyme(), null, Role.COUREUR, creeLe, actif);
     }
 
     public boolean estAnonyme() {

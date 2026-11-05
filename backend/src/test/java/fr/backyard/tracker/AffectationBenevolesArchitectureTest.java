@@ -27,14 +27,17 @@ class AffectationBenevolesArchitectureTest {
     private static final String ADAPTATEUR_ANNULATION = "AnnulationInscriptionsAdapter";
     // 8.1 RG18 : quatrième exception nommée, le pont de désaffectation d'un bénévole désactivé
     private static final String ADAPTATEUR_DESAFFECTATION = "DesaffectationBenevoleAdapter";
+    // 9.6a RG9 : cinquième exception nommée, le pont de consultation des inscriptions
+    private static final String ADAPTATEUR_CONSULTATION = "ConsultationInscriptionsAdapter";
 
     private static final DescribedPredicate<JavaClass> HORS_ADAPTATEUR_NOMME =
             DescribedPredicate.describe(
-                    "autre que " + ADAPTATEUR + ", " + ADAPTATEUR_PSEUDOS + ", " + ADAPTATEUR_ANNULATION + " et "
-                            + ADAPTATEUR_DESAFFECTATION,
+                    "autre que " + ADAPTATEUR + ", " + ADAPTATEUR_PSEUDOS + ", " + ADAPTATEUR_ANNULATION + ", "
+                            + ADAPTATEUR_DESAFFECTATION + " et " + ADAPTATEUR_CONSULTATION,
                     c -> !c.getSimpleName().equals(ADAPTATEUR) && !c.getSimpleName().equals(ADAPTATEUR_PSEUDOS)
                             && !c.getSimpleName().equals(ADAPTATEUR_ANNULATION)
-                            && !c.getSimpleName().equals(ADAPTATEUR_DESAFFECTATION));
+                            && !c.getSimpleName().equals(ADAPTATEUR_DESAFFECTATION)
+                            && !c.getSimpleName().equals(ADAPTATEUR_CONSULTATION));
 
     @ArchTest
     static void ca5_le_port_et_les_exceptions_sont_dans_le_domaine_courses(JavaClasses classes) {
