@@ -1,8 +1,10 @@
 package fr.backyard.tracker.comptes.application;
 
 import fr.backyard.tracker.comptes.domaine.AdminMasterNonSupprimableException;
+import fr.backyard.tracker.comptes.domaine.AnnulationInscriptions;
 import fr.backyard.tracker.comptes.domaine.Compte;
 import fr.backyard.tracker.comptes.domaine.CompteNonGerableException;
+import fr.backyard.tracker.comptes.domaine.ConsultationInscriptions;
 import fr.backyard.tracker.comptes.domaine.DepotComptes;
 import fr.backyard.tracker.comptes.domaine.DernierAdminActifNonSupprimableException;
 import fr.backyard.tracker.comptes.domaine.InvalidationAutresSessions;
@@ -16,10 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Suppression définitive d'un Compte ADMIN (actif ou désactivé) par l'admin master, dans une seule transaction : tous
- * les Comptes ADMIN relus sous verrou, garde du domaine, suppression du Compte, remise à zéro du compteur d'échecs de
- * son pseudo, puis fermeture de toutes ses sessions après validation. Un admin n'a ni affectation ni Inscription
- * (hypothèse à revoir au 9.7). Journal sans pseudo ni mot de passe.
+ * Suppression d'un Compte ADMIN (actif ou désactivé) par l'admin master, dans une seule transaction : tous les Comptes
+ * ADMIN relus sous verrou, gardes du domaine, annulation de ses Inscriptions aux Courses non démarrées, puis
+ * anonymisation s'il lui reste des Inscriptions (ancien coureur, 9.6a RG2), suppression définitive sinon, remise à
+ * zéro du compteur d'échecs de son pseudo et fermeture de toutes ses sessions après validation. Un admin n'a pas
+ * d'affectation. Journal sans pseudo ni mot de passe.
  */
 @Service
 public class SupprimerAdmin {
@@ -29,12 +32,18 @@ public class SupprimerAdmin {
     private final DepotComptes depotComptes;
     private final InvalidationAutresSessions invalidationSessions;
     private final LimitationTentatives limitation;
+    private final AnnulationInscriptions annulationInscriptions;
+    private final ConsultationInscriptions consultationInscriptions;
 
     public SupprimerAdmin(DepotComptes depotComptes, InvalidationAutresSessions invalidationSessions,
-                          RegistreTentativesConnexion registreTentatives, PolitiqueBlocage politiqueBlocage) {
+                          RegistreTentativesConnexion registreTentatives, PolitiqueBlocage politiqueBlocage,
+                          AnnulationInscriptions annulationInscriptions,
+                          ConsultationInscriptions consultationInscriptions) {
         this.depotComptes = depotComptes;
         this.invalidationSessions = invalidationSessions;
         this.limitation = new LimitationTentatives(registreTentatives, politiqueBlocage);
+        this.annulationInscriptions = annulationInscriptions;
+        this.consultationInscriptions = consultationInscriptions;
     }
 
     /**
@@ -47,9 +56,15 @@ public class SupprimerAdmin {
         AdminsVerrouilles verrouilles = AdminsVerrouilles.charger(depotComptes, cibleId);
         Compte cible = verrouilles.cible();
         verifier(cible, verrouilles);
-        depotComptes.supprimer(cibleId);
+        annulationInscriptions.annulerPour(cibleId);
+        if (consultationInscriptions.aDesInscriptions(cibleId)) {
+            depotComptes.mettreAJour(cible.anonymiserBenevoleOuAdmin());
+            JOURNAL.log(Level.INFO, "Admin anonymisé (compte {0} par {1})", cibleId, appelantId);
+        } else {
+            depotComptes.supprimer(cibleId);
+            JOURNAL.log(Level.INFO, "Admin supprimé (compte {0} par {1})", cibleId, appelantId);
+        }
         limitation.oublier(cible.pseudoNormalise());
-        JOURNAL.log(Level.INFO, "Admin supprimé (compte {0} par {1})", cibleId, appelantId);
         Desactivation.fermerSessionsApresValidation(invalidationSessions, cibleId);
     }
 
