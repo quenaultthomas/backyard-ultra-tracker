@@ -605,7 +605,7 @@ class SuppressionAdminIntegrationTest {
     // ---------------------------------------------------------------- CA11
 
     @Test
-    @DisplayName("CA11 : aucun nouveau changeset (0002 à 0011-compte-actif) ; la suppression ne modifie ni affectation ni inscription ; démarrage sur schéma validé")
+    @DisplayName("CA11 : aucun nouveau changeset (0002 à 0012-photo-compte) ; la suppression ne modifie ni affectation ni inscription ; démarrage sur schéma validé")
     void ca11_schema_inchange_et_donnees_courses_intactes() throws Exception {
         UUID course = UUID.randomUUID();
         jdbc.update(INSERTION_COURSE, course, "Course CA11", Date.valueOf("2026-10-09"), "EN_PREPARATION", null);
@@ -623,7 +623,7 @@ class SuppressionAdminIntegrationTest {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
                         "0006-affectation-benevole", "0007-inscription", "0008-demarrage-course", "0009-passage",
-                        "0010-abandon-inscription", "0011-compte-actif");
+                        "0010-abandon-inscription", "0011-compte-actif", "0012-photo-compte");
     }
 
     // ---------------------------------------------------------------- utilitaires

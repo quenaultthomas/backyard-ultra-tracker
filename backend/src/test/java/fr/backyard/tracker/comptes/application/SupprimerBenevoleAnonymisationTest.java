@@ -54,7 +54,8 @@ class SupprimerBenevoleAnonymisationTest {
     private final AnnulationEspion annulation = new AnnulationEspion(journal);
     private final ConsultationEspion consultation = new ConsultationEspion(journal);
     private final SupprimerBenevole supprimer = new SupprimerBenevole(depot, desaffectation, sessions, registre,
-            PolitiqueBlocage.parDefaut(), annulation, consultation);
+            PolitiqueBlocage.parDefaut(), annulation, consultation,
+            new EffacementPhoto(new DoublesPhoto.StockageEnMemoire(new ArrayList<>())));
 
     private Compte compte(UUID id, String pseudo, Role role, boolean actif) {
         return depot.ajouter(Compte.reconstituer(id, new Pseudo(pseudo), "empreinte-" + pseudo, role, CREE_LE, actif));
@@ -270,7 +271,8 @@ class SupprimerBenevoleAnonymisationTest {
         depotEnPanne.ajouter(Compte.reconstituer(ID_LEO, new Pseudo("Léo"), "e", Role.BENEVOLE, CREE_LE, true));
         consultation.inscrire(ID_LEO);
         SupprimerBenevole cas = new SupprimerBenevole(depotEnPanne, desaffectation, sessions, registre,
-                PolitiqueBlocage.parDefaut(), annulation, consultation);
+                PolitiqueBlocage.parDefaut(), annulation, consultation,
+                new EffacementPhoto(new DoublesPhoto.StockageEnMemoire(new ArrayList<>())));
 
         assertThatThrownBy(() -> cas.executer(ID_NADIA, ID_LEO)).isInstanceOf(IllegalStateException.class);
 

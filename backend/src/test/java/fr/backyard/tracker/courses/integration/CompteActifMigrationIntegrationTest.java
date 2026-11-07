@@ -79,7 +79,7 @@ class CompteActifMigrationIntegrationTest {
         assertThat(jdbc.queryForObject("select count(*) from compte where actif", Integer.class)).isEqualTo(4);
         List<String> apres = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
         assertThat(apres).containsExactlyElementsOf(java.util.stream.Stream.concat(avant.stream(),
-                java.util.stream.Stream.of("0011-compte-actif")).toList());
+                java.util.stream.Stream.of("0011-compte-actif", "0012-photo-compte")).toList());
     }
 
     private JdbcTemplate jdbc() {

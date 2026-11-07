@@ -483,7 +483,7 @@ class ConnexionIntegrationTest {
 
         assertThat(reponse.statusCode()).isEqualTo(200);
         JsonNode corps = json.readTree(reponse.body());
-        assertThat(corps.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe", "actif");
+        assertThat(corps.propertyNames()).containsExactlyInAnyOrder("id", "pseudo", "role", "creeLe", "actif", "photoUrl");
         assertThat(corps.get("id").asString()).isEqualTo(id.toString());
         assertThat(corps.get("pseudo").asString()).isEqualTo("Alice");
         assertThat(corps.get("role").asString()).isEqualTo("COUREUR");

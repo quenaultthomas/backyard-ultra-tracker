@@ -36,6 +36,9 @@ class ArchitectureTest {
             ADAPTATEUR_ANNULATION, ADAPTATEUR_DESAFFECTATION, ADAPTATEUR_CONSULTATION);
     // 7.3 RG4 : AdresseCliente et ValveAdressePair, partagées entre comptes.infrastructure et courses.infrastructure
     private static final String PARTAGE_INFRASTRUCTURE = RACINE + ".partage.infrastructure";
+    // 10.1a RG15b : domaine partagé (FormatImage), Java pur, accessible aux domaines des contextes (et donc aux couches
+    // qui en dépendent) ; seule autorisation ajoutée
+    private static final String PARTAGE_DOMAINE = RACINE + ".partage.domaine";
     private static final List<String> COUCHES = List.of("domaine", "application", "infrastructure", "exposition");
 
     private static String paquet(String contexte, String couche) {
@@ -48,7 +51,7 @@ class ArchitectureTest {
         for (String contexte : CONTEXTES) {
             classes().that().resideInAPackage(paquet(contexte, "domaine"))
                     .should().onlyDependOnClassesThat()
-                    .resideInAnyPackage("java..", paquet(contexte, "domaine"))
+                    .resideInAnyPackage("java..", paquet(contexte, "domaine"), PARTAGE_DOMAINE + "..")
                     .as("RG12 : le domaine " + contexte + " ne dépend que de java.. et de son propre domaine")
                     .check(classes);
         }
@@ -64,6 +67,7 @@ class ArchitectureTest {
                     .resideInAnyPackage(
                             "java..",
                             paquet(contexte, "domaine"),
+                            PARTAGE_DOMAINE + "..",
                             paquet(contexte, "application"),
                             "org.springframework.stereotype..",
                             "org.springframework.transaction..")
@@ -148,7 +152,7 @@ class ArchitectureTest {
     static void rg09_rg16_toute_classe_est_dans_un_contexte_et_une_couche_connus(JavaClasses classes) {
         String[] paquets = java.util.stream.Stream.concat(
                 CONTEXTES.stream().flatMap(contexte -> COUCHES.stream().map(couche -> paquet(contexte, couche))),
-                java.util.stream.Stream.of(PARTAGE_INFRASTRUCTURE + "..")).toArray(String[]::new);
+                java.util.stream.Stream.of(PARTAGE_INFRASTRUCTURE + "..", PARTAGE_DOMAINE + "..")).toArray(String[]::new);
         classes().that().resideInAPackage(RACINE + "..")
                 .and().doNotHaveFullyQualifiedName(BackyardUltraTrackerApplication.class.getName())
                 .and().doNotHaveFullyQualifiedName(ADAPTATEUR_ANNUAIRE)
@@ -158,6 +162,15 @@ class ArchitectureTest {
                 .and().doNotHaveFullyQualifiedName(ADAPTATEUR_CONSULTATION)
                 .should().resideInAnyPackage(paquets)
                 .as("RG9/RG16 : toute classe est dans fr.backyard.tracker.<comptes|courses>.<couche>")
+                .check(classes);
+    }
+
+    // 10.1a RG15b : le domaine partagé est Java pur et ne dépend d'aucun contexte
+    @ArchTest
+    static void rg15b_partage_domaine_ne_depend_que_de_java(JavaClasses classes) {
+        classes().that().resideInAPackage(PARTAGE_DOMAINE + "..")
+                .should().onlyDependOnClassesThat().resideInAnyPackage("java..", PARTAGE_DOMAINE + "..")
+                .as("RG15b : partage.domaine ne dépend que de java.. (ni contexte, ni framework)")
                 .check(classes);
     }
 

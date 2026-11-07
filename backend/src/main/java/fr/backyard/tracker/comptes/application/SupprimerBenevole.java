@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Suppression d'un Compte BENEVOLE (actif ou désactivé) par un admin ou l'admin master, dans une seule transaction :
  * Compte relu sous verrou, garde de rôle du domaine, annulation de ses Inscriptions aux Courses non démarrées, retrait
  * de toutes ses affectations (Courses verrouillées après le Compte, refus si l'une est EN_COURS), puis anonymisation
- * s'il lui reste des Inscriptions (9.6a RG1), suppression définitive sinon, remise à zéro du compteur d'échecs de son
+ * s'il lui reste des Inscriptions (9.6a RG1), suppression définitive sinon (photo effacée après validation dans les deux cas, 10.1 RG9), remise à zéro du compteur d'échecs de son
  * pseudo et fermeture de toutes ses sessions après validation. Journal sans pseudo, mot de passe ni nom de Course.
  */
 @Service
@@ -34,18 +34,21 @@ public class SupprimerBenevole {
     private final LimitationTentatives limitation;
     private final AnnulationInscriptions annulationInscriptions;
     private final ConsultationInscriptions consultationInscriptions;
+    private final EffacementPhoto effacementPhoto;
 
     public SupprimerBenevole(DepotComptes depotComptes, DesaffectationBenevole desaffectation,
                              InvalidationAutresSessions invalidationSessions,
                              RegistreTentativesConnexion registreTentatives, PolitiqueBlocage politiqueBlocage,
                              AnnulationInscriptions annulationInscriptions,
-                             ConsultationInscriptions consultationInscriptions) {
+                             ConsultationInscriptions consultationInscriptions,
+                             EffacementPhoto effacementPhoto) {
         this.depotComptes = depotComptes;
         this.desaffectation = desaffectation;
         this.invalidationSessions = invalidationSessions;
         this.limitation = new LimitationTentatives(registreTentatives, politiqueBlocage);
         this.annulationInscriptions = annulationInscriptions;
         this.consultationInscriptions = consultationInscriptions;
+        this.effacementPhoto = effacementPhoto;
     }
 
     /**
@@ -67,6 +70,7 @@ public class SupprimerBenevole {
             JOURNAL.log(Level.INFO, "Bénévole supprimé (compte {0} par {1}, {2} affectation(s) retirée(s))",
                     cibleId, appelantId, retirees);
         }
+        effacementPhoto.effacerApresValidation(cible);
         limitation.oublier(cible.pseudoNormalise());
         Desactivation.fermerSessionsApresValidation(invalidationSessions, cibleId);
     }

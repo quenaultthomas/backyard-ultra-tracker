@@ -591,7 +591,7 @@ class SuppressionAnonymisationIntegrationTest {
     // ---------------------------------------------------------------- CA11 (côté API / schéma)
 
     @Test
-    @DisplayName("CA11 : aucun nouveau changeset (0002 à 0011-compte-actif dans l'ordre) ; aucune Inscription orpheline après anonymisation")
+    @DisplayName("CA11 : aucun nouveau changeset (0002 à 0012-photo-compte dans l'ordre) ; aucune Inscription orpheline après anonymisation")
     void ca11_schema_inchange_et_pas_d_inscription_orpheline() throws Exception {
         UUID alice2 = exCoureur("Alice2", "BENEVOLE", 7);
         UUID admin2 = exCoureur("Admin2", "ADMIN", 4);
@@ -601,7 +601,7 @@ class SuppressionAnonymisationIntegrationTest {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
                         "0006-affectation-benevole", "0007-inscription", "0008-demarrage-course", "0009-passage",
-                        "0010-abandon-inscription", "0011-compte-actif");
+                        "0010-abandon-inscription", "0011-compte-actif", "0012-photo-compte");
         assertThat(jdbc.queryForObject("select count(*) from inscription i left join compte k on k.id = i.compte_id "
                 + "where k.id is null", Integer.class)).isZero();
     }

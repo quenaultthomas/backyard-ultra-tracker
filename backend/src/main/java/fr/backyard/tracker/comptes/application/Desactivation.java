@@ -7,8 +7,6 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.util.Collection;
 import java.util.UUID;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Étapes communes aux désactivations d'admin et de bénévole : contrôle du domaine journalisé, journal du changement,
@@ -42,15 +40,6 @@ final class Desactivation {
      * le Compte inactif. Sans transaction en cours (tests sans Spring), fermeture immédiate.
      */
     static void fermerSessionsApresValidation(InvalidationAutresSessions sessions, UUID compteId) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            sessions.invaliderToutesLesSessions(compteId);
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                sessions.invaliderToutesLesSessions(compteId);
-            }
-        });
+        ApresTransaction.apresValidation(() -> sessions.invaliderToutesLesSessions(compteId));
     }
 }

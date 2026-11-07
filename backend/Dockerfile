@@ -15,8 +15,11 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -q -DskipTests package \
 
 # --- Etape d'execution : JRE 25, utilisateur non root ---
 FROM eclipse-temurin:25.0.4.1_1-jre-noble
+# Point de montage du volume photos (10.1a) créé ici, avant USER : un volume nommé neuf hérite de ce propriétaire et
+# de ces droits (700), sinon l'utilisateur non root ne peut pas y écrire.
 RUN groupadd --system --gid 10001 backyard \
-    && useradd --system --uid 10001 --gid backyard --no-create-home --shell /usr/sbin/nologin backyard
+    && useradd --system --uid 10001 --gid backyard --no-create-home --shell /usr/sbin/nologin backyard \
+    && install -d -o backyard -g backyard -m 700 /donnees/photos
 WORKDIR /application
 # Version de l'image, exposée par /actuator/info (info.app.version) ; `dev` en développement local.
 ARG VERSION=dev

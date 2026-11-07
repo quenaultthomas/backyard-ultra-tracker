@@ -1,5 +1,6 @@
 package fr.backyard.tracker.courses.domaine;
 
+import fr.backyard.tracker.partage.domaine.FormatImage;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -12,8 +13,8 @@ import java.util.HexFormat;
  */
 public record Logo(byte[] octets) {
 
-    /** 2 Mo = 2 × 1024 × 1024 octets : seul endroit de cette limite. */
-    public static final int TAILLE_MAXIMALE_OCTETS = 2 * 1024 * 1024;
+    /** 2 Mo, la limite commune des images ({@link FormatImage#TAILLE_MAXIMALE_OCTETS}). */
+    public static final int TAILLE_MAXIMALE_OCTETS = FormatImage.TAILLE_MAXIMALE_OCTETS;
 
     /**
      * Contrôles dans l'ordre : présence, taille, puis format (la taille prime sur le format).

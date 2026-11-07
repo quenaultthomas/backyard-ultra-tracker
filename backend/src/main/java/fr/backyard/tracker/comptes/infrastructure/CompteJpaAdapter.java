@@ -7,6 +7,7 @@ import fr.backyard.tracker.comptes.domaine.CompteNonGerableException;
 import fr.backyard.tracker.comptes.domaine.DepotComptes;
 import fr.backyard.tracker.comptes.domaine.Pseudo;
 import fr.backyard.tracker.comptes.domaine.PseudoDejaUtiliseException;
+import fr.backyard.tracker.comptes.domaine.ReferencePhoto;
 import fr.backyard.tracker.comptes.domaine.Role;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
@@ -76,6 +77,17 @@ public class CompteJpaAdapter implements DepotComptes {
     @Override
     public Optional<Compte> trouverParId(UUID id) {
         return Optional.ofNullable(entityManager.find(CompteJpaEntity.class, id)).map(CompteJpaAdapter::versDomaine);
+    }
+
+    /** Recherche par l'index d'unicité {@code uk_compte_photo_jeton}. */
+    @Override
+    public Optional<Compte> trouverParJetonPhoto(String jeton) {
+        return entityManager
+                .createQuery("select c from CompteJpaEntity c where c.photoJeton = :jeton", CompteJpaEntity.class)
+                .setParameter("jeton", jeton)
+                .getResultStream()
+                .findFirst()
+                .map(CompteJpaAdapter::versDomaine);
     }
 
     /** {@code select ... for update} : doit être appelé dans la transaction du cas d'usage. */
@@ -178,8 +190,8 @@ public class CompteJpaAdapter implements DepotComptes {
     }
 
     /**
-     * Le rôle et la date de création d'un compte ne changent jamais : l'empreinte, l'état actif, le pseudo et sa clé
-     * d'unicité (modifiés par l'anonymisation) sont reportés.
+     * La date de création d'un compte ne change jamais : l'empreinte, l'état actif, le rôle, la photo, le pseudo et sa
+     * clé d'unicité (modifiés par l'anonymisation) sont reportés.
      */
     @Override
     @Transactional
@@ -188,8 +200,10 @@ public class CompteJpaAdapter implements DepotComptes {
         if (entite == null) {
             throw new CompteIntrouvableOuInutilisableException();
         }
+        ReferencePhoto photo = compte.photo();
         entite.reporter(compte.pseudo().valeur(), compte.pseudoNormalise(), compte.empreinteMotDePasse(),
-                compte.role(), compte.actif());
+                compte.role(), compte.actif(), photo == null ? null : photo.jeton(),
+                photo == null ? null : photo.format());
         try {
             entityManager.flush();
         } catch (ConstraintViolationException exception) {
@@ -220,13 +234,16 @@ public class CompteJpaAdapter implements DepotComptes {
         return exception;
     }
 
+    /** Un Compte neuf n'a jamais de photo. */
     private static CompteJpaEntity versEntite(Compte compte) {
         return new CompteJpaEntity(compte.id(), compte.pseudo().valeur(), compte.pseudoNormalise(),
-                compte.empreinteMotDePasse(), compte.role(), compte.creeLe(), compte.actif());
+                compte.empreinteMotDePasse(), compte.role(), compte.creeLe(), compte.actif(), null, null);
     }
 
     private static Compte versDomaine(CompteJpaEntity entite) {
+        ReferencePhoto photo = entite.photoJeton() == null ? null
+                : new ReferencePhoto(entite.photoJeton(), entite.photoFormat());
         return Compte.reconstituer(entite.id(), Pseudo.reconstituer(entite.pseudo()), entite.empreinteMotDePasse(),
-                entite.role(), entite.creeLe(), entite.actif());
+                entite.role(), entite.creeLe(), entite.actif(), photo);
     }
 }

@@ -43,6 +43,16 @@ public interface DepotComptes {
     }
 
     /**
+     * Compte dont la photo de profil porte ce jeton (au plus un, unicité en base). L'appelant a déjà contrôlé la forme
+     * du jeton ({@link JetonPhoto#estValide(String)}).
+     *
+     * @throws UnsupportedOperationException si le dépôt ne sait pas rechercher
+     */
+    default Optional<Compte> trouverParJetonPhoto(String jeton) {
+        throw new UnsupportedOperationException("Ce dépôt ne sait pas rechercher par jeton de photo.");
+    }
+
+    /**
      * Compte relu sous verrou exclusif jusqu'à la fin de la transaction de l'appelant : une modification concurrente
      * du même Compte attend, puis relit l'état validé (deux suppressions simultanées : la seconde voit le Compte
      * anonymisé). Par défaut, simple recherche par identifiant, pour les dépôts sans transaction (dépôts en mémoire).
@@ -75,8 +85,8 @@ public interface DepotComptes {
     }
 
     /**
-     * Enregistre les modifications d'un compte existant : empreinte du mot de passe, état actif, et pour un compte
-     * anonymisé pseudo et clé d'unicité.
+     * Enregistre les modifications d'un compte existant : empreinte du mot de passe, état actif, photo de profil, et
+     * pour un compte anonymisé pseudo et clé d'unicité.
      *
      * @throws CompteIntrouvableOuInutilisableException si le compte n'existe plus
      * @throws UnsupportedOperationException            si le dépôt ne sait pas mettre à jour

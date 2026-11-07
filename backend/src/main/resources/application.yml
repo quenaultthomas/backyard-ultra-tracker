@@ -19,8 +19,9 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.yaml
   servlet:
     multipart:
-      # Logo de course : 2 Mo par fichier (2 x 1024 x 1024, meme limite que le domaine), marge pour l'enveloppe.
-      # Depassement : 413 LOGO_TROP_VOLUMINEUX. Lecture differee : l'erreur survient dans le controleur concerne.
+      # Logo de course et photo de profil : 2 Mo par fichier (2 x 1024 x 1024, meme limite que le domaine), marge pour
+      # l'enveloppe. Depassement : 413 LOGO_TROP_VOLUMINEUX ou PHOTO_TROP_VOLUMINEUSE selon le controleur. Lecture
+      # differee : l'erreur survient dans le controleur concerne.
       max-file-size: 2MB
       max-request-size: 3MB
       resolve-lazily: true
@@ -96,6 +97,10 @@ backyard:
     # de hachage par adresse ; vide : aucun,
     # l'IP est celle de la connexion. docker-compose.yml le fixe a web (Caddy).
     proxy-de-confiance: ${BACKYARD_PROXY_DE_CONFIANCE:}
+  photos:
+    # Repertoire des fichiers de photo de profil (10.1a), volume nomme photos. Valeur fixe posee par
+    # docker-compose.yml (BACKYARD_PHOTOS_REPERTOIRE), cree a la premiere ecriture s'il manque.
+    repertoire: ${BACKYARD_PHOTOS_REPERTOIRE:/donnees/photos}
   admin-master:
     # Admin master cree au demarrage s'il n'existe pas (ignorees ensuite). Defaut vide : aucun admin cree.
     # Valeurs validees par le domaine (pseudo 3 a 30 caracteres, mot de passe 12 a 128), jamais journalisees.

@@ -730,7 +730,7 @@ class PassageEnBenevoleIntegrationTest {
     // ---------------------------------------------------------------- CA25
 
     @Test
-    @DisplayName("CA25 : aucun nouveau changeset (0002 à 0011-compte-actif) après un passage en bénévole ; POST sur /api/administration/coureurs : 405 ou 404 sans effet (9.5 CA9)")
+    @DisplayName("CA25 : aucun nouveau changeset (0002 à 0012-photo-compte) après un passage en bénévole ; POST sur /api/administration/coureurs : 405 ou 404 sans effet (9.5 CA9)")
     void ca25_schema_inchange_et_non_regression() throws Exception {
         UUID cible = coureur("CibleSchema");
         assertThat(promouvoir(nadia, cible).statusCode()).isEqualTo(200);
@@ -739,7 +739,7 @@ class PassageEnBenevoleIntegrationTest {
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
                         "0006-affectation-benevole", "0007-inscription", "0008-demarrage-course", "0009-passage",
-                        "0010-abandon-inscription", "0011-compte-actif");
+                        "0010-abandon-inscription", "0011-compte-actif", "0012-photo-compte");
         HttpResponse<String> post = api.requete("POST", RECHERCHE, nadia.entetes(), null, null);
         assertThat(post.statusCode()).isIn(404, 405);
         assertThat(api.requete("GET", RECHERCHE + "/" + UUID.randomUUID(), nadia.enteteLecture(), null, null)

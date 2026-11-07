@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Données de démonstration pour le test manuel (incréments 2.1b, 2.4, 3.5, 4.1, 4.4b et 6.4). À NE PAS UTILISER EN PRODUCTION.
+# Données de démonstration pour le test manuel (incréments 2.1b, 2.4, 3.5, 4.1, 4.4b, 6.4 et 10.1a). À NE PAS UTILISER EN PRODUCTION.
 #
 # Crée par l'API de l'application lancée (jamais d'accès direct à la base), dans cet ordre :
 #   - admin Nadia, bénévoles Léo et Marc (session de l'admin master) ;
@@ -14,8 +14,10 @@
 #   - coureurs Alice, Karim, Sophie et Tom (session anonyme) ;
 #   - Inscriptions, chacune dans la session de son coureur et dans cet ordre : Karim, Sophie, Tom à
 #     « Backyard de démo » ; Karim, Sophie à « Backyard express » ; Karim, Sophie, Tom (dossards 1, 2, 3) à
-#     « Backyard du jour » ; Karim à « Backyard du soir ». Alice et « Backyard mini » n'en reçoivent aucune.
-# Soit 23 éléments : 7 Comptes, 5 Courses, 2 affectations, 9 Inscriptions.
+#     « Backyard du jour » ; Karim à « Backyard du soir ». Alice et « Backyard mini » n'en reçoivent aucune ;
+#   - photos de profil, dans la session de chaque coureur : Karim (JPEG) et Sophie (PNG), fichiers dessinés pour la
+#     démonstration dans scripts/photos-demo/ (256 px, sans métadonnées) ; Alice et Tom n'en ont pas (silhouette).
+# Soit 25 éléments : 7 Comptes, 5 Courses, 2 affectations, 9 Inscriptions, 2 photos.
 # Mots de passe connus : Nadia mot-de-passe-admin-1, Léo et Marc mot-de-passe-benevole-1,
 #   Alice, Karim, Sophie et Tom un-mot-de-passe-12.
 #
@@ -33,6 +35,7 @@
 #     a un autre rôle (non détecté) ;
 #   - une Course est « déjà présente » si une Course du même nom existe ; elle n'est ni comparée ni modifiée ;
 #   - Léo déjà affecté à une Course : rien n'est envoyé pour cette Course ;
+#   - une photo est « déjà présente » si le Compte en a une (photoUrl non nulle), même si c'est une autre image ;
 #   - une Inscription déjà existante (409 INSCRIPTION_DEJA_EXISTANTE) est « déjà présente » ; une Course qui n'est
 #     plus ouverte aux inscriptions (EN_COURS, TERMINEE) fait échouer le script ;
 #   - « Backyard du jour » et « Backyard du soir » gardent la date de leur première création : un autre jour,
@@ -224,7 +227,24 @@ inscrire() {
   done
 }
 
+# poser_photo COUREUR FICHIER : dans la session du coureur, envoie la photo si son Compte n'en a pas encore.
+poser_photo() {
+  local pseudo="$1" fichier="$DOSSIER_PHOTOS/$2" statut
+  [[ -f "$fichier" ]] || echouer "photo de $pseudo : fichier $2 introuvable dans scripts/photos-demo."
+  connecter_coureur "$pseudo"
+  attendre 200 "$(requete GET /api/comptes/moi /dev/null)" "compte de $pseudo"
+  if grep -q '"photoUrl" *: *"/api/photos/' "$REPONSE"; then
+    echo "déjà présent : $pseudo (photo de profil)"
+    return
+  fi
+  statut="$(curl -s -o "$REPONSE" -w '%{http_code}' -b "$COOKIES" -c "$COOKIES" -X PUT \
+    -H "X-XSRF-TOKEN: $(jeton_csrf)" -F "fichier=@$fichier" "$BASE_URL/api/comptes/moi/photo" || true)"
+  attendre 200 "$statut" "photo de $pseudo"
+  echo "créé : $pseudo (photo de profil)"
+}
+
 verifier_cible
+DOSSIER_PHOTOS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/photos-demo"
 MOT_DE_PASSE_COUREUR="un-mot-de-passe-12"
 TEMPORAIRE="$(mktemp -d)"
 trap 'rm -rf "$TEMPORAIRE"' EXIT
@@ -252,3 +272,5 @@ done
 inscrire Karim "Backyard de démo" "Backyard express" "Backyard du jour" "Backyard du soir"
 inscrire Sophie "Backyard de démo" "Backyard express" "Backyard du jour"
 inscrire Tom "Backyard de démo" "Backyard du jour"
+poser_photo Karim karim.jpg
+poser_photo Sophie sophie.png

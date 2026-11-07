@@ -5,7 +5,7 @@ Toute l'application tourne dans Docker : aucune installation de Java, Node ou Po
 | Service | Rôle | Exposition en production |
 |---|---|---|
 | `base` | PostgreSQL, volume nommé `donnees-postgres` | aucune |
-| `api` | Spring Boot, migrations Liquibase appliquées au démarrage | aucune (réseau interne uniquement) |
+| `api` | Spring Boot, migrations Liquibase appliquées au démarrage, volume nommé `photos` (photos de profil, monté sur `/donnees/photos`) | aucune (réseau interne uniquement) |
 | `web` | Caddy : front Angular, relais `/api` vers `api`, HTTPS automatique | 80/tcp, 443/tcp, 443/udp |
 
 - Dev : `docker compose up -d --build` (HTTP sur http://localhost, API aussi publiée sur le port 8080).
@@ -228,7 +228,7 @@ Le jeton est stocké dans `~/.docker/config.json` : ne jamais le commiter et lui
    Pour revenir en arrière, remettre l'ancienne valeur de `VERSION` et relancer `$PROD up -d` (les migrations Liquibase déjà appliquées ne sont pas annulées : restaurer la sauvegarde si le schéma a changé).
 5. Facultatif, libérer l'espace des anciennes images : `docker image prune -f`.
 
-Ne jamais utiliser `down -v` en production : cette option supprime les volumes, donc la base et les certificats.
+Ne jamais utiliser `down -v` en production : cette option supprime les volumes, donc la base, les photos de profil et les certificats.
 
 Les sessions de connexion sont conservées en mémoire par `api` (expiration après une inactivité qui dépend du rôle : 2 h par défaut pour les administrateurs, 12 h pour les coureurs et bénévoles) : toute mise à jour ou tout redémarrage de `api` déconnecte tous les utilisateurs, qui doivent se reconnecter. Éviter de mettre à jour pendant une course.
 
@@ -274,7 +274,7 @@ Les créations de coureurs passent par `POST /api/comptes`, limité à `CREATION
 
 ## Sauvegarde
 
-Sauvegarde de la base au format personnalisé de `pg_dump`, lancée dans le conteneur `base` (l'utilisateur et la base sont lus depuis le conteneur, pas depuis l'hôte) par `scripts/sauvegarder.sh`, à lancer depuis la racine du dépôt :
+Sauvegarde de la base au format personnalisé de `pg_dump`, lancée dans le conteneur `base` (l'utilisateur et la base sont lus depuis le conteneur, pas depuis l'hôte), et du volume `photos` (photos de profil, depuis 10.1a), par `scripts/sauvegarder.sh`, à lancer depuis la racine du dépôt :
 
 ```sh
 ./scripts/sauvegarder.sh                          # production (-f docker-compose.yml -f docker-compose.prod.yml)
@@ -282,12 +282,14 @@ Sauvegarde de la base au format personnalisé de `pg_dump`, lancée dans le cont
 COMPOSE_FICHIERS="-f docker-compose.yml" ./scripts/sauvegarder.sh   # stack de dev
 ```
 
-Le script écrit dans un fichier temporaire, le contrôle (`pg_restore --list`), le renomme `sauvegarde-AAAAMMJJ-HHMM.dump` (suffixe des secondes si le nom existe déjà), puis ne garde que les plus récents fichiers `sauvegarde-*.dump` du dossier (les autres fichiers ne sont jamais touchés). La dernière ligne affichée donne le chemin et la taille. En cas d'échec (`base` arrêtée, disque plein, dump illisible), le message part sur la sortie d'erreur, le code de sortie est non nul et aucune sauvegarde existante n'est supprimée. Il ne lit pas `.env` et n'affiche aucun mot de passe.
+Le script écrit dans un fichier temporaire, le contrôle (`pg_restore --list`), le renomme `sauvegarde-AAAAMMJJ-HHMM.dump` (suffixe des secondes si le nom existe déjà), puis ne garde que les plus récents fichiers `sauvegarde-*.dump` du dossier. Il archive ensuite le contenu du volume `photos` : un conteneur éphémère du service `api` (même image, même montage, utilisateur `backyard`, sans démarrer d'autre service) exécute `tar czf - -C /donnees/photos .`, ce qui évite de deviner le nom du volume préfixé par le projet ; l'archive est écrite sous un nom temporaire, contrôlée (`tar tzf`), puis renommée `sauvegarde-photos-AAAAMMJJ-HHMM.tar.gz`, avec la même rotation (un volume vide donne une archive vide valide). Les autres fichiers du dossier ne sont jamais touchés. Les deux dernières lignes affichées donnent le chemin et la taille du dump, puis le chemin et le nombre de photos de l'archive. En cas d'échec (`base` arrêtée, disque plein, dump ou archive illisible), le message part sur la sortie d'erreur, le code de sortie est non nul et aucune sauvegarde existante n'est supprimée. Il ne lit pas `.env` et n'affiche aucun mot de passe.
+
+**La base et les photos se sauvegardent et se restaurent ensemble** : la base fait foi (une photo n'est servie que si son jeton est en base). Une base restaurée sans le volume donne des photos en 404 (`GET /api/photos/<jeton>`) jusqu'à la restauration de l'archive ; des fichiers restaurés sans la base correspondante ne sont jamais servis. Copier hors du VPS le dump **et** l'archive de photos du même horodatage.
 
 | Variable | Défaut | Rôle |
 |---|---|---|
 | `SAUVEGARDE_DOSSIER` | `./sauvegardes` | dossier de destination, créé s'il manque (droits `700`) |
-| `SAUVEGARDE_CONSERVER` | `14` | nombre de fichiers `sauvegarde-*.dump` conservés ; entier ≥ 1, sinon code 2 avant toute écriture |
+| `SAUVEGARDE_CONSERVER` | `14` | nombre de fichiers `sauvegarde-*.dump` conservés, et autant d'archives `sauvegarde-photos-*.tar.gz` ; entier ≥ 1, sinon code 2 avant toute écriture |
 | `COMPOSE_FICHIERS` | `-f docker-compose.yml -f docker-compose.prod.yml` | options passées à `docker compose` (ajouter `-p <projet> --env-file <fichier>` pour une stack isolée) |
 
 `--verifier-restauration` restaure le dump dans une base temporaire `restauration_verif` du conteneur `base` (supprimée puis recréée si elle existe déjà, jamais la base de production), compare le nombre de lignes des tables `course`, `inscription` et `passage` avec la base source, supprime la base temporaire dans tous les cas et sort en code 1 si un comptage diffère (une écriture pendant la sauvegarde peut l'expliquer : relancer).
@@ -321,7 +323,7 @@ docker run --rm -v backyard-ultra-tracker_donnees-caddy:/data -v "$PWD":/sauvega
 
 Le nom du volume est préfixé par le nom du projet Compose (`backyard-ultra-tracker_` sur le VPS, `backyard-prod_` pour le test local décrit plus bas) : vérifier avec `docker volume ls`.
 
-Les logos de course sont stockés dans la base : ils sont inclus dans le `pg_dump` ci-dessus et restaurés avec lui. Il n'existe aucun volume séparé pour les logos.
+Les logos de course sont stockés dans la base : ils sont inclus dans le `pg_dump` ci-dessus et restaurés avec lui. Il n'existe aucun volume séparé pour les logos. Les photos de profil, elles, sont des fichiers du volume `photos` (au plus une par Compte, 2 Mo au maximum) : elles sont dans l'archive `sauvegarde-photos-*.tar.gz`, pas dans le dump.
 
 ## Restauration
 
@@ -341,6 +343,20 @@ Contrôle après restauration :
 2. `curl https://<domaine>/api/version` : la version attendue ;
 3. connexion avec l'admin master sur `https://<domaine>/connexion` ;
 4. la liste des Courses de l'administration (et l'accueil public) montre les Courses de la sauvegarde, et le suivi public d'une Course affiche ses coureurs.
+
+### Restauration des photos de profil
+
+À faire avec la restauration de la base, à partir de l'archive `sauvegarde-photos-*.tar.gz` du même horodatage que le dump, `api` arrêtée. Le conteneur éphémère du service `api` vide le volume puis y extrait l'archive avec l'utilisateur `backyard` (les fichiers lui appartiennent, droits `600`) :
+
+```sh
+$PROD stop api
+$PROD run --rm --no-deps -T --entrypoint sh api -c \
+  'find /donnees/photos -mindepth 1 -delete && tar xzf - -C /donnees/photos --no-same-owner && chmod 600 /donnees/photos/*.* 2>/dev/null; ls /donnees/photos | wc -l' \
+  < sauvegardes/sauvegarde-photos-AAAAMMJJ-HHMM.tar.gz
+$PROD start api
+```
+
+La dernière commande du conteneur affiche le nombre de fichiers restaurés. Contrôle : `$PROD ps` (`api` `healthy`), puis les photos s'affichent : pour un coureur qui avait une photo, `GET /api/comptes/moi` renvoie une `photoUrl` et `curl -sI https://<domaine><photoUrl>` répond 200 avec le type de l'image.
 
 Restauration facultative des certificats Caddy (`web` arrêté ; `tar` exécuté en root conserve les propriétaires d'origine, l'utilisateur non root `web`) :
 
@@ -466,8 +482,9 @@ Pour finir : `$P down -v` (supprime uniquement les volumes du projet `backyard-p
 | Courses (`EN_PREPARATION`) | « Backyard de démo » (J+30, 6706 m, 60 min, 120 m, 50 participants, 24 boucles), « Backyard express » (J+7, 400 m, 1 min, 5 m, 10, 5), « Backyard mini » (J+14, 1000 m, 2 min, 10 m, 2, 2), « Backyard du jour » (jour même, 400 m, 1 min, 5 m, 10, 5), « Backyard du soir » (jour même, 400 m, 5 min, 5 m, 10, 5) |
 | Affectations | `Léo` à « Backyard de démo » et « Backyard du jour » |
 | Inscriptions | `Karim` : démo, express, du jour, du soir ; `Sophie` : démo, express, du jour ; `Tom` : démo, du jour |
+| Photos de profil | `Karim` (JPEG) et `Sophie` (PNG), fichiers de `scripts/photos-demo/` envoyés par l'API ; `Alice` et `Tom` sans photo |
 
-Soit 23 éléments (7 Comptes, 5 Courses, 2 affectations, 9 Inscriptions). Les deux Courses du jour sont démarrables le jour de leur création : « du jour » se termine en une à deux minutes, « du soir » reste en cours au moins 5 minutes, ce qui montre ensemble les rubriques « En cours » et « Terminées » de l'accueil.
+Soit 25 éléments (7 Comptes, 5 Courses, 2 affectations, 9 Inscriptions, 2 photos). Les deux Courses du jour sont démarrables le jour de leur création : « du jour » se termine en une à deux minutes, « du soir » reste en cours au moins 5 minutes, ce qui montre ensemble les rubriques « En cours » et « Terminées » de l'accueil.
 
 ```sh
 docker compose up -d --build     # stack de dev, .env avec ADMIN_MASTER_PSEUDO et ADMIN_MASTER_MOT_DE_PASSE
@@ -475,10 +492,10 @@ docker compose up -d --build     # stack de dev, .env avec ADMIN_MASTER_PSEUDO e
 ```
 
 - Prérequis sur l'hôte : `bash` et `curl`. Les identifiants de l'admin master sont lus dans l'environnement, à défaut dans le `.env` du répertoire courant (tels quels, sans interprétation du `$` ni des guillemets) ; ils ne sont jamais affichés.
-- Relançable : un Compte ou une Course (même nom) déjà présent n'est ni recréé ni modifié. Un pseudo pris par un Compte d'un autre rôle n'est pas détecté.
+- Relançable : un Compte ou une Course (même nom) déjà présent n'est ni recréé ni modifié ; un coureur qui a déjà une photo (`photoUrl` non nulle) n'en reçoit pas de nouvelle. Un pseudo pris par un Compte d'un autre rôle n'est pas détecté.
 - `BASE_URL` (défaut `http://localhost`) : adresse visée. Garde-fou : tout hôte autre que `localhost` ou `127.0.0.1` est refusé (code 2, aucune requête) sauf `DEMO_FORCER=oui`, à ne jamais utiliser contre la production : les Comptes `Nadia`, `Léo`, `Marc` et `Alice` ne doivent jamais exister en production.
 - Codes de sortie : 0 succès, 1 variable manquante ou réponse inattendue de l'API (statut HTTP affiché, `000` si l'API est injoignable), 2 cible refusée.
-- Pour repartir d'une base neuve : `docker compose down -v` puis `docker compose up -d --build`.
+- Pour repartir d'une base neuve : `docker compose down -v` (supprime aussi le volume `photos`) puis `docker compose up -d --build`.
 
 ## Tests E2E et profil `e2e`
 

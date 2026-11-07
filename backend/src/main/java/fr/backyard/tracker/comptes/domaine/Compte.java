@@ -1,5 +1,6 @@
 package fr.backyard.tracker.comptes.domaine;
 
+import fr.backyard.tracker.partage.domaine.FormatImage;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Comparator;
@@ -29,8 +30,11 @@ public final class Compte {
     private final Role role;
     private final Instant creeLe;
     private final boolean actif;
+    /** Photo de profil, nulle sans photo (10.1 RG4) ; jamais portée par un Compte anonymisé. */
+    private final ReferencePhoto photo;
 
-    private Compte(UUID id, Pseudo pseudo, String empreinteMotDePasse, Role role, Instant creeLe, boolean actif) {
+    private Compte(UUID id, Pseudo pseudo, String empreinteMotDePasse, Role role, Instant creeLe, boolean actif,
+                   ReferencePhoto photo) {
         this.id = Objects.requireNonNull(id);
         this.pseudo = Objects.requireNonNull(pseudo);
         this.pseudoNormalise = pseudo.estAnonyme() ? cleAnonyme(id) : pseudo.normalise();
@@ -38,36 +42,43 @@ public final class Compte {
         this.role = Objects.requireNonNull(role);
         this.creeLe = Objects.requireNonNull(creeLe);
         this.actif = actif;
+        this.photo = photo;
     }
 
     /** Les comptes créés librement sont toujours des comptes coureurs. */
     public static Compte creerCoureur(Pseudo pseudo, String empreinteMotDePasse, Instant creeLe) {
         return new Compte(UUID.randomUUID(), pseudo, Objects.requireNonNull(empreinteMotDePasse), Role.COUREUR,
-                creeLe, true);
+                creeLe, true, null);
     }
 
     /** Les comptes administrateurs sont créés par l'admin master, toujours avec le rôle ADMIN. */
     public static Compte creerAdmin(Pseudo pseudo, String empreinteMotDePasse, Instant creeLe) {
         return new Compte(UUID.randomUUID(), pseudo, Objects.requireNonNull(empreinteMotDePasse), Role.ADMIN,
-                creeLe, true);
+                creeLe, true, null);
     }
 
     /** Les comptes bénévoles sont créés par un admin (ou l'admin master), toujours avec le rôle BENEVOLE. */
     public static Compte creerBenevole(Pseudo pseudo, String empreinteMotDePasse, Instant creeLe) {
         return new Compte(UUID.randomUUID(), pseudo, Objects.requireNonNull(empreinteMotDePasse), Role.BENEVOLE,
-                creeLe, true);
+                creeLe, true, null);
     }
 
     /** L'unique admin master, créé au premier démarrage à partir de la configuration, jamais depuis l'interface. */
     public static Compte creerAdminMaster(Pseudo pseudo, String empreinteMotDePasse, Instant creeLe) {
         return new Compte(UUID.randomUUID(), pseudo, Objects.requireNonNull(empreinteMotDePasse), Role.ADMIN_MASTER,
-                creeLe, true);
+                creeLe, true, null);
     }
 
-    /** Recharge un compte existant, dans l'état lu en base ; l'empreinte est nulle pour un compte anonymisé. */
+    /** Recharge un compte existant sans photo, dans l'état lu en base ; l'empreinte est nulle s'il est anonymisé. */
     public static Compte reconstituer(UUID id, Pseudo pseudo, String empreinteMotDePasse, Role role, Instant creeLe,
                                       boolean actif) {
-        return new Compte(id, pseudo, empreinteMotDePasse, role, creeLe, actif);
+        return reconstituer(id, pseudo, empreinteMotDePasse, role, creeLe, actif, null);
+    }
+
+    /** Recharge un compte existant, dans l'état lu en base ; {@code photo} est nulle sans photo de profil. */
+    public static Compte reconstituer(UUID id, Pseudo pseudo, String empreinteMotDePasse, Role role, Instant creeLe,
+                                      boolean actif, ReferencePhoto photo) {
+        return new Compte(id, pseudo, empreinteMotDePasse, role, creeLe, actif, photo);
     }
 
     /**
@@ -97,12 +108,12 @@ public final class Compte {
 
     /** Même Compte, inactif : il ne peut plus se connecter ; pseudo (toujours réservé) et empreinte conservés. */
     public Compte desactiver() {
-        return new Compte(id, pseudo, empreinteMotDePasse, role, creeLe, false);
+        return new Compte(id, pseudo, empreinteMotDePasse, role, creeLe, false, photo);
     }
 
     /** Même Compte, actif : il se connecte de nouveau avec son mot de passe inchangé. */
     public Compte reactiver() {
-        return new Compte(id, pseudo, empreinteMotDePasse, role, creeLe, true);
+        return new Compte(id, pseudo, empreinteMotDePasse, role, creeLe, true, photo);
     }
 
     /**
@@ -197,7 +208,7 @@ public final class Compte {
         if (!estCoureurConnectable()) {
             throw new CompteNonGerableException();
         }
-        return new Compte(id, pseudo, empreinteMotDePasse, roleCible, creeLe, actif);
+        return new Compte(id, pseudo, empreinteMotDePasse, roleCible, creeLe, actif, photo);
     }
 
     /**
@@ -205,7 +216,7 @@ public final class Compte {
      * Une empreinte est exigée : un changement ne rend jamais un compte inutilisable.
      */
     public Compte changerMotDePasse(String nouvelleEmpreinte) {
-        return new Compte(id, pseudo, Objects.requireNonNull(nouvelleEmpreinte), role, creeLe, actif);
+        return new Compte(id, pseudo, Objects.requireNonNull(nouvelleEmpreinte), role, creeLe, actif, photo);
     }
 
     /**
@@ -236,9 +247,36 @@ public final class Compte {
         return enCompteAnonyme();
     }
 
-    /** Forme unique d'un Compte anonymisé : même identité, pseudo anonyme, sans empreinte, rôle COUREUR. */
+    /** Forme unique d'un Compte anonymisé : même identité, pseudo anonyme, sans empreinte, rôle COUREUR, sans photo. */
     private Compte enCompteAnonyme() {
-        return new Compte(id, Pseudo.anonyme(), null, Role.COUREUR, creeLe, actif);
+        return new Compte(id, Pseudo.anonyme(), null, Role.COUREUR, creeLe, actif, null);
+    }
+
+    /**
+     * Unique contrôle de la règle « seul un COUREUR ajoute ou remplace sa photo » (10.1 RG1) ; un BENEVOLE ou un ADMIN
+     * ex-coureur garde la sienne mais ne peut que la retirer.
+     *
+     * @throws PhotoNonAutoriseeException le Compte n'est pas un Compte coureur
+     */
+    public void verifierPhotoModifiable() {
+        if (role != Role.COUREUR) {
+            throw new PhotoNonAutoriseeException();
+        }
+    }
+
+    /**
+     * Même Compte avec cette photo, qui remplace l'éventuelle précédente.
+     *
+     * @throws PhotoNonAutoriseeException le Compte n'est pas un Compte coureur
+     */
+    public Compte avecPhoto(String jeton, FormatImage format) {
+        verifierPhotoModifiable();
+        return new Compte(id, pseudo, empreinteMotDePasse, role, creeLe, actif, new ReferencePhoto(jeton, format));
+    }
+
+    /** Même Compte sans photo, quel que soit son rôle (droit de retrait à tout moment) ; sans photo, inchangé. */
+    public Compte retirerPhoto() {
+        return new Compte(id, pseudo, empreinteMotDePasse, role, creeLe, actif, null);
     }
 
     public boolean estAnonyme() {
@@ -278,6 +316,11 @@ public final class Compte {
 
     public boolean actif() {
         return actif;
+    }
+
+    /** Nulle sans photo de profil. */
+    public ReferencePhoto photo() {
+        return photo;
     }
 
     @Override

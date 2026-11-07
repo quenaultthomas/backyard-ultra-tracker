@@ -662,14 +662,14 @@ class SuppressionBenevoleIntegrationTest {
     // ---------------------------------------------------------------- CA14
 
     @Test
-    @DisplayName("CA14 : aucun nouveau changeset (0002 à 0011-compte-actif dans l'ordre) ; aucune affectation orpheline après suppression ; démarrage sur schéma validé")
+    @DisplayName("CA14 : aucun nouveau changeset (0002 à 0012-photo-compte dans l'ordre) ; aucune affectation orpheline après suppression ; démarrage sur schéma validé")
     void ca14_schema_inchange() throws Exception {
         assertThat(supprimer(nadia, idLeo).statusCode()).isEqualTo(204);
 
         assertThat(jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class))
                 .containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
                         "0006-affectation-benevole", "0007-inscription", "0008-demarrage-course", "0009-passage",
-                        "0010-abandon-inscription", "0011-compte-actif");
+                        "0010-abandon-inscription", "0011-compte-actif", "0012-photo-compte");
         assertThat(jdbc.queryForObject("select count(*) from affectation_benevole a left join compte b "
                 + "on b.id = a.benevole_id where b.id is null", Integer.class)).isZero();
     }

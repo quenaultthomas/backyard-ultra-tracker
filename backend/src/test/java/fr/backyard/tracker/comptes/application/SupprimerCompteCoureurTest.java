@@ -59,7 +59,8 @@ class SupprimerCompteCoureurTest {
     private final AnnulationEspion annulation = new AnnulationEspion(journal);
     private final InvalidationEspion invalidation = new InvalidationEspion(journal);
     private final SupprimerCompteCoureur supprimer = new SupprimerCompteCoureur(
-            depot, encodeur, registre, PolitiqueBlocage.parDefaut(), annulation, invalidation, horloge);
+            depot, encodeur, registre, PolitiqueBlocage.parDefaut(), annulation, invalidation, horloge,
+            new EffacementPhoto(new DoublesPhoto.StockageEnMemoire(new ArrayList<>())));
 
     // --- fabriques de test --------------------------------------------------------------------------------
 

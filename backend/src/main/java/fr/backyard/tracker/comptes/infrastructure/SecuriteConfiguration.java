@@ -28,7 +28,8 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  * /api/administration/admins/**, la suppression d'une Course et le passage d'un coureur en admin sont réservés à
  * ADMIN_MASTER, le reste de /api/administration/** aux rôles
  * ADMIN_MASTER et ADMIN (refus avant toute résolution du chemin), /api/benevole/** au seul rôle BENEVOLE,
- * /api/coureur/** et la suppression de son propre compte au seul rôle COUREUR, /api/test/** (horloge pilotable du
+ * /api/coureur/**, la suppression de son propre compte et l'envoi de sa photo au seul rôle COUREUR, la lecture d'une
+ * photo de profil publique, /api/test/** (horloge pilotable du
  * profil e2e) au seul rôle ADMIN_MASTER,
  * CSRF actif en mode cookie pour l'application Angular, session serveur ouverte uniquement par une
  * connexion réussie (cookie JSESSIONID, paramètres dans application.yml).
@@ -70,6 +71,12 @@ public class SecuriteConfiguration {
                         // Suppression de son propre Compte : COUREUR seul (3.6 RG3).
                         .requestMatchers(HttpMethod.POST, "/api/comptes/moi/suppression")
                         .hasRole(Role.COUREUR.name())
+                        // Ajout et remplacement de sa photo de profil : COUREUR seul (10.1 RG8) ; le retrait (DELETE)
+                        // relève de la règle générale /api/** (tout Compte connecté).
+                        .requestMatchers(HttpMethod.PUT, "/api/comptes/moi/photo").hasRole(Role.COUREUR.name())
+                        // Photo de profil : lecture publique par son jeton non devinable (10.1 RG7).
+                        .requestMatchers(HttpMethod.GET, "/api/photos/*").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/photos/*").permitAll()
                         // Liste, logo et suivi des Courses : seules lectures publiques sous /api/courses (écrans
                         // publics : accueil, suivi).
                         .requestMatchers(HttpMethod.GET, "/api/courses", "/api/courses/*/logo", "/api/courses/*/suivi")
