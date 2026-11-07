@@ -15,6 +15,7 @@ import { Observable, finalize, map, switchMap } from 'rxjs';
 import { ErreursSpecifiques, interpreterErreurFormulaire } from '../../../comptes/erreurs-compte';
 import { RefusAccesService } from '../../../comptes/refus-acces.service';
 import { CsrfService } from '../../../partage/csrf.service';
+import { lireImage } from '../../../partage/lecture-image';
 import { MESSAGE_SERVICE_INDISPONIBLE } from '../../../partage/probleme';
 import { AdministrationApiService } from '../../administration-api.service';
 import { ChampCourse } from '../champs-course';
@@ -24,7 +25,6 @@ import {
   ERREURS_COURSE_NON_EDITABLE,
   estCourseNonEditable,
 } from '../erreurs-course';
-import { lireImage } from './lecture-image';
 
 const MESSAGE_LOGO_TROP_VOLUMINEUX = 'Le logo ne doit pas dépasser 2 Mo.';
 const MESSAGE_IMAGE_ILLISIBLE = "Ce fichier n'est pas une image lisible.";

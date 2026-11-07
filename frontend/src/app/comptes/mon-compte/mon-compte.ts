@@ -33,6 +33,7 @@ import { RefusAccesService } from '../refus-acces.service';
 import { LIBELLES_ROLE } from '../roles';
 import { SessionService } from '../session.service';
 import { ECRAN_MON_COMPTE } from './ecran-mon-compte';
+import { PhotoProfil } from './photo-profil/photo-profil';
 import { SuppressionCompte } from './suppression-compte/suppression-compte';
 
 type ChampMotDePasse = keyof ChangerMotDePasseRequete;
@@ -48,12 +49,12 @@ const ERREURS_SPECIFIQUES: ErreursSpecifiques<ChampMotDePasse> = {
 };
 
 /**
- * Écran « Mon compte » de tout Compte connecté : identité, changement du mot de passe (section
- * repliable, repliée à l'arrivée) et, pour un coureur, suppression du Compte.
+ * Écran « Mon compte » de tout Compte connecté : identité, photo de profil, changement du mot de
+ * passe (section repliable, repliée à l'arrivée) et, pour un coureur, suppression du Compte.
  */
 @Component({
   selector: 'app-mon-compte',
-  imports: [ReactiveFormsModule, SuppressionCompte],
+  imports: [ReactiveFormsModule, PhotoProfil, SuppressionCompte],
   templateUrl: './mon-compte.html',
   styleUrls: ['../../partage/page-carte.css', '../formulaire-compte.css', './mon-compte.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

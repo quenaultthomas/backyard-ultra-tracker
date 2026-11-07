@@ -32,4 +32,15 @@ export interface CompteReponse {
   actif: boolean;
 }
 
+/** Compte renvoyé par `GET /api/comptes/moi` : seule réponse portant la photo de profil. */
+export interface CompteCourantReponse extends CompteReponse {
+  /** URL relative publique `/api/photos/<jeton>`, `null` sans photo. */
+  photoUrl: string | null;
+}
+
+/** Réponse 200 de `PUT /api/comptes/moi/photo`. */
+export interface PhotoReponse {
+  photoUrl: string;
+}
+
 export type Role = 'ADMIN_MASTER' | 'ADMIN' | 'BENEVOLE' | 'COUREUR';
