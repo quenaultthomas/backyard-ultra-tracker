@@ -493,6 +493,9 @@ test.describe('Mon compte - changement de mot de passe repliable', () => {
         });
       for (const deplie of [false, true]) {
         if (deplie) await deplierChangementMotDePasse(page);
+        // Pointeur écarté : depuis 10.1b le bloc photo pousse le bouton vers le bas, la page ne se recentre plus
+        // au dépliage et le pointeur resterait sur le bouton (fond « survol »).
+        await page.mouse.move(0, 0);
         // La couleur de fond est animée (transition de 150 ms) : on attend la valeur finale.
         await expect.poll(async () => (await mesurerBouton()).fond).toBe(SURFACE);
         const m = await mesurerBouton();
@@ -514,8 +517,10 @@ test.describe('Mon compte - changement de mot de passe repliable', () => {
 
       const espaces = await page.evaluate(() => {
         const haut = (id: string) => document.querySelector(`[data-testid="${id}"]`)!.getBoundingClientRect();
-        const identite = document.querySelector('dl')!.getBoundingClientRect();
-        const section = document.querySelector('section.section-repliable, section[aria-labelledby="titre-changer-mot-de-passe"]')!.getBoundingClientRect();
+        const sectionEl = document.querySelector('section.section-repliable, section[aria-labelledby="titre-changer-mot-de-passe"]')!;
+        // Élément qui précède la section : l'identité, ou depuis 10.1b le bloc « Ma photo de profil » (au-dessus du mot de passe).
+        const identite = sectionEl.previousElementSibling!.getBoundingClientRect();
+        const section = sectionEl.getBoundingClientRect();
         const btn = haut('mon-compte-bouton-deplier');
         const pan = haut('mon-compte-panneau-mot-de-passe');
         return { identiteVersSection: section.top - identite.bottom, boutonVersPanneau: pan.top - btn.bottom };

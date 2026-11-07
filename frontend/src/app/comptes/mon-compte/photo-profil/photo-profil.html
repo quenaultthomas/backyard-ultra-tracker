@@ -1,0 +1,114 @@
+@if (visible()) {
+  <section class="photo" aria-labelledby="titre-photo-profil" data-testid="mon-compte-photo">
+    <h2 id="titre-photo-profil" class="sous-titre">Ma photo de profil</h2>
+
+    @if (compte(); as c) {
+      @if (c.photoUrl; as url) {
+        <img
+          class="photo__cadre"
+          [src]="url"
+          alt="Ma photo de profil"
+          data-testid="mon-compte-photo-image"
+        />
+      } @else {
+        <img
+          class="photo__cadre"
+          [src]="silhouette"
+          alt="Aucune photo de profil"
+          data-testid="mon-compte-photo-silhouette"
+        />
+      }
+
+      <p class="aide" data-testid="mon-compte-photo-information">
+        Votre photo est publique : elle sera visible par tout le monde, notamment sur l'écran de
+        suivi des courses auxquelles vous participez. Vous pouvez la retirer à tout moment.
+        @if (peutModifier()) {
+          Elle est réduite à 512 pixels et enregistrée sans ses informations cachées, comme la
+          position GPS.
+        }
+      </p>
+
+      <div class="photo__actions">
+        @if (peutModifier()) {
+          <input
+            #champPhoto
+            type="file"
+            class="masque"
+            accept="image/*"
+            tabindex="-1"
+            aria-hidden="true"
+            (change)="choisir(champPhoto)"
+            data-testid="mon-compte-photo-champ"
+          />
+          <button
+            #boutonChoisir
+            type="button"
+            class="bouton bouton--secondaire"
+            [disabled]="envoiEnCours()"
+            (click)="champPhoto.click()"
+            data-testid="mon-compte-photo-bouton-choisir"
+          >
+            {{ c.photoUrl === null ? 'Ajouter une photo' : 'Remplacer la photo' }}
+          </button>
+        }
+        @if (c.photoUrl !== null) {
+          <button
+            type="button"
+            class="bouton bouton--danger-contour"
+            [disabled]="envoiEnCours()"
+            (click)="retirer()"
+            data-testid="mon-compte-photo-bouton-retirer"
+          >
+            Retirer la photo
+          </button>
+        }
+      </div>
+    }
+
+    @if (preparationEnCours()) {
+      <p class="message--info" role="status" data-testid="mon-compte-photo-preparation">
+        Préparation de la photo…
+      </p>
+    }
+    @if (message(); as texte) {
+      <p class="message--succes" role="status" data-testid="mon-compte-photo-message">
+        {{ texte }}
+      </p>
+    }
+
+    @if (erreur(); as texte) {
+      <p class="message--erreur" role="alert" data-testid="mon-compte-photo-erreur">{{ texte }}</p>
+    }
+
+    @if (peutModifier() && (preparee() !== null || preparationEnCours())) {
+      <div class="photo__apercu" role="group" aria-label="Nouvelle photo de profil">
+        @if (preparee(); as p) {
+          <img
+            class="photo__cadre"
+            [src]="p.apercu"
+            alt="Aperçu de la nouvelle photo"
+            data-testid="mon-compte-photo-apercu"
+          />
+          <button
+            type="button"
+            class="bouton"
+            [disabled]="envoiEnCours()"
+            (click)="envoyer()"
+            data-testid="mon-compte-photo-bouton-envoyer"
+          >
+            Enregistrer la photo
+          </button>
+        }
+        <button
+          type="button"
+          class="bouton bouton--secondaire"
+          [disabled]="envoiEnCours()"
+          (click)="annuler()"
+          data-testid="mon-compte-photo-bouton-annuler"
+        >
+          Annuler
+        </button>
+      </div>
+    }
+  </section>
+}

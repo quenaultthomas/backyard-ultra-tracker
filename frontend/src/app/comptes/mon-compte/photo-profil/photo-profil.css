@@ -1,0 +1,63 @@
+/* Bloc « Ma photo de profil » de Mon compte : photo, information, actions, messages, aperçu. */
+:host {
+  display: block;
+  flex: none;
+}
+
+.photo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  min-width: 0;
+}
+
+.photo p {
+  margin: 0;
+}
+
+/* Taille fixe, recadrée sans déformation : une image immense ne casse pas la mise en page. */
+.photo__cadre {
+  display: block;
+  flex: none;
+  box-sizing: border-box;
+  width: 160px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border: 1px solid var(--couleur-trait);
+  border-radius: var(--rayon-pastille);
+  background-color: var(--couleur-sable);
+  object-fit: cover;
+  color: var(--couleur-encre-douce);
+  overflow-wrap: anywhere;
+}
+
+.photo__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espace-3);
+  min-width: 0;
+}
+
+.photo__actions .bouton {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* L'aperçu montre l'image entière telle qu'elle sera envoyée, ses boutons dessous. */
+.photo__apercu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-3);
+  min-width: 0;
+  padding: var(--espace-3);
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-sable);
+}
+
+.photo__apercu .photo__cadre {
+  border-radius: var(--rayon-s);
+  background-color: var(--couleur-surface);
+  object-fit: contain;
+}
