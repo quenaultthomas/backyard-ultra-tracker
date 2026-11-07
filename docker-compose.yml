@@ -60,9 +60,14 @@ services:
       # le service web (Caddy).
       # Valeur fixe.
       BACKYARD_PROXY_DE_CONFIANCE: web
+      # Repertoire des photos de profil (10.1a), point de montage du volume photos. Valeur fixe.
+      BACKYARD_PHOTOS_REPERTOIRE: /donnees/photos
       # Admin master cree au premier demarrage (facultatives en dev, obligatoires en production).
       ADMIN_MASTER_PSEUDO: ${ADMIN_MASTER_PSEUDO:-}
       ADMIN_MASTER_MOT_DE_PASSE: ${ADMIN_MASTER_MOT_DE_PASSE:-}
+    volumes:
+      # Photos de profil : fichiers <jeton>.<extension>, jamais dans l'image ; a sauvegarder avec la base.
+      - photos:/donnees/photos
     depends_on:
       base:
         condition: service_healthy
@@ -106,3 +111,4 @@ services:
 
 volumes:
   donnees-postgres:
+  photos:

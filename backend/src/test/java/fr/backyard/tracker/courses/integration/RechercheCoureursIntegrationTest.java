@@ -517,7 +517,7 @@ class RechercheCoureursIntegrationTest {
     // ---------------------------------------------------------------- CA11
 
     @Test
-    @DisplayName("CA11 : aucune migration ajoutée (0002 à 0011-compte-actif), schéma validé, aucune écriture par la recherche")
+    @DisplayName("CA11 : aucune migration ajoutée (0002 à 0012-photo-compte), schéma validé, aucune écriture par la recherche")
     void ca11_aucune_migration_ni_ecriture() throws Exception {
         List<String> avant = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
         List<Map<String, Object>> comptes = jdbc.queryForList("select * from compte order by id");
@@ -528,7 +528,7 @@ class RechercheCoureursIntegrationTest {
 
         List<String> apres = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
         assertThat(apres).isEqualTo(avant);
-        assertThat(apres.get(apres.size() - 1)).isEqualTo("0011-compte-actif");
+        assertThat(apres.get(apres.size() - 1)).isEqualTo("0012-photo-compte");
         Set<String> identifiants = new HashSet<>(apres);
         for (int i = 2; i <= 10; i++) {
             String prefixe = "%04d-".formatted(i);

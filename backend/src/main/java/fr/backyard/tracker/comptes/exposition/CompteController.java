@@ -46,8 +46,8 @@ public class CompteController {
 
     /** Compte de la session, relu en base. Principal : identifiant du compte (voir {@link SessionConnexion}). */
     @GetMapping("/moi")
-    public CompteReponse consulterCompteConnecte(@AuthenticationPrincipal UUID idCompte) {
-        return CompteReponse.depuis(consulterCompteConnecte.executer(idCompte));
+    public CompteConnecteReponse consulterCompteConnecte(@AuthenticationPrincipal UUID idCompte) {
+        return CompteConnecteReponse.depuis(consulterCompteConnecte.executer(idCompte));
     }
 
     /**

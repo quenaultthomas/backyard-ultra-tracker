@@ -49,7 +49,8 @@ class SupprimerAdminAnonymisationTest {
     private final AnnulationEspion annulation = new AnnulationEspion(journal);
     private final ConsultationEspion consultation = new ConsultationEspion(journal);
     private final SupprimerAdmin supprimer = new SupprimerAdmin(depot, sessions, registre,
-            PolitiqueBlocage.parDefaut(), annulation, consultation);
+            PolitiqueBlocage.parDefaut(), annulation, consultation,
+            new EffacementPhoto(new DoublesPhoto.StockageEnMemoire(new ArrayList<>())));
 
     private Compte compte(UUID id, String pseudo, Role role, boolean actif) {
         return depot.ajouter(Compte.reconstituer(id, new Pseudo(pseudo), "empreinte-" + pseudo, role, CREE_LE, actif));

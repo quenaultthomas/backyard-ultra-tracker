@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Suppression de son propre Compte coureur, confirmée par le mot de passe actuel (mêmes contrôles et même comptage
  * des échecs que le changement de mot de passe). Dans une seule transaction : annulation des Inscriptions aux Courses
- * non démarrées, anonymisation du Compte, remise à zéro du compteur de l'ancien pseudo, puis fermeture de toutes les
+ * non démarrées, anonymisation du Compte (sans photo, fichier effacé après validation, 10.1 RG9), remise à zéro du compteur de l'ancien pseudo, puis fermeture de toutes les
  * sessions du Compte en dernier. Journal sans pseudo ni mot de passe.
  */
 @Service
@@ -47,11 +47,13 @@ public class SupprimerCompteCoureur {
     private final AnnulationInscriptions annulationInscriptions;
     private final InvalidationAutresSessions invalidationSessions;
     private final Clock horloge;
+    private final EffacementPhoto effacementPhoto;
 
     public SupprimerCompteCoureur(DepotComptes depotComptes, EncodeurMotDePasse encodeurMotDePasse,
                                   RegistreTentativesConnexion registreTentatives, PolitiqueBlocage politiqueBlocage,
                                   AnnulationInscriptions annulationInscriptions,
-                                  InvalidationAutresSessions invalidationSessions, Clock horloge) {
+                                  InvalidationAutresSessions invalidationSessions, Clock horloge,
+                                  EffacementPhoto effacementPhoto) {
         this.depotComptes = depotComptes;
         this.limitation = new LimitationTentatives(registreTentatives, politiqueBlocage);
         this.confirmation = new ConfirmationMotDePasse(depotComptes, encodeurMotDePasse, limitation, JOURNAL,
@@ -59,6 +61,7 @@ public class SupprimerCompteCoureur {
         this.annulationInscriptions = annulationInscriptions;
         this.invalidationSessions = invalidationSessions;
         this.horloge = horloge;
+        this.effacementPhoto = effacementPhoto;
     }
 
     /**
@@ -75,6 +78,7 @@ public class SupprimerCompteCoureur {
         Compte anonyme = compte.anonymiser();
         int annulees = annulationInscriptions.annulerPour(compte.id());
         depotComptes.mettreAJour(anonyme);
+        effacementPhoto.effacerApresValidation(compte);
         limitation.oublier(compte.pseudoNormalise());
         invalidationSessions.invaliderToutesLesSessions(compte.id());
         JOURNAL.log(Level.INFO, "Compte supprimé (compte {0}, {1} inscription(s) annulée(s))", compte.id(),

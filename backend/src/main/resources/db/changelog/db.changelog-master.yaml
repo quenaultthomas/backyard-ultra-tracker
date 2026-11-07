@@ -32,3 +32,6 @@ databaseChangeLog:
   - include:
       file: changesets/0011-compte-actif.yaml
       relativeToChangelogFile: true
+  - include:
+      file: changesets/0012-photo-compte.yaml
+      relativeToChangelogFile: true

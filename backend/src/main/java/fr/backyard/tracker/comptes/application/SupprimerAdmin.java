@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Suppression d'un Compte ADMIN (actif ou désactivé) par l'admin master, dans une seule transaction : tous les Comptes
  * ADMIN relus sous verrou, gardes du domaine, annulation de ses Inscriptions aux Courses non démarrées, puis
- * anonymisation s'il lui reste des Inscriptions (ancien coureur, 9.6a RG2), suppression définitive sinon, remise à
+ * anonymisation s'il lui reste des Inscriptions (ancien coureur, 9.6a RG2), suppression définitive sinon (photo effacée après validation dans les deux cas, 10.1 RG9), remise à
  * zéro du compteur d'échecs de son pseudo et fermeture de toutes ses sessions après validation. Un admin n'a pas
  * d'affectation. Journal sans pseudo ni mot de passe.
  */
@@ -34,16 +34,19 @@ public class SupprimerAdmin {
     private final LimitationTentatives limitation;
     private final AnnulationInscriptions annulationInscriptions;
     private final ConsultationInscriptions consultationInscriptions;
+    private final EffacementPhoto effacementPhoto;
 
     public SupprimerAdmin(DepotComptes depotComptes, InvalidationAutresSessions invalidationSessions,
                           RegistreTentativesConnexion registreTentatives, PolitiqueBlocage politiqueBlocage,
                           AnnulationInscriptions annulationInscriptions,
-                          ConsultationInscriptions consultationInscriptions) {
+                          ConsultationInscriptions consultationInscriptions,
+                          EffacementPhoto effacementPhoto) {
         this.depotComptes = depotComptes;
         this.invalidationSessions = invalidationSessions;
         this.limitation = new LimitationTentatives(registreTentatives, politiqueBlocage);
         this.annulationInscriptions = annulationInscriptions;
         this.consultationInscriptions = consultationInscriptions;
+        this.effacementPhoto = effacementPhoto;
     }
 
     /**
@@ -64,6 +67,7 @@ public class SupprimerAdmin {
             depotComptes.supprimer(cibleId);
             JOURNAL.log(Level.INFO, "Admin supprimé (compte {0} par {1})", cibleId, appelantId);
         }
+        effacementPhoto.effacerApresValidation(cible);
         limitation.oublier(cible.pseudoNormalise());
         Desactivation.fermerSessionsApresValidation(invalidationSessions, cibleId);
     }

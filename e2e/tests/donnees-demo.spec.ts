@@ -112,8 +112,11 @@ function verifierAucunSecret(r: Resultat): void {
 
 function verifierSeptElements(r: Resultat, etat: 'créé' | 'déjà présent'): void {
   const lignesEtat = lignes(r.sortie, `${etat} : `);
-  // 23 lignes (6.4 CA19) : 7 comptes, 5 courses, les 2 affectations de Léo (2.4, 4.4b) et 9 inscriptions
-  expect(lignesEtat).toHaveLength(23);
+  // 25 lignes (10.1a CA32) : 7 comptes, 5 courses, les 2 affectations de Léo (2.4, 4.4b), 9 inscriptions et 2 photos
+  expect(lignesEtat).toHaveLength(25);
+  expect(lignesEtat.filter((l) => l === `${etat} : Karim (photo de profil)`)).toHaveLength(1);
+  expect(lignesEtat.filter((l) => l === `${etat} : Sophie (photo de profil)`)).toHaveLength(1);
+  expect(lignesEtat.filter((l) => l.includes('(photo de profil)'))).toHaveLength(2);
   for (const [pseudo, course] of INSCRIPTIONS) {
     expect(lignesEtat.filter((l) => l === `${etat} : ${pseudo} (inscription à ${course})`), `${pseudo} / ${course}`).toHaveLength(1);
   }
@@ -219,7 +222,7 @@ test.describe('Données de démonstration, base neuve', () => {
   test.skip(SCENARIO !== 'neuve', 'scénario réservé à une base neuve (DEMO_SCENARIO=neuve)');
   test.describe.configure({ mode: 'serial' });
 
-  test('CA1 et CA13 - le premier lancement crée vingt-trois éléments, les comptes se connectent et les courses sont listées', async ({ page, request, playwright }) => {
+  test('CA1 et CA13 - le premier lancement crée vingt-cinq éléments, les comptes se connectent et les courses sont listées', async ({ page, request, playwright }) => {
     const r = await lancerScript({ env: envAdminMaster() });
     expect(r.code, `sortie : ${r.sortie}\nerreur : ${r.erreur}`).toBe(0);
     verifierSeptElements(r, 'créé');
@@ -278,7 +281,7 @@ test.describe('Données de démonstration, base neuve', () => {
     }
   });
 
-  test('CA2 et CA13 - la relance ne crée rien : vingt-trois éléments déjà présents et une seule course de chaque nom', async ({ request }) => {
+  test('CA2 et CA13 - la relance ne crée rien : vingt-cinq éléments déjà présents et une seule course de chaque nom', async ({ request }) => {
     const r = await lancerScript({ env: envAdminMaster() });
     expect(r.code, `sortie : ${r.sortie}\nerreur : ${r.erreur}`).toBe(0);
     verifierSeptElements(r, 'déjà présent');
@@ -289,6 +292,46 @@ test.describe('Données de démonstration, base neuve', () => {
     for (const nom of NOMS_COURSES) {
       expect(courses.filter((c) => c['nom'] === nom), nom).toHaveLength(1);
     }
+  });
+
+  test('CA32 - Karim (JPEG) et Sophie (PNG) ont une photo décodable servie publiquement, Alice et Tom n\'en ont pas, la relance n\'en ajoute pas', async ({ playwright }) => {
+    const lirePhotoUrl = async (pseudo: string): Promise<string | null> => {
+      let url: string | null = null;
+      await avecContexte(playwright, async (ctx) => {
+        await connecterParApi(ctx, pseudo, 'un-mot-de-passe-12');
+        const r = await ctx.get('/api/comptes/moi');
+        expect(r.status(), pseudo).toBe(200);
+        url = ((await r.json()) as { photoUrl: string | null }).photoUrl;
+      });
+      return url;
+    };
+    const avant: Record<string, string | null> = {};
+    for (const pseudo of ['Karim', 'Sophie', 'Alice', 'Tom']) avant[pseudo] = await lirePhotoUrl(pseudo);
+    expect(avant['Alice']).toBeNull();
+    expect(avant['Tom']).toBeNull();
+    const attendu: Record<string, { type: string; signature: number[] }> = {
+      Karim: { type: 'image/jpeg', signature: [0xff, 0xd8, 0xff] },
+      Sophie: { type: 'image/png', signature: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] },
+    };
+    await avecContexte(playwright, async (anonyme) => {
+      for (const [pseudo, { type, signature }] of Object.entries(attendu)) {
+        expect(avant[pseudo], pseudo).toMatch(/^\/api\/photos\/[0-9a-f]{32}$/);
+        const r = await anonyme.get(avant[pseudo]!);
+        expect(r.status(), pseudo).toBe(200);
+        expect(r.headers()['content-type'], pseudo).toBe(type);
+        const octets = await r.body();
+        expect(octets.length, pseudo).toBeGreaterThan(100);
+        expect(octets.length, pseudo).toBeLessThan(50 * 1024);
+        expect([...octets.subarray(0, signature.length)], pseudo).toEqual(signature);
+      }
+    });
+
+    const r = await lancerScript({ env: envAdminMaster() });
+    expect(r.code, `sortie : ${r.sortie}\nerreur : ${r.erreur}`).toBe(0);
+    expect(lignes(r.sortie, 'créé')).toHaveLength(0);
+    expect(r.sortie).toContain('déjà présent : Karim (photo de profil)');
+    expect(r.sortie).toContain('déjà présent : Sophie (photo de profil)');
+    for (const pseudo of ['Karim', 'Sophie', 'Alice', 'Tom']) expect(await lirePhotoUrl(pseudo), pseudo).toBe(avant[pseudo]);
   });
 
   test('CA22 - Léo voit « Backyard de démo » et « Backyard du jour » à l\'accueil bénévole, Marc n\'en voit aucune', async ({ page, browser }) => {
@@ -377,7 +420,7 @@ test.describe('Données de démonstration, base neuve', () => {
 test.describe('Données de démonstration, lancement partiel', () => {
   test.skip(SCENARIO !== 'partiel', 'scénario réservé à une base neuve (DEMO_SCENARIO=partiel)');
 
-  test('CA2 et CA13 - avec Nadia et Backyard express déjà présents, deux éléments déjà présents et vingt et un créés', async ({ playwright }) => {
+  test('CA2 et CA13 - avec Nadia et Backyard express déjà présents, deux éléments déjà présents et vingt-trois créés', async ({ playwright }) => {
     await avecContexte(playwright, (ctx) => creerAdminParApi(ctx, 'Nadia', 'mot-de-passe-admin-1'));
     await avecContexte(playwright, (ctx) => creerCourseParApi(ctx, {
       nom: 'Backyard express', date: jourPlus(7), distanceBoucleMetres: 400, dureeBoucleMinutes: 1,
@@ -389,10 +432,10 @@ test.describe('Données de démonstration, lancement partiel', () => {
     const presents = lignes(r.sortie, 'déjà présent : ');
     const crees = lignes(r.sortie, 'créé : ');
     expect(presents).toHaveLength(2);
-    expect(crees).toHaveLength(21);
+    expect(crees).toHaveLength(23);
     expect(presents.join('\n')).toContain('Nadia');
     expect(presents.join('\n')).toContain('Backyard express');
-    for (const nom of ['Léo', 'Marc', 'Alice', 'Karim', 'Sophie', 'Tom', 'Backyard de démo', 'Backyard mini', 'Backyard du jour', 'Backyard du soir', 'Léo affecté à Backyard de démo', 'Léo affecté à Backyard du jour']) {
+    for (const nom of ['Léo', 'Marc', 'Alice', 'Karim', 'Sophie', 'Tom', 'Backyard de démo', 'Backyard mini', 'Backyard du jour', 'Backyard du soir', 'Léo affecté à Backyard de démo', 'Léo affecté à Backyard du jour', 'Karim (photo de profil)', 'Sophie (photo de profil)']) {
       expect(crees.join('\n')).toContain(nom);
     }
     verifierAucunSecret(r);
@@ -413,7 +456,7 @@ test.describe('Données de démonstration, course de même nom', () => {
     const presents = lignes(r.sortie, 'déjà présent : ');
     expect(presents).toHaveLength(1);
     expect(presents[0]).toContain('Backyard mini');
-    expect(lignes(r.sortie, 'créé : ')).toHaveLength(22);
+    expect(lignes(r.sortie, 'créé : ')).toHaveLength(24);
 
     const mini = (await coursesParApi(request)).filter((c) => c['nom'] === 'Backyard mini');
     expect(mini).toHaveLength(1);
@@ -543,7 +586,7 @@ test.describe('Données de démonstration, documentation', () => {
     expect(entete).toMatch(/date du jour à Paris/);
     // pluriel depuis 6.4 : « du jour » et « du soir » ne sont plus démarrables
     expect(entete).toMatch(/(n'est|ne sont) plus démarrables?/);
-    expect(entete).toMatch(/23 éléments/);
+    expect(entete).toMatch(/25 éléments/);
     // 6.4 RG14 : la Course du soir (5 min)
     expect(entete).toContain('Backyard du soir');
   });

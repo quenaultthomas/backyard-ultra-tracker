@@ -442,7 +442,7 @@ class CompteIntegrationTest {
         List<String> changesets = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
         assertThat(changesets).containsExactly("0002-compte", "0003-admin-master-unique", "0004-course", "0005-logo-course",
                 "0006-affectation-benevole", "0007-inscription",
-                "0008-demarrage-course", "0009-passage", "0010-abandon-inscription", "0011-compte-actif");
+                "0008-demarrage-course", "0009-passage", "0010-abandon-inscription", "0011-compte-actif", "0012-photo-compte");
 
         Map<String, Map<String, Object>> colonnes = new java.util.HashMap<>();
         jdbc.queryForList("""
@@ -450,7 +450,7 @@ class CompteIntegrationTest {
                 from information_schema.columns where table_schema = 'public' and table_name = 'compte'""")
                 .forEach(c -> colonnes.put((String) c.get("column_name"), c));
         assertThat(colonnes.keySet()).containsExactlyInAnyOrder(
-                "id", "pseudo", "pseudo_normalise", "empreinte_mot_de_passe", "role", "cree_le", "actif");
+                "id", "pseudo", "pseudo_normalise", "empreinte_mot_de_passe", "role", "cree_le", "actif", "photo_jeton", "photo_format");
         assertThat(colonnes.get("id").get("data_type")).isEqualTo("uuid");
         assertThat(colonnes.get("pseudo").get("character_maximum_length")).isEqualTo(30);
         assertThat(colonnes.get("pseudo").get("is_nullable")).isEqualTo("NO");

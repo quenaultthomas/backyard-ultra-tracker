@@ -478,7 +478,7 @@ class PilotageBouclageIntegrationTest {
         List<String> ids = jdbc.queryForList("select id from databasechangelog order by orderexecuted", String.class);
 
         assertThat(ids).isNotEmpty();
-        assertThat(ids.get(ids.size() - 1)).isEqualTo("0011-compte-actif");
+        assertThat(ids.get(ids.size() - 1)).isEqualTo("0012-photo-compte");
     }
 
     @Test

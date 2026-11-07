@@ -24,7 +24,9 @@ class LogoArchitectureTest {
                 .or().haveSimpleName("FormatLogo")
                 .or().haveSimpleName("DepotLogos")
                 .should().resideInAPackage(COURSES + "domaine..")
-                .andShould().onlyDependOnClassesThat().resideInAnyPackage("java..", COURSES + "domaine..")
+                .andShould().onlyDependOnClassesThat().resideInAnyPackage("java..", COURSES + "domaine..",
+                        // 10.1a RG15b : seule autorisation ajoutée, le domaine partagé (FormatImage)
+                        "fr.backyard.tracker.partage.domaine..")
                 .as("CA8 : Logo, FormatLogo et DepotLogos sont dans courses.domaine, sans Spring, JPA ni Jackson")
                 .check(classes);
     }

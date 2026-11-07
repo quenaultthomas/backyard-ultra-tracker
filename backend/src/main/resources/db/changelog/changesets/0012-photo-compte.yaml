@@ -1,0 +1,36 @@
+# Increment 10.1a : photo de profil d'un compte (contexte comptes). Les octets sont dans un fichier du volume photos,
+# nomme <jeton>.<extension> ; la base ne porte que le jeton public et le format, et reste la source de verite.
+# Comptes existants : sans photo (colonnes nulles).
+databaseChangeLog:
+  - changeSet:
+      id: 0012-photo-compte
+      author: backyard-ultra-tracker
+      changes:
+        - addColumn:
+            tableName: compte
+            columns:
+              - column:
+                  name: photo_jeton
+                  type: varchar(32)
+                  constraints:
+                    nullable: true
+                    unique: true
+                    uniqueConstraintName: uk_compte_photo_jeton
+              - column:
+                  name: photo_format
+                  type: varchar(5)
+                  constraints:
+                    nullable: true
+        - sql:
+            sql: >-
+              alter table compte
+              add constraint ck_compte_photo_jeton_format check (photo_jeton ~ '^[0-9a-f]{32}$'),
+              add constraint ck_compte_photo_format check (photo_format in ('PNG', 'JPEG', 'WEBP')),
+              add constraint ck_compte_photo_coherente check ((photo_jeton is null) = (photo_format is null))
+      rollback:
+        - dropColumn:
+            tableName: compte
+            columnName: photo_format
+        - dropColumn:
+            tableName: compte
+            columnName: photo_jeton

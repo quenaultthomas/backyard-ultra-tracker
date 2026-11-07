@@ -20,7 +20,9 @@ class CoursesArchitectureTest {
     @ArchTest
     static void ca9_le_domaine_courses_ne_depend_que_de_java_et_de_son_propre_domaine(JavaClasses classes) {
         classes().that().resideInAPackage(COURSES + "domaine..")
-                .should().onlyDependOnClassesThat().resideInAnyPackage("java..", COURSES + "domaine..")
+                .should().onlyDependOnClassesThat().resideInAnyPackage("java..", COURSES + "domaine..",
+                        // 10.1a RG15b : seule autorisation ajoutée, le domaine partagé (FormatImage)
+                        "fr.backyard.tracker.partage.domaine..")
                 .as("CA9 : le domaine courses est pur (sans Spring, JPA ni Jackson)")
                 .check(classes);
     }

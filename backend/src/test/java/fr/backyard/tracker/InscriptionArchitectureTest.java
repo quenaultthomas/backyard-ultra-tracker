@@ -32,7 +32,9 @@ class InscriptionArchitectureTest {
     @ArchTest
     static void ca3_le_domaine_courses_reste_pur(JavaClasses classes) {
         classes().that().resideInAPackage(COURSES + "domaine..")
-                .should().onlyDependOnClassesThat().resideInAnyPackage("java..", COURSES + "domaine..")
+                .should().onlyDependOnClassesThat().resideInAnyPackage("java..", COURSES + "domaine..",
+                        // 10.1a RG15b : seule autorisation ajoutée, le domaine partagé (FormatImage)
+                        "fr.backyard.tracker.partage.domaine..")
                 .as("CA3 : le domaine courses ne dépend ni de Spring, ni de JPA, ni de Jackson")
                 .check(classes);
     }
