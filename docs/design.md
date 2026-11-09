@@ -15,7 +15,7 @@ Univers : une boucle de 6,7 km refaite toutes les heures, en forêt, de jour. D�
 
 ## 2. Palette
 
-Le thème n'emploie aucune autre couleur (ni noir pur, ni blanc pur), à une exception près : le QR code d'une Inscription reste noir sur blanc pour la lecture par caméra. La feuille imprimée du dossard (section 11, « Dossard ») emploie aussi le noir et le blanc, par deux jetons d'impression dédiés, jamais à l'écran. Cette exception est maintenue en contraste forcé (`forced-colors: active`) : le QR porte `forced-color-adjust: none`, car un QR recoloré ou inversé ne se scanne plus.
+Le thème n'emploie aucune autre couleur (ni noir pur, ni blanc pur), à une exception près : le QR code d'une Inscription reste noir sur blanc pour la lecture par caméra. La feuille imprimée du dossard (section 11, « Dossard ») emploie aussi le noir et le blanc, par deux jetons d'impression dédiés, jamais à l'écran. Le tableau de polaroïds du suivi public (section 11, « Tableau de polaroïds ») emploie trois couleurs de décor dédiées (liège, grain du liège, bois), jamais pour du texte. Cette exception est maintenue en contraste forcé (`forced-colors: active`) : le QR porte `forced-color-adjust: none`, car un QR recoloré ou inversé ne se scanne plus.
 
 | Variable | Hex | Usage |
 |---|---|---|
@@ -517,8 +517,8 @@ Notices hors ligne et bandeau de mise à jour (5.2), tous en `.message--info` (e
 - **Contraste de 7 au moins** pour tout texte de projection : encre sur crème (13,31) ou surface (14,63), forêt sur crème (11,86) ou surface (13,03), crème sur forêt (11,86). Exclus en projection : encre-douce sur crème (6,50) et orange sur forêt (5,44).
 - **Vainqueur** : bandeau forêt à texte crème, filet orange en aplat (jamais d'orange en texte) ; le mot « Vainqueur » est écrit.
 - **Abandons** : liste avec la Boucle et le motif en texte.
-- **Listes du suivi** (6.2, `suivi/coureurs-suivi/coureurs-suivi.css`) : sections `section.section-coureurs` (filet supérieur 1px trait, comme au pilotage) titrées `h2.sous-titre` avec l'effectif (« Coureurs en course (3) », « Abandons (1) »), puis `ul.lignes` sans puces. Ligne `li.ligne` : « Dossard N » (`.ligne__dossard`, graisse 700, forêt), pseudo (`.ligne__pseudo`, graisse 500, rendu en texte), et pour un abandon « Boucle N » (`.ligne__detail`, encre) et le motif en pastille `.pastille-statut--abandon` (libellés du pilotage) ou « Boucle non renseignée » / « Motif non renseigné » en texte ; éléments passés à la ligne quand la place manque, mots coupés (`overflow-wrap: anywhere`), filet bas 1px trait entre lignes. Liste vide : phrase simple encre (« Aucun coureur en course. », « Aucun abandon. »). Ni troncature ni pagination ni défilement interne.
-- **Bandeau vainqueur** (6.2) : `section.vainqueurs`, fond forêt, texte crème (11,86), `--rayon-m`, `padding: var(--espace-4)`, filet supérieur `var(--espace-1)` orange en aplat ; titre « Vainqueur » / « Vainqueurs » en crème ; lignes en `--taille-grande`, dossard crème, filets forêt-survol.
+- **Listes du suivi** (6.2, `suivi/coureurs-suivi/coureurs-suivi.css`) : sections `section.section-coureurs` (filet supérieur 1px trait, comme au pilotage) titrées `h2.sous-titre` avec l'effectif (« Coureurs en course (3) », « Abandons (1) »), puis `ul.lignes` sans puces (depuis 10.2, « Coureurs en course » est un tableau de polaroïds : section « Tableau de polaroïds »). Ligne `li.ligne` : « Dossard N » (`.ligne__dossard`, graisse 700, forêt), pseudo (`.ligne__pseudo`, graisse 500, rendu en texte), et pour un abandon « Boucle N » (`.ligne__detail`, encre) et le motif en pastille `.pastille-statut--abandon` (libellés du pilotage) ou « Boucle non renseignée » / « Motif non renseigné » en texte ; éléments passés à la ligne quand la place manque, mots coupés (`overflow-wrap: anywhere`), filet bas 1px trait entre lignes. Liste vide : phrase simple encre (« Aucun coureur en course. », « Aucun abandon. »). Ni troncature ni pagination ni défilement interne.
+- **Bandeau vainqueur** (6.2) : `section.vainqueurs`, fond forêt, texte crème (11,86), `--rayon-m`, `padding: var(--espace-4)`, filet supérieur `var(--espace-1)` orange en aplat ; titre « Vainqueur » / « Vainqueurs » en crème ; depuis 10.2, un grand polaroïd droit par vainqueur (section « Tableau de polaroïds »).
 - **Statistiques** (6.3, `suivi/statistiques-suivi/statistiques-suivi.css`) : `section.statistiques` (filet supérieur 1px trait, comme les listes) titrée `h2.sous-titre` « Statistiques », placée après le bandeau vainqueur et avant « Coureurs en course ». `dl.statistiques__liste` en grille (`repeat(auto-fit, minmax(min(100%, 11em), 1fr))`, colonnes en `em` pour s'élargir en projection) de `div.statistique` : libellé `dt` (`--taille-secondaire`, encre-douce, toujours présent) puis valeur `dd.statistique__valeur` (`--taille-statistique`, graisse 700, forêt, chiffres tabulaires de `body`, largeur réservée `min(100%, 10ch)`, mots coupés par la carte). Libellés : « Une boucle » (« 6,70 km, 35 m D+ »), « Boucles terminées », « Distance cumulée » (« 13,40 km »), « Dénivelé cumulé » (« 70 m D+ »), « Allure moyenne » (« 7:13 /km » ou « Non disponible »). Aucun `aria-live`.
 - **Durée de la course** (6.3, Course terminée) : bloc `.chronometrage` sous « La course est terminée. », libellé « Durée de la course » et valeur `HH:MM:SS` en `.chronometrage__valeur`, figée.
 - **Bouton « Plein écran »** (6.3) : `.bouton.bouton--secondaire` sous l'en-tête de Course (44 px), libellé « Plein écran » puis « Quitter le plein écran » dans le même élément. Repli sans API Fullscreen : `.message--info` (`role="status"`) « Plein écran indisponible sur cet appareil : affichage agrandi seulement. ».
@@ -535,6 +535,44 @@ Notices hors ligne et bandeau de mise à jour (5.2), tous en `.message--info` (e
 Valeurs de départ (spec 6.3, point ouvert 4) à ajuster en situation réelle (projecteur, distance).
 - Aucune cible tactile exigée en projection ; hors projection, les contrôles gardent 44 px.
 - `prefers-reduced-motion` respecté ; aucune animation décorative.
+
+### Tableau de polaroïds
+
+Section « Coureurs en course » du suivi public (10.2) : un polaroïd épinglé par coureur sur un panneau de liège ; vainqueur(s) en grand polaroïd droit dans le bandeau. Livré par `suivi/coureurs-suivi/coureurs-suivi.css` (tableau, paliers, bandeau) et `suivi/polaroid-coureur/polaroid-coureur.css` (polaroïd, épingle). Valeurs de départ (spec 10.2, point ouvert 2) à valider sur un vrai projecteur.
+
+| Variable | Valeur | Usage |
+|---|---|---|
+| `--couleur-liege` | `#C8A06C` | fond du tableau (jamais de texte posé dessus) |
+| `--couleur-liege-grain` | `#A9814F` | grain du liège (points en dégradé radial) |
+| `--couleur-bois` | `#7A5230` | cadre du tableau (bois / crème : 6,06) |
+| `--couleur-epingle` | `var(--couleur-danger)` | tête de l'épingle (danger / liège : 3,38 ; danger / surface : 7,95) |
+| `--couleur-cadre-polaroid` | `var(--couleur-surface)` | cadre blanc cassé du polaroïd, fond de la légende |
+| `--fond-liege` | `radial-gradient(var(--couleur-liege-grain) 0.0625rem, transparent 0.1rem) 0 0 / 0.4375rem 0.4375rem, radial-gradient(var(--couleur-liege-grain) 0.0625rem, transparent 0.1rem) 0.1875rem 0.3125rem / 0.6875rem 0.6875rem, var(--couleur-liege)` | fond liège en CSS pur (aucune image, aucune requête) |
+| `--epaisseur-cadre-bois` | `0.625rem` | bordure de bois du tableau |
+| `--ombre-tableau` | `inset 0 0 0.75rem rgb(20 53 42 / 0.35)` | ombre intérieure du tableau |
+| `--ombre-polaroid` | `0 1px 2px rgb(20 53 42 / 0.30), 0 4px 10px rgb(20 53 42 / 0.25)` | ombre portée du polaroïd |
+| `--ombre-epingle` | `0 1px 2px rgb(20 53 42 / 0.45)` | ombre de l'épingle |
+| `--taille-epingle` | `0.875rem` | diamètre de l'épingle |
+| `--taille-legende-polaroid` | `0.8125rem` | légende des paliers petit et compact (13 px, minimum de l'interface) |
+| `--taille-legende-polaroid-projection` | `var(--taille-projection-texte)` | légende des paliers petit et compact en projection (24 px, comme tout le texte projeté) |
+| `--polaroid-largeur-grand` | `13.75rem` | jusqu'à 12 coureurs (220 px) |
+| `--polaroid-largeur-moyen` | `10rem` | 13 à 30 coureurs (160 px) |
+| `--polaroid-largeur-petit` | `7.5rem` | 31 à 60 coureurs (120 px) |
+| `--polaroid-largeur-compact` | `6rem` | plus de 60 coureurs (96 px) |
+| `--polaroid-largeur-vainqueur` | `17.5rem` | polaroïd d'un vainqueur (280 px) |
+| `--polaroid-largeur-projection-grand` | `20rem` | palier grand en projection (320 px) |
+| `--polaroid-largeur-projection-moyen` | `13.75rem` | palier moyen en projection (220 px) |
+| `--polaroid-largeur-projection-petit` | `12.5rem` | palier petit en projection (200 px : « Dossard N » sur une ligne à 24 px) |
+| `--polaroid-largeur-projection-compact` | `10rem` | palier compact en projection (160 px : pseudo lisible sur deux lignes à 24 px) |
+| `--polaroid-largeur-projection-vainqueur` | `25rem` | polaroïd d'un vainqueur en projection (400 px) |
+
+- **Tableau** `ul.tableau.tableau--<palier>` (`suivi-tableau`, attribut `data-palier`) : cadre `--epaisseur-cadre-bois` de bois, `--rayon-s`, fond `--fond-liege`, `--ombre-tableau`, grille `repeat(auto-fill, min(100%, largeur du palier))` centrée, passée à la ligne (aucun défilement horizontal ni interne), `overflow: clip`. Palier choisi par le front d'après la seule longueur de la liste reçue (`suivi/palier-tableau.ts`) : grand (<= 12), moyen (13 à 30), petit (31 à 60), compact (> 60). Paliers petit et compact : marge de polaroïd et écarts réduits, et carte de la page pleine largeur (`.suivi--large`, `--carte-largeur: none`) pour que 100 polaroïds tiennent sur un écran 1920 × 1080. Sans coureur en course : pas de tableau, phrase « Aucun coureur en course. ».
+- **Polaroïd** `figure.polaroid` (`app-polaroid-coureur`) : cadre `--couleur-cadre-polaroid`, `padding` `--espace-2` (`--espace-1` aux paliers petit et compact) et `--espace-3` en bas, `--ombre-polaroid` ; photo carrée (`aspect-ratio: 1`, `object-fit: cover`, fond sable réservé avant chargement) ou silhouette (même illustration que Mon compte, `partage/silhouette.ts`, URL `data:`) ; légende centrée, interligne `--interligne-titre`, pseudo en graisse 500 coupé (`overflow-wrap: anywhere`, deux lignes au plus sur le tableau), « Dossard N » (« n° N » au palier compact) en graisse 700 forêt. Contrastes : encre / surface 14,63, forêt / surface 13,03 (>= 7, valable en projection). Taille de la légende : `--taille-base` (grand), `--taille-secondaire` (moyen), `--taille-legende-polaroid` (petit, compact) ; en projection les deux premières deviennent `--taille-projection-texte`, la troisième `--taille-legende-polaroid-projection`.
+- **Épingle** `div.polaroid__epingle` (`aria-hidden`) : disque `--taille-epingle`, dégradé radial reflet crème puis `--couleur-epingle`, `--ombre-epingle`, centrée à cheval sur le haut du cadre.
+- **Inclinaison** : `((dossard × 7) mod 9) − 4` degrés (−4 à +4), calculée par le composant, posée par l'attribut `data-inclinaison` et appliquée par `transform: rotate()` sur le `figure` (aucun style en ligne). Statique : ni transition ni animation, en `prefers-reduced-motion` comme ailleurs.
+- **Vainqueur** : même composant, largeur `--polaroid-largeur-vainqueur`, droit (aucune rotation), sans épingle, bord `var(--espace-1)` orange en aplat (orange / forêt : 5,44), légende en `--taille-grande` et pseudo entier ; polaroïds côte à côte dans `ul.vainqueurs__polaroids`, passés à la ligne.
+- **Projection** : la racine `.suivi--projection` redéfinit les cinq largeurs `--polaroid-largeur-*` par leurs équivalents `--polaroid-largeur-projection-*`, et `--taille-legende-polaroid` par `--taille-legende-polaroid-projection` : en projection, pseudo et dossard font 24 px à tous les paliers (pseudo coupé à deux lignes au plus), sans défilement horizontal ; à 100 coureurs, le tableau dépasse la hauteur de l'écran et se parcourt par le défilement vertical de la page.
+- Le bord blanc cassé du polaroïd sur le liège (surface / liège : 2,36) n'est pas une bordure porteuse d'information : chaque polaroïd est identifié par sa légende, et l'ombre le détache du fond.
 
 ## 12. Icône de l'application
 

@@ -8,10 +8,9 @@ test.beforeAll(() => {
 
 const ATTENDUES: Record<string, string> = { ...PALETTE, ...ALIAS, ...AUTRES_VARIABLES };
 
-/** Une propriété personnalisée se lit une fois ses `var()` résolus : l'alias vaut la valeur de la variable visée. */
+/** Une propriété personnalisée se lit une fois ses `var()` résolus (y compris dans une valeur composée). */
 function valeurResolue(attendue: string): string {
-  const reference = /^var\((--[a-z-]+)\)$/.exec(attendue)?.[1];
-  return reference ? ATTENDUES[reference] : attendue;
+  return attendue.replace(/var\((--[a-z-]+)\)/g, (_m, reference: string) => valeurResolue(ATTENDUES[reference]));
 }
 
 test('CA1 - les variables de la charte ont les valeurs de la spec et aucun nom anglais n\'est défini', async ({ page }) => {

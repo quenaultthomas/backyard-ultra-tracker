@@ -37,17 +37,20 @@ public record SuiviCourseReponse(UUID courseId, String nom, String logoUrl, Stat
                                  long denivelePositifCumuleMetres, Long allureSecondesParKilometre,
                                  Long dureeFinaleMillisecondes) {
 
-    /** Coureur en course ou vainqueur : dossard et pseudo uniquement. */
-    public record CoureurSuiviReponse(int dossard, String pseudo) {
+    /**
+     * Coureur en course ou vainqueur : dossard, pseudo et adresse relative de sa photo ({@code /api/photos/<jeton>}),
+     * null sans photo (10.2 RG1).
+     */
+    public record CoureurSuiviReponse(int dossard, String pseudo, String photoUrl) {
 
-        /** Dossard uniquement. */
+        /** Dossard uniquement : ni pseudo ni adresse de photo (10.2 RG4). */
         @Override
         public String toString() {
             return "CoureurSuiviReponse[dossard=" + dossard + "]";
         }
 
         static List<CoureurSuiviReponse> depuis(List<ConsulterSuivi.CoureurSuivi> coureurs) {
-            return coureurs.stream().map(c -> new CoureurSuiviReponse(c.dossard(), c.pseudo())).toList();
+            return coureurs.stream().map(c -> new CoureurSuiviReponse(c.dossard(), c.pseudo(), c.photoUrl())).toList();
         }
     }
 

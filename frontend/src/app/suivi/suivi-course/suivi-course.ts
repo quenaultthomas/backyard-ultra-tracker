@@ -21,6 +21,7 @@ import {
 } from '../../partage/chronometrage/formats-duree';
 import { MESSAGE_SERVICE_INDISPONIBLE } from '../../partage/probleme';
 import { CoureursSuivi } from '../coureurs-suivi/coureurs-suivi';
+import { estPalierLarge, palierTableau } from '../palier-tableau';
 import { ProjectionSuivi } from '../projection-suivi';
 import { RafraichissementSuivi } from '../rafraichissement-suivi';
 import { StatistiquesSuivi } from '../statistiques-suivi/statistiques-suivi';
@@ -71,6 +72,11 @@ export class SuiviCourse implements OnInit {
         ? annoncerFin(suivant)
         : ''),
   });
+
+  /** Tableau de polaroïds aux paliers petit et compact : la carte prend toute la largeur. */
+  protected readonly tableauLarge = computed(() =>
+    estPalierLarge(palierTableau(this.suivi()?.coureursEnCourse.length ?? 0)),
+  );
 
   /** 404 `COURSE_INTROUVABLE` : actualisation arrêtée. */
   protected readonly introuvable = signal(false);

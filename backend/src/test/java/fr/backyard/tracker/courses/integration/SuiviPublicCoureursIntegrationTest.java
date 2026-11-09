@@ -54,7 +54,8 @@ class SuiviPublicCoureursIntegrationTest {
             "vainqueurs", "distanceBoucleMetres", "denivelePositifBoucleMetres", "bouclesTerminees",
             "distanceCumuleeMetres", "denivelePositifCumuleMetres", "allureSecondesParKilometre",
             "dureeFinaleMillisecondes");
-    static final List<String> CHAMPS_COUREUR = List.of("dossard", "pseudo");
+    // 10.2 RG1 : les lignes de coureur en course et de vainqueur portent aussi photoUrl
+    static final List<String> CHAMPS_COUREUR = List.of("dossard", "pseudo", "photoUrl");
     static final List<String> CHAMPS_ABANDON = List.of("dossard", "pseudo", "boucleAbandon", "motifAbandon");
     static final String ANONYME = "Coureur anonyme";
 
@@ -321,7 +322,7 @@ class SuiviPublicCoureursIntegrationTest {
     // ---------------------------------------------------------------- CA12
 
     @Test
-    @DisplayName("CA12 : 3 puis 60 Inscriptions de Comptes distincts : même nombre d'instructions SQL, exactement 3 de plus qu'en EN_PREPARATION (6.3 CA14 remplace 2 par 3 : Passages en plus), lecture de Passage groupée")
+    @DisplayName("CA12 : 3 puis 60 Inscriptions de Comptes distincts : même nombre d'instructions SQL, exactement 4 de plus qu'en EN_PREPARATION (6.3 CA14 remplace 2 par 3 : Passages en plus ; 10.2 RG2 : photos en plus), lecture de Passage groupée")
     void ca12_nombre_de_requetes_independant_du_nombre_d_inscrits() throws Exception {
         UUID petite = courseEnCours("Petite");
         UUID grande = courseEnCours("Grande");
@@ -348,7 +349,8 @@ class SuiviPublicCoureursIntegrationTest {
         long enPreparation = requetes(statistiques, preparation);
 
         assertThat(pour60).as("même nombre d'instructions SQL pour 3 et 60 inscrits (pas de N+1)").isEqualTo(pour3);
-        assertThat(pour3 - enPreparation).as("Inscriptions, pseudos et Passages s'ajoutent (6.3 RG9)").isEqualTo(3);
+        assertThat(pour3 - enPreparation).as("Inscriptions, pseudos, photos et Passages s'ajoutent (6.3 RG9, 10.2 RG2)")
+                .isEqualTo(4);
         assertThat(corps(grande).get("coureursEnCourse")).hasSize(40);
         assertThat(corps(grande).get("abandons")).hasSize(20);
         // les instructions ajoutées (Inscriptions, pseudos, Passages) sont absentes en EN_PREPARATION

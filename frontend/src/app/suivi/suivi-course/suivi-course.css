@@ -3,13 +3,19 @@
   --carte-largeur: 44rem;
 }
 
+/* Tableau de plus de 30 polaroïds (paliers petit et compact) : carte pleine largeur. */
+.suivi--large {
+  --carte-largeur: none;
+}
+
 .suivi-bouton-projection {
   align-self: flex-start;
 }
 
 /*
  * Mode projection (6.3, jetons --taille-projection-*) : la racine redéfinit pour toute la page,
- * composants enfants compris, les jetons de taille (texte courant à 1,5 rem au moins) et les
+ * composants enfants compris, les jetons de taille (texte courant à 1,5 rem au moins, polaroïds
+ * agrandis par les jetons --polaroid-largeur-projection-*, 10.2) et les
  * couleurs de texte sous 7 de contraste (encre-douce, orange-foncé, danger) ; carte pleine largeur,
  * fond opaque et défilement vertical en plein écran. Aucune animation.
  */
@@ -21,6 +27,12 @@
   --taille-grande: var(--taille-projection-titre);
   --taille-titre: var(--taille-projection-titre);
   --taille-statistique: var(--taille-projection-statistique);
+  --polaroid-largeur-grand: var(--polaroid-largeur-projection-grand);
+  --polaroid-largeur-moyen: var(--polaroid-largeur-projection-moyen);
+  --polaroid-largeur-petit: var(--polaroid-largeur-projection-petit);
+  --polaroid-largeur-compact: var(--polaroid-largeur-projection-compact);
+  --polaroid-largeur-vainqueur: var(--polaroid-largeur-projection-vainqueur);
+  --taille-legende-polaroid: var(--taille-legende-polaroid-projection);
   --couleur-encre-douce: var(--couleur-encre);
   --couleur-orange-fonce: var(--couleur-encre);
   --couleur-danger: var(--couleur-danger-survol);

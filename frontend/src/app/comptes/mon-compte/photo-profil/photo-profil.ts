@@ -18,6 +18,7 @@ import { Observable, finalize, switchMap } from 'rxjs';
 import { CsrfService } from '../../../partage/csrf.service';
 import { lireImage } from '../../../partage/lecture-image';
 import { MESSAGE_SERVICE_INDISPONIBLE } from '../../../partage/probleme';
+import { SILHOUETTE } from '../../../partage/silhouette';
 import { Role } from '../../compte';
 import { ComptesApiService } from '../../comptes-api.service';
 import { ErreursSpecifiques, interpreterErreurFormulaire } from '../../erreurs-compte';
@@ -40,13 +41,6 @@ const ERREURS_PHOTO: ErreursSpecifiques = {
   PHOTO_FORMAT_INVALIDE: { generale: 'La photo doit être une image PNG, JPEG ou WebP.' },
   PHOTO_REQUISE: { generale: 'Le fichier de la photo est obligatoire.' },
 };
-
-/** Silhouette par défaut, en URL `data:` : jamais chargée depuis le réseau. */
-const SILHOUETTE =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E" +
-  "%3Crect width='160' height='160' fill='%23EFE6D0'/%3E" +
-  "%3Ccircle cx='80' cy='62' r='28' fill='%234A5A50'/%3E" +
-  "%3Cpath d='M26 160c0-32 24-56 54-56s54 24 54 56Z' fill='%234A5A50'/%3E%3C/svg%3E";
 
 /** Photo et rôle du Compte, tels que renvoyés par `GET /api/comptes/moi`. */
 interface ComptePhoto {

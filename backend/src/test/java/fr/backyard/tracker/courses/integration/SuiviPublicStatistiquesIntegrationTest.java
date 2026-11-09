@@ -211,7 +211,7 @@ class SuiviPublicStatistiquesIntegrationTest {
     // ---------------------------------------------------------------- CA14
 
     @Test
-    @DisplayName("CA14 : 3 puis 60 Inscriptions de 3 Passages chacune : même nombre d'instructions SQL, exactement 3 de plus qu'en EN_PREPARATION et 2 de plus qu'en EN_COURS sans Inscription, pas de lecture Passage par Passage ni par Inscription")
+    @DisplayName("CA14 : 3 puis 60 Inscriptions de 3 Passages chacune : même nombre d'instructions SQL, exactement 4 de plus qu'en EN_PREPARATION et 3 de plus qu'en EN_COURS sans Inscription (10.2 RG2 : photos), pas de lecture Passage par Passage ni par Inscription")
     void ca14_nombre_d_instructions_independant_des_inscrits_et_des_passages() throws Exception {
         UUID petite = coursesql("Petite", "EN_COURS", T0);
         UUID grande = coursesql("Grande", "EN_COURS", T0);
@@ -232,15 +232,15 @@ class SuiviPublicStatistiquesIntegrationTest {
         long sansCoureur = requetes(statistiques, sansInscription);
 
         assertThat(pour60).as("indépendant du nombre d'inscrits et de Passages (pas de N+1)").isEqualTo(pour3);
-        assertThat(pour3 - enPreparation).as("Inscriptions, pseudos, Passages").isEqualTo(3);
+        assertThat(pour3 - enPreparation).as("Inscriptions, pseudos, photos (10.2 RG2), Passages").isEqualTo(4);
         assertThat(sansCoureur - enPreparation).as("sans Inscription : seules les Inscriptions sont lues").isEqualTo(1);
-        assertThat(pour3 - sansCoureur).as("pseudos et Passages omis sans Inscription").isEqualTo(2);
+        assertThat(pour3 - sansCoureur).as("pseudos, photos et Passages omis sans Inscription").isEqualTo(3);
         JsonNode corps = corps(grande.toString());
         assertThat(corps.get("bouclesTerminees").asInt()).isEqualTo(3);
         assertThat(corps.get("coureursEnCourse")).hasSize(60);
 
         // une seule instruction lit les Passages : 180 Passages sur 60 Inscriptions ne coûtent pas une instruction de plus
-        // que 9 Passages sur 3 Inscriptions (égalité pour3 / pour60 ci-dessus) et l'écart avec EN_PREPARATION est de 3.
+        // que 9 Passages sur 3 Inscriptions (égalité pour3 / pour60 ci-dessus) et l'écart avec EN_PREPARATION est de 4.
     }
 
     // ---------------------------------------------------------------- CA15

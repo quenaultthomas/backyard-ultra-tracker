@@ -147,7 +147,7 @@ const PSEUDO_LONG = 'A'.repeat(30);
 const PSEUDO_HTML = '<b>x</b>';
 
 function lignes(n: number, depart: number) {
-  return Array.from({ length: n }, (_, i) => ({ dossard: depart + i, pseudo: `coureur-${depart + i}` }));
+  return Array.from({ length: n }, (_, i) => ({ dossard: depart + i, pseudo: `coureur-${depart + i}`, photoUrl: null }));
 }
 
 /** Réponse simulée : 40 coureurs en course (dont pseudo long et pseudo HTML) et 6 abandons ; le pseudo n'est jamais interprété. */
@@ -167,13 +167,13 @@ function reponseChargee(statut: 'EN_COURS' | 'TERMINEE'): string {
       tempsAvantFinBoucleMillisecondes: null,
       dureeEcouleeMillisecondes: null,
       coureursEnCourse: [],
-      vainqueurs: [{ dossard: 1, pseudo: PSEUDO_LONG }],
+      vainqueurs: [{ dossard: 1, pseudo: PSEUDO_LONG, photoUrl: null }],
       abandons,
     });
   }
   const coureurs = lignes(40, 1);
-  coureurs[0] = { dossard: 1, pseudo: PSEUDO_LONG };
-  coureurs[1] = { dossard: 2, pseudo: PSEUDO_HTML };
+  coureurs[0] = { dossard: 1, pseudo: PSEUDO_LONG, photoUrl: null };
+  coureurs[1] = { dossard: 2, pseudo: PSEUDO_HTML, photoUrl: null };
   return reponseSuivi({ coureursEnCourse: coureurs, abandons, vainqueurs: [] });
 }
 
@@ -221,7 +221,7 @@ test('CA25 - listes responsives et accessibles : 40 lignes, 6 abandons, pseudo l
     // Pseudo long : lisible (texte intégral présent) et dans la carte
     await expect(lire(page, 'suivi-coureur-1')).toContainText(PSEUDO_LONG);
     const debord = await page.evaluate(() => {
-      const ligne = document.querySelector('[data-testid="suivi-coureur-1"] .ligne__pseudo') as HTMLElement;
+      const ligne = document.querySelector('[data-testid="suivi-coureur-1"] [data-testid="suivi-polaroid-pseudo"]') as HTMLElement;
       const carte = document.querySelector('main section') as HTMLElement;
       return ligne.getBoundingClientRect().right - carte.getBoundingClientRect().right;
     });

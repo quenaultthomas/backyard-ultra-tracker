@@ -6,8 +6,10 @@ import fr.backyard.tracker.comptes.domaine.PhotoNonAutoriseeException;
 import java.net.URI;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -59,12 +61,13 @@ public class GestionnaireErreursPhoto {
                 "ACCES_REFUSE");
     }
 
+    /** Jamais mis en cache (10.2 RG5) : une absence n'est pas mémorisée par le navigateur. */
     @ExceptionHandler(PhotoIntrouvableException.class)
-    ProblemDetail photoIntrouvable() {
+    ResponseEntity<ProblemDetail> photoIntrouvable() {
         ProblemDetail probleme = probleme(HttpStatus.NOT_FOUND, "Introuvable", "La photo est introuvable.",
                 "PHOTO_INTROUVABLE");
         probleme.setInstance(INSTANCE_PHOTOS);
-        return probleme;
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).cacheControl(CacheControl.noStore()).body(probleme);
     }
 
     private static ProblemDetail probleme(HttpStatus statut, String titre, String detail, String code) {

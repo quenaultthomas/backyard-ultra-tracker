@@ -92,6 +92,9 @@ export function reponseSuivi(surcharge: Record<string, unknown> = {}): string {
     denivelePositifCumuleMetres: 0,
     allureSecondesParKilometre: null,
     dureeFinaleMillisecondes: null,
+    coureursEnCourse: [],
+    abandons: [],
+    vainqueurs: [],
     ...surcharge,
   });
 }

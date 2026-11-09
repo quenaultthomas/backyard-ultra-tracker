@@ -1,5 +1,6 @@
-/* Listes publiques du suivi (docs/design.md, section 11 « Suivi public ») : vainqueur(s) en bandeau,
-   coureurs en course et abandons en lignes. Aucune animation : lignes suivies par dossard. */
+/* Listes publiques du suivi (docs/design.md, section 11 « Suivi public ») : vainqueur(s) en bandeau
+   de polaroïds, coureurs en course en tableau de liège, abandons en lignes. Aucun mouvement :
+   éléments suivis par dossard. */
 :host {
   display: flex;
   flex-direction: column;
@@ -76,11 +77,62 @@
   color: var(--couleur-encre);
 }
 
-.vainqueurs .ligne {
-  font-size: var(--taille-grande);
-  border-bottom-color: var(--couleur-foret-survol);
+/* Vainqueur(s) : grands polaroïds droits, côte à côte puis passés à la ligne, dans l'ordre reçu. */
+.vainqueurs__polaroids {
+  --polaroid-largeur: var(--polaroid-largeur-vainqueur);
+  --polaroid-taille-legende: var(--taille-grande);
+
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--espace-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.vainqueurs .ligne__dossard {
-  color: var(--couleur-creme);
+.vainqueurs__polaroids > li {
+  width: min(100%, var(--polaroid-largeur));
+}
+
+/* Tableau de liège (10.2) : cadre de bois, fond liège en CSS pur, grille de polaroïds de largeur
+   fixée par le palier, passée à la ligne (jamais de défilement horizontal ni interne). */
+.tableau {
+  --polaroid-largeur: var(--polaroid-largeur-grand);
+  --polaroid-taille-legende: var(--taille-base);
+
+  display: grid;
+  grid-template-columns: repeat(auto-fill, min(100%, var(--polaroid-largeur)));
+  justify-content: center;
+  gap: var(--espace-6) var(--espace-4);
+  margin: 0;
+  padding: var(--espace-6) var(--espace-4);
+  list-style: none;
+  border: var(--epaisseur-cadre-bois) solid var(--couleur-bois);
+  border-radius: var(--rayon-s);
+  background: var(--fond-liege);
+  box-shadow: var(--ombre-tableau);
+  overflow: clip;
+}
+
+.tableau--moyen {
+  --polaroid-largeur: var(--polaroid-largeur-moyen);
+  --polaroid-taille-legende: var(--taille-secondaire);
+}
+
+.tableau--petit,
+.tableau--compact {
+  --polaroid-marge: var(--espace-1);
+  --polaroid-taille-legende: var(--taille-legende-polaroid);
+
+  gap: var(--espace-3) var(--espace-2);
+  padding: var(--espace-4) var(--espace-3);
+}
+
+.tableau--petit {
+  --polaroid-largeur: var(--polaroid-largeur-petit);
+}
+
+.tableau--compact {
+  --polaroid-largeur: var(--polaroid-largeur-compact);
 }

@@ -1,0 +1,36 @@
+@let c = coureur();
+<figure
+  class="polaroid"
+  [class.polaroid--vainqueur]="vainqueur()"
+  [attr.data-inclinaison]="inclinaison()"
+  data-testid="suivi-polaroid"
+>
+  @if (!vainqueur()) {
+    <div class="polaroid__epingle" aria-hidden="true" data-testid="suivi-polaroid-epingle"></div>
+  }
+  @if (photo(); as url) {
+    <img
+      class="polaroid__photo"
+      [src]="url"
+      [alt]="'Photo de ' + c.pseudo"
+      decoding="async"
+      loading="lazy"
+      (error)="signalerPhotoEnErreur(url)"
+      data-testid="suivi-polaroid-photo"
+    />
+  } @else {
+    <img
+      class="polaroid__photo"
+      [src]="silhouette"
+      alt=""
+      aria-hidden="true"
+      data-testid="suivi-polaroid-silhouette"
+    />
+  }
+  <figcaption class="polaroid__legende">
+    <span class="polaroid__pseudo" data-testid="suivi-polaroid-pseudo">{{ c.pseudo }}</span>
+    <span class="polaroid__dossard" data-testid="suivi-polaroid-dossard"
+      >{{ compact() ? 'n°' : 'Dossard' }} {{ c.dossard }}</span
+    >
+  </figcaption>
+</figure>
