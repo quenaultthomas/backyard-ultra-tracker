@@ -1,11 +1,13 @@
 import { StatutCourse } from '../administration/courses/course';
 import { MotifAbandon } from '../administration/courses/pilotage-course';
 
-/** Ligne publique d'un coureur en course ou vainqueur (`CoureurSuivi`) : dossard et pseudo seulement. */
+/** Ligne publique d'un coureur en course ou vainqueur (`CoureurSuivi`) : dossard, pseudo et photo. */
 export interface CoureurSuivi {
   dossard: number;
   /** Pseudo tel que renvoyé par l'API (« Coureur anonyme », « Compte inconnu ») : affiché en texte. */
   pseudo: string;
+  /** Adresse relative de la photo publique (`/api/photos/<jeton>`), `null` sans photo. */
+  photoUrl: string | null;
 }
 
 /** Ligne publique d'un abandon (`AbandonSuivi`). */

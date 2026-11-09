@@ -82,4 +82,29 @@
   --taille-projection-titre: 2.25rem;
   --taille-projection-statistique: 3rem;
   --taille-projection-chronometre: 5rem;
+
+  /* Tableau de polaroïds du suivi public (10.2) : liège, cadre de bois, épingles, polaroïds. */
+  --couleur-liege: #C8A06C;
+  --couleur-liege-grain: #A9814F;
+  --couleur-bois: #7A5230;
+  --couleur-epingle: var(--couleur-danger);
+  --couleur-cadre-polaroid: var(--couleur-surface);
+  --fond-liege: radial-gradient(var(--couleur-liege-grain) 0.0625rem, transparent 0.1rem) 0 0 / 0.4375rem 0.4375rem, radial-gradient(var(--couleur-liege-grain) 0.0625rem, transparent 0.1rem) 0.1875rem 0.3125rem / 0.6875rem 0.6875rem, var(--couleur-liege);
+  --epaisseur-cadre-bois: 0.625rem;
+  --ombre-tableau: inset 0 0 0.75rem rgb(20 53 42 / 0.35);
+  --ombre-polaroid: 0 1px 2px rgb(20 53 42 / 0.30), 0 4px 10px rgb(20 53 42 / 0.25);
+  --ombre-epingle: 0 1px 2px rgb(20 53 42 / 0.45);
+  --taille-epingle: 0.875rem;
+  --taille-legende-polaroid: 0.8125rem;
+  --taille-legende-polaroid-projection: var(--taille-projection-texte);
+  --polaroid-largeur-grand: 13.75rem;
+  --polaroid-largeur-moyen: 10rem;
+  --polaroid-largeur-petit: 7.5rem;
+  --polaroid-largeur-compact: 6rem;
+  --polaroid-largeur-vainqueur: 17.5rem;
+  --polaroid-largeur-projection-grand: 20rem;
+  --polaroid-largeur-projection-moyen: 13.75rem;
+  --polaroid-largeur-projection-petit: 12.5rem;
+  --polaroid-largeur-projection-compact: 10rem;
+  --polaroid-largeur-projection-vainqueur: 25rem;
 }

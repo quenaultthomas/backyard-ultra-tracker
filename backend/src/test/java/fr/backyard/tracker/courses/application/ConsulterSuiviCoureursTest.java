@@ -47,7 +47,7 @@ class ConsulterSuiviCoureursTest {
     private final DepotInscriptionsEspionDeTest inscriptions = new DepotInscriptionsEspionDeTest();
     private final AnnuaireSuiviDeTest annuaire = new AnnuaireSuiviDeTest();
     private final DepotPassagesEnMemoireDeTest passages = new DepotPassagesEnMemoireDeTest();
-    private final ConsulterSuivi consulterSuivi = new ConsulterSuivi(depotCourses, inscriptions.port, annuaire,
+    private final ConsulterSuivi consulterSuivi = new ConsulterSuivi(depotCourses, inscriptions.port, annuaire, new AnnuairePhotosDeTest(),
             passages, new DepotLogosDeTest(), Clock.fixed(MAINTENANT, ZoneOffset.UTC));
 
     @BeforeEach
@@ -84,7 +84,7 @@ class ConsulterSuiviCoureursTest {
     void doit_lire_le_statut_enregistre_sans_le_recalculer() {
         inscrire(X, 1, "Alice", StatutInscription.EN_COURSE);
 
-        var suivi = new ConsulterSuivi(depotCourses, inscriptions.port, annuaire,
+        var suivi = new ConsulterSuivi(depotCourses, inscriptions.port, annuaire, new AnnuairePhotosDeTest(),
                 passages, new DepotLogosDeTest(), Clock.fixed(T0.plusSeconds(6 * 3_600), ZoneOffset.UTC)).executer(X);
 
         assertThat(suivi.coureursEnCourse()).extracting(c -> c.dossard()).containsExactly(1);

@@ -97,6 +97,11 @@ backyard:
     # de hachage par adresse ; vide : aucun,
     # l'IP est celle de la connexion. docker-compose.yml le fixe a web (Caddy).
     proxy-de-confiance: ${BACKYARD_PROXY_DE_CONFIANCE:}
+  limite-debit-photos:
+    # GET /api/photos/* (10.2 RG6) : requetes par IP et par minute, compteur et plafond separes de ceux de
+    # /api/courses (les images du tableau du suivi n'entament pas le plafond du suivi). Meme proxy de confiance.
+    # Entier >= 0, 0 = aucune limite ; valeur invalide : l'api ne demarre pas. Defaut 3000.
+    par-minute: ${BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE:3000}
   photos:
     # Repertoire des fichiers de photo de profil (10.1a), volume nomme photos. Valeur fixe posee par
     # docker-compose.yml (BACKYARD_PHOTOS_REPERTOIRE), cree a la premiere ecriture s'il manque.

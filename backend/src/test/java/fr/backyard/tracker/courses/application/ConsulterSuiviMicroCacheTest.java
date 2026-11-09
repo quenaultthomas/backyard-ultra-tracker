@@ -41,6 +41,7 @@ class ConsulterSuiviMicroCacheTest {
     private final DepotCoursesDeTest depotCourses = new DepotCoursesDeTest();
     private final DepotInscriptionsEspionDeTest inscriptions = new DepotInscriptionsEspionDeTest();
     private final AnnuaireSuiviDeTest annuaire = new AnnuaireSuiviDeTest();
+    private final AnnuairePhotosDeTest annuairePhotos = new AnnuairePhotosDeTest();
     private final DepotPassagesEnMemoireDeTest passages = new DepotPassagesEnMemoireDeTest();
     private final HorlogeReglableDeTest horloge = new HorlogeReglableDeTest(DEPART);
 
@@ -217,10 +218,45 @@ class ConsulterSuiviMicroCacheTest {
         assertThat(passages.nombreDeLecturesGroupees).isZero();
     }
 
+    // ---------- 10.2 : jetons de photo dans le micro-cache ----------
+
+    @Test
+    @DisplayName("10.2 RG2 - les photos sont lues une fois par chargement : 100 consultations en moins d'1 s, un seul appel")
+    void doit_garder_les_photos_dans_le_micro_cache() {
+        garnirCourseEnCoursDeCinqCoureurs();
+        annuairePhotos.jetons.put(id(0xc01), "a".repeat(32));
+        ConsulterSuivi suivi = consulteur(passages);
+
+        for (int i = 0; i < 100; i++) {
+            suivi.executer(COURSE);
+        }
+        horloge.placerA(DEPART.plusMillis(999));
+        var instantane = suivi.executer(COURSE);
+
+        assertThat(annuairePhotos.appels).hasSize(1);
+        assertThat(instantane.coureursEnCourse().getFirst().photoUrl()).isEqualTo("/api/photos/" + "a".repeat(32));
+
+        horloge.placerA(DEPART.plusMillis(1000));
+        suivi.executer(COURSE);
+
+        assertThat(annuairePhotos.appels).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("10.2 RG2 - Course EN_PREPARATION : aucune photo lue")
+    void doit_ne_lire_aucune_photo_d_une_course_en_preparation() {
+        depotCourses.enregistrer(course(COURSE_EN_PREPARATION, StatutCourse.EN_PREPARATION, null));
+
+        consulteur(passages).executer(COURSE_EN_PREPARATION);
+
+        assertThat(annuairePhotos.appels).isEmpty();
+    }
+
     // ---------- décor ----------
 
     private ConsulterSuivi consulteur(DepotPassages depotPassages) {
-        return new ConsulterSuivi(depotCourses, inscriptions.port, annuaire, depotPassages, new DepotLogosDeTest(), horloge);
+        return new ConsulterSuivi(depotCourses, inscriptions.port, annuaire, annuairePhotos, depotPassages,
+                new DepotLogosDeTest(), horloge);
     }
 
     private void garnirCourseEnCoursDeCinqCoureurs() {

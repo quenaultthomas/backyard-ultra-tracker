@@ -307,7 +307,7 @@ class ConsulterSuiviStatistiquesTest {
     // ---------- fabriques ----------
 
     private ConsulterSuivi consulterA(Instant maintenant) {
-        return new ConsulterSuivi(depotCourses, inscriptions.port, annuaire, passages, new DepotLogosDeTest(),
+        return new ConsulterSuivi(depotCourses, inscriptions.port, annuaire, new AnnuairePhotosDeTest(), passages, new DepotLogosDeTest(),
                 Clock.fixed(maintenant, ZoneOffset.UTC));
     }
 

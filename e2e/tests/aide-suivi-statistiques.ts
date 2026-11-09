@@ -115,15 +115,15 @@ export function reponseChargee(statut: 'EN_COURS' | 'TERMINEE'): string {
       tempsAvantFinBoucleMillisecondes: null,
       dureeEcouleeMillisecondes: null,
       coureursEnCourse: [],
-      vainqueurs: [{ dossard: 1, pseudo: PSEUDO_30 }],
+      vainqueurs: [{ dossard: 1, pseudo: PSEUDO_30, photoUrl: null }],
       abandons,
       ...stats,
       dureeFinaleMillisecondes: 10_800_000,
     });
   }
-  const coureurs = Array.from({ length: 40 }, (_, i) => ({ dossard: i + 1, pseudo: `coureur-${i + 1}` }));
-  coureurs[0] = { dossard: 1, pseudo: PSEUDO_30 };
-  coureurs[1] = { dossard: 2, pseudo: PSEUDO_HTML };
+  const coureurs = Array.from({ length: 40 }, (_, i) => ({ dossard: i + 1, pseudo: `coureur-${i + 1}`, photoUrl: null }));
+  coureurs[0] = { dossard: 1, pseudo: PSEUDO_30, photoUrl: null };
+  coureurs[1] = { dossard: 2, pseudo: PSEUDO_HTML, photoUrl: null };
   return reponseSuivi({ nom: NOM_60, coureursEnCourse: coureurs, abandons, vainqueurs: [], ...stats });
 }
 

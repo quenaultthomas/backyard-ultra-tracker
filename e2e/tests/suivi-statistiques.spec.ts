@@ -290,7 +290,7 @@ test('CA27 - projection à 1920x1080 et 1280x720 : aucun défilement horizontal,
     await expect(lire(page, 'suivi-coureur-1')).toContainText('pseudo-de-trente-caracteres-xx');
     await expect(lire(page, 'suivi-coureur-2')).toContainText('<b>x</b>');
     await expect(page.locator('main b')).toHaveCount(0);
-    expect(await taillePolice(page.locator('[data-testid="suivi-coureur-1"] .ligne__pseudo'))).toBeGreaterThanOrEqual(24);
+    expect(await taillePolice(page.locator('[data-testid="suivi-coureur-1"] [data-testid="suivi-polaroid-pseudo"]'))).toBeGreaterThanOrEqual(24);
     expect(await taillePolice(lire(page, 'suivi-abandon-41').locator('.ligne__pseudo'))).toBeGreaterThanOrEqual(24);
 
     const mesures = await mesurerContrastes(page);

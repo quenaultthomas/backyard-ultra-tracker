@@ -19,6 +19,8 @@
     <!-- Suivi public (6.3) : statistiques, bouton plein écran et mode projection, feuilles réelles. -->
     <link rel="stylesheet" href="../frontend/src/app/suivi/statistiques-suivi/statistiques-suivi.css" />
     <link rel="stylesheet" href="../frontend/src/app/suivi/suivi-course/suivi-course.css" />
+    <!-- Tableau de polaroïds du suivi public (10.2) : feuille réelle du polaroïd, sans copie. -->
+    <link rel="stylesheet" href="../frontend/src/app/suivi/polaroid-coureur/polaroid-coureur.css" />
     <!-- Rubriques de l'accueil public (6.4) : feuille réelle, sans copie. -->
     <link rel="stylesheet" href="../frontend/src/app/accueil/rubrique-courses/rubrique-courses.css" />
     <!-- Abandon manuel (4.11) : confirmation en ligne et panneau d'abandon, feuilles réelles. -->
@@ -371,19 +373,6 @@
       <section aria-labelledby="titre-suivi">
         <h2 id="titre-suivi">Suivi public</h2>
         <div class="carte" style="max-width: 44rem">
-          <section class="vainqueurs" data-composant="suivi-vainqueurs">
-            <h3 class="sous-titre">Vainqueur</h3>
-            <ul class="lignes">
-              <li class="ligne"><span class="ligne__dossard">Dossard 1</span><span class="ligne__pseudo">Alice</span></li>
-            </ul>
-          </section>
-          <section class="section-coureurs" data-composant="suivi-coureurs-en-course">
-            <h3 class="sous-titre">Coureurs en course (2)</h3>
-            <ul class="lignes">
-              <li class="ligne"><span class="ligne__dossard">Dossard 1</span><span class="ligne__pseudo">Alice</span></li>
-              <li class="ligne"><span class="ligne__dossard">Dossard 4</span><span class="ligne__pseudo">Coureur anonyme</span></li>
-            </ul>
-          </section>
           <section class="section-coureurs" data-composant="suivi-abandons">
             <h3 class="sous-titre">Abandons (2)</h3>
             <ul class="lignes">
@@ -410,6 +399,39 @@
             </dl>
           </div>
         </div>
+        <h3>Tableau de polaroïds (10.2)</h3>
+        <div class="carte" style="max-width: 44rem">
+          <section class="section-coureurs" data-composant="suivi-tableau-polaroids">
+            <h3 class="sous-titre">Coureurs en course (2)</h3>
+            <ul class="tableau tableau--grand">
+              <li>
+                <figure class="polaroid" data-inclinaison="3" data-composant="suivi-polaroid-photo">
+                  <div class="polaroid__epingle" aria-hidden="true"></div>
+                  <img class="polaroid__photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' fill='%23F7F1E3'/%3E%3Cpath d='M0 120 40 60 70 100 100 50 160 120V160H0Z' fill='%231F5A43'/%3E%3Ccircle cx='120' cy='36' r='14' fill='%23F28C28'/%3E%3C/svg%3E" alt="Photo de Karim" />
+                  <figcaption class="polaroid__legende"><span class="polaroid__pseudo">Karim</span><span class="polaroid__dossard">Dossard 1</span></figcaption>
+                </figure>
+              </li>
+              <li>
+                <figure class="polaroid" data-inclinaison="-3" data-composant="suivi-polaroid-silhouette">
+                  <div class="polaroid__epingle" aria-hidden="true"></div>
+                  <img class="polaroid__photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' fill='%23EFE6D0'/%3E%3Ccircle cx='80' cy='62' r='28' fill='%234A5A50'/%3E%3Cpath d='M26 160c0-32 24-56 54-56s54 24 54 56Z' fill='%234A5A50'/%3E%3C/svg%3E" alt="" aria-hidden="true" />
+                  <figcaption class="polaroid__legende"><span class="polaroid__pseudo">Coureur anonyme</span><span class="polaroid__dossard">Dossard 4</span></figcaption>
+                </figure>
+              </li>
+            </ul>
+          </section>
+          <section class="vainqueurs" data-composant="suivi-polaroid-vainqueur">
+            <h3 class="sous-titre">Vainqueur</h3>
+            <ul class="vainqueurs__polaroids">
+              <li>
+                <figure class="polaroid polaroid--vainqueur">
+                  <img class="polaroid__photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' fill='%23F7F1E3'/%3E%3Cpath d='M0 120 40 60 70 100 100 50 160 120V160H0Z' fill='%231F5A43'/%3E%3Ccircle cx='120' cy='36' r='14' fill='%23F28C28'/%3E%3C/svg%3E" alt="Photo de Karim" />
+                  <figcaption class="polaroid__legende"><span class="polaroid__pseudo">Karim</span><span class="polaroid__dossard">Dossard 1</span></figcaption>
+                </figure>
+              </li>
+            </ul>
+          </section>
+        </div>
         <h3>Mode projection (tailles --taille-projection-*)</h3>
         <div class="suivi--projection" data-composant="suivi-projection">
         <div class="carte" style="max-width: none">
@@ -432,6 +454,25 @@
               <div class="statistique"><dt>Dénivelé cumulé</dt><dd class="statistique__valeur">70 m D+</dd></div>
               <div class="statistique"><dt>Allure moyenne</dt><dd class="statistique__valeur">125:00 /km</dd></div>
             </dl>
+          </section>
+          <section class="section-coureurs" data-composant="suivi-tableau-projection-compact">
+            <h3 class="sous-titre">Coureurs en course (palier compact, légende 24 px)</h3>
+            <ul class="tableau tableau--compact">
+              <li>
+                <figure class="polaroid" data-inclinaison="2">
+                  <div class="polaroid__epingle" aria-hidden="true"></div>
+                  <img class="polaroid__photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' fill='%23EFE6D0'/%3E%3Ccircle cx='80' cy='62' r='28' fill='%234A5A50'/%3E%3Cpath d='M26 160c0-32 24-56 54-56s54 24 54 56Z' fill='%234A5A50'/%3E%3C/svg%3E" alt="" aria-hidden="true" />
+                  <figcaption class="polaroid__legende"><span class="polaroid__pseudo">pseudo-de-trente-caracteres-xx</span><span class="polaroid__dossard">n° 87</span></figcaption>
+                </figure>
+              </li>
+              <li>
+                <figure class="polaroid" data-inclinaison="-1">
+                  <div class="polaroid__epingle" aria-hidden="true"></div>
+                  <img class="polaroid__photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' fill='%23EFE6D0'/%3E%3Ccircle cx='80' cy='62' r='28' fill='%234A5A50'/%3E%3Cpath d='M26 160c0-32 24-56 54-56s54 24 54 56Z' fill='%234A5A50'/%3E%3C/svg%3E" alt="" aria-hidden="true" />
+                  <figcaption class="polaroid__legende"><span class="polaroid__pseudo">Karim</span><span class="polaroid__dossard">n° 100</span></figcaption>
+                </figure>
+              </li>
+            </ul>
           </section>
           <section class="section-coureurs">
             <h3 class="sous-titre">Abandons (1)</h3>

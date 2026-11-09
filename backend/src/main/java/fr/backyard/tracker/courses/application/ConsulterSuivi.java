@@ -1,6 +1,7 @@
 package fr.backyard.tracker.courses.application;
 
 import fr.backyard.tracker.courses.application.ListerInscritsCourse.Inscrit;
+import fr.backyard.tracker.courses.domaine.AnnuairePhotos;
 import fr.backyard.tracker.courses.domaine.AnnuairePseudos;
 import fr.backyard.tracker.courses.domaine.Chronometrage;
 import fr.backyard.tracker.courses.domaine.Course;
@@ -14,12 +15,14 @@ import fr.backyard.tracker.courses.domaine.MotifAbandon;
 import fr.backyard.tracker.courses.domaine.Passage;
 import fr.backyard.tracker.courses.domaine.StatistiquesCourse;
 import fr.backyard.tracker.courses.domaine.StatutInscription;
+import fr.backyard.tracker.partage.domaine.AdressePhoto;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -29,14 +32,15 @@ import org.springframework.stereotype.Service;
 /**
  * Suivi public d'une Course : la Course, son chronométrage à l'instant de l'horloge (lu une seule fois) et ses
  * coureurs répartis selon le statut enregistré de leur Inscription (jamais recalculé), et ses statistiques calculées
- * par le domaine ({@link Course#statistiques}). Au plus cinq lectures : la Course d'abord, l'empreinte de son logo
+ * par le domaine ({@link Course#statistiques}). Au plus six lectures : la Course d'abord, l'empreinte de son logo
  * (sans les octets), puis ses Inscriptions,
  * les pseudos et les Passages de toutes ses Inscriptions en une seule lecture groupée (pseudos et Passages omis sans
- * Inscription) ; rien d'autre n'est lu tant que la Course n'expose pas ses coureurs (EN_PREPARATION). Lire la Course
+ * Inscription), et les photos des seuls coureurs en course et vainqueurs en une seule lecture groupée (omise s'il n'y en
+ * a aucun, 10.2 RG2) ; rien d'autre n'est lu tant que la Course n'expose pas ses coureurs (EN_PREPARATION). Lire la Course
  * avant les Inscriptions garantit qu'une Course TERMINEE est vue avec ses statuts finaux (écrits dans la même
  * transaction). Lecture seule, aucun journal en fonctionnement normal (lecture fréquente et publique).
  *
- * <p>Micro-cache (7.2) : les lectures (Course, empreinte du logo, Inscriptions, pseudos, Passages) sont conservées par Course pendant
+ * <p>Micro-cache (7.2) : les lectures (Course, empreinte du logo, Inscriptions, pseudos, photos, Passages) sont conservées par Course pendant
  * {@link #DUREE_DU_CACHE} ; chronométrage, statistiques et {@code heureServeur} sont recalculés à chaque appel à
  * l'instant de l'horloge. Une seule lecture à la fois par Course : les appels concurrents sur une entrée expirée
  * attendent ce chargement et partagent son résultat. Une erreur de lecture n'est jamais mise en cache ; une Course
@@ -46,10 +50,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class ConsulterSuivi {
 
-    /** Coureur en course ou vainqueur : dossard et pseudo. */
-    public record CoureurSuivi(int dossard, String pseudo) {
+    /** Coureur en course ou vainqueur : dossard, pseudo et adresse relative de sa photo (null sans photo, 10.2 RG1). */
+    public record CoureurSuivi(int dossard, String pseudo, String photoUrl) {
 
-        /** Dossard uniquement : jamais de pseudo dans les journaux. */
+        /** Dossard uniquement : jamais de pseudo ni d'adresse de photo dans les journaux. */
         @Override
         public String toString() {
             return "CoureurSuivi[dossard=" + dossard + "]";
@@ -92,14 +96,22 @@ public class ConsulterSuivi {
     /** Durée de réutilisation des lectures d'une Course : un suivi servi a moins d'une seconde de retard (RG2). */
     public static final Duration DUREE_DU_CACHE = Duration.ofSeconds(1);
 
-    /** Lectures d'une Course à l'instant {@code chargeeLe} ; Inscriptions, inscrits et Passages vides hors exposition. */
+    /** Statuts dont les coureurs sont affichés avec leur photo : jamais les abandons (10.2 RG1, RG2). */
+    private static final Set<StatutInscription> AVEC_PHOTO = Set.of(StatutInscription.EN_COURSE,
+            StatutInscription.VAINQUEUR);
+
+    /**
+     * Lectures d'une Course à l'instant {@code chargeeLe} ; Inscriptions, inscrits, photos et Passages vides hors
+     * exposition. {@code photosParInscription} : adresse de la photo par identifiant d'Inscription, absente sans photo.
+     */
     private record Lectures(Instant chargeeLe, Course course, Optional<String> empreinteLogo,
-                            List<Inscription> inscriptions,
-                            List<Inscrit> parDossard, List<Passage> passages) {
+                            List<Inscription> inscriptions, List<Inscrit> parDossard,
+                            Map<UUID, String> photosParInscription, List<Passage> passages) {
 
         private Lectures {
             inscriptions = List.copyOf(inscriptions);
             parDossard = List.copyOf(parDossard);
+            photosParInscription = Map.copyOf(photosParInscription);
             passages = List.copyOf(passages);
         }
 
@@ -113,16 +125,18 @@ public class ConsulterSuivi {
     private final DepotCourses depotCourses;
     private final DepotInscriptions depotInscriptions;
     private final AnnuairePseudos annuairePseudos;
+    private final AnnuairePhotos annuairePhotos;
     private final DepotPassages depotPassages;
     private final DepotLogos depotLogos;
     private final Clock horloge;
 
     public ConsulterSuivi(DepotCourses depotCourses, DepotInscriptions depotInscriptions,
-                          AnnuairePseudos annuairePseudos, DepotPassages depotPassages, DepotLogos depotLogos,
-                          Clock horloge) {
+                          AnnuairePseudos annuairePseudos, AnnuairePhotos annuairePhotos,
+                          DepotPassages depotPassages, DepotLogos depotLogos, Clock horloge) {
         this.depotCourses = depotCourses;
         this.depotInscriptions = depotInscriptions;
         this.annuairePseudos = annuairePseudos;
+        this.annuairePhotos = annuairePhotos;
         this.depotPassages = depotPassages;
         this.depotLogos = depotLogos;
         this.horloge = horloge;
@@ -135,9 +149,9 @@ public class ConsulterSuivi {
         Course course = lectures.course();
         Optional<Chronometrage> chronometrage = course.chronometrage(maintenant);
         return new Suivi(course, lectures.empreinteLogo(), maintenant, chronometrage,
-                coureurs(lectures.parDossard(), StatutInscription.EN_COURSE),
+                coureurs(lectures, StatutInscription.EN_COURSE),
                 abandons(lectures.inscriptions(), lectures.parDossard()),
-                coureurs(lectures.parDossard(), StatutInscription.VAINQUEUR),
+                coureurs(lectures, StatutInscription.VAINQUEUR),
                 course.statistiques(maintenant, lectures.passages()));
     }
 
@@ -163,11 +177,29 @@ public class ConsulterSuivi {
         }
         Optional<String> empreinteLogo = depotLogos.empreinteParIdCourse(courseId);
         if (!course.get().exposeSesCoureursAuPublic()) {
-            return new Lectures(maintenant, course.get(), empreinteLogo, List.of(), List.of(), List.of());
+            return new Lectures(maintenant, course.get(), empreinteLogo, List.of(), List.of(), Map.of(), List.of());
         }
         List<Inscription> inscriptions = depotInscriptions.parCourse(courseId);
         return new Lectures(maintenant, course.get(), empreinteLogo, inscriptions,
-                ListerInscritsCourse.inscritsParDossard(inscriptions, annuairePseudos), passagesDe(inscriptions));
+                ListerInscritsCourse.inscritsParDossard(inscriptions, annuairePseudos), photosDe(inscriptions),
+                passagesDe(inscriptions));
+    }
+
+    /**
+     * Une seule lecture groupée des photos des coureurs en course et vainqueurs, omise s'il n'y en a aucun ; l'adresse
+     * publique est calculée par {@link AdressePhoto}, seul détenteur du préfixe.
+     */
+    private Map<UUID, String> photosDe(List<Inscription> inscriptions) {
+        List<Inscription> avecPhoto = inscriptions.stream()
+                .filter(inscription -> AVEC_PHOTO.contains(inscription.statut())).toList();
+        if (avecPhoto.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, String> jetons = annuairePhotos.jetonsPhotoDe(
+                avecPhoto.stream().map(Inscription::compteId).distinct().toList());
+        return avecPhoto.stream().filter(inscription -> jetons.containsKey(inscription.compteId()))
+                .collect(Collectors.toUnmodifiableMap(Inscription::id,
+                        inscription -> AdressePhoto.de(jetons.get(inscription.compteId()))));
     }
 
     /** Une seule lecture groupée des Passages de toutes les Inscriptions, omise sans Inscription. */
@@ -178,9 +210,11 @@ public class ConsulterSuivi {
         return depotPassages.parInscriptions(inscriptions.stream().map(Inscription::id).toList());
     }
 
-    private static List<CoureurSuivi> coureurs(List<Inscrit> parDossard, StatutInscription statut) {
-        return parDossard.stream().filter(inscrit -> inscrit.statut() == statut)
-                .map(inscrit -> new CoureurSuivi(inscrit.dossard(), inscrit.pseudo())).toList();
+    private static List<CoureurSuivi> coureurs(Lectures lectures, StatutInscription statut) {
+        return lectures.parDossard().stream().filter(inscrit -> inscrit.statut() == statut)
+                .map(inscrit -> new CoureurSuivi(inscrit.dossard(), inscrit.pseudo(),
+                        lectures.photosParInscription().get(inscrit.inscriptionId())))
+                .toList();
     }
 
     private static List<AbandonSuivi> abandons(List<Inscription> inscriptions, List<Inscrit> inscrits) {

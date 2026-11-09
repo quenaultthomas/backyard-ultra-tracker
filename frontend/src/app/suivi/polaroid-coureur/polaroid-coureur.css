@@ -1,0 +1,117 @@
+/*
+ * Polaroïd du suivi public (docs/design.md, section 11 « Tableau de polaroïds ») : cadre blanc cassé,
+ * photo carrée, légende encre sur cadre, épingle en CSS. Largeur, marge et taille de légende viennent
+ * du conteneur (--polaroid-largeur, --polaroid-marge, --polaroid-taille-legende). Aucun mouvement :
+ * l'inclinaison est statique.
+ */
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.polaroid {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espace-1);
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: var(--polaroid-marge, var(--espace-2));
+  padding-bottom: var(--espace-3);
+  background-color: var(--couleur-cadre-polaroid);
+  box-shadow: var(--ombre-polaroid);
+  color: var(--couleur-encre);
+}
+
+/* Inclinaison déterministe (dossard) posée par attribut : aucun style en ligne. */
+.polaroid[data-inclinaison] {
+  transform: rotate(calc(var(--polaroid-inclinaison) * 1deg));
+}
+.polaroid[data-inclinaison='-4'] {
+  --polaroid-inclinaison: -4;
+}
+.polaroid[data-inclinaison='-3'] {
+  --polaroid-inclinaison: -3;
+}
+.polaroid[data-inclinaison='-2'] {
+  --polaroid-inclinaison: -2;
+}
+.polaroid[data-inclinaison='-1'] {
+  --polaroid-inclinaison: -1;
+}
+.polaroid[data-inclinaison='0'] {
+  --polaroid-inclinaison: 0;
+}
+.polaroid[data-inclinaison='1'] {
+  --polaroid-inclinaison: 1;
+}
+.polaroid[data-inclinaison='2'] {
+  --polaroid-inclinaison: 2;
+}
+.polaroid[data-inclinaison='3'] {
+  --polaroid-inclinaison: 3;
+}
+.polaroid[data-inclinaison='4'] {
+  --polaroid-inclinaison: 4;
+}
+
+/* Épingle : tête ronde avec reflet et ombre, à cheval sur le haut du cadre. */
+.polaroid__epingle {
+  position: absolute;
+  top: calc(var(--taille-epingle) / -2);
+  left: calc(50% - var(--taille-epingle) / 2);
+  width: var(--taille-epingle);
+  height: var(--taille-epingle);
+  border-radius: var(--rayon-pastille);
+  background: radial-gradient(
+    circle at 35% 35%,
+    var(--couleur-creme) 0 15%,
+    var(--couleur-epingle) 35%
+  );
+  box-shadow: var(--ombre-epingle);
+}
+
+/* Dimensions réservées avant le chargement : aucun saut de mise en page. */
+.polaroid__photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background-color: var(--couleur-sable);
+}
+
+.polaroid__legende {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--polaroid-taille-legende, var(--taille-base));
+  line-height: var(--interligne-titre);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* Pseudo coupé à deux lignes sur le tableau : il ne dépasse jamais du polaroïd. */
+.polaroid__pseudo {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  font-weight: var(--poids-moyen);
+}
+
+.polaroid__dossard {
+  font-weight: var(--poids-gras);
+  color: var(--couleur-foret);
+}
+
+/* Vainqueur : droit, bord orange en aplat (jamais de texte orange), pseudo entier. */
+.polaroid--vainqueur {
+  border: var(--espace-1) solid var(--couleur-orange);
+}
+
+.polaroid--vainqueur .polaroid__pseudo {
+  display: block;
+}

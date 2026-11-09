@@ -9,7 +9,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Incrément 7.2 : limite de débit par IP des routes publiques (CA8, CA9 ; RG4, RG5).
- * Signatures supposées : {@code LimiteDebitPublic(int limiteParMinute, Clock horloge)} ;
+ * Signatures supposées : {@code LimiteDebitPublic(String prefixe, int limiteParMinute, Clock horloge)} (préfixe
+ * ajouté en 10.2, ici {@code /api/courses}) ;
  * {@code LimiteDebitPublic.Decision verifier(String methodeHttp, String chemin, String ip)} ;
  * record {@code Decision(boolean autorisee, int reessayerDansSecondes)} (secondes jusqu'à la fin de la minute,
  * arrondies au-dessus, >= 1 quand refusée).
@@ -24,7 +25,7 @@ class LimiteDebitPublicTest {
     @Test
     @DisplayName("CA8 - L = 3 : les 3 premières requêtes passent, la 4e est refusée avec les secondes restantes dans la minute")
     void doit_refuser_la_requete_qui_depasse_la_limite() {
-        LimiteDebitPublic limite = new LimiteDebitPublic(3, horloge);
+        LimiteDebitPublic limite = new LimiteDebitPublic("/api/courses", 3, horloge);
 
         for (int i = 0; i < 3; i++) {
             assertThat(limite.verifier("GET", SUIVI, IP).autorisee()).isTrue();
@@ -38,7 +39,7 @@ class LimiteDebitPublicTest {
     @Test
     @DisplayName("CA8 - à 10:00:59.500 le Retry-After est arrondi à 1 seconde, jamais 0")
     void doit_annoncer_au_moins_une_seconde_en_fin_de_minute() {
-        LimiteDebitPublic limite = new LimiteDebitPublic(1, horloge);
+        LimiteDebitPublic limite = new LimiteDebitPublic("/api/courses", 1, horloge);
         limite.verifier("GET", SUIVI, IP);
         horloge.placerA(Instant.parse("2026-10-21T10:00:59.500Z"));
 
@@ -51,7 +52,7 @@ class LimiteDebitPublicTest {
     @Test
     @DisplayName("CA8 - à la minute suivante, le compteur repart de zéro")
     void doit_remettre_le_compteur_a_zero_a_la_minute_suivante() {
-        LimiteDebitPublic limite = new LimiteDebitPublic(3, horloge);
+        LimiteDebitPublic limite = new LimiteDebitPublic("/api/courses", 3, horloge);
         for (int i = 0; i < 4; i++) {
             limite.verifier("GET", SUIVI, IP);
         }
@@ -63,7 +64,7 @@ class LimiteDebitPublicTest {
     @Test
     @DisplayName("CA8 - une autre IP n'est pas affectée par le dépassement d'une IP")
     void doit_compter_chaque_ip_separement() {
-        LimiteDebitPublic limite = new LimiteDebitPublic(3, horloge);
+        LimiteDebitPublic limite = new LimiteDebitPublic("/api/courses", 3, horloge);
         for (int i = 0; i < 4; i++) {
             limite.verifier("GET", SUIVI, IP);
         }
@@ -74,7 +75,7 @@ class LimiteDebitPublicTest {
     @Test
     @DisplayName("CA8 - L = 0 désactive la limite : jamais de refus")
     void doit_ne_jamais_refuser_quand_la_limite_est_zero() {
-        LimiteDebitPublic limite = new LimiteDebitPublic(0, horloge);
+        LimiteDebitPublic limite = new LimiteDebitPublic("/api/courses", 0, horloge);
 
         for (int i = 0; i < 5000; i++) {
             assertThat(limite.verifier("GET", SUIVI, IP).autorisee()).isTrue();
@@ -84,7 +85,7 @@ class LimiteDebitPublicTest {
     @Test
     @DisplayName("CA9 - sante, version, POST sur courses, routes coureur et bénévole ne sont pas comptées")
     void doit_ignorer_les_routes_non_publiques_et_les_methodes_autres_que_get() {
-        LimiteDebitPublic limite = new LimiteDebitPublic(3, horloge);
+        LimiteDebitPublic limite = new LimiteDebitPublic("/api/courses", 3, horloge);
 
         for (int i = 0; i < 10; i++) {
             assertThat(limite.verifier("GET", "/api/sante", IP).autorisee()).isTrue();
@@ -102,7 +103,7 @@ class LimiteDebitPublicTest {
     @Test
     @DisplayName("CA9 - GET /api/courses, suivi et logo sont comptés avec le même compteur")
     void doit_compter_liste_suivi_et_logo_dans_le_meme_compteur() {
-        LimiteDebitPublic limite = new LimiteDebitPublic(3, horloge);
+        LimiteDebitPublic limite = new LimiteDebitPublic("/api/courses", 3, horloge);
 
         assertThat(limite.verifier("GET", "/api/courses", IP).autorisee()).isTrue();
         assertThat(limite.verifier("GET", SUIVI, IP).autorisee()).isTrue();

@@ -171,7 +171,7 @@ class PhotoProfilIntegrationTest extends PhotoIntegrationBase {
         assertThat(reponse.headers().firstValue("x-content-type-options")).hasValue("nosniff");
         assertThat(reponse.headers().firstValue("content-disposition")).hasValueSatisfying(
                 d -> assertThat(d).startsWith("inline").doesNotContain("filename"));
-        assertThat(reponse.headers().firstValue("cache-control")).hasValue("public, no-cache");
+        assertThat(reponse.headers().firstValue("cache-control")).hasValue("public, max-age=300");
         assertThat(reponse.headers().firstValue("etag")).hasValue("\"" + jeton + "\"");
         assertThat(reponse.headers().allValues("set-cookie")).isEmpty();
 
@@ -180,7 +180,7 @@ class PhotoProfilIntegrationTest extends PhotoIntegrationBase {
         assertThat(inchange.statusCode()).isEqualTo(304);
         assertThat(inchange.body()).isEmpty();
         assertThat(inchange.headers().firstValue("etag")).hasValue("\"" + jeton + "\"");
-        assertThat(inchange.headers().firstValue("cache-control")).hasValue("public, no-cache");
+        assertThat(inchange.headers().firstValue("cache-control")).hasValue("public, max-age=300");
 
         HttpResponse<byte[]> autreEtag = api.requete("GET", CHEMIN_PHOTOS + jeton,
                 Map.of("If-None-Match", "\"" + "0".repeat(32) + "\""), null, null);
@@ -710,7 +710,9 @@ class PhotoProfilIntegrationTest extends PhotoIntegrationBase {
         Path envExemple = Path.of("..", ".env.example");
 
         assertThat(envExemple).exists();
-        assertThat(Files.readString(envExemple)).doesNotContain("PHOTOS");
+        // 10.2 RG6 ajoute BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE à .env.example : seule la variable du répertoire
+        // des photos (10.1) doit en rester absente
+        assertThat(Files.readString(envExemple)).doesNotContain("BACKYARD_PHOTOS_REPERTOIRE");
         assertThat(Files.readString(Path.of("..", "docker-compose.yml")))
                 .contains("BACKYARD_PHOTOS_REPERTOIRE: /donnees/photos").contains("photos:");
     }
