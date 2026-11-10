@@ -1,7 +1,6 @@
 package fr.backyard.tracker.comptes.exposition;
 
 import fr.backyard.tracker.comptes.domaine.Compte;
-import fr.backyard.tracker.partage.domaine.AdressePhoto;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -14,6 +13,6 @@ public record CompteConnecteReponse(UUID id, String pseudo, String role, Instant
 
     static CompteConnecteReponse depuis(Compte compte) {
         return new CompteConnecteReponse(compte.id(), compte.pseudo().valeur(), compte.role().name(), compte.creeLe(),
-                compte.actif(), compte.photo() == null ? null : AdressePhoto.de(compte.photo().jeton()));
+                compte.actif(), compte.photo() == null ? null : RoutePhotos.adresseDe(compte.photo().jeton()));
     }
 }

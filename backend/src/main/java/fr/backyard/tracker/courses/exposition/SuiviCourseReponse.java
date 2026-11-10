@@ -43,6 +43,13 @@ public record SuiviCourseReponse(UUID courseId, String nom, String logoUrl, Stat
      */
     public record CoureurSuiviReponse(int dossard, String pseudo, String photoUrl) {
 
+        /**
+         * Préfixe de l'adresse publique des photos, propre à l'exposition de courses (correctif audit jalon 10 RG12) :
+         * copie volontaire de celle de comptes, sans dépendance entre contextes ; leur cohérence est vérifiée par un test
+         * d'intégration.
+         */
+        private static final String PREFIXE_PHOTOS = "/api/photos/";
+
         /** Dossard uniquement : ni pseudo ni adresse de photo (10.2 RG4). */
         @Override
         public String toString() {
@@ -50,7 +57,12 @@ public record SuiviCourseReponse(UUID courseId, String nom, String logoUrl, Stat
         }
 
         static List<CoureurSuiviReponse> depuis(List<ConsulterSuivi.CoureurSuivi> coureurs) {
-            return coureurs.stream().map(c -> new CoureurSuiviReponse(c.dossard(), c.pseudo(), c.photoUrl())).toList();
+            return coureurs.stream().map(c -> new CoureurSuiviReponse(c.dossard(), c.pseudo(), adressePhoto(c.jetonPhoto())))
+                    .toList();
+        }
+
+        private static String adressePhoto(String jetonPhoto) {
+            return jetonPhoto == null ? null : PREFIXE_PHOTOS + jetonPhoto;
         }
     }
 

@@ -14,9 +14,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Lecture publique d'une photo de profil par son jeton (10.1 RG7) : forme du jeton contrôlée avant tout accès à la base
- * ou au disque, Compte trouvé par son jeton (la base fait foi), puis fichier lu. Tout échec donne la même
- * {@link PhotoIntrouvableException} ; un fichier manquant alors que la base porte le jeton est journalisé en ERROR.
+ * Lecture publique d'une photo de profil par son jeton (10.1 RG7), en deux étapes (correctif audit jalon 10 RG3) :
+ * {@link #resoudre} contrôle la forme du jeton avant tout accès, puis trouve le Compte par son jeton (la base fait foi)
+ * sans toucher au stockage ; {@link #lire} lit ensuite le fichier, seulement si l'appelant en a besoin (pas pour un
+ * 304). Tout échec donne la même {@link PhotoIntrouvableException} ; un fichier manquant alors que la base porte le
+ * jeton est journalisé en ERROR.
  */
 @Service
 public class LirePhoto {
@@ -56,20 +58,40 @@ public class LirePhoto {
         this.stockage = stockage;
     }
 
-    /** @throws PhotoIntrouvableException jeton mal formé ou inconnu, photo retirée ou fichier manquant */
-    @Transactional(readOnly = true)
+    /** Résolution puis lecture, en un appel. */
     public PhotoLue executer(String jeton) {
+        return lire(resoudre(jeton));
+    }
+
+    /**
+     * Jeton et format de la photo portée par un Compte : une recherche en base au plus, aucun accès au stockage.
+     *
+     * @throws PhotoIntrouvableException jeton mal formé (sans accès à la base), inconnu ou photo retirée
+     */
+    @Transactional(readOnly = true)
+    public ReferencePhoto resoudre(String jeton) {
         if (!JetonPhoto.estValide(jeton)) {
             throw new PhotoIntrouvableException();
         }
         Compte compte = depotComptes.trouverParJetonPhoto(jeton).orElseThrow(PhotoIntrouvableException::new);
-        ReferencePhoto photo = compte.photo();
-        byte[] octets = stockage.lire(photo.jeton(), photo.format()).orElseThrow(() -> fichierManquant(compte));
+        return compte.photo();
+    }
+
+    /**
+     * Octets de la photo résolue : une lecture du stockage.
+     *
+     * @throws PhotoIntrouvableException fichier manquant (journalisé en ERROR avec l'identifiant du Compte, jamais le
+     *                                    jeton : seul ce cas d'anomalie relit le Compte)
+     */
+    public PhotoLue lire(ReferencePhoto photo) {
+        byte[] octets = stockage.lire(photo.jeton(), photo.format()).orElseThrow(() -> fichierManquant(photo));
         return new PhotoLue(photo.jeton(), photo.format(), octets);
     }
 
-    private static PhotoIntrouvableException fichierManquant(Compte compte) {
-        JOURNAL.log(Level.ERROR, "Fichier de photo introuvable (compte {0})", compte.id());
+    private PhotoIntrouvableException fichierManquant(ReferencePhoto photo) {
+        depotComptes.trouverParJetonPhoto(photo.jeton()).map(Compte::id).ifPresentOrElse(
+                id -> JOURNAL.log(Level.ERROR, "Fichier de photo introuvable (compte {0})", id),
+                () -> JOURNAL.log(Level.ERROR, "Fichier de photo introuvable"));
         return new PhotoIntrouvableException();
     }
 }

@@ -17,8 +17,9 @@ import {
 } from './aide-polaroid';
 
 /*
- * Incrément 10.2, tableau de polaroïds du suivi public sur la stack réelle : CA13, CA14, CA15, CA17, CA19 (abandon et
- * rechargement), CA25 et CA26. Les CA sur réponses simulées : suivi-polaroids-simules.spec.ts ; CA18 (horloge) :
+ * Incrément 10.2, tableau de polaroïds du suivi public sur la stack réelle : CA13, CA14, CA15, CA19 (abandon et
+ * rechargement), CA25 et CA26. L'ancien CA17 (404 et 429, aucune nouvelle tentative) est remplacé par les CA19 à CA21 du
+ * correctif d'audit du jalon 10 : suivi-polaroids-nouvelles-tentatives.spec.ts. Les CA sur réponses simulées : suivi-polaroids-simules.spec.ts ; CA18 (horloge) :
  * suivi-polaroids.horloge.spec.ts. Chaque test ouvre la page dans un contexte neuf, sans session.
  */
 
@@ -122,40 +123,6 @@ test('CA15 - 2 requêtes d\'images au chargement, 0 pendant le polling ; une pho
   expect(marquesKarim.figure).toEqual(noeuds[karim.dossard].figure);
   expect(marquesKarim.img).toEqual(noeuds[karim.dossard].img);
 });
-
-for (const statut of [404, 429]) {
-  test(`CA17 - la photo de Karim répond ${statut} : silhouette sans message ni exception, aucune nouvelle requête pendant 10 s, le rechargement réessaie`, async ({ page, playwright }) => {
-    const { course, karim, jetonKarim } = await courseDeQuatre(playwright);
-    const chemin = `/api/photos/${jetonKarim}`;
-    const erreurs: string[] = [];
-    page.on('pageerror', (e) => erreurs.push(e.message));
-    page.on('console', (m) => {
-      if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) erreurs.push(m.text());
-    });
-    await page.route(`**${chemin}`, (route) =>
-      route.fulfill({ status: statut, contentType: 'application/problem+json', body: JSON.stringify({ code: statut === 404 ? 'PHOTO_INTROUVABLE' : 'TROP_DE_REQUETES' }) }),
-    );
-    const images = espionnerImages(page);
-    await page.goto(urlSuivi(course.id));
-    const li = lire(page, `suivi-coureur-${karim.dossard}`);
-    await expect(li.getByTestId('suivi-polaroid-silhouette')).toBeVisible();
-    await expect(li.getByTestId('suivi-polaroid-photo')).toHaveCount(0);
-    await expect(li).toContainText(karim.pseudo);
-    await expect(page.getByRole('alert')).toHaveCount(0);
-    expect(images.vers(chemin)).toBe(1);
-
-    const suivi = compterRequetesSuivi(page);
-    await laisserPasser(page, 10_000);
-    await expect.poll(() => suivi.nombre(), { message: 'au moins 3 rafraîchissements' }).toBeGreaterThanOrEqual(3);
-    expect(images.vers(chemin), 'aucune nouvelle tentative').toBe(1);
-    await expect(li.getByTestId('suivi-polaroid-silhouette')).toBeVisible();
-    expect(erreurs).toEqual([]);
-
-    await page.reload();
-    await expect(lire(page, `suivi-coureur-${karim.dossard}`).getByTestId('suivi-polaroid-silhouette')).toBeVisible();
-    expect(images.vers(chemin), 'le rechargement réessaie').toBe(2);
-  });
-}
 
 test('CA19 - les inclinaisons de Dossards 1 à 4 valent 3, 1, -1, -3 et ne changent ni après un abandon ni après rechargement', async ({ page, playwright }) => {
   const { course, tom } = await courseDeQuatre(playwright);

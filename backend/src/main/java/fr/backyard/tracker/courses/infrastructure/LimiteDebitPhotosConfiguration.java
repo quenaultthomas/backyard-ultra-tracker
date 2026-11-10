@@ -1,7 +1,7 @@
 package fr.backyard.tracker.courses.infrastructure;
 
-import fr.backyard.tracker.partage.domaine.AdressePhoto;
 import java.time.Clock;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -9,15 +9,24 @@ import org.springframework.context.annotation.Configuration;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Limite de débit de {@code GET /api/photos/*} (10.2 RG6) : même mécanisme que {@link LimiteDebitPublicConfiguration},
- * avec son propre plafond et ses propres compteurs, pour que les chargements d'images n'entament pas le plafond du
- * suivi. {@code backyard.limite-debit-photos.par-minute} (variable BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE, entier
- * >= 0, 0 = aucune limite ; valeur invalide : l'api ne démarre pas). Même proxy de confiance que la limite publique.
+ * Limite de débit de {@code GET} et {@code HEAD /api/photos/*} (10.2 RG6, correctif audit jalon 10 RG2) : même
+ * mécanisme que {@link LimiteDebitPublicConfiguration}, avec son propre plafond et ses propres compteurs, pour que les
+ * chargements d'images n'entament pas le plafond du suivi. {@code GET} et {@code HEAD} partagent le même compteur.
+ * {@code backyard.limite-debit-photos.par-minute} (variable BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE, entier >= 0,
+ * 0 = aucune limite ; valeur invalide : l'api ne démarre pas). Même proxy de confiance que la limite publique.
  */
 @Configuration(proxyBeanMethods = false)
 public class LimiteDebitPhotosConfiguration {
 
     static final String PROPRIETE_PAR_MINUTE = "backyard.limite-debit-photos.par-minute";
+
+    /**
+     * Route publique des photos, propre à l'infrastructure (correctif audit jalon 10 RG12) : copie volontaire de celle
+     * de l'exposition de comptes, leur cohérence est vérifiée par un test d'intégration.
+     */
+    static final String ROUTE_PHOTOS = "/api/photos";
+
+    private static final Set<String> METHODES_COMPTEES = Set.of("GET", "HEAD");
 
     /** La limite n'est pas un bean : seul ce filtre l'utilise, sans ambiguïté avec celle de /api/courses. */
     @Bean
@@ -25,9 +34,9 @@ public class LimiteDebitPhotosConfiguration {
             @Value("${" + PROPRIETE_PAR_MINUTE + "}") String parMinute,
             @Value("${" + LimiteDebitPublicConfiguration.PROPRIETE_PROXY + ":}") String proxyDeConfiance,
             Clock horloge, JsonMapper jsonMapper) {
-        LimiteDebitPublic limite = new LimiteDebitPublic(AdressePhoto.ROUTE,
+        LimiteDebitPublic limite = new LimiteDebitPublic(ROUTE_PHOTOS, METHODES_COMPTEES,
                 LimiteDebitPublicConfiguration.entierPositifOuNul(parMinute, PROPRIETE_PAR_MINUTE,
                         "BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE"), horloge);
-        return LimiteDebitPublicConfiguration.enregistrer(limite, proxyDeConfiance, jsonMapper, AdressePhoto.ROUTE);
+        return LimiteDebitPublicConfiguration.enregistrer(limite, proxyDeConfiance, jsonMapper, ROUTE_PHOTOS);
     }
 }

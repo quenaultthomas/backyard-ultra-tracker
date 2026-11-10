@@ -1,6 +1,7 @@
 package fr.backyard.tracker.comptes.infrastructure;
 
 import fr.backyard.tracker.comptes.domaine.JetonPhoto;
+import fr.backyard.tracker.comptes.domaine.PolitiqueNettoyagePhotos;
 import fr.backyard.tracker.comptes.domaine.StockagePhotos;
 import fr.backyard.tracker.partage.domaine.FormatImage;
 import java.io.IOException;
@@ -26,7 +27,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class PhotosFichiersAdapter implements StockagePhotos {
 
-    private static final String SUFFIXE_TEMPORAIRE = ".tmp";
+    /** Convention partagée avec le nettoyage des orphelins, qui rattrape les temporaires abandonnés. */
+    private static final String SUFFIXE_TEMPORAIRE = PolitiqueNettoyagePhotos.SUFFIXE_TEMPORAIRE;
     private static final boolean POSIX = FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
 
     private final Path repertoire;

@@ -705,14 +705,15 @@ class PhotoProfilIntegrationTest extends PhotoIntegrationBase {
     }
 
     @Test
-    @DisplayName("CA22 : .env.example n'est pas modifié par la photo (variable fixée par docker-compose, absente de .env.example)")
+    @DisplayName("CA22 : la variable du répertoire des photos, fixée par docker-compose, n'est dans .env.example que pour mémoire (ligne commentée, correctif audit jalon 10 RG1)")
     void ca22_env_example_inchange() throws Exception {
         Path envExemple = Path.of("..", ".env.example");
 
         assertThat(envExemple).exists();
-        // 10.2 RG6 ajoute BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE à .env.example : seule la variable du répertoire
-        // des photos (10.1) doit en rester absente
-        assertThat(Files.readString(envExemple)).doesNotContain("BACKYARD_PHOTOS_REPERTOIRE");
+        // Correctif audit jalon 10, RG1 (remplace 10.1 RG16f « .env.example inchangé ») : la variable n'apparaît que
+        // commentée, pour mémoire ; aucune valeur active ne peut être posée par .env.
+        assertThat(Files.readString(envExemple)).doesNotContainPattern("(?m)^\\s*BACKYARD_PHOTOS_REPERTOIRE\\s*=")
+                .contains("# BACKYARD_PHOTOS_REPERTOIRE=/donnees/photos");
         assertThat(Files.readString(Path.of("..", "docker-compose.yml")))
                 .contains("BACKYARD_PHOTOS_REPERTOIRE: /donnees/photos").contains("photos:");
     }

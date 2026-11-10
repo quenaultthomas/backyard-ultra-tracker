@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -18,7 +19,7 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * Applique {@link LimiteDebitPublic} avant Spring Security et avant tout accès base : une requête refusée reçoit 429
  * {@code TROP_DE_REQUETES} (ProblemDetail, {@code Retry-After}, {@code Cache-Control: no-store}) sans donnée de
- * Course ; les autres continuent sans modification.
+ * Course ; les autres continuent sans modification. Un {@code HEAD} refusé reçoit les mêmes en-têtes, sans corps.
  */
 final class FiltreLimiteDebitPublic extends OncePerRequestFilter {
 
@@ -60,6 +61,8 @@ final class FiltreLimiteDebitPublic extends OncePerRequestFilter {
         reponse.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
         reponse.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
         reponse.setCharacterEncoding("UTF-8");
-        jsonMapper.writeValue(reponse.getOutputStream(), probleme);
+        if (!HttpMethod.HEAD.matches(requete.getMethod())) {
+            jsonMapper.writeValue(reponse.getOutputStream(), probleme);
+        }
     }
 }

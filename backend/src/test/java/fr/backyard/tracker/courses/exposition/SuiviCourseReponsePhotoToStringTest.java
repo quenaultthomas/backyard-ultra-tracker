@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Incrément 10.2 : confidentialité des affichages (CA6 ; RG4).
- * Signatures attendues : {@code ConsulterSuivi.CoureurSuivi(int dossard, String pseudo, String photoUrl)} ;
+ * Signatures attendues : {@code ConsulterSuivi.CoureurSuivi(int dossard, String pseudo, String jetonPhoto)} ;
  * {@code SuiviCourseReponse.CoureurSuiviReponse(int dossard, String pseudo, String photoUrl)}.
  */
 class SuiviCourseReponsePhotoToStringTest {
@@ -22,9 +22,9 @@ class SuiviCourseReponsePhotoToStringTest {
     @Test
     @DisplayName("CA6 - toString d'une ligne du cas d'usage n'affiche ni pseudo, ni jeton, ni photoUrl")
     void doit_masquer_pseudo_et_photo_dans_le_to_string_de_la_ligne_du_cas_d_usage() {
-        String texte = new CoureurSuivi(2, "Karim", URL).toString();
+        String texte = new CoureurSuivi(2, "Karim", JETON).toString();
 
-        assertThat(texte).doesNotContain("Karim", JETON, "/api/photos", "photoUrl");
+        assertThat(texte).doesNotContain("Karim", JETON, "/api/photos", "photoUrl", "jetonPhoto");
     }
 
     @Test
