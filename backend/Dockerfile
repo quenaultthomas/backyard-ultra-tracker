@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # --- Etape de build : JDK 25 ---
-FROM eclipse-temurin:25.0.4.1_1-jdk-noble AS build
+FROM eclipse-temurin:25.0.5_8-jdk-noble AS build
 WORKDIR /construction
 
 # Dependances d'abord, pour profiter du cache des couches.
@@ -14,7 +14,7 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -q -DskipTests package \
     && cp target/backyard-ultra-tracker-*.jar application.jar
 
 # --- Etape d'execution : JRE 25, utilisateur non root ---
-FROM eclipse-temurin:25.0.4.1_1-jre-noble
+FROM eclipse-temurin:25.0.5_8-jre-noble
 # Point de montage du volume photos (10.1a) créé ici, avant USER : un volume nommé neuf hérite de ce propriétaire et
 # de ces droits (700), sinon l'utilisateur non root ne peut pas y écrire.
 RUN groupadd --system --gid 10001 backyard \
