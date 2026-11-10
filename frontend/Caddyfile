@@ -48,12 +48,15 @@
 
 	# Endpoints métier : relayés sans réécriture du chemin.
 	handle /api/* {
-		# Logo de course : 2 Mo refusés par l'api (413 ProblemDetail) ; au-delà de 4 Mio, Caddy répond lui-même 413
-		# avant que Tomcat ne coupe la connexion sur un corps trop gros.
+		# Logo et photo : 2 Mo refusés par l'api (413 ProblemDetail) ; au-delà de 8 Mio, Caddy répond lui-même 413.
+		# Le corps est tamponné en entier avant d'être relayé : un 413 de l'api n'arrive jamais pendant que Caddy lit
+		# encore le client (sinon 431 sur la requête suivante). Voir docs/deploiement.md, « Envois volumineux refusés ».
 		request_body {
-			max_size 4MiB
+			max_size 8MiB
 		}
-		reverse_proxy api:8080
+		reverse_proxy api:8080 {
+			request_buffers 8MiB
+		}
 	}
 
 	# Application Angular : fichiers statiques, repli sur index.html pour le routage.

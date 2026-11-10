@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { CsrfService } from '../../partage/csrf.service';
@@ -19,6 +19,7 @@ import {
   erreurTentativesExcessives,
   interpreterErreurCompte,
 } from '../erreurs-compte';
+import { NavigationApresConnexionService } from '../navigation-apres-connexion.service';
 import { destinationApresConnexion } from '../retour';
 import { SessionService } from '../session.service';
 
@@ -41,7 +42,7 @@ const NON_BLANC = /\S/;
 export class Connexion implements OnInit {
   private readonly session = inject(SessionService);
   private readonly csrf = inject(CsrfService);
-  private readonly router = inject(Router);
+  private readonly navigationApresConnexion = inject(NavigationApresConnexionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly retour = inject(ActivatedRoute).snapshot.queryParamMap.get('retour');
 
@@ -115,10 +116,13 @@ export class Connexion implements OnInit {
     }
   }
 
-  /** La destination dépend du rôle du Compte connecté, connu seulement après la connexion. */
+  /**
+   * La destination dépend du rôle du Compte connecté, connu seulement après la connexion (ou la
+   * relecture de la session, cas « déjà connecté ») ; un retour interdit au rôle mène à son accueil.
+   */
   private rejoindreDestination(): void {
     const role = this.session.compte()?.role;
-    void this.router.navigateByUrl(destinationApresConnexion(this.retour, role));
+    this.navigationApresConnexion.rejoindre(destinationApresConnexion(this.retour, role));
   }
 
   /** Le mot de passe n'est jamais conservé après un envoi ; le pseudo saisi l'est. */
