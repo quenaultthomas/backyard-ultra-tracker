@@ -167,10 +167,46 @@ class LimiteDebitPhotosIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA11 : la saturation des photos ne consomme pas le plafond de /api/courses : après 6 photos, 1200 n'est pas atteint et GET /api/courses répond 200 ; HEAD n'est pas compté")
+    @DisplayName("CA3 (correctif audit jalon 10) : plafond 5 : 3 GET + 2 HEAD sur la photo répondent 200, le 6e HEAD répond 429 TROP_DE_REQUETES (Retry-After >= 1, no-store, sans corps, aucune instruction SQL), le 7e GET aussi ; HEAD /api/courses/X/suivi x10 : 401 à chaque fois, jamais 429 ; minute suivante : 200")
+    void ca3_head_compte_dans_le_plafond_des_photos() throws Exception {
+        for (int i = 1; i <= 3; i++) {
+            assertThat(photos.lire("GET", urlPhoto, Map.of()).statusCode()).as("GET " + i).isEqualTo(200);
+        }
+        for (int i = 1; i <= 2; i++) {
+            assertThat(photos.lire("HEAD", urlPhoto, Map.of()).statusCode()).as("HEAD " + i).isEqualTo(200);
+        }
+        Statistics statistiques = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        long avant = statistiques.getPrepareStatementCount();
+
+        HttpResponse<byte[]> refuse = photos.lire("HEAD", urlPhoto, Map.of());
+
+        assertThat(refuse.statusCode()).isEqualTo(429);
+        assertThat(statistiques.getPrepareStatementCount()).as("aucune requête SQL pour un refus").isEqualTo(avant);
+        assertThat(Integer.parseInt(refuse.headers().firstValue("retry-after").orElseThrow()))
+                .isGreaterThanOrEqualTo(1);
+        assertThat(refuse.headers().firstValue("cache-control")).hasValueSatisfying(
+                c -> assertThat(c).contains("no-store"));
+        assertThat(refuse.body()).isEmpty();
+        assertThat(photos.lire("GET", urlPhoto, Map.of()).statusCode()).as("7e appel (GET)").isEqualTo(429);
+
+        for (int i = 1; i <= 10; i++) {
+            assertThat(photos.lire("HEAD", "/api/courses/" + course + "/suivi", Map.of()).statusCode())
+                    .as("HEAD suivi " + i).isEqualTo(401);
+        }
+
+        Instant fin = horloge.instant();
+        horloge.fixer(fin.plusSeconds(60 - (fin.getEpochSecond() % 60)));
+        assertThat(photos.lire("GET", urlPhoto, Map.of()).statusCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("CA11 : la saturation des photos ne consomme pas le plafond de /api/courses : après 6 photos, 1200 n'est pas atteint et GET /api/courses répond 200 ; HEAD sur /api/courses n'est pas compté")
     void ca11_compteurs_separes_et_head_non_compte() throws Exception {
+        // Correctif audit jalon 10, RG2 : HEAD /api/photos/* est désormais compté (remplace 10.2 RG6 / CA5 pour les
+        // photos) ; HEAD reste non compté sur /api/courses (réponse de la sécurité, jamais 429 de la limite).
         for (int i = 0; i < 20; i++) {
-            assertThat(photos.lire("HEAD", urlPhoto, Map.of()).statusCode()).isEqualTo(200);
+            assertThat(photos.lire("HEAD", "/api/courses/" + course + "/suivi", Map.of()).statusCode())
+                    .isNotEqualTo(429);
         }
         for (int i = 1; i <= 5; i++) {
             assertThat(photos.lire("GET", urlPhoto, Map.of()).statusCode()).isEqualTo(200);

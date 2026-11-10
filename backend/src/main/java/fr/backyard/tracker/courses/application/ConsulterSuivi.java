@@ -15,7 +15,6 @@ import fr.backyard.tracker.courses.domaine.MotifAbandon;
 import fr.backyard.tracker.courses.domaine.Passage;
 import fr.backyard.tracker.courses.domaine.StatistiquesCourse;
 import fr.backyard.tracker.courses.domaine.StatutInscription;
-import fr.backyard.tracker.partage.domaine.AdressePhoto;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -50,10 +49,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class ConsulterSuivi {
 
-    /** Coureur en course ou vainqueur : dossard, pseudo et adresse relative de sa photo (null sans photo, 10.2 RG1). */
-    public record CoureurSuivi(int dossard, String pseudo, String photoUrl) {
+    /**
+     * Coureur en course ou vainqueur : dossard, pseudo et jeton de sa photo (null sans photo, 10.2 RG1). L'adresse
+     * publique est construite par l'exposition (correctif audit jalon 10 RG12).
+     */
+    public record CoureurSuivi(int dossard, String pseudo, String jetonPhoto) {
 
-        /** Dossard uniquement : jamais de pseudo ni d'adresse de photo dans les journaux. */
+        /** Dossard uniquement : jamais de pseudo ni de jeton de photo dans les journaux. */
         @Override
         public String toString() {
             return "CoureurSuivi[dossard=" + dossard + "]";
@@ -102,7 +104,7 @@ public class ConsulterSuivi {
 
     /**
      * Lectures d'une Course à l'instant {@code chargeeLe} ; Inscriptions, inscrits, photos et Passages vides hors
-     * exposition. {@code photosParInscription} : adresse de la photo par identifiant d'Inscription, absente sans photo.
+     * exposition. {@code photosParInscription} : jeton de la photo par identifiant d'Inscription, absente sans photo.
      */
     private record Lectures(Instant chargeeLe, Course course, Optional<String> empreinteLogo,
                             List<Inscription> inscriptions, List<Inscrit> parDossard,
@@ -185,10 +187,7 @@ public class ConsulterSuivi {
                 passagesDe(inscriptions));
     }
 
-    /**
-     * Une seule lecture groupée des photos des coureurs en course et vainqueurs, omise s'il n'y en a aucun ; l'adresse
-     * publique est calculée par {@link AdressePhoto}, seul détenteur du préfixe.
-     */
+    /** Une seule lecture groupée des jetons de photo des coureurs en course et vainqueurs, omise s'il n'y en a aucun. */
     private Map<UUID, String> photosDe(List<Inscription> inscriptions) {
         List<Inscription> avecPhoto = inscriptions.stream()
                 .filter(inscription -> AVEC_PHOTO.contains(inscription.statut())).toList();
@@ -199,7 +198,7 @@ public class ConsulterSuivi {
                 avecPhoto.stream().map(Inscription::compteId).distinct().toList());
         return avecPhoto.stream().filter(inscription -> jetons.containsKey(inscription.compteId()))
                 .collect(Collectors.toUnmodifiableMap(Inscription::id,
-                        inscription -> AdressePhoto.de(jetons.get(inscription.compteId()))));
+                        inscription -> jetons.get(inscription.compteId())));
     }
 
     /** Une seule lecture groupée des Passages de toutes les Inscriptions, omise sans Inscription. */

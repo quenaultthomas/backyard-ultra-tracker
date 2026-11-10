@@ -30,8 +30,9 @@ import org.junit.jupiter.api.Test;
  * ont une (absent de la Map sinon, jamais d'exception) ;</li>
  * <li>{@code ConsulterSuivi(DepotCourses, DepotInscriptions, AnnuairePseudos, AnnuairePhotos, DepotPassages,
  * DepotLogos, Clock)} ;</li>
- * <li>{@code ConsulterSuivi.CoureurSuivi(int dossard, String pseudo, String photoUrl)}, {@code photoUrl} null sans
- * photo, sinon {@code "/api/photos/" + jeton} (construite uniquement dans le cas d'usage) ;</li>
+ * <li>{@code ConsulterSuivi.CoureurSuivi(int dossard, String pseudo, String jetonPhoto)}, {@code jetonPhoto} null
+ * sans photo, sinon le jeton brut de 32 caractères (correctif audit jalon 10, CA15 / RG12 : l'adresse est construite
+ * par l'exposition, jamais par le cas d'usage) ;</li>
  * <li>{@code AbandonSuivi} inchangé.</li>
  * </ul>
  */
@@ -58,7 +59,7 @@ class ConsulterSuiviPhotosTest {
     }
 
     @Test
-    @DisplayName("CA1 - en course : photoUrl relative /api/photos/<jeton> avec photo, null sans photo, par dossard")
+    @DisplayName("CA1 - en course : jetonPhoto brut avec photo, null sans photo, par dossard")
     void doit_exposer_la_photo_url_des_coureurs_en_course_dans_l_ordre_des_dossards() {
         Inscription karim = inscrire(2, "Karim", StatutInscription.EN_COURSE);
         inscrire(1, "Alice", StatutInscription.EN_COURSE);
@@ -66,10 +67,10 @@ class ConsulterSuiviPhotosTest {
 
         var suivi = consulterSuivi.executer(X);
 
-        assertThat(suivi.coureursEnCourse()).extracting(c -> c.dossard(), c -> c.pseudo(), c -> c.photoUrl())
+        assertThat(suivi.coureursEnCourse()).extracting(c -> c.dossard(), c -> c.pseudo(), c -> c.jetonPhoto())
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple(1, "Alice", null),
-                        org.assertj.core.groups.Tuple.tuple(2, "Karim", "/api/photos/" + JETON_KARIM));
+                        org.assertj.core.groups.Tuple.tuple(2, "Karim", JETON_KARIM));
     }
 
     @Test
@@ -80,8 +81,8 @@ class ConsulterSuiviPhotosTest {
 
         var suivi = consulterSuivi.executer(X);
 
-        assertThat(suivi.vainqueurs()).extracting(c -> c.dossard(), c -> c.photoUrl())
-                .containsExactly(org.assertj.core.groups.Tuple.tuple(3, "/api/photos/" + JETON_SOPHIE));
+        assertThat(suivi.vainqueurs()).extracting(c -> c.dossard(), c -> c.jetonPhoto())
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(3, JETON_SOPHIE));
     }
 
     @Test
@@ -94,8 +95,8 @@ class ConsulterSuiviPhotosTest {
 
         var suivi = consulterSuivi.executer(X);
 
-        assertThat(suivi.coureursEnCourse()).extracting(c -> c.photoUrl())
-                .containsExactly("/api/photos/" + JETON_KARIM, "/api/photos/" + JETON_SOPHIE);
+        assertThat(suivi.coureursEnCourse()).extracting(c -> c.jetonPhoto())
+                .containsExactly(JETON_KARIM, JETON_SOPHIE);
     }
 
     @Test
@@ -171,10 +172,33 @@ class ConsulterSuiviPhotosTest {
         var suivi = consulterSuivi.executer(X);
 
         assertThat(annuairePhotos.appels.getFirst()).contains(anonymise.compteId(), inconnu.compteId());
-        assertThat(suivi.coureursEnCourse()).extracting(c -> c.dossard(), c -> c.pseudo(), c -> c.photoUrl())
+        assertThat(suivi.coureursEnCourse()).extracting(c -> c.dossard(), c -> c.pseudo(), c -> c.jetonPhoto())
                 .containsExactly(
                         org.assertj.core.groups.Tuple.tuple(1, "Coureur anonyme", null),
                         org.assertj.core.groups.Tuple.tuple(2, "Compte inconnu", null));
+    }
+
+    @Test
+    @DisplayName("CA15 (correctif) - CoureurSuivi n'a que dossard, pseudo et jetonPhoto : aucune adresse, aucun préfixe")
+    void doit_ne_porter_que_dossard_pseudo_et_jeton_photo() {
+        var composants = java.util.Arrays.stream(ConsulterSuivi.CoureurSuivi.class.getRecordComponents())
+                .map(java.lang.reflect.RecordComponent::getName).toList();
+
+        assertThat(composants).containsExactly("dossard", "pseudo", "jetonPhoto");
+    }
+
+    @Test
+    @DisplayName("CA15 (correctif) - le jeton est celui de l'annuaire, sans préfixe d'adresse, pour coureur et vainqueur")
+    void doit_exposer_le_jeton_sans_prefixe() {
+        Inscription karim = inscrire(2, "Karim", StatutInscription.EN_COURSE);
+        Inscription sophie = inscrire(3, "Sophie", StatutInscription.VAINQUEUR);
+        annuairePhotos.jetons.put(karim.compteId(), JETON_KARIM);
+        annuairePhotos.jetons.put(sophie.compteId(), JETON_SOPHIE);
+
+        var suivi = consulterSuivi.executer(X);
+
+        assertThat(suivi.coureursEnCourse().getFirst().jetonPhoto()).isEqualTo(JETON_KARIM).doesNotContain("/");
+        assertThat(suivi.vainqueurs().getFirst().jetonPhoto()).isEqualTo(JETON_SOPHIE).doesNotContain("/");
     }
 
     // ---------- fabriques ----------

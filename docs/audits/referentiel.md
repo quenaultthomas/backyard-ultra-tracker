@@ -32,6 +32,8 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | SEC-20 | Recherche de coureurs par pseudo (`GET /api/administration/coureurs`) : 401/403 avant toute validation de `q`, fragment de 3 à 30 caractères, résultats limités à 10, réponse réduite à `id` et `pseudo` en `no-store`, comptes anonymisés, désactivés et autres rôles exclus, fragment traité comme un motif littéral (`_`, `%`, `\` échappés, requête paramétrée), fragment jamais journalisé. Risque accepté et documenté : un admin peut énumérer les pseudos par fragments de 3 caractères, sans limitation de débit | P2 | 9.5 |
 | SEC-21 | Secrets SMTP uniquement en variables d'environnement, jamais journalisés ni présents dans une exception, un `ProblemDetail` ou une trace ; TLS exigé vers le fournisseur en production | P1 | 9.9 |
 | SEC-22 | Mail d'inscription sans injection d'en-têtes ni de contenu : retours à la ligne dans le nom de course, le pseudo ou l'adresse neutralisés, adresse validée, corps en texte brut ou échappé, aucune donnée personnelle autre que celles prévues | P2 | 9.9 |
+| SEC-23 | Envoi de la photo de profil : signature, taille et rôle `COUREUR` contrôlés côté serveur ; nom et type déclarés jamais lus ; fichier nommé `<jeton>.<ext>` côté serveur sans traversée possible ; écriture atomique et droits 700/600 ; limites multipart et Caddy cohérentes avec le domaine (distinct de SEC-10, qui vise le logo en base). Risque accepté et documenté : un client qui contourne le front peut publier une photo avec ses métadonnées EXIF/GPS, car le serveur ne décode pas l'image | P1 | 10.1a |
+| SEC-24 | Lecture publique `GET /api/photos/{jeton}` : jeton de 128 bits contrôlé avant tout accès base ou disque, 404 identique pour tous les échecs, `nosniff`, `inline`, pas de cookie ni de session, base source de vérité, limite de débit dédiée, `HEAD` compris dans la limite | P1 | 10.1a |
 
 ## ARC : Architecture et DDD
 
@@ -67,6 +69,7 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | MET-13 | Suppression d'un admin : admin master jamais supprimable, connexion impossible ensuite, règle du dernier admin conforme à la décision de la roadmap | P1 | 9.4 |
 | MET-14 | Changement de rôle : refus (409) avec inscription `EN_PREPARATION` ou `EN_COURS`, inscriptions `TERMINEE` conservées, rôle cible permis selon le rôle de l'appelant, aucun passage de rôle depuis ou vers un compte autre que `COUREUR` | P1 | 9.6 |
 | MET-15 | Notification d'inscription : aucun mail sans adresse, contenu limité à course, pseudo, dossard et places restantes, un échec d'envoi journalisé ne bloque ni n'annule l'inscription | P1 | 9.9 |
+| MET-16 | Suppression, anonymisation, remplacement ou retrait : le fichier de photo est effacé après validation, jamais avant, et un échec d'effacement ne change ni la réponse ni la transaction ; un compte anonymisé n'a plus de photo | P1 | 10.1a |
 
 ## PER : Persistance
 
@@ -77,6 +80,8 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | PER-03 | Contraintes d'unicité et clés étrangères en base (pseudo, dossard par course, inscription par course et compte, passage par inscription et boucle) | P1 | 3.1 |
 | PER-04 | Index adaptés aux requêtes de suivi et de scan | P3 | 4.4 |
 | PER-05 | Passages immuables : aucune mise à jour ni suppression applicative | P1 | 4.4 |
+| PER-06 | Cohérence base/volume des photos : fichiers orphelins, `.tmp` abandonnés et photos manquantes détectés ou rattrapés, procédure documentée | P2 | 10.1a |
+| PER-07 | Charge du suivi public : nombre de requêtes SQL et de lectures disque par appel de `/suivi` et par chargement du tableau de polaroïds, avec 100 coureurs (micro-cache, ETag, 304) | P2 | 10.2 |
 
 ## DEP : Déploiement
 
@@ -90,6 +95,7 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | DEP-06 | `.dockerignore` : pas de `target/`, `node_modules/`, secrets dans les images | P3 | 0.1 |
 | DEP-07 | Sauvegarde et restauration documentées et cohérentes avec les volumes réels | P2 | 0.4 |
 | DEP-08 | Mailpit absent de la configuration de production (`docker compose -f docker-compose.yml -f docker-compose.prod.yml config`), image à version fixée, variables SMTP dans `.env.example` et configuration de production documentée dans `docs/deploiement.md` | P1 | 9.9 |
+| DEP-09 | Volume `photos` : monté sur `api`, propriétaire non root, présent dans la sauvegarde et la restauration, jamais supprimé par `down -v` en production | P2 | 10.1a |
 
 ## TST : Tests et qualité
 
@@ -113,3 +119,4 @@ Liste de référence des points auditables. Chaque point a un identifiant stable
 | FRT-05 | File de scan hors ligne : pas de perte ni de doublon, reprise après coupure | P1 | 5.1 |
 | FRT-06 | Service worker : pas de mise en cache de données sensibles ni de réponses d'API périmées | P2 | 5.2 |
 | FRT-07 | Menu d'administration reflétant le rôle sans en être la protection ; formulaires de création à la demande (fermés après création ou annulation, état effacé) sans perte de saisie sur erreur | P3 | 9.1 |
+| FRT-08 | Écran Mon compte (photo) : préparation navigateur (512 px, JPEG, sans métadonnées), aucune requête en cas d'échec de préparation, aperçu de l'image réellement envoyée | P2 | 10.1b |

@@ -54,7 +54,8 @@ Toutes les variables sont décrites dans `.env.example`. Le fichier `.env` n'est
 | `HACHAGE_CONCURRENCE_MAX_PAR_IP` | facultative (défaut `1`, entier ≥ 1) | calculs Argon2id simultanés par adresse cliente, appliqué avant `HACHAGE_CONCURRENCE_MAX` : une adresse n'occupe jamais plus de places (voir « Limitation des connexions ») |
 | `COOKIES_SECURE` | imposée à `true` par `docker-compose.prod.yml` (`.env` ignoré) ; `false` par défaut dans `docker-compose.yml` | drapeau `Secure` des cookies `JSESSIONID` et `XSRF-TOKEN`, indépendant de `X-Forwarded-Proto` ; `true` ou `false` |
 | `BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE` | facultative (défaut `1200`, entier ≥ 0, `0` = aucune limite) | requêtes `GET /api/courses` et `/api/courses/**` (accueil, suivi, logo) admises par IP et par minute ; au-delà, 429 `TROP_DE_REQUETES` (voir « Suivi public sous charge ») |
-| `BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE` | facultative (défaut `3000`, entier ≥ 0, `0` = aucune limite ; E2E : `60000`) | requêtes `GET /api/photos/*` (photos de profil du tableau du suivi) admises par IP et par minute, compteur séparé de celui de `/api/courses` ; au-delà, 429 `TROP_DE_REQUETES` (voir « Suivi public sous charge ») |
+| `BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE` | facultative (défaut `3000`, entier ≥ 0, `0` = aucune limite ; E2E : `60000`) | requêtes `GET` et `HEAD /api/photos/*` (photos de profil du tableau du suivi, les deux méthodes dans le même compteur) admises par IP et par minute, compteur séparé de celui de `/api/courses` ; au-delà, 429 `TROP_DE_REQUETES` (voir « Suivi public sous charge ») |
+| `BACKYARD_PHOTOS_REPERTOIRE` | fixe (`/donnees/photos`), non réglable : posée par `docker-compose.yml`, la valeur de `.env` est ignorée | répertoire des fichiers de photos de profil, point de montage du volume `photos` (voir « Sauvegarde » et « Restauration ») |
 | `API_MEMOIRE_MAX` | facultative (défaut `1g`) | plafond mémoire du conteneur `api` (production seulement) |
 | `BASE_MEMOIRE_MAX` | facultative (défaut `512m`) | plafond mémoire du conteneur `base` (production seulement) |
 | `WEB_MEMOIRE_MAX` | facultative (défaut `256m`) | plafond mémoire du conteneur `web` (production seulement) |
@@ -257,7 +258,7 @@ Le suivi public est projeté et ouvert par les spectateurs : chaque écran inter
 - **Micro-cache** : l'api relit la Course, ses Inscriptions et ses Passages au plus une fois par seconde et par Course ; compte à rebours, Boucle courante et heure du serveur sont recalculés à chaque requête. Un statut de coureur (scan, abandon, vainqueur) peut apparaître sur le suivi jusqu'à ~2 s après la décision. Le pilotage n'est pas mis en cache.
 - **Planificateur** : le contrôle d'abandon automatique ne verrouille une Course et ne relit ses Passages qu'à l'échéance d'une Boucle (départ + délai de grâce), plus chaque seconde.
 - **Limite de débit** : `BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE` (défaut `1200`) requêtes par IP et par minute sur `GET /api/courses` et `/api/courses/**` ; au-delà, 429 `TROP_DE_REQUETES` avec `Retry-After` jusqu'à la minute suivante, refusé avant tout accès à la base. La connexion, les routes coureur, bénévole et administration ne sont pas concernées. L'IP retenue est celle transmise par Caddy (`X-Forwarded-For`), uniquement si la requête vient du service `web` (`BACKYARD_PROXY_DE_CONFIANCE=web`, fixé dans `docker-compose.yml`) : un en-tête envoyé directement à `api` est ignoré. Une ligne `Débit public dépassé` par IP et par minute apparaît dans `$PROD logs api`.
-- **Photos du suivi** : `GET /api/photos/*` a son propre plafond, `BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE` (défaut `3000`), compté séparément : les images n'entament pas le plafond du suivi et inversement (même IP retenue, même 429, ligne `Débit public dépassé sur /api/photos`). Les photos sont servies avec `Cache-Control: public, max-age=300` : une photo retirée peut rester visible jusqu'à 5 minutes dans un navigateur qui l'a déjà chargée (un nouveau chargement reçoit 404, non mis en cache) ; Caddy ne met rien en cache. Le front ne redemande pas les images pendant le polling.
+- **Photos du suivi** : `GET` et `HEAD /api/photos/*` ont leur propre plafond, `BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE` (défaut `3000`), un seul compteur pour les deux méthodes, compté séparément : les images n'entament pas le plafond du suivi et inversement (même IP retenue, même 429, ligne `Débit public dépassé sur /api/photos`). Les photos sont servies avec `Cache-Control: public, max-age=300` : une photo retirée peut rester visible jusqu'à 5 minutes dans un navigateur qui l'a déjà chargée (un nouveau chargement reçoit 404, non mis en cache) ; Caddy ne met rien en cache. Le front ne redemande pas les images pendant le polling. Une revalidation (`If-None-Match` égal à l'ETag) répond 304 sans lire le fichier : seule la base est consultée.
 - **Limite connue** : des spectateurs derrière une même IP (wifi d'un stade, NAT d'opérateur) partagent le compteur ; 1200 admet ~60 écrans. Au-delà, remonter la variable dans `.env` puis `$PROD up -d api` (aucune reconstruction, mais les sessions sont perdues : hors course). `0` désactive la limite.
 - **Évolution possible** : limiter dans Caddy (module tiers `caddy-ratelimit`, image Caddy à construire) protégerait aussi la bande passante ; non retenu pour garder l'image officielle.
 
@@ -273,6 +274,55 @@ COURSE=<identifiant> ECRANS=50 DUREE=60 ./scripts/charge-suivi.sh
 Le script affiche les requêtes envoyées, les `200`, `429`, `5xx`/erreurs réseau, la latence médiane et le p95 ; il sort en code 1 si le p95 dépasse 500 ms ou s'il y a au moins un `5xx`. Il lit `ADMIN_MASTER_PSEUDO` et `ADMIN_MASTER_MOT_DE_PASSE` dans `.env` comme `scripts/donnees-demo.sh` (pour `PEUPLER`), vise `BASE_URL` (défaut `http://localhost`) et refuse une cible autre que `localhost`/`127.0.0.1` sans `DEMO_FORCER=oui` (code 2).
 
 Les créations de coureurs passent par `POST /api/comptes`, limité à `CREATION_COMPTE_PAR_IP_MAX` créations par adresse sur la fenêtre glissante (voir « Limitation des créations de comptes ») : sur un 429, `charge-suivi.sh` et `donnees-demo.sh` affichent « limite de création de comptes atteinte, nouvel essai dans N s », attendent la durée annoncée (au plus 60 s) puis renouvellent la même création, trois fois au plus. Avec le défaut (10 par 60 s), `PEUPLER=30` dure donc environ 2 à 3 minutes ; pour aller plus vite en local, relever `CREATION_COMPTE_PAR_IP_MAX` dans `.env` puis `docker compose up -d api`.
+
+## Photos de profil : nettoyage au démarrage
+
+**Objet.** Un fichier de photo peut rester sur le volume `photos` sans qu'aucun Compte ne le porte : effacement en échec après un remplacement, un retrait, une suppression ou une anonymisation (le WARN « Effacement de la photo impossible » est alors journalisé), fichier temporaire laissé par un envoi interrompu, fichier oublié après un retrait d'urgence (voir « Retirer une photo en urgence »). À **chaque démarrage de `api`**, après les migrations, un balayage unique supprime ces fichiers. Il n'y a pas de balayage périodique : un fichier orphelin est rattrapé au redémarrage suivant de `api`, à condition d'avoir plus d'une heure.
+
+**Règle.** Seules les entrées directes de `/donnees/photos` sont examinées (aucune descente dans un sous-répertoire, aucun lien suivi, le répertoire n'est jamais créé par le balayage) :
+- un fichier `<32 caractères hexadécimaux minuscules>.png`, `.jpg` ou `.webp` dont le jeton n'est porté par **aucun** Compte et modifié depuis **plus d'une heure** est supprimé (la marge d'une heure protège un envoi en cours) ;
+- un fichier temporaire `<jeton>.<png|jpg|webp>.tmp` modifié depuis plus d'une heure est supprimé, quel que soit l'état de la base ;
+- tout autre nom (`lisez-moi.txt`, `.gitkeep`, majuscules, extension inconnue, `lost+found`…) est **ignoré, jamais supprimé** ; un fichier dont le jeton est porté par un Compte n'est jamais supprimé (même si son extension diffère du format enregistré : il est alors compté parmi les ignorés).
+
+La base est interrogée en une seule requête pour tous les fichiers. Seuil d'une heure et garde-fou sont des constantes de l'application, non réglables.
+
+**Garde-fou.** Si plus de **10** fichiers orphelins sont à supprimer **et** qu'ils représentent plus de **la moitié** des fichiers de photo conformes, rien n'est supprimé (les `.tmp` anciens le sont quand même) et le journal affiche « Nettoyage des photos suspendu : trop de fichiers orphelins (N sur T) ». Cas typique : volume restauré sans la base correspondante, ou base restaurée à une date antérieure. Vérifier la cohérence de la sauvegarde restaurée ; si les fichiers sont réellement à supprimer, les effacer à la main (`$PROD exec api rm /donnees/photos/<nom>`), sinon restaurer la base du même horodatage puis redémarrer `api`.
+
+**Lire le bilan.**
+
+```sh
+$PROD logs api | grep "Nettoyage des photos"
+```
+
+Une ligne INFO « Nettoyage des photos : N fichier(s) orphelin(s) supprimé(s), M fichier(s) temporaire(s) supprimé(s), K fichier(s) ignoré(s) » par démarrage (uniquement des nombres : ni nom de fichier, ni jeton, ni pseudo). Volume neuf ou vide : « 0 … 0 … 0 ».
+
+**En cas d'erreur.** « Nettoyage des photos : E erreur(s) » : E fichiers n'ont pas pu être supprimés (droits, fichier disparu entre-temps) ; les autres l'ont été. Contrôler les droits du volume (`$PROD exec api ls -l /donnees/photos`, fichiers à l'utilisateur `backyard`) ; ils seront retentés au prochain démarrage. « Nettoyage des photos impossible, aucun fichier supprimé : … » : répertoire illisible ou base inaccessible au moment du balayage ; rien n'est supprimé, le démarrage continue normalement, un redémarrage de `api` relance le balayage. Le démarrage de `api` n'est jamais bloqué par le nettoyage.
+
+**Ordre de restauration.** Restaurer **la base avant de démarrer `api`** avec un volume `photos` restauré : sinon les fichiers restaurés (qui gardent leur date d'origine, plus d'une heure) dont le jeton n'est pas encore en base seraient vus comme orphelins et supprimés (le garde-fou ne protège qu'au-delà de 10 fichiers et de la moitié du volume). La procédure de « Restauration » respecte cet ordre : `api` reste arrêtée pendant la restauration du dump et de l'archive de photos.
+
+## Retirer une photo en urgence
+
+Il n'existe pas d'action d'administration « retirer la photo » : le coureur peut retirer sa photo à tout moment (Mon compte). En cas d'urgence (photo inappropriée projetée sur le suivi), l'exploitant la retire directement en base, sans passer par l'application. Remplacer `backyard` par `BASE_UTILISATEUR` et `BASE_NOM` s'ils ont été changés, et `<pseudo>` par le pseudo affiché sur le polaroïd :
+
+1. **Identifier** le Compte :
+   ```sh
+   $PROD exec base psql -U backyard -d backyard -c "select id, photo_jeton, photo_format from compte where pseudo = '<pseudo>'"
+   ```
+2. **Retirer de l'affichage** (les deux colonnes ensemble : la contrainte `ck_compte_photo_coherente` l'exige) :
+   ```sh
+   $PROD exec base psql -U backyard -d backyard -c "update compte set photo_jeton = null, photo_format = null where pseudo = '<pseudo>'"
+   ```
+   Dès cette instruction, l'adresse de la photo répond 404 et le suivi renvoie `photoUrl` `null` : la silhouette s'affiche au rafraîchissement suivant (au plus ~4 s). `UPDATE 0` : pseudo inconnu ou photo déjà retirée, rien à faire.
+3. **Supprimer le fichier** (`<ext>` : `png` pour `PNG`, `jpg` pour `JPEG`, `webp` pour `WEBP`, d'après `photo_format` lu à l'étape 1) :
+   ```sh
+   $PROD exec api rm /donnees/photos/<photo_jeton>.<ext>
+   ```
+
+À savoir :
+- un navigateur qui a déjà chargé la photo peut encore l'afficher **jusqu'à 5 minutes** (cache `max-age=300`) : sur l'écran projeté, faire un rechargement forcé (Ctrl+Maj+R) ;
+- si l'étape 3 est oubliée, le fichier devenu orphelin est supprimé au **prochain démarrage de `api`** (voir « Photos de profil : nettoyage au démarrage ») ;
+- la procédure contourne l'application : aucune ligne de journal applicatif n'est écrite ;
+- elle ne touche ni le Compte (pseudo, rôle, connexion), ni ses Inscriptions, ni ses sessions ; le coureur peut ensuite envoyer une nouvelle photo (nouveau jeton, nouvelle adresse).
 
 ## Sauvegarde
 
@@ -358,7 +408,7 @@ $PROD run --rm --no-deps -T --entrypoint sh api -c \
 $PROD start api
 ```
 
-La dernière commande du conteneur affiche le nombre de fichiers restaurés. Contrôle : `$PROD ps` (`api` `healthy`), puis les photos s'affichent : pour un coureur qui avait une photo, `GET /api/comptes/moi` renvoie une `photoUrl` et `curl -sI https://<domaine><photoUrl>` répond 200 avec le type de l'image.
+Restaurer le dump de la base **avant** de redémarrer `api` (voir « Restauration » ci-dessus) : au démarrage, `api` supprime les fichiers de plus d'une heure dont le jeton n'est pas en base (voir « Photos de profil : nettoyage au démarrage »). La dernière commande du conteneur affiche le nombre de fichiers restaurés. Contrôle : `$PROD ps` (`api` `healthy`), puis les photos s'affichent : pour un coureur qui avait une photo, `GET /api/comptes/moi` renvoie une `photoUrl` et `curl -sI https://<domaine><photoUrl>` répond 200 avec le type de l'image.
 
 Restauration facultative des certificats Caddy (`web` arrêté ; `tar` exécuté en root conserve les propriétaires d'origine, l'utilisateur non root `web`) :
 

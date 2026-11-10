@@ -8,25 +8,19 @@
   @if (!vainqueur()) {
     <div class="polaroid__epingle" aria-hidden="true" data-testid="suivi-polaroid-epingle"></div>
   }
-  @if (photo(); as url) {
-    <img
-      class="polaroid__photo"
-      [src]="url"
-      [alt]="'Photo de ' + c.pseudo"
-      decoding="async"
-      loading="lazy"
-      (error)="signalerPhotoEnErreur(url)"
-      data-testid="suivi-polaroid-photo"
-    />
-  } @else {
-    <img
-      class="polaroid__photo"
-      [src]="silhouette"
-      alt=""
-      aria-hidden="true"
-      data-testid="suivi-polaroid-silhouette"
-    />
-  }
+  <!-- Un seul nœud img : la silhouette et les nouvelles tentatives de la photo y alternent. -->
+  <img
+    class="polaroid__photo"
+    [src]="source()"
+    [alt]="photoAffichee() ? 'Photo de ' + c.pseudo : ''"
+    [attr.aria-hidden]="photoAffichee() ? null : 'true'"
+    [attr.data-etat-photo]="phase()"
+    [attr.data-testid]="photoAffichee() ? 'suivi-polaroid-photo' : 'suivi-polaroid-silhouette'"
+    decoding="async"
+    loading="lazy"
+    (load)="photoChargee()"
+    (error)="photoEnEchec()"
+  />
   <figcaption class="polaroid__legende">
     <span class="polaroid__pseudo" data-testid="suivi-polaroid-pseudo">{{ c.pseudo }}</span>
     <span class="polaroid__dossard" data-testid="suivi-polaroid-dossard"

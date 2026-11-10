@@ -79,8 +79,12 @@ public class CompteJpaAdapter implements DepotComptes {
         return Optional.ofNullable(entityManager.find(CompteJpaEntity.class, id)).map(CompteJpaAdapter::versDomaine);
     }
 
-    /** Recherche par l'index d'unicité {@code uk_compte_photo_jeton}. */
+    /**
+     * Recherche par l'index d'unicité {@code uk_compte_photo_jeton}. Transaction propre ou celle de l'appelant : le flux
+     * de résultats est lu dans la transaction (lecture d'une photo, journal d'un fichier manquant hors transaction).
+     */
     @Override
+    @Transactional(readOnly = true)
     public Optional<Compte> trouverParJetonPhoto(String jeton) {
         return entityManager
                 .createQuery("select c from CompteJpaEntity c where c.photoJeton = :jeton", CompteJpaEntity.class)

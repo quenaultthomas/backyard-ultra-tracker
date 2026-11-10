@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
  * leur compteur.
  */
 class LimiteDebitPublicPhotosTest {
+    // Correctif audit jalon 10 (RG2) : le test « HEAD non compté » de 10.2 est remplacé par
+    // LimiteDebitPublicMethodesComptees (HEAD compté sur /api/photos). Le constructeur à 3 arguments reste « GET seul ».
 
     private static final String IP_A = "203.0.113.7";
     private static final String IP_B = "198.51.100.9";
@@ -83,19 +85,6 @@ class LimiteDebitPublicPhotosTest {
         for (int i = 0; i < 5000; i++) {
             assertThat(photos.verifier("GET", PHOTO, IP_A).autorisee()).isTrue();
         }
-    }
-
-    @Test
-    @DisplayName("CA5 - HEAD sur une photo n'est pas compté")
-    void doit_ne_pas_compter_les_head() {
-        var photos = new LimiteDebitPublic("/api/photos", 2, horloge);
-
-        for (int i = 0; i < 10; i++) {
-            assertThat(photos.verifier("HEAD", PHOTO, IP_A).autorisee()).isTrue();
-        }
-        assertThat(photos.verifier("GET", PHOTO, IP_A).autorisee()).isTrue();
-        assertThat(photos.verifier("GET", PHOTO, IP_A).autorisee()).isTrue();
-        assertThat(photos.verifier("GET", PHOTO, IP_A).autorisee()).isFalse();
     }
 
     @Test

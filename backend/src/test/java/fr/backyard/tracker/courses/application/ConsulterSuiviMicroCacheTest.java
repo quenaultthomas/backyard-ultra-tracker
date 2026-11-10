@@ -234,7 +234,7 @@ class ConsulterSuiviMicroCacheTest {
         var instantane = suivi.executer(COURSE);
 
         assertThat(annuairePhotos.appels).hasSize(1);
-        assertThat(instantane.coureursEnCourse().getFirst().photoUrl()).isEqualTo("/api/photos/" + "a".repeat(32));
+        assertThat(instantane.coureursEnCourse().getFirst().jetonPhoto()).isEqualTo("a".repeat(32));
 
         horloge.placerA(DEPART.plusMillis(1000));
         suivi.executer(COURSE);
