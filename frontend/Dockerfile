@@ -12,7 +12,7 @@ RUN printf "export const VERSION = '%s';\n" "$VERSION" > src/app/version.ts
 RUN npm run build
 
 # Étape d'exécution : Caddy sert le build et relaie /api vers le service api.
-FROM caddy:2.11.7-alpine
+FROM caddy:2.11.9-alpine
 # Le binaire caddy de l'image officielle porte la capacité cap_net_bind_service :
 # un utilisateur non root peut écouter sur le port 80.
 RUN addgroup -S web \
