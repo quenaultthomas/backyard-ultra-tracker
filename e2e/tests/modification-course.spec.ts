@@ -493,7 +493,7 @@ test.describe('Modification d\'une course', () => {
     await expect(page.getByTestId('course-bouton-enregistrer')).toHaveCount(0);
     await expect(page.getByTestId('course-bouton-annuler')).toHaveCount(0);
 
-    for (const [pseudo, mdp] of [[coureur, MOT_DE_PASSE], [benevole, MOT_DE_PASSE_BENEVOLE_CREE]]) {
+    for (const [pseudo, mdp, accueil] of [[coureur, MOT_DE_PASSE, /^[^?]*\/$/], [benevole, MOT_DE_PASSE_BENEVOLE_CREE, /\/benevole$/]] as const) {
       const contexte = await browser.newContext();
       const p = await contexte.newPage();
       try {
@@ -501,6 +501,10 @@ test.describe('Modification d\'une course', () => {
         await expect(p).toHaveURL(RETOUR_COURSES);
         await saisir(p, pseudo, mdp);
         await p.getByTestId('bouton-connexion').click();
+        // retour interdit au rôle : accueil du rôle (correctif retour-apres-connexion RG2), puis accès direct refusé (RG3)
+        await expect(p).toHaveURL(accueil);
+        await expect(p.getByTestId('entete-pseudo')).toHaveText(pseudo);
+        await p.goto('/administration/courses');
         await expect(p).toHaveURL(/\/acces-refuse$/);
         await expect(p.getByTestId('titre-acces-refuse')).toHaveText('Accès refusé');
       } finally {

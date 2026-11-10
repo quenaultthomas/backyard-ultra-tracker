@@ -5,6 +5,9 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+### Corrigé
+- Après un envoi de logo ou de photo de profil refusé car trop volumineux (413), la requête suivante sur la même connexion ne reçoit plus de 431, 400, 502 ni coupure : Caddy tamponne le corps des requêtes `/api/*` (`request_buffers 8MiB`) et Tomcat absorbe jusqu'à 8 Mo d'un envoi refusé (`server.tomcat.max-swallow-size`, `swallowAbortedUploads`). La limite de Caddy passe de 4 Mio à 8 Mio : jusque-là, la réponse est le 413 JSON `PHOTO_TROP_VOLUMINEUSE` ou `LOGO_TROP_VOLUMINEUX` ; au-delà, Caddy répond 413 sans corps JSON. Risque mémoire de `web` accepté et documenté dans `docs/deploiement.md` (« Envois volumineux refusés (413) »).
+
 ### Sécurité
 - Désactivation et réactivation des comptes administrateur (par l'admin master) et bénévole (par un admin ou l'admin master) : un compte désactivé ne peut plus se connecter (réponse identique à des identifiants invalides), toutes ses sessions sont fermées, et un bénévole désactivé est retiré des courses qui n'ont pas démarré ; ses passages et ses affectations aux courses démarrées sont conservés. L'admin master, son propre compte et le dernier administrateur actif ne peuvent pas être désactivés (SEC-13, constat PEN-01 du pentest du 2026-10-26).
 - Un bénévole désactivé ne peut plus être ajouté à une course (409 `BENEVOLE_DESACTIVE`).
