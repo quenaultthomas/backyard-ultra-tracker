@@ -362,11 +362,14 @@ test.describe('Passer un coureur en bénévole', () => {
       await pageA.getByTestId('menu-lien-mes-inscriptions').click();
       await expect(pageA).toHaveURL(/\/connexion\?retour=/);
 
-      // reconnexion (page de connexion sans `retour`) avec les mêmes identifiants : espace bénévole, aucune course
-      await ouvrirConnexion(pageA);
+      // reconnexion depuis /connexion?retour=%2Fcoureur%2Finscriptions (parcours réel), mêmes identifiants : espace bénévole, aucune course
+      await ouvrirConnexion(pageA, '/connexion?retour=%2Fcoureur%2Finscriptions');
+      const cheminsA: string[] = [];
+      pageA.on('framenavigated', (cadre) => { if (cadre === pageA.mainFrame()) cheminsA.push(new URL(cadre.url()).pathname); });
       await saisir(pageA, e5, MOT_DE_PASSE);
       await pageA.getByTestId('bouton-connexion').click();
       await expect(pageA).toHaveURL(/\/benevole$/);
+      expect(cheminsA, `chemins visités : ${cheminsA.join(' > ')}`).not.toContain('/acces-refuse');
       await expect(pageA.getByTestId('benevole-ligne-course')).toHaveCount(0);
 
       // Nadia l'affecte à une course, il la voit

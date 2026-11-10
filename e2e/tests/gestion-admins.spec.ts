@@ -163,6 +163,10 @@ test.describe('Gestion des administrateurs', () => {
     await expect(pageCoureur).toHaveURL(RETOUR_ADMINS);
     await saisir(pageCoureur, coureur, 'un-mot-de-passe-12');
     await pageCoureur.getByTestId('bouton-connexion').click();
+    // retour interdit au rôle : accueil du rôle (correctif retour-apres-connexion RG2), puis accès direct refusé (RG3)
+    await expect(pageCoureur).toHaveURL(/^[^?]*\/$/);
+    await expect(pageCoureur.getByTestId('entete-pseudo')).toHaveText(coureur);
+    await pageCoureur.goto('/administration/admins');
     await expect(pageCoureur).toHaveURL(/\/acces-refuse$/);
     await contexteCoureur.close();
 

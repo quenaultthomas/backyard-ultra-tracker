@@ -53,11 +53,17 @@ test.describe('Passer en bénévole : accessibilité', () => {
       return arrets;
     };
 
-    // panneau ouvert, sans confirmation : champ, un bouton par résultat, Fermer, boutons de ligne
-    const sans = await parcourir(200);
+    // La page Bénévoles liste toute la base, sans pagination : le parcours est borné par le nombre réel de
+    // boutons tabulables de la liste (comptés une fois, liste chargée), et non par un plafond fixe.
+    const boutonsDeLigne = await t(page, 'liste-benevoles').locator('button:not([disabled])').count();
+    test.setTimeout(150_000 + 2_000 * boutonsDeLigne);
+
+    // panneau ouvert, sans confirmation : champ, un bouton par résultat, Fermer, boutons de ligne, lien retour
+    const sans = await parcourir(11 + boutonsDeLigne + 3);
     const ids = sans.map((a) => a.testid ?? '');
     expect(ids.slice(0, 10)).toEqual(Array(10).fill('benevole-promotion-bouton-passer'));
     expect(ids[10]).toBe('benevole-promotion-bouton-fermer');
+    expect(ids.slice(11, -1)).toHaveLength(boutonsDeLigne);
     expect(ids.slice(11, -1).every((id) => /^benevole-bouton-(desactiver|reactiver|supprimer)$/.test(id))).toBe(true);
     expect(ids.at(-1)).toBe('lien-retour-administration');
     expect(sans.slice(0, 10).map((a) => a.nom)).toEqual(pseudos.slice(0, 10).map((p) => `Passer en bénévole le coureur ${p}`));

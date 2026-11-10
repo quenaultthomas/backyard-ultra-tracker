@@ -170,13 +170,17 @@ test.describe('Gestion des bénévoles', () => {
     await expect(page.getByTestId('lien-gestion-admins')).toBeVisible();
 
     // coureur et bénévole : accès refusé
-    for (const [pseudoRole, mdp] of [[coureur, MOT_DE_PASSE], [benevole, MOT_DE_PASSE_BENEVOLE_CREE]]) {
+    for (const [pseudoRole, mdp, accueil] of [[coureur, MOT_DE_PASSE, /^[^?]*\/$/], [benevole, MOT_DE_PASSE_BENEVOLE_CREE, /\/benevole$/]] as const) {
       const contexte = await browser.newContext();
       const p = await contexte.newPage();
       await p.goto('/administration/benevoles');
       await expect(p).toHaveURL(RETOUR_BENEVOLES);
       await saisir(p, pseudoRole, mdp);
       await p.getByTestId('bouton-connexion').click();
+      // retour interdit au rôle : accueil du rôle (correctif retour-apres-connexion RG2), puis accès direct refusé (RG3)
+      await expect(p).toHaveURL(accueil);
+      await expect(p.getByTestId('entete-pseudo')).toHaveText(pseudoRole);
+      await p.goto('/administration/benevoles');
       await expect(p).toHaveURL(/\/acces-refuse$/);
       await expect(p.getByTestId('titre-acces-refuse')).toHaveText('Accès refusé');
       await contexte.close();
@@ -289,6 +293,9 @@ test.describe('Accueil bénévole', () => {
     const contexteRetour = await browser.newContext();
     const pageRetour = await contexteRetour.newPage();
     await connecter(pageRetour, benevole, MOT_DE_PASSE_BENEVOLE_CREE, '/connexion?retour=%2Fadministration');
+    // retour interdit au rôle : accueil du rôle (correctif retour-apres-connexion RG2), puis accès direct refusé (RG3)
+    await expect(pageRetour).toHaveURL(/\/benevole$/);
+    await pageRetour.goto('/administration');
     await expect(pageRetour).toHaveURL(/\/acces-refuse$/);
     await contexteRetour.close();
   });

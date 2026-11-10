@@ -64,21 +64,44 @@ class VersionPubliqueDepotIntegrationTest {
         assertThat(rewritesActuator).isEqualTo(2);
     }
 
+    /**
+     * CA7 reformulé par le correctif 431 après un 413 de téléversement (docs/specs/correctif-431-televersement.md) :
+     * le Caddyfile ne peut plus être strictement identique à main, le bloc {@code handle /api/*} portant désormais
+     * {@code request_body} (8MiB) et {@code request_buffers}. L'intention de 8.3 (RG4) est conservée : les alias
+     * {@code /api/sante} et {@code /api/version}, seuls chemins qui atteignent l'actuator, sont identiques à main, et
+     * tout le reste du fichier, hors bloc {@code handle /api/*}, l'est aussi (aucune nouvelle exposition possible).
+     */
     @Test
-    @DisplayName("CA7 : le Caddyfile est inchangé par rapport à main")
-    void ca7_caddyfile_inchange_par_rapport_a_main() throws Exception {
+    @DisplayName("CA7 : les alias /api/sante et /api/version et tout le Caddyfile hors bloc handle /api/* sont inchangés par rapport à main")
+    void ca7_caddyfile_inchange_par_rapport_a_main_hors_bloc_api() throws Exception {
         Process p;
         try {
-            p = new ProcessBuilder("git", "diff", "--quiet", "main", "--", "frontend/Caddyfile")
-                    .directory(RACINE.toFile()).redirectErrorStream(true).start();
+            p = new ProcessBuilder("git", "show", "main:frontend/Caddyfile")
+                    .directory(RACINE.toFile()).redirectErrorStream(false).start();
         } catch (IOException e) {
             assumeTrue(false, "git indisponible");
             return;
         }
-        assumeTrue(p.waitFor(30, TimeUnit.SECONDS), "git diff trop long");
-        int code = p.exitValue();
-        assumeTrue(code == 0 || code == 1, "branche main indisponible (code " + code + ")");
-        assertThat(code).as("frontend/Caddyfile modifié par rapport à main").isZero();
+        String main = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        assumeTrue(p.waitFor(30, TimeUnit.SECONDS), "git show trop long");
+        assumeTrue(p.exitValue() == 0, "branche main indisponible (code " + p.exitValue() + ")");
+
+        String courant = lire("frontend/Caddyfile");
+        assertThat(bloc(courant, "handle /api/sante")).as("alias /api/sante").isEqualTo(bloc(main, "handle /api/sante"));
+        assertThat(bloc(courant, "handle /api/version")).as("alias /api/version")
+                .isEqualTo(bloc(main, "handle /api/version"));
+        assertThat(courant.replace(bloc(courant, "handle /api/*"), ""))
+                .as("frontend/Caddyfile modifié par rapport à main hors bloc handle /api/*")
+                .isEqualTo(main.replace(bloc(main, "handle /api/*"), ""));
+    }
+
+    /** Bloc {@code <entête> {...}} indenté d'une tabulation, de l'entête à son accolade fermante incluse. */
+    private static String bloc(String caddy, String entete) {
+        int debut = caddy.indexOf("\n\t" + entete + " {");
+        assertThat(debut).as("bloc " + entete).isGreaterThanOrEqualTo(0);
+        int fin = caddy.indexOf("\n\t}\n", debut);
+        assertThat(fin).as("fin du bloc " + entete).isGreaterThan(debut);
+        return caddy.substring(debut, fin + 4);
     }
 
     @Test

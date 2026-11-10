@@ -114,7 +114,27 @@ La création libre d'un Compte coureur (`POST /api/comptes`, écran « Créer un
 
 **Journaux** : les trois services utilisent le pilote `json-file` avec rotation (5 fichiers de 10 Mo au plus par conteneur, défini dans `docker-compose.yml`), soit 150 Mo au plus pour la stack. `$PROD logs` ne montre que ce qui est conservé : pour garder une trace plus longue, copier les journaux régulièrement (`$PROD logs --no-color --since 24h > journaux-$(date +%F).txt`). Une panne durable du contrôle d'abandon automatique (base injoignable, course en échec) n'est journalisée, trace comprise, qu'aux échecs consécutifs 1, 2, 4, 8… puis tous les 1024, et son rétablissement une fois.
 
-**Mémoire (production)** : `mem_limit` plafonne chaque conteneur (`API_MEMOIRE_MAX`, `BASE_MEMOIRE_MAX`, `WEB_MEMOIRE_MAX`, défauts `1g`, `512m`, `256m`, soit 1,75 Go). La JVM de `api` prend 60 % de son plafond pour le tas (`-XX:MaxRAMPercentage=60`, `backend/Dockerfile`), le reste couvre la mémoire hors tas ; elle s'arrête sur `OutOfMemoryError` (`-XX:+ExitOnOutOfMemoryError`) et Docker la relance (`restart: unless-stopped`). Sur un VPS de 2 Go, garder les défauts ; au-delà, augmenter d'abord `API_MEMOIRE_MAX` (et `HACHAGE_CONCURRENCE_MAX` si les connexions simultanées sont nombreuses : compter 19 Mio par calcul dans le tas). Un conteneur qui dépasse son plafond est tué par le noyau (`$PROD ps` le montre redémarré, `docker inspect --format '{{.State.OOMKilled}}' <conteneur>` vaut `true`). Une modification de ces variables s'applique par `$PROD up -d`. En dev, aucun plafond n'est posé.
+**Mémoire (production)** : `mem_limit` plafonne chaque conteneur (`API_MEMOIRE_MAX`, `BASE_MEMOIRE_MAX`, `WEB_MEMOIRE_MAX`, défauts `1g`, `512m`, `256m`, soit 1,75 Go). La JVM de `api` prend 60 % de son plafond pour le tas (`-XX:MaxRAMPercentage=60`, `backend/Dockerfile`), le reste couvre la mémoire hors tas ; elle s'arrête sur `OutOfMemoryError` (`-XX:+ExitOnOutOfMemoryError`) et Docker la relance (`restart: unless-stopped`). Sur un VPS de 2 Go, garder les défauts ; au-delà, augmenter d'abord `API_MEMOIRE_MAX` (et `HACHAGE_CONCURRENCE_MAX` si les connexions simultanées sont nombreuses : compter 19 Mio par calcul dans le tas). Un conteneur qui dépasse son plafond est tué par le noyau (`$PROD ps` le montre redémarré, `docker inspect --format '{{.State.OOMKilled}}' <conteneur>` vaut `true`). Une modification de ces variables s'applique par `$PROD up -d`. En dev, aucun plafond n'est posé. Les envois volumineux tamponnés par `web` pèsent sur `WEB_MEMOIRE_MAX` : voir « Envois volumineux refusés (413) » ci-dessous.
+
+### Envois volumineux refusés (413)
+
+**Cause corrigée** : un envoi trop gros de logo (`PUT /api/administration/courses/{id}/logo`) ou de photo de profil (`PUT /api/comptes/moi/photo`) est coupé par Spring à 3 Mo (`max-request-size`) ; Tomcat répondait 413 avant d'avoir lu tout le corps, pendant que Caddy lisait encore le client. Les octets restés sur la connexion réutilisée étaient alors lus comme la requête suivante : 431 (ou 400, plus rarement 502 ou coupure) sur, par exemple, `GET /api/comptes/moi`, environ une fois sur 70.
+
+**Correctif** (trois éléments, tous nécessaires) :
+1. `frontend/Caddyfile`, bloc `handle /api/*` : `request_body { max_size 8MiB }` (au-delà, Caddy répond lui-même 413, sans corps JSON) et `reverse_proxy api:8080 { request_buffers 8MiB }` : Caddy lit tout le corps avant de le relayer.
+2. `backend/src/main/resources/application.yml` : `server.tomcat.max-swallow-size: 8MB` : Tomcat lit et jette jusqu'à 8 Mo d'un envoi refusé avant de réutiliser la connexion.
+3. `TeleversementConfiguration` (`swallowAbortedUploads` actif) : Tomcat ne s'arrête pas de lire après la réponse d'erreur.
+
+Entre 2 097 153 octets de fichier et 8 Mio de corps, la réponse reste le 413 JSON `PHOTO_TROP_VOLUMINEUSE` ou `LOGO_TROP_VOLUMINEUX`, et la requête suivante est traitée normalement. `/api/sante` et `/api/version` ne sont pas tamponnés.
+
+**Cohérence à revérifier à chaque changement d'une des trois limites** : `max-swallow-size` ≥ `max_size` de Caddy − `max-request-size`, soit aujourd'hui 8 Mio ≥ 8 Mio − 3 Mio = 5 Mio. Un test d'intégration du back échoue si l'inégalité est rompue.
+
+**Mémoire de `web` (risque accepté)** : `request_buffers` place en mémoire jusqu'à 8 Mio **par requête `/api/*` en cours**, avant toute authentification (un client anonyme y a accès). Une requête ordinaire ne tamponne que son corps (quelques octets) ; seuls les envois volumineux pèsent. Avec `WEB_MEMOIRE_MAX=256m` (défaut de production), une vingtaine d'envois de 8 Mio simultanés, ou des envois lents qui gardent leur tampon, peuvent faire tuer `web` par le noyau (OOM) : Docker le relance (`restart: unless-stopped`), l'indisponibilité dure quelques secondes, et `api`, la base et les sessions ne sont pas touchées ; un envoi interrompu ne modifie ni la photo ni le logo. Mesure d'exploitation :
+- surveiller les redémarrages de `web` : `$PROD ps` (durée « Up » anormalement courte) et `docker inspect --format '{{.State.OOMKilled}}' $($PROD ps -q web)` (`true` après un OOM) ;
+- en cas d'OOM, relever `WEB_MEMOIRE_MAX` à `384m` dans `.env`, puis `$PROD up -d` ;
+- si un abus est constaté (envois massifs répétés), limiter le volume entrant au niveau du VPS ou du pare-feu de l'hébergeur ; Caddy n'a pas de limitation de débit native.
+
+**Bande passante (risque accepté)** : un envoi refusé est lu jusqu'à 8 Mo par Caddy puis absorbé par Tomcat, au lieu de 2 à 3 Mo auparavant.
 
 ### Admin master
 

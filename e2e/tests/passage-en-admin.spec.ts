@@ -332,11 +332,14 @@ test.describe('Passer un coureur en admin', () => {
       await pageA.getByTestId('menu-lien-mes-inscriptions').click();
       await expect(pageA).toHaveURL(/\/connexion\?retour=/);
 
-      // reconnexion avec les mêmes identifiants : administration, sans entrée Admins
-      await ouvrirConnexion(pageA);
+      // reconnexion depuis /connexion?retour=%2Fcoureur%2Finscriptions (parcours réel), mêmes identifiants : administration, sans entrée Admins
+      await ouvrirConnexion(pageA, '/connexion?retour=%2Fcoureur%2Finscriptions');
+      const cheminsA: string[] = [];
+      pageA.on('framenavigated', (cadre) => { if (cadre === pageA.mainFrame()) cheminsA.push(new URL(cadre.url()).pathname); });
       await saisir(pageA, e5, MOT_DE_PASSE);
       await pageA.getByTestId('bouton-connexion').click();
       await expect(pageA).toHaveURL(/\/administration$/);
+      expect(cheminsA, `chemins visités : ${cheminsA.join(' > ')}`).not.toContain('/acces-refuse');
       await expect(pageA.getByTestId('menu-administration-courses')).toBeVisible();
       await expect(pageA.getByTestId('menu-administration-benevoles')).toBeVisible();
       await expect(pageA.getByTestId('menu-administration-admins')).toHaveCount(0);
