@@ -392,13 +392,17 @@ test.describe('Gestion des courses', () => {
     await expect(page.getByTestId('lien-gestion-courses')).toBeVisible();
     await expect(page.getByTestId('lien-gestion-courses')).toHaveText('Gérer les courses');
 
-    for (const [pseudoRole, mdp] of [[coureur, MOT_DE_PASSE], [benevole, MOT_DE_PASSE_BENEVOLE_CREE]]) {
+    for (const [pseudoRole, mdp, accueil] of [[coureur, MOT_DE_PASSE, /^[^?]*\/$/], [benevole, MOT_DE_PASSE_BENEVOLE_CREE, /\/benevole$/]] as const) {
       const contexte = await browser.newContext();
       const p = await contexte.newPage();
       await p.goto('/administration/courses');
       await expect(p).toHaveURL(RETOUR_COURSES);
       await saisir(p, pseudoRole, mdp);
       await p.getByTestId('bouton-connexion').click();
+      // retour interdit au rôle : accueil du rôle (correctif retour-apres-connexion RG2), puis accès direct refusé (RG3)
+      await expect(p).toHaveURL(accueil);
+      await expect(p.getByTestId('entete-pseudo')).toHaveText(pseudoRole);
+      await p.goto('/administration/courses');
       await expect(p).toHaveURL(/\/acces-refuse$/);
       await expect(p.getByTestId('titre-acces-refuse')).toHaveText('Accès refusé');
       await contexte.close();

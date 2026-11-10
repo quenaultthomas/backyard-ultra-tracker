@@ -35,6 +35,11 @@ server:
   # Derriere Caddy : X-Forwarded-For est lu (adresse cliente). X-Forwarded-Proto est ignore (7.3 RG2, voir
   # AdresseClienteConfiguration) : le drapeau Secure des cookies ne depend que de cookie.secure.
   forward-headers-strategy: native
+  tomcat:
+    # Envoi refuse (413) : Tomcat lit et jette jusqu'a 8 Mo du corps avant de reutiliser la connexion (correctif 431
+    # RG3). Coherence (RG5) : max-swallow-size >= limite Caddy (8MiB) - max-request-size (3MB). A reverifier si une
+    # des trois valeurs change (voir docs/deploiement.md, « Envois volumineux refuses (413) »).
+    max-swallow-size: 8MB
   servlet:
     session:
       # Sessions en memoire : un redemarrage de l'api deconnecte tout le monde.

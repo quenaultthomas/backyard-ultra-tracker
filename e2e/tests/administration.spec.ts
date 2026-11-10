@@ -81,6 +81,11 @@ test.describe('Espace d\'administration', () => {
     await ouvrirConnexion(page, '/connexion?retour=%2Fadministration');
     await saisir(page, pseudo, MOT_DE_PASSE);
     await page.getByTestId('bouton-connexion').click();
+    // correctif retour-apres-connexion RG2 : le retour interdit au rôle mène à l'accueil du rôle (jamais /acces-refuse) ...
+    await expect(page).toHaveURL(/^[^?]*\/$/);
+    await expect(page.getByTestId('entete-pseudo')).toHaveText(pseudo);
+    // ... l'accès direct à la route reste refusé (RG3)
+    await page.goto('/administration');
     await expect(page).toHaveURL(/\/acces-refuse$/);
     await page.goto('/');
     await seDeconnecterParLeMenu(page);
