@@ -19,10 +19,10 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-/** Contrôles du dépôt pour la publication de la 0.5.0 (incrément 7.4) : versions, CHANGELOG, documentation, scripts. */
+/** Contrôles du dépôt pour la publication de la 0.6.0 (reprise du contrôle de l'incrément 7.4) : versions, CHANGELOG, documentation, scripts. */
 class ReleaseDepotIntegrationTest {
 
-    private static final String VERSION = "0.5.0";
+    private static final String VERSION = "0.6.0";
     private static final Path RACINE = racine();
 
     private static Path racine() {
@@ -64,7 +64,7 @@ class ReleaseDepotIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA1 : pom, package.json et package-lock.json de frontend et e2e valent 0.5.0")
+    @DisplayName("CA1 : pom, package.json et package-lock.json de frontend et e2e valent 0.6.0")
     void ca1_versions_des_sources() throws IOException {
         assertThat(lire("backend/pom.xml")).contains("\n    <version>" + VERSION + "</version>\n");
         for (String module : List.of("frontend", "e2e")) {
@@ -80,80 +80,68 @@ class ReleaseDepotIntegrationTest {
     }
 
     @Test
-    @DisplayName("CA1 : aucune version 0.4.0 hors CHANGELOG, audit, specs et workflow (commentaire)")
+    @DisplayName("CA1 : aucune version 0.5.0 dans les sources versionnées (hors CHANGELOG, documentation historique, audit, specs)")
     void ca1_plus_de_0_4_0_dans_les_sources() throws IOException {
         for (String chemin : List.of("backend/pom.xml", "frontend/package.json", "e2e/package.json", "e2e/package-lock.json",
                 ".env.example", "docker-compose.yml", "docker-compose.prod.yml", "docker-compose.e2e.yml")) {
-            assertThat(lire(chemin)).as(chemin).doesNotContain("0.4.0");
+            assertThat(lire(chemin)).as(chemin).doesNotContain("0.5.0");
         }
-        // Écart connu : le commentaire « v0.4.0 » de .github/workflows/release.yml est conservé (hors critère strict).
-        // Le package-lock du frontend ne cite 0.4.0 que pour une dépendance tierce (gen-mapping 0.4.0-beta.0).
-        assertThat(lire("frontend/package-lock.json").replace("0.4.0-beta.0", "")).doesNotContain("0.4.0");
-        assertThat(lire("docs/deploiement.md")).doesNotContain("0.4.0");
+        // Le package-lock du frontend peut citer 0.5.0 pour une dépendance tierce : seule l'entrée racine compte (CA1).
+        // docs/deploiement.md garde la 0.5.0 dans ses résultats datés (historique) : les exemples valent 0.6.0 (CA3).
     }
 
     @Test
-    @DisplayName("CA3 : .env.example fixe VERSION=0.5.0 et cite 0.5.0 et 0.5.0-rc.1 ; deploiement.md cite les mêmes exemples")
+    @DisplayName("CA3 : .env.example fixe VERSION=0.6.0 et cite 0.6.0 et 0.6.0-rc.1 ; deploiement.md cite les mêmes exemples")
     void ca3_env_example_et_deploiement() throws IOException {
         String env = lire(".env.example");
-        assertThat(env).containsPattern("(?m)^VERSION=0\\.5\\.0$");
-        assertThat(env).contains("0.5.0, ou 0.5.0-rc.1");
+        assertThat(env).containsPattern("(?m)^VERSION=0\\.6\\.0$");
+        assertThat(env).contains("0.6.0, ou 0.6.0-rc.1");
         String deploiement = lire("docs/deploiement.md");
-        assertThat(deploiement).contains("0.5.0").contains("0.5.0-rc.1");
+        assertThat(deploiement).contains("0.6.0").contains("0.6.0-rc.1");
     }
 
     @Test
-    @DisplayName("CA4 : la section [0.5.0] précède la 0.4.0, est datée, cite jalons 5 à 7 et les quatre variables")
-    void ca4_changelog_0_5_0() throws IOException {
+    @DisplayName("CA4 : la section [0.6.0] précède la 0.5.0, est datée, cite jalons 8 à 10 et les variables nouvelles")
+    void ca4_changelog_0_6_0() throws IOException {
         String texte = lire("CHANGELOG.md");
-        assertThat(texte.indexOf("## [0.5.0]")).isPositive().isLessThan(texte.indexOf("## [0.4.0]"));
+        assertThat(texte.indexOf("## [0.6.0]")).isPositive().isLessThan(texte.indexOf("## [0.5.0]"));
         String section = sectionChangelog(VERSION);
-        assertThat(section).containsPattern("(?m)^## \\[0\\.5\\.0\\] - \\d{4}-\\d{2}-\\d{2}$");
-        assertThat(section).contains("Jalon 5", "Jalon 6", "Jalon 7", "BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE",
-                "COOKIES_SECURE", "HACHAGE_CONCURRENCE_MAX_PAR_IP", "BACKYARD_PROXY_DE_CONFIANCE", "HSTS",
-                "Changements à l'exploitation", "Limites connues", "### Sécurité");
-        assertThat(section).contains("limite « pas d'en-tête HSTS » de la 0.4.0 est levée");
+        assertThat(section).containsPattern("(?m)^## \\[0\\.6\\.0\\] - \\d{4}-\\d{2}-\\d{2}$");
+        assertThat(section).contains("Jalon 8", "Jalon 9", "Jalon 10", "SESSION_INACTIVITE_ADMIN_SECONDES",
+                "CONNEXION_ECHECS_PAR_IP_MAX", "CREATION_COMPTE_PAR_IP_MAX", "BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE",
+                "Changements à l'exploitation", "### Corrigé", "### Sécurité");
     }
 
     @Test
-    @DisplayName("CA4 : le lien [0.5.0] existe (écart connu : liens regroupés en bas du fichier, pas en fin de section)")
+    @DisplayName("CA4 : le lien [0.6.0] existe (écart connu : liens regroupés en bas du fichier, pas en fin de section)")
     void ca4_lien_de_comparaison() throws IOException {
         assertThat(lire("CHANGELOG.md")).contains(
-                "[0.5.0]: https://github.com/quenaultthomas/backyard-ultra-tracker/releases/tag/v0.5.0");
+                "[0.6.0]: https://github.com/quenaultthomas/backyard-ultra-tracker/releases/tag/v0.6.0");
     }
 
     @Test
-    @DisplayName("CA4 : toute variable de .env.example absente de la 0.4.0 figure dans la section 0.5.0")
+    @DisplayName("CA4 : toute variable de .env.example absente de la 0.5.0 figure dans la section 0.6.0")
     void ca4_variables_nouvelles_listees() throws IOException {
-        String section0_5 = sectionChangelog(VERSION);
-        // Variables de .env.example à la v0.4.0 (git show v0.4.0:.env.example) : la 0.4.0 ne les nomme pas toutes.
-        List<String> deja0_4 = List.of("BASE_NOM", "BASE_UTILISATEUR", "BASE_MOT_DE_PASSE", "VERSION", "DOMAINE",
-                "CONNEXION_ECHECS_MAX", "CONNEXION_BLOCAGE_SECONDES", "HACHAGE_CONCURRENCE_MAX", "API_MEMOIRE_MAX",
-                "BASE_MEMOIRE_MAX", "WEB_MEMOIRE_MAX", "ADMIN_MASTER_PSEUDO", "ADMIN_MASTER_MOT_DE_PASSE", "BASE_URL",
-                "DEMO_FORCER",
-                // Ajoutées après la 0.5.0 (8.2 RG13) : décrites dans [Unreleased] du CHANGELOG, pas dans la 0.5.0.
-                "SESSION_INACTIVITE_ADMIN_SECONDES", "SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES",
-                // Ajoutées après la 0.5.0 (8.4 RG15) : décrites dans [Unreleased] du CHANGELOG, pas dans la 0.5.0.
-                "CONNEXION_ECHECS_PAR_IP_MAX", "CONNEXION_ECHECS_PAR_IP_FENETRE_SECONDES",
-                // Ajoutées après la 0.5.0 (8.5 RG9) : décrites dans [Unreleased] du CHANGELOG, pas dans la 0.5.0.
-                "CREATION_COMPTE_PAR_IP_MAX", "CREATION_COMPTE_PAR_IP_FENETRE_SECONDES",
-                // Ajoutée après la 0.5.0 (10.2 RG6) : décrite dans [Non publié] du CHANGELOG, pas dans la 0.5.0.
-                "BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE",
-                // Documentée pour mémoire après la 0.5.0 (correctif audit jalon 10, RG1) : décrite dans [Non publié].
-                "BACKYARD_PHOTOS_REPERTOIRE");
+        String section0_6 = sectionChangelog(VERSION);
+        // Variables de .env.example à la v0.5.0 (git show v0.5.0:.env.example).
+        List<String> deja0_5 = List.of("BASE_NOM", "BASE_UTILISATEUR", "BASE_MOT_DE_PASSE", "VERSION", "DOMAINE",
+                "CONNEXION_ECHECS_MAX", "CONNEXION_BLOCAGE_SECONDES", "HACHAGE_CONCURRENCE_MAX",
+                "HACHAGE_CONCURRENCE_MAX_PAR_IP", "COOKIES_SECURE", "BACKYARD_LIMITE_DEBIT_PUBLIC_PAR_MINUTE",
+                "BACKYARD_PROXY_DE_CONFIANCE", "API_MEMOIRE_MAX", "BASE_MEMOIRE_MAX", "WEB_MEMOIRE_MAX",
+                "ADMIN_MASTER_PSEUDO", "ADMIN_MASTER_MOT_DE_PASSE", "BASE_URL", "DEMO_FORCER");
         Matcher variables = Pattern.compile("(?m)^#?\\s*([A-Z][A-Z0-9_]+)=").matcher(lire(".env.example"));
         List<String> manquantes = new ArrayList<>();
         while (variables.find()) {
             String nom = variables.group(1);
-            if (!deja0_4.contains(nom) && !section0_5.contains(nom)) {
+            if (!deja0_5.contains(nom) && !section0_6.contains(nom)) {
                 manquantes.add(nom);
             }
         }
-        assertThat(manquantes).as("variables de .env.example ni en 0.4.0 ni en 0.5.0").isEmpty();
+        assertThat(manquantes).as("variables de .env.example ni en 0.5.0 ni en 0.6.0").isEmpty();
     }
 
     @ParameterizedTest(name = "CA5 : tag {0} accepté par la vérification du workflow Release")
-    @ValueSource(strings = {"v0.5.0-rc.1", "v0.5.0"})
+    @ValueSource(strings = {"v0.6.0-rc.1", "v0.6.0"})
     @DisplayName("CA5 : tags acceptés")
     void ca5_tags_acceptes(String tag) throws Exception {
         Resultat resultat = rejouerVerificationRelease(tag);
@@ -161,7 +149,7 @@ class ReleaseDepotIntegrationTest {
     }
 
     @ParameterizedTest(name = "CA5 : tag {0} refusé par la vérification du workflow Release")
-    @ValueSource(strings = {"v0.5.1", "v0.4.0", "v0.5", "v0.5.0-beta.1"})
+    @ValueSource(strings = {"v0.6.1", "v0.5.0", "v0.6", "v0.6.0-beta.1"})
     @DisplayName("CA5 : tags refusés")
     void ca5_tags_refuses(String tag) throws Exception {
         Resultat resultat = rejouerVerificationRelease(tag);
@@ -206,7 +194,7 @@ class ReleaseDepotIntegrationTest {
             assertThat(repetition).as("étape " + etape).containsPattern("(?m)^" + etape + "\\. \\*\\*");
         }
         assertThat(repetition).doesNotContainPattern("(?m)^10\\. ");
-        assertThat(repetition.toLowerCase()).contains("v0.5.0-rc.1", "v0.5.0", "strict-transport-security", "pre-release",
+        assertThat(repetition.toLowerCase()).contains("v0.6.0-rc.1", "v0.6.0", "strict-transport-security", "pre-release",
                 "jamais déplacé");
     }
 

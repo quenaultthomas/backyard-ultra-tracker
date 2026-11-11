@@ -112,8 +112,9 @@ class VersionPubliqueDepotIntegrationTest {
         assertThat(lignes.get(0)).contains("| P2 |").endsWith("| 8.3 |");
 
         String changelog = lire("CHANGELOG.md");
-        String nonPublie = section(changelog, "## [Non publié]", "\n## [0.");
-        assertThat(nonPublie).contains("/api/version", "SEC-17", "PEN-03");
+        // SEC-17 est publiée avec la 0.6.0 : sa mention vit dans cette section depuis la release.
+        String sectionVersion = section(changelog, "## [0.6.0]", "\n## [0.5.0]");
+        assertThat(sectionVersion).contains("/api/version", "SEC-17", "PEN-03");
 
         String deploiement = lire("docs/deploiement.md");
         assertThat(section(deploiement, "7. Vérifier le site", "\n8.")).contains("{\"app\":{\"version\"");
