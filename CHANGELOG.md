@@ -5,8 +5,31 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+## [0.6.0] - 2026-11-11
+
+Version de la gestion des comptes et des photos : durcissement issu du pentest du 2026-10-26, administration par menu avec suppression de comptes et changement de rôle, photo de profil des coureurs et tableau de polaroïds sur le suivi public.
+
+### Ajouté
+
+**Jalon 8 : durcissement issu du pentest**
+- Désactivation et réactivation des comptes administrateur et bénévole (voir « Sécurité »).
+- Plafonds par adresse IP sur les échecs de connexion et sur la création de comptes coureur, durée de session des administrateurs réduite (voir « Sécurité »).
+
+**Jalon 9 : gestion des comptes et navigation d'administration**
+- Menu de navigation de l'administration (Courses, Admins, Bénévoles selon le rôle) ; les formulaires de création (course, admin, bénévole) ne s'ouvrent qu'à la demande et se referment après création ou annulation.
+- Suppression d'un bénévole (admins et admin master) et d'un admin (admin master seul), avec confirmation : affectations retirées, sessions invalidées, passages conservés ; refusée (409) pour un bénévole affecté à une Course `EN_COURS`. Un compte issu d'un coureur qui a des Inscriptions est anonymisé au lieu d'être effacé, pour conserver les résultats.
+- Recherche d'un coureur par pseudo (partielle, 3 caractères minimum, résultats limités).
+- Changement de rôle d'un coureur trouvé par la recherche : en bénévole (admins et admin master), en admin (admin master seul). Refusé (409) si le coureur a une Inscription à une Course `EN_PREPARATION` ou `EN_COURS` ; sa session est invalidée pour que le nouveau rôle s'applique.
+- Les incréments 9.8 et 9.9 ont été abandonnés (voir `docs/roadmap.md`).
+
+**Jalon 10 : photos des coureurs**
+- Photo de profil du coureur (écran « Mon compte ») : recadrée et recompressée dans le navigateur (512 px, JPEG, métadonnées EXIF supprimées), `PUT` et `DELETE /api/comptes/moi/photo`, lecture publique par un jeton non devinable `GET /api/photos/{jeton}` (cache, `ETag`).
+- Tableau de polaroïds sur le suivi public : la photo, le dossard et le pseudo de chaque coureur en course et de chaque Vainqueur, lisibles en mode projection.
+- Le suivi public expose `photoUrl` pour les coureurs en course et les Vainqueurs.
+
 ### Corrigé
-- Après un envoi de logo ou de photo de profil refusé car trop volumineux (413), la requête suivante sur la même connexion ne reçoit plus de 431, 400, 502 ni coupure : Caddy tamponne le corps des requêtes `/api/*` (`request_buffers 8MiB`) et Tomcat absorbe jusqu'à 8 Mo d'un envoi refusé (`server.tomcat.max-swallow-size`, `swallowAbortedUploads`). La limite de Caddy passe de 4 Mio à 8 Mio : jusque-là, la réponse est le 413 JSON `PHOTO_TROP_VOLUMINEUSE` ou `LOGO_TROP_VOLUMINEUX` ; au-delà, Caddy répond 413 sans corps JSON. Risque mémoire de `web` accepté et documenté dans `docs/deploiement.md` (« Envois volumineux refusés (413) »).
+- Après un envoi de logo ou de photo de profil refusé car trop volumineux (413), la requête suivante sur la même connexion ne reçoit plus de 431, 400, 502 ni coupure : Caddy tamponne le corps des requêtes `/api/*` (`request_buffers 8MiB`) et Tomcat absorbe jusqu'à 8 Mo d'un envoi refusé (`server.tomcat.max-swallow-size`, `swallowAbortedUploads`). La limite de Caddy passe de 4 Mio à 8 Mio : jusque-là, la réponse est le 413 JSON `PHOTO_TROP_VOLUMINEUSE` ou `LOGO_TROP_VOLUMINEUX` ; au-delà, Caddy répond 413 sans corps JSON.
+- Après une reconnexion, un `retour` que le rôle n'a pas le droit d'ouvrir mène à l'accueil du rôle (`/administration`, `/benevole` ou `/`) au lieu de `/acces-refuse` ; l'accès direct à une route interdite reste sur `/acces-refuse`.
 
 ### Sécurité
 - Désactivation et réactivation des comptes administrateur (par l'admin master) et bénévole (par un admin ou l'admin master) : un compte désactivé ne peut plus se connecter (réponse identique à des identifiants invalides), toutes ses sessions sont fermées, et un bénévole désactivé est retiré des courses qui n'ont pas démarré ; ses passages et ses affectations aux courses démarrées sont conservés. L'admin master, son propre compte et le dernier administrateur actif ne peuvent pas être désactivés (SEC-13, constat PEN-01 du pentest du 2026-10-26).
@@ -18,6 +41,19 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 - Création de comptes coureur limitée par adresse IP sur une fenêtre glissante (défaut : 10 tentatives par 60 s, réussies ou non) : au-delà, `POST /api/comptes` répond 429 `TROP_DE_REQUETES` avec `Retry-After`, avant toute validation, lecture de la base et tout calcul d'empreinte ; compteur distinct de celui de la connexion, comptes bénévole et administrateur non concernés. Réglable par `CREATION_COMPTE_PAR_IP_MAX` (1 à 1000) et `CREATION_COMPTE_PAR_IP_FENETRE_SECONDES` (1 à 3600), validés au démarrage. `scripts/donnees-demo.sh` et `scripts/charge-suivi.sh` attendent et réessaient sur ce 429 (SEC-15, constat PEN-04 du pentest du 2026-10-26).
 - `GET /api/photos/*` est limité par adresse IP et par minute avec un plafond et un compteur séparés de ceux de `/api/courses` (défaut 3000, 429 `TROP_DE_REQUETES` avec `Retry-After`), réglable par `BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE` (`0` = aucune limite), validé au démarrage (10.2).
 - `HEAD /api/photos/*` est compté dans le même plafond que `GET` ; une revalidation (`If-None-Match`) d'une photo répond 304 sans lire le fichier ; au démarrage, `api` supprime les fichiers de photo orphelins de plus d'une heure (garde-fou au-delà de 10 fichiers et de la moitié du volume ; voir `docs/deploiement.md`). `BACKYARD_PHOTOS_REPERTOIRE` est documentée pour mémoire dans `.env.example` (fixée à `/donnees/photos` par `docker-compose.yml`, non réglable). Procédure « Retirer une photo en urgence » ajoutée à `docs/deploiement.md` (correctif de l'audit du jalon 10).
+
+### Variables d'environnement nouvelles depuis la 0.5.0
+Toutes facultatives (voir `.env.example` et `docs/deploiement.md`) :
+- `SESSION_INACTIVITE_ADMIN_SECONDES` (défaut 2 h) et `SESSION_INACTIVITE_COUREUR_BENEVOLE_SECONDES` (défaut 12 h) : inactivité avant expiration de la session.
+- `CONNEXION_ECHECS_PAR_IP_MAX` (défaut 20) et `CONNEXION_ECHECS_PAR_IP_FENETRE_SECONDES` (défaut 60) : plafond d'échecs de connexion par adresse IP.
+- `CREATION_COMPTE_PAR_IP_MAX` (défaut 10) et `CREATION_COMPTE_PAR_IP_FENETRE_SECONDES` (défaut 60) : plafond de créations de compte coureur par adresse IP.
+- `BACKYARD_LIMITE_DEBIT_PHOTOS_PAR_MINUTE` : requêtes `/api/photos/*` admises par IP et par minute, défaut `3000`, `0` désactive la limite.
+- `BACKYARD_PHOTOS_REPERTOIRE` : documentée pour mémoire, fixée à `/donnees/photos` par `docker-compose.yml`, non réglable.
+
+### Changements à l'exploitation
+- Nouveau volume nommé `photos` pour les fichiers de photo de profil : à inclure dans la sauvegarde (voir « Sauvegarde » dans `docs/deploiement.md`). Procédure « Retirer une photo en urgence » ajoutée.
+- La mémoire de `web` peut monter jusqu'à 8 Mio par requête `/api/*` en cours (tampon de Caddy) : si `web` est tué faute de mémoire (`OOMKilled`), relever `WEB_MEMOIRE_MAX` à `384m` (voir « Envois volumineux refusés (413) »).
+- Rappel : sessions et blocages de connexion sont en mémoire et perdus à chaque redémarrage de `api` ; ne pas mettre à jour pendant une course.
 
 ## [0.5.0] - 2026-10-22
 
@@ -109,5 +145,6 @@ Première version déployable : une course de bout en bout, de la déclaration �
 - Audit du 2026-10-16 (`docs/audits/`) : le hachage Argon2id est sorti des transactions et plafonné en concurrence (réponse 503 `SERVICE_SATURE` en cas de saturation), pour qu'une rafale de connexions ne bloque pas les scans ; journaux Docker bornés ; plafonds mémoire des conteneurs et JVM qui s'arrête proprement sur manque de mémoire.
 - Limites connues : le blocage de connexion porte sur le pseudo (un tiers peut bloquer temporairement un compte, l'admin master compris), pas de limite de débit par adresse IP, pas d'en-tête HSTS. Voir `docs/deploiement.md` et le jalon A de la roadmap.
 
+[0.6.0]: https://github.com/quenaultthomas/backyard-ultra-tracker/releases/tag/v0.6.0
 [0.5.0]: https://github.com/quenaultthomas/backyard-ultra-tracker/releases/tag/v0.5.0
 [0.4.0]: https://github.com/quenaultthomas/backyard-ultra-tracker/releases/tag/v0.4.0

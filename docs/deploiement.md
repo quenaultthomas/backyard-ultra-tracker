@@ -38,7 +38,7 @@ Toutes les variables sont décrites dans `.env.example`. Le fichier `.env` n'est
 | `BASE_NOM` | facultative (défaut `backyard`) | nom de la base |
 | `BASE_UTILISATEUR` | facultative (défaut `backyard`) | utilisateur de la base |
 | `BASE_MOT_DE_PASSE` | **obligatoire**, non vide | mot de passe de la base |
-| `VERSION` | **obligatoire** en production | version des images `api` et `web` tirées de `ghcr.io`, sans le « v » du tag (`0.5.0`, `0.5.0-rc.1`) ; ignorée en dev et en E2E |
+| `VERSION` | **obligatoire** en production | version des images `api` et `web` tirées de `ghcr.io`, sans le « v » du tag (`0.6.0`, `0.6.0-rc.1`) ; ignorée en dev et en E2E |
 | `DOMAINE` | **obligatoire** | nom de domaine servi en HTTPS |
 | `CONNEXION_ECHECS_MAX` | facultative (défaut `5`, entier ≥ 1) | échecs de connexion consécutifs sur un même pseudo avant blocage temporaire |
 | `CONNEXION_BLOCAGE_SECONDES` | facultative (défaut `900`, entier ≥ 1) | durée du blocage, et délai au-delà duquel des échecs partiels sont oubliés |
@@ -169,7 +169,7 @@ $PROD logs api | grep "Admin master"
    chmod 600 .env
    ```
 3. Renseigner dans `.env` :
-   - `VERSION=` la version à déployer, sans le « v » (ex. `0.5.0`, ou `0.5.0-rc.1` pour une pré-version) ;
+   - `VERSION=` la version à déployer, sans le « v » (ex. `0.6.0`, ou `0.6.0-rc.1` pour une pré-version) ;
    - `DOMAINE=` le nom de domaine (ex. `backyard.example.org`) ;
    - `BASE_MOT_DE_PASSE=` la sortie de `openssl rand -hex 24` ;
    - `ADMIN_MASTER_PSEUDO=` le pseudo de l'admin master (ex. `Patron`) ;
@@ -477,39 +477,39 @@ Avant le tag, les images construites localement (`docker compose build`, images 
 | Image `web` (`caddy:2.11.7-alpine`) | 5 `HIGH` dans le binaire `caddy` (Go `stdlib` 1.26.8 et `golang.org/x/net` 0.59.0 : CVE-2026-78669 et CVE-2026-78667 déni de service HTTP/2 et en-têtes `Range`, CVE-2026-97031 déni de service TLS ECH, CVE-2026-111943 validation de chaîne x509). **Acceptées** : aucune image Caddy plus récente que 2.11.7 publiée. Exposition réelle : `web` est exposé à Internet, risque de déni de service (pas de fuite de données identifiée) ; CVE-2026-111943 concerne la validation de certificats clients/amont, non utilisée (Caddy ne relaie qu'en HTTP vers `api` dans le réseau Compose). À reprendre (nouvelle `-rc.N`) dès la sortie d'une image Caddy corrigée |
 | Image `postgres:17.11-alpine` | 1 `CRITICAL` et 25 `HIGH`, toutes dans `gosu` (compilé avec Go 1.24.6). **Acceptées** : aucune image `postgres` 17 plus récente publiée. Exposition réelle : `gosu` ne sert qu'au point d'entrée pour abandonner les droits root, sans réseau ; `base` n'expose aucun port (réseau Compose interne). PostgreSQL lui-même : 0 vulnérabilité `HIGH`/`CRITICAL` |
 
-Les résultats de la répétition `v0.5.0-rc.1` sur les images publiées sont ajoutés à ce tableau par l'utilisateur (étape 7 de « Répétition générale d'une version »).
+Les résultats de la répétition `v0.6.0-rc.1` sur les images publiées sont ajoutés à ce tableau par l'utilisateur (étape 7 de « Répétition générale d'une version »).
 
 ## Répétition générale d'une version
 
-Avant chaque version `X.Y.Z`, une pré-version `vX.Y.Z-rc.1` est déployée et éprouvée sur le VPS, dans cet ordre. Exemple pour la 0.5.0 :
+Avant chaque version `X.Y.Z`, une pré-version `vX.Y.Z-rc.1` est déployée et éprouvée sur le VPS, dans cet ordre. Exemple pour la 0.6.0 :
 
 1. **Tag de pré-version.** Pull request de la branche de release ouverte et CI verte. Sur la tête de la branche :
    ```sh
-   git tag v0.5.0-rc.1 && git push origin v0.5.0-rc.1
+   git tag v0.6.0-rc.1 && git push origin v0.6.0-rc.1
    gh run watch
    ```
-   Le workflow `Release` doit réussir et créer une Release GitHub marquée *Pre-release*. Les sources restent en `0.5.0` : la vérification ignore le suffixe `-rc.N`.
+   Le workflow `Release` doit réussir et créer une Release GitHub marquée *Pre-release*. Les sources restent en `0.6.0` : la vérification ignore le suffixe `-rc.N`.
 2. **Packages publics** si c'est la première publication (voir « Accès du VPS aux images »).
-3. **Déploiement sur le VPS.** Faire une sauvegarde, puis `VERSION=0.5.0-rc.1` dans `.env` et :
+3. **Déploiement sur le VPS.** Faire une sauvegarde, puis `VERSION=0.6.0-rc.1` dans `.env` et :
    ```sh
    $PROD pull && $PROD up -d && $PROD ps
    curl https://<domaine>/api/version
    ```
-   Le workflow construit les images avec l'argument `VERSION` égal au tag sans le « v » : `app.version` vaut `0.5.0-rc.1` (seul champ de la réponse). Le pied de page de l'application affiche aussi `0.5.0-rc.1`.
+   Le workflow construit les images avec l'argument `VERSION` égal au tag sans le « v » : `app.version` vaut `0.6.0-rc.1` (seul champ de la réponse). Le pied de page de l'application affiche aussi `0.6.0-rc.1`.
 4. **Sécurité visible.**
    - `curl -sI https://<domaine>/ | grep -i strict-transport-security` : en-tête présent ;
    - cookies `JSESSIONID` et `XSRF-TOKEN` marqués `Secure` (outils du navigateur, après connexion) ;
    - connecté en admin master, `https://<domaine>/api/test/horloge` répond 404 (l'horloge pilotable n'existe qu'en E2E ; 401 sans session).
 5. **Sauvegarde et restauration.** `./scripts/sauvegarder.sh --verifier-restauration` (trois comptages identiques, code 0), copie hors du VPS, poser le `crontab` d'exemple et vérifier qu'un `.dump` apparaît ; puis restauration réelle de ce dump (section Restauration) et son contrôle.
 6. **Mini-course de bout en bout.** Course de 2 minutes par Boucle, 2 ou 3 coureurs inscrits, un bénévole affecté ; application installée (PWA) sur le téléphone du bénévole ; un scan fait hors ligne (mode avion) puis transmis ; un coureur sans passage passe en abandon automatique ; un Vainqueur est désigné ; suivi public ouvert sur un second appareil pendant toute la course.
-7. **Scan des images** publiées `0.5.0-rc.1` (section « Contrôle des vulnérabilités ») et ajout des résultats datés.
-8. **Décision.** Tout est vert : passage à la `0.5.0`. Sinon : correction sur la branche, puis `v0.5.0-rc.2` et reprise à l'étape 1.
+7. **Scan des images** publiées `0.6.0-rc.1` (section « Contrôle des vulnérabilités ») et ajout des résultats datés.
+8. **Décision.** Tout est vert : passage à la `0.6.0`. Sinon : correction sur la branche, puis `v0.6.0-rc.2` et reprise à l'étape 1.
 9. **Version finale.** Merger la pull request, puis :
    ```sh
    git switch main && git pull
-   git tag v0.5.0 && git push origin v0.5.0
+   git tag v0.6.0 && git push origin v0.6.0
    ```
-   Déployer par la procédure « Mise à jour » (`VERSION=0.5.0`). Le retour arrière se fait vers `VERSION=0.5.0-rc.1` (mêmes migrations) ou, avec restauration de la sauvegarde faite avant la mise à jour, vers la version précédente.
+   Déployer par la procédure « Mise à jour » (`VERSION=0.6.0`). Le retour arrière se fait vers `VERSION=0.6.0-rc.1` (mêmes migrations) ou, avec restauration de la sauvegarde faite avant la mise à jour, vers la version précédente.
 
 Un tag publié n'est jamais déplacé ni supprimé : une correction donne toujours un nouveau tag.
 
