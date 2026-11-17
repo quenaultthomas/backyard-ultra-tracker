@@ -23,7 +23,7 @@
         <archunit.version>1.5.1</archunit.version>
         <jacoco.version>0.8.16</jacoco.version>
         <!-- Requis par Argon2PasswordEncoder (Spring Security), non géré par Spring Boot. -->
-        <bouncycastle.version>1.86</bouncycastle.version>
+        <bouncycastle.version>1.87</bouncycastle.version>
         <!-- Montées de correctifs de sécurité au-dessus des versions gérées par Spring Boot 4.1.1 (incrément 7.4,
              docs/deploiement.md « Contrôle des vulnérabilités ») : Tomcat 11.0.24 (CVE-2026-65182, -65905, -68525,
              CRITICAL) et Jackson 3.1.5 (CVE-2026-89407, -89425, -91776, -91777, -68497, HIGH). À retirer dès qu'une
