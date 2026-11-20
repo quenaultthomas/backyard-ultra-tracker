@@ -1,49 +1,30 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  OnInit,
-  inject,
-  signal,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
-import { CoursesPubliquesApiService } from './courses-publiques-api.service';
-import { CoursesPubliquesReponse } from './courses-publiques';
-import { RubriqueCourses } from './rubrique-courses/rubrique-courses';
+import { SessionService } from '../comptes/session.service';
+import { entreesAccueil } from './entrees-accueil';
 
 /**
- * Accueil public, identique pour tous : titre et accroche sur le décor backyard, puis les Courses
- * en cours, à venir et terminées. Chargées une fois à l'ouverture, sans rafraîchissement automatique.
+ * Accueil, identique pour tous : titre et accroche sur le décor backyard, puis les actions du
+ * visiteur (se connecter, créer un compte) ou de la personne connectée selon son rôle. Aucune
+ * liste de courses ici.
  */
 @Component({
   selector: 'app-accueil',
-  imports: [RubriqueCourses],
+  imports: [RouterLink],
   templateUrl: './accueil.html',
   styleUrl: './accueil.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Accueil implements OnInit {
-  private readonly coursesPubliquesApi = inject(CoursesPubliquesApiService);
-  private readonly destroyRef = inject(DestroyRef);
+export class Accueil {
+  private readonly session = inject(SessionService);
 
-  /** `null` pendant le chargement ou après une erreur. */
-  protected readonly courses = signal<CoursesPubliquesReponse | null>(null);
-  protected readonly erreur = signal(false);
-
-  ngOnInit(): void {
-    this.charger();
-  }
-
-  protected charger(): void {
-    this.erreur.set(false);
-    this.courses.set(null);
-    this.coursesPubliquesApi
-      .lister()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (courses) => this.courses.set(courses),
-        error: () => this.erreur.set(true),
-      });
-  }
+  /** Vide tant que la session est inconnue : la zone reste réservée pour que la page ne bouge pas. */
+  protected readonly entrees = computed(() => {
+    const etat = this.session.etat();
+    if (etat === 'INCONNU') {
+      return [];
+    }
+    return entreesAccueil(this.session.compte()?.role ?? null);
+  });
 }

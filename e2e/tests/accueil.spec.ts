@@ -77,18 +77,21 @@ test.describe('Accueil', () => {
 
     await expect(page.getByTestId('titre')).toHaveText(TITRE);
     await expect(page.getByTestId('accroche')).toHaveText(ACCROCHE);
-    // 6.4 RG8 : sous le titre et l'accroche (inchangés), un conteneur unique pour les rubriques de courses
-    await expect(page.getByTestId('accueil-chargement')).toHaveCount(0);
+    // le visiteur voit, sous le titre et l'accroche, les deux entrées : se connecter ou créer un compte
+    await expect(page.getByTestId('accueil-actions')).toBeVisible();
+    await expect(page.getByTestId('accueil-connexion')).toHaveText('Se connecter');
+    await expect(page.getByTestId('accueil-creer-compte')).toHaveText('Créer un compte');
+    await expect(page.getByTestId('accueil-course')).toHaveCount(0);
     await expect(page.locator('main > *')).toHaveCount(3);
     await expect(page.locator('main > *').nth(0)).toHaveJSProperty('tagName', 'H1');
     await expect(page.locator('main > *').nth(1)).toHaveJSProperty('tagName', 'P');
-    await expect(page.locator('main > *').nth(2)).toHaveJSProperty('tagName', 'DIV');
+    await expect(page.locator('main > *').nth(2)).toHaveJSProperty('tagName', 'NAV');
     await expect(page.getByTestId('etat-api')).toHaveCount(0);
     await expect(page.getByTestId('lien-creer-compte')).toHaveCount(0);
-    // 6.4 : les cartes de courses portent des liens « Voir le suivi » ; aucun autre lien ni bouton, aucune zone vivante
+    // aucune liste de courses : seuls les deux liens d'entrée, aucun bouton, aucune zone vivante
     await expect(page.locator('main [role="status"], main [aria-live], main [role="alert"]')).toHaveCount(0);
     await expect(page.locator('main button')).toHaveCount(0);
-    await expect(page.locator('main a:not([data-testid="accueil-course-lien-suivi"])')).toHaveCount(0);
+    await expect(page.locator('main a')).toHaveCount(2);
     await expect(page.locator('h1')).toHaveCount(1);
     await expect(page).toHaveTitle(TITRE);
     const texte = await page.evaluate(() => document.body.innerText);
@@ -98,6 +101,15 @@ test.describe('Accueil', () => {
 
     await ouvrirMenuVisiteur(page);
     await page.getByTestId('menu-lien-creer-compte').click();
+    await expect(page).toHaveURL(/\/creer-compte$/);
+  });
+
+  test('le visiteur rejoint la connexion et la création de compte depuis l\'accueil', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('accueil-connexion').click();
+    await expect(page).toHaveURL(/\/connexion$/);
+    await page.goto('/');
+    await page.getByTestId('accueil-creer-compte').click();
     await expect(page).toHaveURL(/\/creer-compte$/);
   });
 
@@ -112,7 +124,7 @@ test.describe('Accueil', () => {
       return contexte;
     }
 
-    test('R.4 CA2 - visiteur, coureur, bénévole, admin et admin master voient exactement la même page', async ({ browser, playwright }) => {
+    test('R.4 CA2 - visiteur, coureur, bénévole, admin et admin master ont le même titre et la même accroche, aux mêmes positions, avec chacun ses actions', async ({ browser, playwright }) => {
       const api = await playwright.request.newContext({ baseURL: process.env.BASE_URL ?? 'http://localhost' });
       const coureur = pseudoUnique('alice');
       const benevole = pseudoBenevoleUnique();
@@ -125,12 +137,12 @@ test.describe('Accueil', () => {
         await api.dispose();
       }
 
-      const sessions: { nom: string; pseudo?: string; motDePasse?: string }[] = [
-        { nom: 'visiteur' },
-        { nom: 'coureur', pseudo: coureur, motDePasse: MOT_DE_PASSE },
-        { nom: 'benevole', pseudo: benevole, motDePasse: MOT_DE_PASSE_BENEVOLE_CREE },
-        { nom: 'admin', pseudo: admin, motDePasse: MOT_DE_PASSE_ADMIN_CREE },
-        { nom: 'admin master', pseudo: PSEUDO_ADMIN_MASTER, motDePasse: MOT_DE_PASSE_ADMIN_MASTER },
+      const sessions: { nom: string; attendu: string; pseudo?: string; motDePasse?: string }[] = [
+        { nom: 'visiteur', attendu: 'accueil-connexion' },
+        { nom: 'coureur', attendu: 'accueil-trouver-course', pseudo: coureur, motDePasse: MOT_DE_PASSE },
+        { nom: 'benevole', attendu: 'accueil-espace-benevole', pseudo: benevole, motDePasse: MOT_DE_PASSE_BENEVOLE_CREE },
+        { nom: 'admin', attendu: 'accueil-gerer-courses', pseudo: admin, motDePasse: MOT_DE_PASSE_ADMIN_CREE },
+        { nom: 'admin master', attendu: 'accueil-gerer-admins', pseudo: PSEUDO_ADMIN_MASTER, motDePasse: MOT_DE_PASSE_ADMIN_MASTER },
       ];
       const mesures: { nom: string; titre: string; accroche: string; classe: string; image: string; fond: string; rt: Rect; ra: Rect }[] = [];
       for (const s of sessions) {
@@ -139,6 +151,7 @@ test.describe('Accueil', () => {
           const page = await contexte.newPage();
           await chargerAccueil(page);
           await expect(page.getByTestId('lien-creer-compte')).toHaveCount(0);
+          await expect(page.getByTestId(s.attendu)).toBeVisible();
           const style = await page.locator('main').evaluate((e) => ({ classe: e.className, image: getComputedStyle(e).backgroundImage, fond: getComputedStyle(e).backgroundColor }));
           mesures.push({
             nom: s.nom,
@@ -220,8 +233,7 @@ test.describe('Accueil', () => {
         repetition: cs.backgroundRepeat,
         positionY: cs.backgroundPositionY,
         taille: cs.backgroundSize,
-        // 6.4 : les logos des cartes de courses sont des contenus, pas du décor
-        formes: e.querySelectorAll('svg, canvas, picture, video, img:not([data-testid="accueil-course-logo"] img)').length,
+        formes: e.querySelectorAll('svg, canvas, picture, video').length,
       };
     });
     expect(style.couleur).toBe('rgb(247, 241, 227)');
@@ -232,7 +244,7 @@ test.describe('Accueil', () => {
     expect(style.positionY.split(',')[0].trim()).toBe('100%');
     expect(style.taille.split(',')[0].trim()).toBe('auto 96px');
     expect(style.formes).toBe(0);
-    await expect(page.locator('main svg, main canvas, main picture, main video, main img:not([data-testid="accueil-course-logo"] img)')).toHaveCount(0);
+    await expect(page.locator('main svg, main canvas, main picture, main video, main img')).toHaveCount(0);
 
     const [sapins, courbes] = svgs;
     for (const svg of svgs) {
@@ -316,9 +328,6 @@ test.describe('Accueil', () => {
       test(`R.4 CA5 - à ${v.width} x ${v.height} la page tient dans l'écran, centrée, sapins au bas de la fenêtre`, async ({ page }) => {
         await page.setViewportSize({ width: v.width, height: v.height });
         await chargerAccueil(page);
-        await expect(page.getByTestId('accueil-chargement')).toHaveCount(0);
-        // 6.4 : la liste des courses fait défiler la page verticalement ; l'ajustement à l'écran ne vaut que sans carte
-        const sansCarte = (await page.getByTestId('accueil-course').count()) === 0;
         const m = await page.evaluate(() => {
           const racine = document.documentElement;
           const main = document.querySelector('main')!.getBoundingClientRect();
@@ -341,7 +350,7 @@ test.describe('Accueil', () => {
           expect(r.droite, `${id} droite`).toBeLessThanOrEqual(m.largeurFenetre);
         }
         expect(m.basMain).toBeGreaterThanOrEqual(m.hauteurFenetre - 1);
-        if (v.sansDefilement && sansCarte) expect(m.scrollHeight).toBeLessThanOrEqual(m.clientHeight);
+        if (v.sansDefilement) expect(m.scrollHeight).toBeLessThanOrEqual(m.clientHeight);
         const titre = await rect(page, 'titre');
         expect(Math.abs(titre.x + titre.width / 2 - m.centreMain)).toBeLessThanOrEqual(1);
         expect(Math.abs(m.taillePoliceTitre - attendue(v.width))).toBeLessThanOrEqual(0.1);
@@ -438,7 +447,7 @@ test.describe('Accueil', () => {
   });
 
   for (const mode of ['abort', 'fulfill 503'] as const) {
-    test(`R.4 CA8 - API injoignable (${mode}) : l'accueil garde titre, accroche et décor ; seul le message d'erreur des courses s'ajoute (6.4 RG10)`, async ({ page }) => {
+    test(`R.4 CA8 - API injoignable (${mode}) : l'accueil garde titre, accroche et décor sans message d'erreur`, async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 800 });
       const requetes: string[] = [];
       const erreurs: Error[] = [];
@@ -451,9 +460,7 @@ test.describe('Accueil', () => {
       await expect(page.getByTestId('accroche')).toHaveText(ACCROCHE);
       const image = await page.locator('main').evaluate((e) => getComputedStyle(e).backgroundImage);
       expect(extraireSvg(image).svgs).toHaveLength(2);
-      // 6.4 RG10 : l'échec du chargement des courses est annoncé, et lui seul
-      await expect(page.getByTestId('accueil-erreur')).toBeVisible();
-      await expect(page.locator('main [role="alert"], main [role="status"]')).toHaveCount(1);
+      await expect(page.locator('main [role="alert"], main [role="status"]')).toHaveCount(0);
       expect(requetes.filter((u) => u.includes('/api/sante'))).toEqual([]);
       expect(erreurs.map((e) => e.message)).toEqual([]);
     });

@@ -30,20 +30,18 @@
   overflow-wrap: anywhere;
 }
 
-/* Rubriques des Courses : largeur des écrans en cartes, texte aligné à gauche ; conteneur `cartes` (repli étroit de cartes.css). */
-.courses {
-  container: cartes / inline-size;
-  box-sizing: border-box;
+/* Zone réservée (une rangée) même vide : la page ne bouge pas quand la session est résolue. */
+.actions {
   display: flex;
-  flex-direction: column;
-  gap: var(--espace-6);
-  width: 100%;
-  max-width: 64rem;
-  min-width: 0;
-  text-align: start;
-  overflow-wrap: anywhere;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--espace-4);
+  min-height: 3.5rem;
 }
 
-.reessayer {
-  align-self: flex-start;
+.action {
+  min-height: 3.5rem;
+  padding-inline: var(--espace-6);
+  font-size: var(--taille-grande);
+  text-decoration: none;
 }
