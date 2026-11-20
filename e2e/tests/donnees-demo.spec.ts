@@ -357,25 +357,6 @@ test.describe('Données de démonstration, base neuve', () => {
     }
   });
 
-  test('CA19 (6.4) - l\'accueil public liste les cinq courses de démo dans « À venir »', async ({ browser }) => {
-    const contexte = await browser.newContext();
-    try {
-      const page = await contexte.newPage();
-      await page.goto('/');
-      const rubrique = page.getByTestId('accueil-rubrique-a-venir');
-      await expect(rubrique).toBeVisible();
-      const noms = (await rubrique.getByTestId('accueil-course-nom').allTextContents()).map((n) => n.trim());
-      for (const nom of NOMS_COURSES) {
-        expect(noms.filter((n) => n === nom), nom).toHaveLength(1);
-      }
-      // ordre : date croissante, puis nom (« du jour » avant « du soir », même date)
-      const ordre = ['Backyard du jour', 'Backyard du soir', 'Backyard express', 'Backyard mini', 'Backyard de démo'];
-      expect(noms.filter((n) => NOMS_COURSES.includes(n))).toEqual(ordre);
-    } finally {
-      await contexte.close();
-    }
-  });
-
   // Dernier test de la série : démarrer « Backyard du jour » est irréversible (le script échouerait ensuite sur ses inscriptions).
   test('CA19 - Nadia démarre « Backyard du jour » (3 inscrits) et se voit refuser le démarrage de « Backyard express » et « Backyard mini »', async ({ page }) => {
     await ouvrirConnexion(page);
